@@ -1,1 +1,1 @@
-web: gunicorn company_system.wsgi
+web: gunicorn company_db_9x4p.wsgi
