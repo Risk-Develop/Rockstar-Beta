@@ -1,0 +1,14 @@
+<!-- employees/templates/employees/edit_employee.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Edit Employee</title></head>
+<body>
+  <h2 style="text-align:center">Edit: {{ employee.name }}</h2>
+  <form method="POST" style="max-width:480px;margin:auto;background:#fff;padding:20px;border-radius:8px;">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save Changes</button>
+    <a href="{% url 'dashboard' %}">Cancel</a>
+  </form>
+</body>
+</html>

@@ -1,0 +1,13 @@
+<!-- employees/templates/employees/confirm_delete.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Delete Employee</title></head>
+<body>
+  <h2 style="text-align:center">Delete "{{ employee.name }}"?</h2>
+  <form method="POST" style="text-align:center">
+    {% csrf_token %}
+    <button type="submit">Yes, Delete</button>
+    <a href="{% url 'dashboard' %}">Cancel</a>
+  </form>
+</body>
+</html>

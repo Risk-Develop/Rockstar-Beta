@@ -1,0 +1,110 @@
+<!-- employees/templates/employees/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* keep the same styles you used before (kpi, charts, etc.) */
+    body { font-family: 'Segoe UI', sans-serif; background:#f4f6f9; padding:20px;}
+    h1 { text-align:center; margin-bottom:10px }
+    .kpi-container{ display:flex; gap:20px; justify-content:center; margin-bottom:20px}
+    .kpi{ background:#fff; padding:18px; border-radius:10px; width:200px; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.08)}
+    .charts{ display:flex; gap:30px; justify-content:center; flex-wrap:wrap; margin-bottom:20px }
+    canvas{ background:#fff; padding:15px; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    table{ width:90%; margin: 20px auto; border-collapse: collapse; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.06) }
+    th,td{ padding:10px; border-bottom:1px solid #eee; text-align:left }
+    .actions a { margin-right:8px; text-decoration:none }
+    .top-controls { text-align:center; margin-bottom:12px }
+  </style>
+</head>
+<body>
+  <h1>📊 Company Dashboard</h1>
+
+  <div class="top-controls">
+    <form method="get" style="display:inline-block; margin-right:12px;">
+      <label>Filter: </label>
+      <select name="department" onchange="this.form.submit()">
+        <option value="">All</option>
+        {% for dept in departments %}
+          <option value="{{ dept }}" {% if selected_department == dept %}selected{% endif %}>{{ dept }}</option>
+        {% endfor %}
+      </select>
+    </form>
+
+    <a href="{% url 'add_employee' %}">
+      <button style="padding:8px 12px; border-radius:6px; cursor:pointer">➕ Add Employee</button>
+    </a>
+    
+        <a href="{% url 'export_employees' %}">
+      <button style="padding:8px 12px; border-radius:6px; cursor:pointer">⬇️ Export</button>
+    </a>
+</form>
+
+  </div>
+
+  <div class="kpi-container">
+    <div class="kpi"><h4>Total Employees</h4><h2>{{ total_employees }}</h2></div>
+    <div class="kpi"><h4>Total Salary</h4><h2>${{ total_salary }}</h2></div>
+    <div class="kpi"><h4>Average Salary</h4><h2>${{ avg_salary }}</h2></div>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Name</th><th>Position</th><th>Department</th><th>Salary</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for emp in employees %}
+      <tr>
+        <td>{{ emp.name }}</td>
+        <td>{{ emp.position }}</td>
+        <td>{{ emp.department }}</td>
+        <td>${{ emp.salary }}</td>
+        <td class="actions">
+          <a href="{% url 'edit_employee' emp.id %}">✏️ Edit</a>
+          <a href="{% url 'delete_employee' emp.id %}">🗑️ Delete</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" style="text-align:center">No employees found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="charts">
+    <canvas id="salaryChart" width="450" height="300"></canvas>
+    <canvas id="positionChart" width="450" height="300"></canvas>
+  </div>
+
+
+
+  <script>
+    // Salary Chart (bar)
+    const salaryCtx = document.getElementById('salaryChart').getContext('2d');
+    new Chart(salaryCtx, {
+      type: 'bar',
+      data: {
+        labels: {{ names|safe }},
+        datasets: [{
+          label: 'Salary ($)',
+          data: {{ salaries|safe }},
+          borderWidth: 1
+        }]
+      },
+      options: { scales: { y: { beginAtZero: true } } }
+    });
+
+    // Position Pie Chart
+    const posCtx = document.getElementById('positionChart').getContext('2d');
+    new Chart(posCtx, {
+      type: 'pie',
+      data: {
+        labels: {{ position_labels|safe }},
+        datasets: [{
+          label: 'Employees per Position',
+          data: {{ position_values|safe }},
+        }]
+      }
+    });
+  </script>
+</body>
+</html>
