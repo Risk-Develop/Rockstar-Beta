@@ -1,1 +1,1 @@
-web: cd company_system && gunicorn sub_company_system.wsgi:application
+web: gunicorn company_system.sub_company_system.wsgi:application
