@@ -1,8 +1,8 @@
 Django
 gunicorn
-dj-database-url
 psycopg2-binary
-whitenoise
+dj-database-url
+python-decouple
 asgiref==3.10.0
 beautifulsoup4==4.14.2
 bs4==0.0.2
