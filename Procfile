@@ -1,1 +1,1 @@
-web: cd company_system && gunicorn --chdir company_system sub_company_system.wsgi:application --log-file -
+web: cd company_system && gunicorn sub_company_system.wsgi:application --log-file -
