@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{% block title %}Dashboard{% endblock %}</title>
+    {% include 'includes/scripts.html' %}
+  </head>
+  <body>
+    {% include 'includes/navbar.html' %}
+    <main>{% block content %}{% endblock %}</main>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+{% load static %}
+<script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // Salary Chart (bar)
+    const salaryCtx = document.getElementById('salaryChart').getContext('2d');
+    new Chart(salaryCtx, {
+      type: 'bar',
+      data: {
+        labels: {{ names|safe }},
+        datasets: [{
+          label: 'Salary ($)',
+          data: {{ salaries|safe }},
+          borderWidth: 1
+        }]
+      },
+      options: { scales: { y: { beginAtZero: true } } }
+    });
+
+    // Position Pie Chart
+    const posCtx = document.getElementById('positionChart').getContext('2d');
+    new Chart(posCtx, {
+      type: 'pie',
+      data: {
+        labels: {{ position_labels|safe }},
+        datasets: [{
+          label: 'Employees per Position',
+          data: {{ position_values|safe }},
+        }]
+      }
+    });
+</script>

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %} Sales Dashboard {% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'includes/sidebar.html' %}
+{% include 'employees/main_dashboard.html' %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    console.log("This page has custom JS");
+</script>
+{% endblock %}

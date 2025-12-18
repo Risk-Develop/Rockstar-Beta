@@ -1,0 +1,84 @@
+<tbody class="divide-y divide-gray-200 text-sm text-gray-700">
+  {% for s in staff_list %}
+  <tr>
+    <td class="px-4 py-3">{{ s.first_name }} {{ s.middle_name }} {{ s.last_name }}</td>
+    <td class="px-4 py-3">
+      {% if s.positionlink %}
+        {{ s.positionlink.position_name }}
+      {% else %}
+        <span class="text-gray-400">No Position</span>
+      {% endif %}
+    </td>
+    <td class="px-4 py-3">{{ s.get_type_display }}</td>
+    <!-- Department (dynamic) -->
+    <td class="px-4 py-3">
+      {% if s.departmentlink %}
+        {{ s.departmentlink.department_name }}
+      {% else %}
+        <span class="text-gray-400">No Department</span>
+      {% endif %}
+    </td>
+
+    <!-- Inline role assignment -->
+    <td class="px-4 py-2">
+      <form method="post" class="inline-role-form flex gap-2 items-center">
+        {% csrf_token %}
+        <input type="hidden" name="staff_id" value="{{ s.id }}">
+        <select name="role" class="border rounded p-1">
+          <option value="">-- No Role --</option>
+          {% for role in roles %}
+            <option value="{{ role.id }}" {% if s.role_id == role.id %}selected{% endif %}>
+              {{ role.role_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+    </td>
+
+    <td class="px-4 py-3">{{ s.get_status_display }}</td>
+    <td class="px-4 py-3">{{ s.get_shift_display }}</td>
+
+    <!-- Actions: Edit / Delete -->
+    <td class="px-4 py-3 flex gap-2">
+      <a href="{% url 'user_detail' s.id %}" 
+       class="bg-gray-200 text-gray-800 px-2 py-1 rounded hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
+       Details
+    </a>
+      <a href="{% url 'user_edit' s.pk %}"
+         class="text-indigo-600 hover:underline">Edit</a>
+
+      <button 
+    onclick="openDeleteModal('modal-{{ s.id }}')" 
+    class="bg-red-600 text-white px-4 py-2 rounded">
+    Delete
+  </button>
+
+      <!-- Delete confirmation modal -->
+<div
+  id="modal-{{ s.id }}"
+  class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center z-50"
+>
+  <div class="bg-white p-6 rounded shadow-lg w-96">
+    <h3 class="text-lg font-semibold">Confirm Delete</h3>
+    <p class="mt-2">Are you sure you want to delete <strong>{{ s.first_name }} {{ s.last_name }}</strong>?</p>
+    <div class="mt-4 flex justify-end gap-2">
+      <form method="post" action="{% url 'user_delete' s.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded">
+          Yes, Delete
+        </button>
+      </form>
+      <button onclick="closeDeleteModal('modal-{{ s.id }}')" class="px-4 py-2 border rounded">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+    </td>
+  </tr>
+  {% empty %}
+  <tr>
+    <td colspan="8" class="px-4 py-6 text-center text-gray-500">No users found</td>
+  </tr>
+  {% endfor %}
+</tbody>

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold mb-4">Leave Credits</h1>
+
+    <!-- Add Button -->
+    <a href="{% url 'human_resource:leave_credit_add' %}" 
+       class="inline-block mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+       Add Leave Credit
+    </a>
+
+    <!-- Search Form -->
+    <form method="get" class="mb-4 flex gap-2">
+        <input type="text" name="q" placeholder="Search employee..." value="{{ request.GET.q }}" class="px-3 py-2 border rounded w-full">
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Search</button>
+    </form>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white shadow rounded-lg text-sm">
+            <thead class="bg-gray-100 text-left text-gray-700 text-xs uppercase">
+                <tr>
+                    <th class="px-4 py-2">Employee</th>
+                    <th class="px-4 py-2">Rank</th>
+                    <th class="px-4 py-2">Leave Type</th>
+                    <th class="px-4 py-2">Total</th>
+                    <th class="px-4 py-2">Used</th>
+                    <th class="px-4 py-2">Remaining</th>
+                    <th class="px-4 py-2">Year</th>
+                    <th class="px-4 py-2">Notes</th>
+                    <th class="px-4 py-2">Actions</th>
+                    <th class="px-4 py-2">Leave Requests</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for credit in leave_credits %}
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="px-4 py-2 font-medium">{{ credit.employee.first_name }} {{ credit.employee.last_name }}</td>
+                    <td class="px-4 py-2">{{ credit.employee.rank|title }}</td>
+                    <td class="px-4 py-2">{{ credit.get_leave_type_display }}</td>
+                    <td class="px-4 py-2">{{ credit.total|floatformat:1 }}</td>
+                    <td class="px-4 py-2">{{ credit.used|floatformat:1 }}</td>
+                    <td class="px-4 py-2 font-semibold">
+                        <span class="px-2 py-1 rounded
+                            {% if credit.remaining == 0 %}bg-red-200 text-red-800
+                            {% elif credit.remaining <= 2 %}bg-yellow-200 text-yellow-800
+                            {% else %}bg-green-200 text-green-800
+                            {% endif %}">
+                            {{ credit.remaining|floatformat:1 }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-2">{{ credit.year }}</td>
+                    <td class="px-4 py-2">{{ credit.notes|default:"-" }}</td>
+                    <td class="px-4 py-2">
+                        <a href="{% url 'human_resource:leave_credit_edit' credit.id %}" class="text-yellow-600 hover:text-yellow-800 mr-2">Edit</a>
+                    </td>
+                    <td class="px-4 py-2">
+                        <a href="{% url 'human_resource:leave_request_list' %}?employee={{ credit.employee.id }}&leave_type={{ credit.leave_type }}" class="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition">View Requests</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="px-4 py-2 text-center text-gray-500">No leave credits found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="mt-4 flex justify-center">
+            <nav class="inline-flex rounded-md shadow">
+                {% if leave_credits.has_previous %}
+                <a href="?page={{ leave_credits.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-l">Previous</a>
+                {% else %}
+                <span class="px-3 py-1 bg-gray-100 rounded-l text-gray-400 cursor-not-allowed">Previous</span>
+                {% endif %}
+
+                <span class="px-3 py-1 bg-white border-t border-b">{{ leave_credits.number }} / {{ leave_credits.paginator.num_pages }}</span>
+
+                {% if leave_credits.has_next %}
+                <a href="?page={{ leave_credits.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-r">Next</a>
+                {% else %}
+                <span class="px-3 py-1 bg-gray-100 rounded-r text-gray-400 cursor-not-allowed">Next</span>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}

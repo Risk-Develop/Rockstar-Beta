@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Edit Employee Profile: {{ employee.first_name }} {{ employee.last_name }}</h2>
+<form method="POST">
+    {% csrf_token %}
+
+    <label>Rank</label>
+    <select name="rank">
+        {% for key, value in RANK_CHOICES %}
+            <option value="{{ key }}" {% if profile.rank == key %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Shift</label>
+    <select name="shift">
+        {% for key, value in shifts %}
+            <option value="{{ key }}" {% if profile.shift == key %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
+    </select>
+
+    <label>VL</label>
+    <input type="number" name="vl" value="{{ profile.current_vl }}" min="0" />
+    <label>SL</label>
+    <input type="number" name="sl" value="{{ profile.current_sl }}" min="0" />
+
+    <button type="submit">Save</button>
+</form>
+<a href="{% url 'human_resource:hr_employee_list' %}">Back to Employee List</a>
+{% endblock %}

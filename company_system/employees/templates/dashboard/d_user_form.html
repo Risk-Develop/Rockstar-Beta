@@ -1,0 +1,332 @@
+
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile Details</title>
+
+    {% include 'includes/header.html' %}
+    <style>
+      .transition-transform {
+        transition: transform 0.3s ease, opacity 0.3s ease;
+      }
+    </style>
+  </head>
+  <body
+    class="m-0 p-0 bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 transition-colors duration-300"
+  >
+    {% include 'includes/sidebar.html' %}
+<!-- Main Content -->
+<main
+  id="mainContent"
+  class="md:ml-64 pt-10 min-h-screen p-6 transition-all duration-500 ease-in-out transform bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+>
+
+
+{% block content %}
+<div class="max-w-5xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-8">{{ action }} User</h1>
+
+    <form method="post" novalidate class="space-y-8">
+        {% csrf_token %}
+
+        <!-- PERSONAL INFORMATION -->
+        <div class="bg-white border rounded-xl shadow-sm p-6">
+            <h2 class="text-xl font-semibold mb-4">Personal Information</h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                    {{ form.first_name.label_tag }} 
+                    {{ form.first_name }}
+                </div>
+
+                <div>
+                    {{ form.middle_name.label_tag }} 
+                    {{ form.middle_name }}
+                </div>
+
+                <div>
+                    {{ form.last_name.label_tag }} 
+                    {{ form.last_name }}
+                </div>
+
+                <div>
+                    {{ form.birthdate.label_tag }} 
+                    {{ form.birthdate }}
+                </div>
+
+                <div>
+                    {{ form.age.label_tag }} 
+                    {{ form.age }}
+                </div>
+
+                <div>
+                    {{ form.sex.label_tag }} 
+                    {{ form.sex }}
+                </div>
+            </div>
+        </div>
+
+        <!-- EMPLOYMENT DETAILS -->
+        <div class="bg-white border rounded-xl shadow-sm p-6">
+            <h2 class="text-xl font-semibold mb-4">Employment Details</h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+
+                <div>{{ form.start_date.label_tag }}{{ form.start_date }}</div>
+                <div>{{ form.tenure_active.label_tag }}{{ form.tenure_active }}</div>
+                <div>{{ form.employee_number.label_tag }}{{ form.employee_number }}</div>
+                <div>{{ form.status.label_tag }}{{ form.status }}</div>
+                <div>{{ form.positionlink.label_tag }}{{ form.positionlink }}</div>
+                <div>{{ form.type.label_tag }}{{ form.type }}</div>
+                <div>{{ form.departmentlink.label_tag }}{{ form.departmentlink }}</div>
+                <div>{{ form.rank.label_tag }}{{ form.rank }}</div>
+                <div>{{ form.shift.label_tag }}{{ form.shift }}</div>
+
+            </div>
+        </div>
+
+        <!-- GOVERNMENT NUMBERS -->
+        <div class="bg-white border rounded-xl shadow-sm p-6">
+            <h2 class="text-xl font-semibold mb-4">Government Numbers</h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>{{ form.sss_number.label_tag }}{{ form.sss_number }}</div>
+                <div>{{ form.pagibig_number.label_tag }}{{ form.pagibig_number }}</div>
+                <div>{{ form.philhealth_number.label_tag }}{{ form.philhealth_number }}</div>
+            </div>
+        </div>
+
+        <!-- CONTACT INFORMATION -->
+        <div class="bg-white border rounded-xl shadow-sm p-6">
+            <h2 class="text-xl font-semibold mb-4">Contact Information</h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>{{ form.email_address.label_tag }}{{ form.email_address }}</div>
+                <div>{{ form.phone_number.label_tag }}{{ form.phone_number }}</div>
+                <div>{{ form.emergency_contact_name.label_tag }}{{ form.emergency_contact_name }}</div>
+                <div>{{ form.emergency_contact_number.label_tag }}{{ form.emergency_contact_number }}</div>
+            </div>
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="flex gap-3 pt-4">
+            <button 
+                type="submit"
+                class="bg-blue-600 text-white px-6 py-2.5 rounded-lg shadow hover:bg-blue-700 transition">
+                {{ action }}
+            </button>
+
+            <a href="{% url 'dashboard_user_mgnt' %}"
+               class="px-6 py-2.5 border rounded-lg hover:bg-gray-100 transition">
+                Cancel
+            </a>
+        </div>
+
+    </form>
+</div>
+
+{% endblock %}
+</main>
+ {% include 'includes/script.html' %}
+    <script>
+
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.querySelector("form");
+
+    form.addEventListener("submit", function (e) {
+        let invalid = false;
+
+        // find ALL Django required input fields
+        const requiredFields = form.querySelectorAll("[required]");
+
+        requiredFields.forEach(field => {
+            const wrapper = field.closest("div");
+
+            // remove previous error message
+            const oldErr = wrapper.querySelector(".error-text");
+            if (oldErr) oldErr.remove();
+
+            field.classList.remove("border-red-500");
+
+            // check if empty
+            if (!field.value.trim()) {
+                invalid = true;
+
+                field.classList.add("border-red-500");
+
+                // Show required label
+                const err = document.createElement("p");
+                err.className = "text-red-600 text-sm mt-1 error-text";
+                err.innerText = "This field is required.";
+
+                wrapper.appendChild(err);
+            }
+        });
+
+        if (invalid) e.preventDefault();
+    });
+});
+
+
+
+
+
+
+
+
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    // -----------------------------
+    // AUTO-COMPUTE TENURE (Years, Months, Days)
+    // -----------------------------
+    const startDateInput = document.getElementById("id_start_date");
+    const tenureInput = document.getElementById("id_tenure_active");
+
+    function calculateFullTenure() {
+        const startValue = startDateInput.value;
+        if (!startValue) return;
+
+        const start = new Date(startValue);
+        const today = new Date();
+
+        let years = today.getFullYear() - start.getFullYear();
+        let months = today.getMonth() - start.getMonth();
+        let days = today.getDate() - start.getDate();
+
+        // Fix negative days
+        if (days < 0) {
+            months -= 1;
+            const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+            days += prevMonth.getDate();
+        }
+
+        // Fix negative months
+        if (months < 0) {
+            years -= 1;
+            months += 12;
+        }
+
+        let result = "";
+
+        if (years > 0) {
+            result += years + (years === 1 ? " year, " : " years, ");
+        } else {
+            result += "0 years, ";
+        }
+
+        if (months > 0) {
+            result += months + (months === 1 ? " month, " : " months, ");
+        } else {
+            result += "0 months, ";
+        }
+
+        result += days + (days === 1 ? " day" : " days");
+
+        tenureInput.value = result;
+    }
+
+    startDateInput.addEventListener("change", calculateFullTenure);
+
+
+
+    // -----------------------------
+    // AUTO-COMPUTE AGE (Years)
+    // -----------------------------
+    const birthInput = document.getElementById("id_birthdate");
+    const ageInput = document.getElementById("id_age");
+
+    function calculateAge() {
+        const birthValue = birthInput.value;
+        if (!birthValue) return;
+
+        const birth = new Date(birthValue);
+        const today = new Date();
+
+        let age = today.getFullYear() - birth.getFullYear();
+        const m = today.getMonth() - birth.getMonth();
+
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+            age--;
+        }
+
+        ageInput.value = age >= 0 ? age : 0;
+    }
+
+    birthInput.addEventListener("change", calculateAge);
+
+
+
+    // -----------------------------
+    // AUTO-GENERATE EMPLOYEE NUMBER
+    // Format: EMP-yyyyMM-xxxx
+    // -----------------------------
+    const empInput = document.getElementById("id_employee_number");
+
+    function generateEmployeeNumber() {
+        if (empInput.value) return; // Do not override if already exists
+
+        const now = new Date();
+
+        const year = now.getFullYear().toString();
+        const month = ("0" + (now.getMonth() + 1)).slice(-2);
+
+        const randomId = Math.floor(1000 + Math.random() * 9000); // 4-digit number
+
+        const empNo = `EMP-${year}${month}-${randomId}`;
+        empInput.value = empNo;
+    }
+
+    // Generate on page load
+    generateEmployeeNumber();
+});
+
+
+
+
+      // Floating Action Button Logic
+      const fabToggle = document.getElementById('fabToggle');
+      const fabMenu = document.getElementById('fabMenu');
+
+      fabToggle.addEventListener('click', () => {
+        const isOpen = fabMenu.classList.contains('opacity-100');
+        if (isOpen) {
+          fabMenu.classList.remove('opacity-100', 'scale-100');
+          fabMenu.classList.add('opacity-0', 'scale-0');
+          fabToggle.classList.remove('rotate-45');
+        } else {
+          fabMenu.classList.remove('opacity-0', 'scale-0');
+          fabMenu.classList.add('opacity-100', 'scale-100');
+          fabToggle.classList.add('rotate-45');
+        }
+      });
+
+      // Delete Modal Logic
+      const deleteButtons = document.querySelectorAll('.delete-btn');
+      const deleteModal = document.getElementById('dash-delete-modal');
+      const modalUsername = document.getElementById('modal-username');
+      const confirmYes = document.getElementById('confirmYes');
+      const confirmNo = document.getElementById('confirmNo');
+
+      deleteButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const username = button.getAttribute('data-username');
+          const url = button.getAttribute('data-url');
+          modalUsername.textContent = username;
+          confirmYes.onclick = () => {
+            window.location.href = url;
+          };
+          deleteModal.classList.remove('hidden');
+        });
+      });
+
+      confirmNo.addEventListener('click', () => {
+        deleteModal.classList.add('hidden');
+      });
+    </script>
+  </body>
+</html>

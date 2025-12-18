@@ -1,0 +1,140 @@
+  <tbody class="divide-y divide-gray-200 dark:divide-gray-700 text-sm text-gray-700 dark:text-gray-200">
+  {% for s in staff_list %}
+  <tr class="block md:table-row mb-4 md:mb-0 bg-white dark:bg-gray-800 rounded-lg md:rounded-none p-2 md:p-0">
+    
+    <!-- Name -->
+    <td class="block md:table-cell px-4 py-2 font-medium before:content-['Name:'] before:inline-block md:before:hidden w-full md:w-auto">
+      {{ s.first_name }} {{ s.middle_name }} {{ s.last_name }}
+    </td>
+
+    <!-- Department -->
+    <td class="block md:table-cell px-4 py-2 before:content-['Department:'] before:inline-block md:before:hidden w-full md:w-auto">
+      {% if s.positionlink %}
+        {{ s.positionlink.position_name }}
+      {% else %}
+        <span class="text-gray-400 dark:text-gray-500">No Position</span>
+      {% endif %}
+    </td>
+
+    <!-- Type -->
+    <td class="block md:table-cell px-4 py-2 before:content-['Type:'] before:inline-block md:before:hidden w-full md:w-auto">
+      {{ s.get_type_display }}
+    </td>
+
+    <!-- Department -->
+    <td class="block md:table-cell px-4 py-2 before:content-['Department:'] before:inline-block md:before:hidden w-full md:w-auto">
+      {% if s.departmentlink %}
+        {{ s.departmentlink.department_name }}
+      {% else %}
+        <span class="text-gray-400 dark:text-gray-500">No Department</span>
+      {% endif %}
+    </td>
+
+    <!-- Role -->
+    <td class="block md:table-cell px-4 py-2 before:content-['Role:'] before:inline-block md:before:hidden w-full md:w-auto">
+      <form method="post" action="{% url 'update_staff_role' %}" class="inline-role-form flex items-center gap-2">
+        {% csrf_token %}
+        <input type="hidden" name="staff_id" value="{{ s.id }}">
+        <select name="role" class="border rounded p-1 dark:bg-gray-700 dark:text-gray-200 w-full md:w-auto">
+          <option value="">-- No Role --</option>
+          {% for role in roles %}
+            <option value="{{ role.id }}" {% if s.role_id == role.id %}selected{% endif %}>
+              {{ role.role_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+    </td>
+
+    <!-- Status -->
+    <td class="block md:table-cell px-4 py-2 before:content-['Status:'] before:inline-block md:before:hidden w-full md:w-auto">
+      {{ s.get_status_display }}
+    </td>
+
+    <!-- Shift -->
+    <td class="block md:table-cell px-4 py-2 before:content-['Shift:'] before:inline-block md:before:hidden w-full md:w-auto">
+      {{ s.get_shift_display }}
+    </td>
+
+    <!-- Actions -->
+    <td class="block md:table-cell px-4 py-2 w-full md:w-auto relative">
+
+      <!-- Mobile Dropdown -->
+      <div class="md:hidden">
+        <button 
+          class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded w-full text-left flex justify-between items-center"
+          onclick="this.nextElementSibling.classList.toggle('hidden')"
+        >
+          Actions
+          <svg class="w-4 h-4 ml-2 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+
+        <div class="hidden mt-1 border dark:border-gray-700 rounded shadow-md bg-white dark:bg-gray-800">
+          <a href="{% url 'dashboard_user_detail' s.id %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">Details</a>
+          <a href="{% url 'dashboard_user_edit' s.pk %}" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">Edit</a>
+          <button 
+            class="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 delete-btn"
+            data-username="{{ s.first_name }} {{ s.last_name }}"
+            data-url="{% url 'user_delete_dash' s.pk %}">
+            Delete
+          </button>
+        </div>
+      </div>
+
+      <!-- Desktop Buttons -->
+      <div class="hidden md:flex flex-row gap-2">
+        <a href="{% url 'dashboard_user_detail' s.id %}" 
+           class="bg-gray-200 text-gray-800 px-3 py-1 rounded hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition">
+          Details
+        </a>
+        <a href="{% url 'dashboard_user_edit' s.pk %}" 
+           class="bg-indigo-100 text-indigo-600 px-3 py-1 rounded hover:bg-indigo-200 dark:bg-indigo-700 dark:text-indigo-200 dark:hover:bg-indigo-600 transition">
+          Edit
+        </a>
+        <button
+           class="delete-btn bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition"
+           data-username="{{ s.first_name }} {{ s.last_name }}"
+           data-url="{% url 'user_delete_dash' s.pk %}">
+          Delete
+        </button>
+      </div>
+    </td>
+
+  </tr>
+  {% empty %}
+  <tr>
+    <td colspan="8" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+      No users found
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
+
+  </table>
+</div>
+
+<!-- Generic Delete Modal (for all users) -->
+<div
+  id="dash-delete-modal"
+  class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 hidden z-50"
+>
+  <div class="bg-white dark:bg-gray-800 dark:text-gray-200 p-6 rounded shadow-lg w-11/12 max-w-md">
+    <h3 class="text-lg font-semibold">Confirm Delete</h3>
+    <p class="mt-2">
+      Are you sure you want to delete <strong id="modal-username"></strong>?
+    </p>
+    <div class="mt-4 flex flex-col sm:flex-row justify-end gap-2">
+      <form id="modal-delete-form" method="post" action="">
+        {% csrf_token %}
+        <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition">
+          Yes, Delete
+        </button>
+      </form>
+      <button onclick="closeDeleteModal()" class="px-4 py-2 border rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>

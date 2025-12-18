@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Human Resource Dashboard {% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'hr/dashboard/hr_sidebar.html' %}
+
+<main
+  id="mainContent"
+  class="md:ml-64 pt-10 min-h-screen p-6 transition-all duration-500 ease-in-out transform bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+>
+{% include "users/d_user_list.html" with staff_list=staff_list roles=roles %}
+
+</main>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'src/js/user_mgnt.js'  %}"></script>
+
+
+    <script>
+  //    function toggleMenu(id) {
+  //      document.getElementById(id).classList.toggle("hidden");
+  //    }
+
+// ==========================
+// Fetch & Render Table
+// ==========================
+function fetchData(page = 1, search = "") {
+  fetch(`{% url 'ajax_user_list' %}?page=${page}&search=${encodeURIComponent(search)}`)
+    .then((res) => res.json())
+    .then((data) => {
+      tableBody.innerHTML = data.html;
+      currentPage = data.current_page;
+      attachRoleDropdownListeners(); // reattach listeners after AJAX load
+      attachDeleteButtonListeners(); // reattach delete modals if needed
+    })
+    .catch((err) => console.error("Fetch Error:", err));
+}
+
+
+    </script>
+ {% endblock %}

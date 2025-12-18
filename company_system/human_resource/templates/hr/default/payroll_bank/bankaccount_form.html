@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Bank Account Form{% endblock %}
+
+{% block content %}
+<h1 class="text-xl font-bold mb-4">{{ account.pk|default:"Add" }} Bank Account</h1>
+
+<form method="POST" class="space-y-4">
+    {% csrf_token %}
+    <div>
+        <label class="block mb-1">Employee</label>
+        <select name="employee" class="border p-2 w-full rounded">
+            {% for emp in employees %}
+            <option value="{{ emp.pk }}" {% if account and account.employee.pk == emp.pk %}selected{% endif %}>{{ emp.get_full_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label class="block mb-1">Bank</label>
+        <select name="bank" class="border p-2 w-full rounded">
+            {% for b in banks %}
+            <option value="{{ b.pk }}" {% if account and account.bank.pk == b.pk %}selected{% endif %}>{{ b.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label class="block mb-1">Account Number</label>
+        <input type="text" name="account_number" value="{{ account.account_number|default:'' }}" class="border p-2 w-full rounded">
+    </div>
+    <div class="flex items-center">
+        <input type="checkbox" name="is_primary" {% if account and account.is_primary %}checked{% endif %} class="mr-2">
+        <label>Primary Account</label>
+    </div>
+    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Save</button>
+</form>
+{% endblock %}

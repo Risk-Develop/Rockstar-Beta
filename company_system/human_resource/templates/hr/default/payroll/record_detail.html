@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Payroll Record Detail{% endblock %}
+
+{% block content %}
+<div class="p-4">
+    <h2 class="text-xl font-bold mb-4">Payroll Record: {{ payroll_record.month }}/{{ payroll_record.year }} (Cutoff {{ payroll_record.cutoff }})</h2>
+
+    <table class="w-full border-collapse border">
+        <thead>
+            <tr>
+                <th class="border p-2">Employee</th>
+                <th class="border p-2">Bank</th>
+                <th class="border p-2">Account No.</th>
+                <th class="border p-2">Gross</th>
+                <th class="border p-2">Additions</th>
+                <th class="border p-2">Deductions</th>
+                <th class="border p-2">Net</th>
+                <th class="border p-2">Payslip</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payout in payouts %}
+            <tr>
+                <td class="border p-2">
+    {% if payout.employee %}
+        {{ payout.employee.first_name }} {{ payout.employee.last_name }}
+    {% else %}
+        -
+    {% endif %}
+</td>
+
+                <td class="border p-2">
+                    {% if payout.bank_account and payout.bank_account.bank %}
+                        {{ payout.bank_account.bank.name }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td class="border p-2">
+                    {% if payout.bank_account %}
+                        {{ payout.bank_account.account_number }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+
+                <td class="border p-2">{{ payout.gross|floatformat:2 }}</td>
+                <td class="border p-2">{{ payout.total_additions|floatformat:2 }}</td>
+                <td class="border p-2">{{ payout.total_deductions|floatformat:2 }}</td>
+                <td class="border p-2">{{ payout.net|floatformat:2 }}</td>
+
+                <td class="border p-2">
+                    {% if payout.payslip %}
+                        <a href="{{ payout.payslip.url }}" target="_blank">View</a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td class="border p-2 text-center" colspan="8">No payouts found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

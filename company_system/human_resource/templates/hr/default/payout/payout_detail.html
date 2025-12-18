@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Payout Detail{% endblock %}
+
+{% block content %}
+<h1 class="text-xl font-bold mb-4">Payout Detail</h1>
+
+<table class="w-full border-collapse border">
+    <tr>
+        <th class="border p-2">Employee</th>
+        <td class="border p-2">{{ payout.employee.get_full_name }}</td>
+    </tr>
+    <tr>
+        <th class="border p-2">Gross</th>
+        <td class="border p-2">{{ payout.gross }}</td>
+    </tr>
+    <tr>
+        <th class="border p-2">Total Additions</th>
+        <td class="border p-2">{{ payout.total_additions }}</td>
+    </tr>
+    <tr>
+        <th class="border p-2">Total Deductions</th>
+        <td class="border p-2">{{ payout.total_deductions }}</td>
+    </tr>
+    <tr>
+        <th class="border p-2">Net Pay</th>
+        <td class="border p-2">{{ payout.net }}</td>
+    </tr>
+    <tr>
+        <th class="border p-2">Bank</th>
+        <td class="border p-2">{{ payout.bank_account.bank.name if payout.bank_account else '-' }}</td>
+    </tr>
+    <tr>
+        <th class="border p-2">Account #</th>
+        <td class="border p-2">{{ payout.bank_account.account_number if payout.bank_account else '-' }}</td>
+    </tr>
+    <tr>
+        <th class="border p-2">Cutoff</th>
+        <td class="border p-2">{{ payout.cutoff }}</td>
+    </tr>
+    <tr>
+        <th class="border p-2">Month/Year</th>
+        <td class="border p-2">{{ payout.month }}/{{ payout.year }}</td>
+    </tr>
+</table>
+
+<a href="{% url 'human_resource:payout_pdf' payout.id %}" class="bg-blue-500 text-white px-3 py-1 rounded mt-2 inline-block">Download PDF</a>
+
+
+<a href="{% url 'human_resource:payout_list' %}" class="bg-gray-500 text-white px-3 py-1 rounded mt-2 inline-block">Back to List</a>
+{% endblock %}

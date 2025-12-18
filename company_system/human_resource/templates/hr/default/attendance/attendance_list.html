@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Attendance List</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Employee</th>
+            <th>Date</th>
+            <th>Clock In</th>
+            <th>Clock Out</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in attendances %}
+        <tr>
+            <td>{{ a.employee.first_name }} {{ a.employee.last_name }}</td>
+            <td>{{ a.date }}</td>
+            <td>{{ a.clock_in|default:"-" }}</td>
+            <td>{{ a.clock_out|default:"-" }}</td>
+            <td>{{ a.get_status_display }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

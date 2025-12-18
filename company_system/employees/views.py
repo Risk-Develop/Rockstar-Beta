@@ -5,6 +5,10 @@ from .models import Employee
 from .forms import EmployeeForm
 import pandas as pd
 from django.http import HttpResponse
+from users.models import Staff, Role
+
+
+
 
 def export_employees(request):
     qs = Employee.objects.all().values('name', 'position', 'department', 'salary')
@@ -14,7 +18,7 @@ def export_employees(request):
     df.to_excel(response, index=False)
     return response
 
-def dashboard(request):
+def old_dashboard(request):
     # Optional filter by department (GET param)
     selected_department = request.GET.get('department', '')
 
@@ -55,7 +59,7 @@ def dashboard(request):
         'departments': departments,
         'selected_department': selected_department,
     }
-    return render(request, 'employees/dashboard.html', context)
+    return render(request, 'employees/old_dashboard.html', context)
 
 
 def add_employee(request):
@@ -63,7 +67,7 @@ def add_employee(request):
         form = EmployeeForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('dashboard')
+            return redirect('old_dashboard')
     else:
         form = EmployeeForm()
     return render(request, 'employees/add_employee.html', {'form': form})
@@ -75,7 +79,7 @@ def edit_employee(request, id):
         form = EmployeeForm(request.POST, instance=employee)
         if form.is_valid():
             form.save()
-            return redirect('dashboard')
+            return redirect('old_dashboard')
     else:
         form = EmployeeForm(instance=employee)
     return render(request, 'employees/edit_employee.html', {'form': form, 'employee': employee})
@@ -85,8 +89,22 @@ def delete_employee(request, id):
     employee = get_object_or_404(Employee, id=id)
     if request.method == 'POST':
         employee.delete()
-        return redirect('dashboard')
+        return redirect('old_dashboard')
     return render(request, 'employees/confirm_delete.html', {'employee': employee})
 
+
+
+def dashboard(request):
+    # add context if needed
+    context = {}
+    return render(request, 'dashboard/master_dashboard.html', context)
+
+def dashboard_user_mgnt(request):
+    staff_list = Staff.objects.all()
+    roles = Role.objects.all()
+    return render(request, 'dashboard/dashboard_user_mgnt.html', {
+        'staff_list': staff_list,
+        'roles': roles
+    })
 
 

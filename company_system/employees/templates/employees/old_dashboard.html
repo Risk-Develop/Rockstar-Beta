@@ -1,0 +1,70 @@
+<!-- employees/templates/employees/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Dashboard</title>
+  
+{% include 'includes/header.html' %}
+  
+<body>
+  <h1>📊 Company Dashboard</h1>
+
+  <div class="top-controls">
+    <form method="get" style="display:inline-block; margin-right:12px;">
+      <label>Filter: </label>
+      <select name="department" onchange="this.form.submit()">
+        <option value="">All</option>
+        {% for dept in departments %}
+          <option value="{{ dept }}" {% if selected_department == dept %}selected{% endif %}>{{ dept }}</option>
+        {% endfor %}
+      </select>
+    </form>
+
+    <a href="{% url 'add_employee' %}">
+      <button style="padding:8px 12px; border-radius:6px; cursor:pointer">➕ Add Employee</button>
+    </a>
+    
+        <a href="{% url 'export_employees' %}">
+      <button style="padding:8px 12px; border-radius:6px; cursor:pointer">⬇️ Export</button>
+    </a>
+</form>
+
+  </div>
+
+  <div class="kpi-container">
+    <div class="kpi"><h4>Total Employees</h4><h2>{{ total_employees }}</h2></div>
+    <div class="kpi"><h4>Total Salary</h4><h2>${{ total_salary }}</h2></div>
+    <div class="kpi"><h4>Average Salary</h4><h2>${{ avg_salary }}</h2></div>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Name</th><th>Position</th><th>Department</th><th>Salary</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for emp in employees %}
+      <tr>
+        <td>{{ emp.name }}</td>
+        <td>{{ emp.position }}</td>
+        <td>{{ emp.department }}</td>
+        <td>${{ emp.salary }}</td>
+        <td class="actions">
+          <a href="{% url 'edit_employee' emp.id %}">✏️ Edit</a>
+          <a href="{% url 'delete_employee' emp.id %}">🗑️ Delete</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" style="text-align:center">No employees found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="charts">
+    <canvas id="salaryChart" width="450" height="300"></canvas>
+    <canvas id="positionChart" width="450" height="300"></canvas>
+  </div>
+  
+{% include 'includes/script.html' %}
+</body>
+</html>
+
+  

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Employee Shift Rules</h2>
+
+<!-- General Note / Instructions -->
+<div class="alert alert-info">
+    <strong>Instructions:</strong><br>
+    - <strong>Clock In Start:</strong> Earliest allowed clock in time.<br>
+    - <strong>Clock In End:</strong> Latest allowed clock in time.<br>
+    - <strong>Clock Out:</strong> Standard clock out time.<br>
+    - HR can edit all times directly in the table and click "Save All".
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Shift</th>
+                <th>Rank</th>
+                <th>Clock In Start</th>
+                <th>Clock In End</th>
+                <th>Clock Out</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for rule in rules %}
+            <tr>
+                <td>{{ rule.get_shift_display }}</td>
+                <td>{{ rule.get_rank_display }}</td>
+                <td>
+                    <input type="time" name="clock_in_start_{{ rule.id }}" value="{{ rule.clock_in_start|time:'H:i' }}" class="form-control" step="300">
+                </td>
+                <td>
+                    <input type="time" name="clock_in_end_{{ rule.id }}" value="{{ rule.clock_in_end|time:'H:i' }}" class="form-control" step="300">
+                </td>
+                <td>
+                    <input type="time" name="clock_out_{{ rule.id }}" value="{{ rule.clock_out|time:'H:i' }}" class="form-control" step="300">
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button type="submit" class="btn btn-success">Save All</button>
+</form>
+{% endblock %}

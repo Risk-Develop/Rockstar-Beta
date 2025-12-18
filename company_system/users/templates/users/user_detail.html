@@ -1,0 +1,18 @@
+<div class="max-w-4xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-4">User Details</h1>
+
+  <div class="bg-white dark:bg-gray-800 shadow p-6 rounded">
+    <p><strong>Name:</strong> {{ staff.first_name }} {{ staff.last_name }}</p>
+    <p><strong>Job Title:</strong> {{ staff.job_title }}</p>
+    <p><strong>Type:</strong> {{ staff.type }}</p>
+    <p><strong>Department:</strong> {{ staff.department }}</p>
+    <p><strong>Role:</strong> {{ staff.role }}</p>
+    <p><strong>Status:</strong> {{ staff.status }}</p>
+    <p><strong>Shift:</strong> {{ staff.shift }}</p>
+  </div>
+
+  <a href="{% url 'user_list' %}"
+     class="mt-4 inline-block bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded">
+     Back to List
+  </a>
+</div>

@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6 max-w-xl">
+    <h1 class="text-2xl font-bold mb-6">
+        {% if form.instance.pk %}Edit{% else %}Add{% endif %} Leave Request
+    </h1>
+
+    <form method="post" id="leaveRequestForm" class="bg-white shadow p-6 rounded-lg space-y-4">
+        {% csrf_token %}
+        {{ form.employee }} {# hidden #}
+
+        {% if form.non_field_errors %}
+        <div class="p-3 bg-red-100 text-red-700 rounded mb-4">
+            <ul class="list-disc list-inside">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Position & Department -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">Position</label>
+                {{ form.position }}
+                <div id="positionOtherDiv" class="mt-2" style="display:none;">
+                    {{ form.position_other }}
+                </div>
+                {% if form.position_other.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.position_other.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">Department</label>
+                {{ form.department }}
+                <div id="departmentOtherDiv" class="mt-2" style="display:none;">
+                    {{ form.department_other }}
+                </div>
+                {% if form.department_other.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.department_other.errors.0 }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Date Filed -->
+        <div>
+            <label class="block text-gray-700 font-medium mb-1">Date Filed</label>
+            {{ form.date_filed }}
+        </div>
+
+        <!-- Leave Type -->
+        <div>
+            <label class="block text-gray-700 font-medium mb-1">Leave Type</label>
+            {{ form.leave_type }}
+        </div>
+
+        <!-- Start, End, Half Day, Total -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">Start Date</label>
+                {{ form.start_date }}
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">End Date</label>
+                {{ form.end_date }}
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                {{ form.half_day }}
+                <label class="text-gray-700 font-medium">Half Day?</label>
+            </div>
+            <div class="flex-1">
+                <label class="block text-gray-700 font-medium mb-1">Total Days</label>
+                {{ form.total_days }}
+            </div>
+        </div>
+
+        <!-- Purpose -->
+        <div>
+            <label class="block text-gray-700 font-medium mb-1">Purpose</label>
+            {{ form.purpose }}
+        </div>
+
+        <!-- Is Paid -->
+        <div class="flex items-center gap-2">
+            {{ form.is_paid }}
+            <label class="text-gray-700 font-medium">Is Paid?</label>
+        </div>
+
+        <!-- Status & Disapproval -->
+        <div>
+            <label class="block text-gray-700 font-medium mb-1">Status</label>
+            {{ form.status }}
+        </div>
+
+        <div>
+            <label class="block text-gray-700 font-medium mb-1">Disapproval Reason</label>
+            {{ form.disapproval_reason }}
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex gap-2 mt-4">
+            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition">
+                Save
+            </button>
+            <a href="{% url 'human_resource:leave_request_list' %}" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const startField = document.getElementById("id_start_date");
+    const endField = document.getElementById("id_end_date");
+    const totalDaysField = document.getElementById("id_total_days");
+    const halfDayCheckbox = document.getElementById("id_half_day");
+
+    const positionSelect = document.getElementById("id_position");
+    const positionOther = document.getElementById("positionOtherDiv");
+    const departmentSelect = document.getElementById("id_department");
+    const departmentOther = document.getElementById("departmentOtherDiv");
+
+    function toggleOther(selectEl, otherDiv) {
+        otherDiv.style.display = selectEl.value === "other" ? "block" : "none";
+    }
+
+    positionSelect.addEventListener("change", () => toggleOther(positionSelect, positionOther));
+    departmentSelect.addEventListener("change", () => toggleOther(departmentSelect, departmentOther));
+
+    toggleOther(positionSelect, positionOther);
+    toggleOther(departmentSelect, departmentOther);
+
+    function updateTotalDays() {
+        const start = new Date(startField.value);
+        const end = new Date(endField.value);
+        if (start && end && end >= start) {
+            let days = Math.floor((end - start)/(1000*60*60*24)) + 1;
+            if (halfDayCheckbox.checked) days -= 0.5;
+            totalDaysField.value = days;
+        } else {
+            totalDaysField.value = 0;
+        }
+    }
+
+    if (startField && endField && halfDayCheckbox) {
+        startField.addEventListener("change", updateTotalDays);
+        endField.addEventListener("change", updateTotalDays);
+        halfDayCheckbox.addEventListener("change", updateTotalDays);
+        updateTotalDays();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Employee Profile {% endblock %}
+
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'hr/dashboard/hr_sidebar.html' %}
+<main
+  id="mainContent"
+  class="md:ml-64 pt-20 min-h-screen p-6 transition-all duration-500 ease-in-out transform bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+>
+
+<div class="max-w-5xl mx-auto p-6 space-y-6">
+
+  <!-- Back Button -->
+  <a href="{% url 'human_resource:hr_user_mgnt' %}" 
+     class="inline-flex items-center text-blue-600 hover:underline font-medium mb-4">
+    ← Back to User Management
+  </a>
+
+  <!-- PERSONAL INFORMATION -->
+  <div class="bg-white border rounded-xl shadow-sm p-6">
+    <h2 class="text-xl font-semibold mb-4">Personal Information</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div><strong>First Name:</strong> {{ staff.first_name }}</div>
+      <div><strong>Middle Name:</strong> {{ staff.middle_name|default:"-" }}</div>
+      <div><strong>Last Name:</strong> {{ staff.last_name }}</div>
+      <div><strong>Birthdate:</strong> {{ staff.birthdate|date:"F j, Y" }}</div>
+      <div><strong>Age:</strong> {{ staff.age }}</div>
+      <div><strong>Sex:</strong> {{ staff.get_sex_display }}</div>
+    </div>
+  </div>
+
+  <!-- EMPLOYMENT DETAILS -->
+  <div class="bg-white border rounded-xl shadow-sm p-6">
+    <h2 class="text-xl font-semibold mb-4">Employment Details</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div><strong>Start Date:</strong> {{ staff.start_date|date:"F j, Y" }}</div>
+      <div><strong>Tenure Active:</strong> {{ staff.tenure_active }}</div>
+      <div><strong>Employee Number:</strong> {{ staff.employee_number }}</div>
+      <div><strong>Status:</strong> {{ staff.get_status_display }}</div>
+      <div><strong>Job Title:</strong> {{ staff.get_job_title_display }}</div>
+      <div><strong>Type:</strong> {{ staff.get_type_display }}</div>
+      <div><strong>Department:</strong> {{ staff.get_department_display }}</div>
+      <div><strong>Rank:</strong> {{ staff.get_rank_display }}</div>
+      <div><strong>Shift:</strong> {{ staff.get_shift_display }}</div>
+    </div>
+  </div>
+
+  <!-- GOVERNMENT NUMBERS -->
+  <div class="bg-white border rounded-xl shadow-sm p-6">
+    <h2 class="text-xl font-semibold mb-4">Government Numbers</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div><strong>SSS Number:</strong> {{ staff.sss_number|default:"-" }}</div>
+      <div><strong>Pag-IBIG Number:</strong> {{ staff.pagibig_number|default:"-" }}</div>
+      <div><strong>PhilHealth Number:</strong> {{ staff.philhealth_number|default:"-" }}</div>
+    </div>
+  </div>
+
+  <!-- CONTACT INFORMATION -->
+  <div class="bg-white border rounded-xl shadow-sm p-6">
+    <h2 class="text-xl font-semibold mb-4">Contact Information</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div><strong>Email Address:</strong> {{ staff.email_address|default:"-" }}</div>
+      <div><strong>Phone Number:</strong> {{ staff.phone_number|default:"-" }}</div>
+      <div><strong>Emergency Contact Name:</strong> {{ staff.emergency_contact_name|default:"-" }}</div>
+      <div><strong>Emergency Contact Number:</strong> {{ staff.emergency_contact_number|default:"-" }}</div>
+    </div>
+  </div>
+
+  <!-- ROLE INFORMATION -->
+  <div class="bg-white border rounded-xl shadow-sm p-6">
+    <h2 class="text-xl font-semibold mb-4">Role Information</h2>
+    <p>
+      <strong>Role:</strong> 
+      {% if staff.role %}
+        {{ staff.role.role_name }}
+      {% else %}
+        No role assigned
+      {% endif %}
+    </p>
+  </div>
+
+</div>
+
+<!-- Delete Button now triggers modal -->
+<!-- Floating Action Button -->
+<div class="fixed bottom-6 right-6 z-50 flex flex-col items-end space-y-2">
+
+  <!-- Expanded buttons (hidden by default) -->
+  <div id="fabMenu" class="flex flex-col gap-2 opacity-0 scale-0 transform transition-all origin-bottom-right pointer-events-none">
+
+    <!-- Edit Button -->
+    <a href="{% url 'human_resource:dashboard_user_edit' staff.pk %}"
+       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+      Edit
+    </a>
+
+    <!-- Delete Button triggers modal -->
+    <button id="deleteBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+      Delete
+    </button>
+
+  </div>
+
+  <!-- Main FAB -->
+  <button id="fabToggle" class="bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-transform transform">
+    +
+  </button>
+
+</div>
+
+<!-- DELETE CONFIRMATION MODAL -->
+<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+  <div class="bg-white rounded-2xl p-6 max-w-md w-full space-y-4">
+    <h3 class="text-xl font-bold text-red-600">Confirm Deletion</h3>
+    <p>Are you sure you want to delete <strong>{{ staff.full_name }}</strong>? This action cannot be undone.</p>
+    <div class="flex justify-end gap-4 mt-4">
+      <button id="cancelDelete" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">Cancel</button>
+      <form method="post" action="{% url 'human_resource:user_delete_dash' staff.pk %}">
+        {% csrf_token %}
+        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Delete</button>
+      </form>
+    </div>
+  </div>
+</div>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// FAB Logic
+  const fabToggle = document.getElementById('fabToggle');
+  const fabMenu = document.getElementById('fabMenu');
+
+  fabToggle.addEventListener('click', () => {
+    const isOpen = fabMenu.classList.contains('opacity-100');
+    if (isOpen) {
+      fabMenu.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
+      fabMenu.classList.add('opacity-0', 'scale-0', 'pointer-events-none');
+      fabToggle.classList.remove('rotate-45');
+    } else {
+      fabMenu.classList.remove('opacity-0', 'scale-0', 'pointer-events-none');
+      fabMenu.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
+      fabToggle.classList.add('rotate-45');
+    }
+  });
+
+  // Modal Logic
+  const deleteBtn = document.getElementById('deleteBtn');
+  const deleteModal = document.getElementById('deleteModal');
+  const cancelDelete = document.getElementById('cancelDelete');
+
+  deleteBtn.addEventListener('click', () => deleteModal.classList.remove('hidden'));
+  cancelDelete.addEventListener('click', () => deleteModal.classList.add('hidden'));
+
+  // Close modal if clicked outside content
+  deleteModal.addEventListener('click', e => {
+    if (e.target === deleteModal) deleteModal.classList.add('hidden');
+  });
+</script>
+
+{% endblock %}
+

@@ -1,0 +1,13 @@
+<div class="max-w-md mx-auto p-4 bg-white rounded shadow">
+  <h3 class="text-lg font-semibold">Delete Department</h3>
+  <p class="mt-2">
+    Are you sure you want to delete <strong>{{ department.name }}</strong>?
+  </p>
+  <form method="post" class="mt-4 flex gap-2">
+    {% csrf_token %}
+    <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded">
+      Yes, Delete
+    </button>
+    <a href="{% url 'department_list' %}" class="px-4 py-2 border rounded">Cancel</a>
+  </form>
+</div>

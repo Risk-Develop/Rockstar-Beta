@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Payouts{% endblock %}
+
+{% block content %}
+<h1 class="text-xl font-bold mb-4">Payouts</h1>
+
+<table class="w-full border-collapse border">
+    <thead>
+        <tr class="bg-gray-200">
+            <th class="border p-2">Employee</th>
+            <th class="border p-2">Net Pay</th>
+            <th class="border p-2">Bank</th>
+            <th class="border p-2">Account #</th>
+            <th class="border p-2">Cutoff</th>
+            <th class="border p-2">Month/Year</th>
+            <th class="border p-2">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for p in payouts %}
+        <tr>
+            <td class="border p-2">{{ p.employee.get_full_name }}</td>
+            <td class="border p-2">{{ p.net }}</td>
+            <td class="border p-2">{{ p.bank_account.bank.name if p.bank_account else '-' }}</td>
+            <td class="border p-2">{{ p.bank_account.account_number if p.bank_account else '-' }}</td>
+            <td class="border p-2">{{ p.cutoff }}</td>
+            <td class="border p-2">{{ p.month }}/{{ p.year }}</td>
+            <td class="border p-2">
+                <a href="{% url 'human_resource:payout_detail' p.pk %}" class="text-blue-600">View</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="border p-2 text-center">No payouts found</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Payslip - {{ payout.employee.get_full_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; margin: 20px; }
+        h1 { text-align: center; font-size: 18px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .section-title { margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Payslip</h1>
+    <p><strong>Employee:</strong> {{ payout.employee.get_full_name }}</p>
+    <p><strong>Month/Year:</strong> {{ payout.month }}/{{ payout.year }} | <strong>Cutoff:</strong> {{ payout.cutoff }}</p>
+
+    <h2 class="section-title">Payment Details</h2>
+    <table>
+        <tr>
+            <th>Gross</th>
+            <td>{{ payout.gross }}</td>
+        </tr>
+        <tr>
+            <th>Total Additions</th>
+            <td>{{ payout.total_additions }}</td>
+        </tr>
+        <tr>
+            <th>Total Deductions</th>
+            <td>{{ payout.total_deductions }}</td>
+        </tr>
+        <tr>
+            <th>Net Pay</th>
+            <td>{{ payout.net }}</td>
+        </tr>
+    </table>
+
+    <h2 class="section-title">Bank Details</h2>
+    <table>
+        <tr>
+            <th>Bank</th>
+            <td>{{ payout.bank_account.bank.name if payout.bank_account else '-' }}</td>
+        </tr>
+        <tr>
+            <th>Account #</th>
+            <td>{{ payout.bank_account.account_number if payout.bank_account else '-' }}</td>
+        </tr>
+    </table>
+</body>
+</html>

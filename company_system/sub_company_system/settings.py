@@ -11,7 +11,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-import dj_database_url,os
+import os
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,9 +23,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-for-local')
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+SECRET_KEY = 'django-insecure-g0)3d2e%+ning)1#8(sq*sea)_gs2ya%ee^g7-4atau5b1av#f'
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.1.30','cook-alt-main-charts.trycloudflare.com']
 
 
 # Application definition
@@ -35,12 +40,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'hr',
     'finance',
     'kpi',
     'sales',
     'marketing',
     'employees',
+    'users',
+    'authentication',
+    'master_dashboard',
+    'human_resource',
 ]
 
 MIDDLEWARE = [
@@ -77,8 +85,16 @@ WSGI_APPLICATION = 'sub_company_system.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(default='postgresql://postgres:password@localhost:5432/company_db')
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'company_db',        # same name you created in pgAdmin
+        'USER': 'postgres',          # default PostgreSQL user
+        'PASSWORD': 'Admin!123',  # password you set during install
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
 }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -104,7 +120,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+#_ZONE = 'UTC'
+
+TIME_ZONE = 'Asia/Manila'  # for Philippines
+USE_TZ = True
 
 USE_I18N = True
 
@@ -114,8 +133,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

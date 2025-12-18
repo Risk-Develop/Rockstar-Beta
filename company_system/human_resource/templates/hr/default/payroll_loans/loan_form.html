@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Loan Form{% endblock %}
+
+{% block content %}
+<h1 class="text-xl font-bold mb-4">{{ loan.pk|default:"Add" }} Loan</h1>
+
+<form method="POST" class="space-y-4">
+    {% csrf_token %}
+    <div>
+        <label class="block mb-1">Employee</label>
+        <select name="employee" class="border p-2 w-full rounded">
+            {% for emp in employees %}
+            <option value="{{ emp.pk }}" {% if loan and loan.employee.pk == emp.pk %}selected{% endif %}>{{ emp.get_full_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label>Principal</label>
+        <input type="number" step="0.01" name="principal" value="{{ loan.principal|default:'' }}" class="border p-2 w-full rounded">
+    </div>
+    <div>
+        <label>Interest Rate (0-1)</label>
+        <input type="number" step="0.001" name="interest_rate" value="{{ loan.interest_rate|default:'' }}" class="border p-2 w-full rounded">
+    </div>
+    <div>
+        <label>Term (months)</label>
+        <input type="number" name="term_months" value="{{ loan.term_months|default:'' }}" class="border p-2 w-full rounded">
+    </div>
+    <div>
+        <label>Start Date</label>
+        <input type="date" name="start_date" value="{{ loan.start_date|default:'' }}" class="border p-2 w-full rounded">
+    </div>
+    <div>
+        <label>Status</label>
+        <select name="status" class="border p-2 w-full rounded">
+            {% for s,v in loan.STATUS %}
+            <option value="{{ s }}" {% if loan and loan.status == s %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Save</button>
+</form>
+{% endblock %}

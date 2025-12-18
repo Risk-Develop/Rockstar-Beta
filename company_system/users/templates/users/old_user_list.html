@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Admin Dept</title>
+
+{% include 'includes/header.html' %}
+
+<body class="bg-gray-100 p-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">Admin Dept — User Management</h1>
+      <a href="{% url 'user_add' %}" class="bg-blue-600 text-white px-4 py-2 rounded">+ Add User</a>
+      <!--<button onclick="openModal('add')" class="bg-blue-600 text-white px-4 py-2 rounded">+ Add User</button>-->
+
+    </div>
+
+    <div class="bg-white shadow rounded">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left">Name</th>
+            <th class="px-4 py-2 text-left">Job Title</th>
+            <th class="px-4 py-2 text-left">Type</th>
+            <th class="px-4 py-2 text-left">Department</th>
+            <th class="px-4 py-2 text-left">Status</th>
+            <th class="px-4 py-2 text-left">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for s in staff_list %}
+          <tr>
+            <td class="px-4 py-3">{{ s.first_name }} {% if s.middle_name %}{{ s.middle_name }}{% endif %} {{ s.last_name }}</td>
+            <td class="px-4 py-3">{{ s.get_job_title_display }}</td>
+            <td class="px-4 py-3">{{ s.get_type_display }}</td>
+            <td class="px-4 py-3">{{ s.get_department_display }}</td>
+            <td class="px-4 py-3">{{ s.get_status_display }}</td>
+            <td class="px-4 py-3">{{ s.get_shift_display }}</td>
+            <td class="px-4 py-3">
+              <a href="{% url 'user_edit' s.pk %}" class="text-indigo-600 mr-2">Edit</a>
+              <a href="{% url 'user_delete' s.pk %}" class="text-red-600">Delete</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">No users yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+<!-- Add/Edit User Modal -->
+<div id="userModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+  <div class="bg-white rounded shadow-lg w-96 p-6 relative">
+    <h2 class="text-xl font-bold mb-4" id="modalTitle">Add User</h2>
+    <form id="modalForm">
+      {% csrf_token %}
+      <div class="grid grid-cols-1 gap-3">
+        <input type="text" name="first_name" placeholder="First Name" class="input px-2 py-1 border rounded" required>
+        <input type="text" name="middle_name" placeholder="Middle Name" class="input px-2 py-1 border rounded">
+        <input type="text" name="last_name" placeholder="Last Name" class="input px-2 py-1 border rounded" required>
+
+        <select name="status" class="select px-2 py-1 border rounded" required>
+          <option value="">--Status--</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="on_leave">On Leave</option>
+          <option value="terminated">Terminated</option>
+        </select>
+
+        <select name="job_title" class="select px-2 py-1 border rounded" required>
+          <option value="">--Job Title--</option>
+          {% for value, label in form.job_title.field.choices %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+
+        <select name="type" class="select px-2 py-1 border rounded" required>
+          <option value="">--Type--</option>
+          {% for value, label in form.type.field.choices %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+
+        <select name="department" class="select px-2 py-1 border rounded" required>
+          <option value="">--Department--</option>
+          {% for value, label in form.department.field.choices %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
+        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded">Cancel</button>
+      </div>
+    </form>
+    <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-500">&times;</button>
+  </div>
+</div>
+
+
+    </div>
+  </div>
+
+<script>
+const modal = document.getElementById('userModal');
+const modalTitle = document.getElementById('modalTitle');
+const modalForm = document.getElementById('modalForm');
+
+function openModal(mode, staffId=null) {
+  modal.classList.remove('hidden');
+  if(mode === 'add') {
+    modalTitle.textContent = "Add User";
+    modalForm.reset();
+    modalForm.dataset.mode = 'add';
+    modalForm.dataset.staffId = '';
+  } else if(mode === 'edit') {
+    modalTitle.textContent = "Edit User";
+    modalForm.dataset.mode = 'edit';
+    modalForm.dataset.staffId = staffId;
+
+    // Fetch staff data from server to populate form
+    fetch(`/admin-dept/get/${staffId}/`)
+      .then(res => res.json())
+      .then(data => {
+        modalForm.first_name.value = data.first_name;
+        modalForm.middle_name.value = data.middle_name;
+        modalForm.last_name.value = data.last_name;
+        modalForm.status.value = data.status;
+        modalForm.job_title.value = data.job_title;
+        modalForm.type.value = data.type;
+        modalForm.department.value = data.department;
+      });
+  }
+}
+
+function closeModal() {
+  modal.classList.add('hidden');
+}
+
+// Handle form submit via AJAX
+modalForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const mode = modalForm.dataset.mode;
+  const staffId = modalForm.dataset.staffId;
+
+  let url = "{% url 'user_add' %}";
+  if(mode === 'edit') url = `/admin-dept/edit/${staffId}/`;
+
+  const formData = new FormData(modalForm);
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    body: formData,
+    headers: {'X-CSRFToken': '{{ csrf_token }}'}
+  });
+
+  const data = await resp.json();
+  if(data.success){
+    location.reload(); // simplest: reload table to see changes
+  } else {
+    console.log(data.errors);
+  }
+});
+</script>
+
+
+<script>
+async function submitAddForm(e){
+  e.preventDefault();
+  const form = document.getElementById('addForm');
+  const fd = new FormData(form);
+  const resp = await fetch("{% url 'user_add' %}", {
+    method: 'POST',
+    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+    body: fd
+  });
+  const data = await resp.json();
+  if (data.success) {
+    // close modal, append a new row to the table (you can render minimal fields)
+    location.reload(); // simplest: reload to see the new user
+  } else {
+    // show errors
+    console.log(data.errors);
+  }
+}
+document.getElementById('addForm').addEventListener('submit', submitAddForm);
+</script>
+
+{% include 'includes/script.html' %}

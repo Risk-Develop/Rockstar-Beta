@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Employee Profile Settings</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Rank</th>
+            <th>Shift</th>
+            <th>VL</th>
+            <th>SL</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for emp in employees %}
+        <tr>
+            <td>{{ emp.first_name }} {{ emp.last_name }}</td>
+            <td>{{ emp.get_rank_display }}</td>
+            <td>{{ emp.get_shift_display }}</td>
+            <td>
+                {% if emp.employeeprofilesettings %}
+                    {{ emp.employeeprofilesettings.current_vl }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>
+                {% if emp.employeeprofilesettings %}
+                    {{ emp.employeeprofilesettings.current_sl }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>
+                <a href="{% url 'human_resource:hr_employee_profile' emp.id %}">Edit</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block content %}
+{% load leave_extras %}
+
+<div class="container mx-auto px-4 py-6">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-3">
+        <h1 class="text-2xl font-bold">Leave Requests</h1>
+
+        {% if employee_id %}
+        <a href="{% url 'human_resource:leave_request_add' %}?employee={{ employee_id }}"
+           class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+            Add Leave
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Search -->
+    <form method="GET" class="mb-4 flex gap-2">
+        <input type="text" name="search" value="{{ search }}"
+               placeholder="Search employee, type, status..."
+               class="w-full md:w-1/3 px-3 py-2 border rounded focus:ring focus:ring-blue-300">
+        {% if sort %}
+        <input type="hidden" name="sort" value="{{ sort }}">
+        {% endif %}
+    </form>
+
+    <!-- Table Wrapper -->
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white shadow rounded-lg text-sm">
+            <thead class="bg-gray-100 text-left text-gray-700 text-xs uppercase">
+                <tr>
+                    <th class="px-4 py-2">
+                        <a href="?{% if search %}search={{ search }}&{% endif %}sort=employee__last_name" class="hover:underline">Employee</a>
+                    </th>
+                    <th class="px-4 py-2">Designation</th>
+                    <th class="px-4 py-2">Department</th>
+                    <th class="px-4 py-2">Total Days</th>
+                    <th class="px-4 py-2">Leave Type</th>
+                    <th class="px-4 py-2">
+                        <a href="?{% if search %}search={{ search }}&{% endif %}sort=date_filed" class="hover:underline">Date Filed ↑</a>
+                        <a href="?{% if search %}search={{ search }}&{% endif %}sort=-date_filed" class="hover:underline text-xs">↓</a>
+                    </th>
+                    <th class="px-4 py-2">Start Date</th>
+                    <th class="px-4 py-2">End Date</th>
+                    <th class="px-4 py-2">
+                        <a href="?{% if search %}search={{ search }}&{% endif %}sort=status" class="hover:underline">Status</a>
+                    </th>
+                    <th class="px-4 py-2">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for req in leave_requests %}
+                <tr class="border-b hover:bg-gray-50 transition">
+                    <td class="px-4 py-2 font-medium">
+                        {{ req.employee.first_name }} {{ req.employee.last_name }}
+                        {% with leave_credits|get_item:req.employee.id as emp_credits %}
+                            {% if emp_credits %}
+                                <div class="mt-1 text-xs text-gray-500">
+                                    {% with emp_credits|get_item:"vl" as vl_credit %}
+                                        {% if vl_credit %}
+                                            <span class="mr-2">VL: {{ vl_credit.remaining|floatformat:1 }}/{{ vl_credit.total|floatformat:1 }}</span>
+                                        {% else %}
+                                            <span class="mr-2">VL: 0/0</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                    {% with emp_credits|get_item:"sl" as sl_credit %}
+                                        {% if sl_credit %}
+                                            <span>SL: {{ sl_credit.remaining|floatformat:1 }}/{{ sl_credit.total|floatformat:1 }}</span>
+                                        {% else %}
+                                            <span>SL: 0/0</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td class="px-4 py-2">{{ req.position }}</td>
+                    <td class="px-4 py-2">{{ req.department }}</td>
+                    <td class="px-4 py-2">{{ req.total_days|floatformat:1 }}</td>
+                    <td class="px-4 py-2">{{ req.get_leave_type_display }}</td>
+                    <td class="px-4 py-2">{{ req.date_filed }}</td>
+                    <td class="px-4 py-2">{{ req.start_date }}</td>
+                    <td class="px-4 py-2">{{ req.end_date }}</td>
+                    <td class="px-4 py-2">
+                        <span class="px-2 py-1 rounded text-xs font-semibold
+                            {% if req.status == 'approved' %}bg-green-200 text-green-800
+                            {% elif req.status == 'pending' %}bg-yellow-200 text-yellow-800
+                            {% else %}bg-red-200 text-red-800
+                            {% endif %}">
+                            {{ req.status|title }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-2">
+                        <a href="{% url 'human_resource:leave_request_edit' req.id %}" class="text-blue-600 hover:text-blue-800 underline text-sm">Edit</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="px-4 py-4 text-center text-gray-500">No leave requests found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if leave_requests.has_other_pages %}
+    <div class="mt-6 flex justify-center">
+        <div class="flex space-x-2">
+            {% if leave_requests.has_previous %}
+            <a href="?page={{ leave_requests.previous_page_number }}&search={{ search }}&sort={{ sort }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Previous</a>
+            {% endif %}
+            <span class="px-3 py-1 bg-gray-100 rounded">Page {{ leave_requests.number }} of {{ leave_requests.paginator.num_pages }}</span>
+            {% if leave_requests.has_next %}
+            <a href="?page={{ leave_requests.next_page_number }}&search={{ search }}&sort={{ sort }}" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Next</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Back Button -->
+    <div class="mt-6">
+        <a href="{% url 'human_resource:leave_credit_list' %}" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition">← Back to Leave Credits</a>
+    </div>
+
+</div>
+{% endblock %}

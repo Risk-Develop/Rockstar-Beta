@@ -1,0 +1,174 @@
+<!-- Sidebar -->{% load static %}
+<aside
+  id="sidebar"
+  class="fixed inset-y-0 left-0 w-64 bg-gray-900 text-white transform -translate-x-full md:translate-x-0 transition-transform duration-500 ease-in-out z-30"
+>
+  <!-- Header -->
+  <div
+    class="flex items-center justify-between px-4 py-4 border-b border-gray-700"
+  >
+    <!-- Logo Section -->
+    <div class="flex items-center space-x-2">
+      <img
+        src="{% static 'img/rockstar.png' %}"
+        alt="Logo"
+        class="h-8 w-8 object-contain"
+      />
+      <span class="text-lg font-semibold">Rockstar Web Design Services</span>
+    </div>
+    <button id="sidebarClose" class="md:hidden text-gray-400 hover:text-white">
+      ✕
+    </button>
+  </div>
+
+  <!-- Menu -->
+  <nav class="p-4 space-y-2 overflow-y-auto h-[calc(100%-4rem)]">
+    <a
+      href={% url 'master_dashboard' %}
+      class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
+    >
+      <span class="mr-3">🏠</span> Dashboard
+    </a>
+
+   <!-- <a
+      href="{% url 'user_list' %}"
+      class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
+    >
+      <span class="mr-3">👤</span> User Management
+    </a>-->
+      <a href="{% url 'dashboard_user_mgnt' %}"
+      class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
+    >
+      <span class="mr-3">👤</span> User Management
+  </a>
+
+    <button
+      class="flex items-center w-full text-left p-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
+      data-collapse="projectsMenu"
+    >
+      <span class="mr-3">📁</span>
+      <span class="flex-1">Projects</span>
+      <span class="transition-transform duration-300">▸</span>
+    </button>
+
+    <div
+      id="projectsMenu"
+      class="max-h-0 overflow-hidden transition-all duration-300 pl-8 space-y-1"
+    >
+      <a
+        href="#"
+        class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
+        >Active</a
+      >
+      <a
+        href="#"
+        class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
+        >Archived</a
+      >
+    </div>
+
+    <div class="border-t border-gray-700 my-3"></div>
+
+    <button
+      data-collapse="submenu-2"
+      class="flex items-center w-full text-left p-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
+    >
+      <span class="mr-3">⚙️</span>
+      <span class="flex-1">Settings</span>
+      <span class="transition-transform duration-300">▸</span>
+    </button>
+    <div
+      id="submenu-2"
+      class="max-h-0 overflow-hidden transition-all duration-300 pl-4"
+    >
+      <a
+        href="#"
+        class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
+        >Profile</a
+      >
+      <a
+        href="#"
+        class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
+        >Billing</a
+      >
+    </div>
+
+    <div class="border-t border-gray-700 my-3"></div>
+
+    <a
+      href="#"
+      class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
+    >
+      <span class="mr-3">📨</span> Messages
+    </a>
+
+    <a
+      href="{% url 'logout' %}"
+      class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
+    >
+      <span class="mr-3">🚪</span> Logout
+    </a>
+  </nav>
+</aside>
+
+<!-- Overlay -->
+<div
+  id="overlay"
+  class="fixed inset-0 bg-black bg-opacity-50 hidden md:hidden transition-opacity duration-300 z-20"
+></div>
+
+
+
+
+
+<!-- JavaScript -->
+<script>
+  const sidebar = document.getElementById("sidebar");
+  const sidebarOpenBtn = document.getElementById("sidebarOpen");
+  const sidebarCloseBtn = document.getElementById("sidebarClose");
+  const overlay = document.getElementById("overlay");
+  const submenus = document.querySelectorAll("[data-collapse]");
+  const themeToggle = document.getElementById("themeToggle");
+  const themeIcon = document.getElementById("themeIcon");
+
+  // Sidebar open
+  sidebarOpenBtn.addEventListener("click", () => {
+    sidebar.classList.remove("-translate-x-full");
+    overlay.classList.remove("hidden");
+    setTimeout(() => overlay.classList.add("opacity-100"), 10);
+    sidebarOpenBtn.classList.add("opacity-0", "pointer-events-none");
+  });
+
+  // Sidebar close
+  function closeSidebar() {
+    sidebar.classList.add("-translate-x-full");
+    overlay.classList.remove("opacity-100");
+    setTimeout(() => overlay.classList.add("hidden"), 300);
+    sidebarOpenBtn.classList.remove("opacity-0", "pointer-events-none");
+  }
+  sidebarCloseBtn.addEventListener("click", closeSidebar);
+  overlay.addEventListener("click", closeSidebar);
+
+  // Collapse toggle
+  submenus.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const target = document.getElementById(btn.dataset.collapse);
+      const arrow = btn.querySelector("span:last-child");
+      const isOpen = target.classList.contains("max-h-40");
+      target.classList.toggle("max-h-0", isOpen);
+      target.classList.toggle("max-h-40", !isOpen);
+      arrow.classList.toggle("rotate-90", !isOpen);
+    });
+  });
+
+  // Smooth fade/slide-in animation on load
+  window.addEventListener("DOMContentLoaded", () => {
+    const main = document.getElementById("mainContent");
+    setTimeout(() => {
+      main.classList.remove("opacity-0", "translate-y-4");
+      main.classList.add("opacity-100", "translate-y-0");
+    }, 100);
+  });
+
+  
+</script>
