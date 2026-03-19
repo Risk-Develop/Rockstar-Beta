@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Shift Rules{% endblock %}
+
+{% block extra_css %}
+<style>
+    [x-cloak] { display: none !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-3">
+        <div>
+            <h1 class="text-2xl font-bold">Employee Shift Rules</h1>
+            <p class="text-sm text-gray-500 mt-1">Configure shift timing rules for employees</p>
+        </div>
+        <div class="flex space-x-2">
+            <a href="{% url 'human_resource:hr_dashboard' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition">
+                &larr; Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Floating Help Button -->
+    <div class="fixed bottom-6 right-6 z-50">
+        <div class="relative flex flex-col items-end" x-data="{ open: false }">
+            <!-- Toggle Button -->
+            <button @click="open = !open" class="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition-all transform hover:scale-110" title="Help & Instructions">
+                <svg x-show="!open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <svg x-show="open" x-cloak class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+            
+            <!-- Instructions Panel -->
+            <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 translate-y-2" class="fixed bottom-24 right-6 w-80 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden max-h-[calc(100vh-8rem)] flex flex-col">
+                <div class="bg-blue-50 px-4 py-3 border-b border-blue-100">
+                    <p class="text-sm font-medium text-blue-800">Shift Rules Instructions</p>
+                </div>
+                <div class="p-4 overflow-y-auto">
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li><strong>Clock In Start:</strong> Earliest allowed clock in time (used for late calculation)</li>
+                        <li><strong>Lunch Start/End:</strong> Standard lunch break times (60 min default)</li>
+                        <li><strong>Clock Out:</strong> Standard clock out time</li>
+                        <li><strong>Lunch Required:</strong> Uncheck for managerial/director ranks with flexible lunch schedules</li>
+                    </ul>
+                    <p class="text-xs text-gray-500 mt-3 border-t pt-2">Edit times directly in the table and click "Save All" to apply changes.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter by Shift -->
+    <div class="bg-white shadow rounded-lg p-4 mb-6">
+        <form method="GET" class="flex flex-wrap gap-4 items-end">
+            <div class="min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Shift</label>
+                <select name="shift" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Shifts</option>
+                    <option value="morning" {% if shift_filter == 'morning' %}selected{% endif %}>Morning</option>
+                    <option value="afternoon" {% if shift_filter == 'afternoon' %}selected{% endif %}>Afternoon</option>
+                    <option value="night" {% if shift_filter == 'night' %}selected{% endif %}>Night</option>
+                    <option value="flexible" {% if shift_filter == 'flexible' %}selected{% endif %}>Flexible</option>
+                </select>
+            </div>
+            <div class="min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Rank</label>
+                <select name="rank" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Ranks</option>
+                    <option value="rank_and_file" {% if rank_filter == 'rank_and_file' %}selected{% endif %}>Rank and File</option>
+                    <option value="supervisory" {% if rank_filter == 'supervisory' %}selected{% endif %}>Supervisory</option>
+                    <option value="managerial" {% if rank_filter == 'managerial' %}selected{% endif %}>Managerial</option>
+                    <option value="director" {% if rank_filter == 'director' %}selected{% endif %}>Director</option>
+                    <option value="top-management" {% if rank_filter == 'top-management' %}selected{% endif %}>Top Management</option>
+                </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                    Filter
+                </button>
+                <a href="{% url 'human_resource:hr_shift_rules_list' %}" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition">
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+<!-- Quick Stats -->
+    {% if rules %}
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-blue-500">
+            <div class="text-sm text-gray-500">Total Rules</div>
+            <div class="text-2xl font-bold">{{ rules|length }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-yellow-500">
+            <div class="text-sm text-gray-500">Morning Shift</div>
+            <div class="text-2xl font-bold text-yellow-600">{{ morning_count|default:0 }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-orange-500">
+            <div class="text-sm text-gray-500">Afternoon Shift</div>
+            <div class="text-2xl font-bold text-orange-600">{{ afternoon_count|default:0 }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-indigo-500">
+            <div class="text-sm text-gray-500">Night Shift</div>
+            <div class="text-2xl font-bold text-indigo-600">{{ night_count|default:0 }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Rules Table -->
+    <div class="mt-4 bg-white shadow rounded-lg overflow-hidden">
+        <form method="post">
+            {% csrf_token %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shift</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock In Start</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lunch Start</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lunch End</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock Out</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lunch Required</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for rule in rules %}
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center
+                                        {% if rule.shift == 'morning' %}bg-yellow-100 text-yellow-600
+                                        {% elif rule.shift == 'afternoon' %}bg-orange-100 text-orange-600
+                                        {% elif rule.shift == 'night' %}bg-indigo-100 text-indigo-600
+                                        {% else %}bg-gray-100 text-gray-600{% endif %}">
+                                        {% if rule.shift == 'morning' %}🌅
+                                        {% elif rule.shift == 'afternoon' %}☀️
+                                        {% elif rule.shift == 'night' %}🌙
+                                        {% else %}⏰{% endif %}
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">{{ rule.get_shift_display }}</div>
+                                        <div class="text-xs text-gray-500">{{ rule.shift|title }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if rule.rank == 'rank_and_file' %}bg-green-100 text-green-800
+                                    {% elif rule.rank == 'supervisory' %}bg-blue-100 text-blue-800
+                                    {% elif rule.rank == 'managerial' %}bg-purple-100 text-purple-800
+                                    {% elif rule.rank == 'director' %}bg-orange-100 text-orange-800
+                                    {% elif rule.rank == 'top-management' %}bg-red-100 text-red-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ rule.get_rank_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="time" name="clock_in_start_{{ rule.id }}" value="{{ rule.clock_in_start|time:'H:i' }}" 
+                                       class="w-32 border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" step="300">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="time" name="lunch_start_{{ rule.id }}" value="{{ rule.lunch_start|time:'H:i' }}" 
+                                       class="w-32 border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" step="300">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="time" name="lunch_end_{{ rule.id }}" value="{{ rule.lunch_end|time:'H:i' }}" 
+                                       class="w-32 border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" step="300">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="time" name="clock_out_{{ rule.id }}" value="{{ rule.clock_out|time:'H:i' }}" 
+                                       class="w-32 border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" step="300">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="checkbox" name="lunch_required_{{ rule.id }}" {% if rule.lunch_required %}checked{% endif %}
+                                       class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                <div class="flex flex-col items-center">
+                                    <svg class="h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <p>No shift rules found.</p>
+                                    <p class="text-sm">Click "Add Rule" to create a new shift rule.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if rules %}
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                <button type="submit" class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition font-medium">
+                    <span class="flex items-center">
+                        <svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Save All Changes
+                    </span>
+                </button>
+                <span class="ml-3 text-sm text-gray-500">Click to save all time changes</span>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    
+
+</div>
+{% endblock %}

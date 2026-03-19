@@ -1,0 +1,1387 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load hr_extras %}
+
+{% block title %}Attendance List{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-3">
+        <h1 class="text-2xl font-bold">Attendance Records</h1>
+        <div class="flex space-x-2">
+            <a href="{% url 'human_resource:hr_dashboard' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition">
+                &larr; Dashboard
+            </a>
+            <a href="{% url 'human_resource:attendance_clock' %}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                + Clock In/Out
+            </a>
+            <a href="{% url 'human_resource:attendance_add' %}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">
+                + Add Record
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white shadow rounded-lg p-4 mb-6">
+        <form method="GET" class="flex flex-wrap gap-4">
+            <!-- Search -->
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search Employee</label>
+                <input type="text" name="search" value="{{ search|default:'' }}" 
+                       placeholder="Employee name..."
+                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- Date From -->
+            <div class="min-w-[150px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Date From</label>
+                <input type="date" name="date_from" value="{{ date_from|default:'' }}"
+                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- Date To -->
+            <div class="min-w-[150px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Date To</label>
+                <input type="date" name="date_to" value="{{ date_to|default:'' }}"
+                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <!-- Department Filter -->
+            <div class="min-w-[150px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <select name="department" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.id }}" {% if department == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.department_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Status Filter (Multi-Select) -->
+            <div class="min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="status" multiple class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" size="5">
+                    <option value="" {% if not status %}selected{% endif %}>All Status</option>
+                    <option value="present" {% if status and 'present' in status %}selected{% endif %}>Present</option>
+                    <option value="absent" {% if status and 'absent' in status %}selected{% endif %}>Absent</option>
+                    <option value="late" {% if status and 'late' in status %}selected{% endif %}>Late</option>
+                    <option value="on_leave" {% if status and 'on_leave' in status %}selected{% endif %}>On Leave</option>
+                    <option value="failed_to_clock_out" {% if status and 'failed_to_clock_out' in status %}selected{% endif %}>Failed to Clock Out</option>
+                    <option value="early_leave" {% if status and 'early_leave' in status %}selected{% endif %}>Early Leave</option>
+                    <option value="overlunch_pending" {% if status and 'overlunch_pending' in status %}selected{% endif %}>Overlunch Pending</option>
+                    <option value="missing_lunch" {% if status and 'missing_lunch' in status %}selected{% endif %}>Missing Lunch</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+            </div>
+            
+            <!-- Filter Buttons -->
+            <div class="flex items-end gap-2">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                    Filter
+                </button>
+                <a href="{% url 'human_resource:attendance_list' %}" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition">
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Export & Actions -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div class="text-sm text-gray-500">
+            Showing <span class="font-medium">{{ attendances|length }}</span> of <span class="font-medium">{% if total_records %}{{ total_records }}{% else %}{{ attendances.paginator.count }}{% endif %}</span> records
+        </div>
+        <div class="flex space-x-2">
+            <!-- View Toggle Buttons -->
+            <button onclick="switchView('table')" id="btn-table-view" class="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm font-medium shadow-sm">
+                📊 Table
+            </button>
+            <button onclick="switchView('calendar')" id="btn-calendar-view" class="px-3 py-1.5 bg-white border-2 border-blue-600 text-blue-600 rounded hover:bg-blue-50 hover:border-blue-700 hover:text-blue-700 transition text-sm font-medium shadow-sm">
+                📅 Calendar
+            </button>
+            <button onclick="window.print()" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-100 hover:border-gray-400 transition text-sm font-medium shadow-sm">
+                🖨️ Print
+            </button>
+            <button onclick="exportToCSV()" class="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm font-medium shadow-sm">
+                📥 Export CSV
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
+        <!-- Hidden JSON data for calendar (ALL records, not paginated) -->
+        <script id="attendance-data" type="application/json">
+        [
+            {% for a in all_attendances %}
+            {
+                "id": "{{ a.id }}",
+                "title": "{{ a.employee.first_name }} {{ a.employee.last_name }}",
+                "start": "{{ a.date|date:'Y-m-d' }}",
+                "backgroundColor": "{% if a.status == 'absent' or a.statuses and 'absent' in a.statuses %}#ef4444{% elif a.status == 'late' or a.statuses and 'late' in a.statuses %}#eab308{% elif a.status == 'on_leave' or a.statuses and 'on_leave' in a.statuses %}#3b82f6{% else %}#22c55e{% endif %}",
+                "borderColor": "{% if a.status == 'absent' or a.statuses and 'absent' in a.statuses %}#dc2626{% elif a.status == 'late' or a.statuses and 'late' in a.statuses %}#ca8a04{% elif a.status == 'on_leave' or a.statuses and 'on_leave' in a.statuses %}#2563eb{% else %}#16a34a{% endif %}",
+                "extendedProps": {
+                    "employeeId": "{{ a.employee.id }}",
+                    "department": "{% if a.employee.departmentlink %}{{ a.employee.departmentlink.department_name|escapejs }}{% endif %}",
+                    "position": "{% if a.employee.positionlink %}{{ a.employee.positionlink.position_name|escapejs }}{% endif %}",
+                    "status": "{% if a.statuses %}{{ a.statuses|escapejs }}{% else %}{{ a.status|escapejs }}{% endif %}",
+                    "leaveType": "{% if a.leave_request %}{% if a.leave_request.leave_type == 'vl' %}Vacation Leave{% elif a.leave_request.leave_type == 'sl' %}Sick Leave{% else %}{{ a.leave_request.get_leave_type_display|escapejs }}{% endif %}{% endif %}",
+                    "leaveReason": "{% if a.leave_request %}{{ a.leave_request.reason|escapejs|default:'' }}{% endif %}",
+                    "leavePurpose": "{% if a.leave_request %}{{ a.leave_request.purpose|escapejs|default:'' }}{% endif %}",
+                    "attendanceNote": "{{ a.note|escapejs|default:'' }}",
+                    "clockIn": "{{ a.clock_in|default:'-'|escapejs }}",
+                    "clockOut": "{{ a.clock_out|default:'-'|escapejs }}",
+                    "lunchIn": "{{ a.lunch_in|default:'-'|escapejs }}",
+                    "lunchOut": "{{ a.lunch_out|default:'-'|escapejs }}",
+                    "hoursWorked": "{{ a.hours_worked|default:'0' }}",
+                    "lateMinutes": "{{ a.late_minutes|default:'0' }}",
+                    "overlunchMinutes": "{{ a.overlunch_minutes|default:'0' }}",
+                    "overlunchValidated": "{% if a.overlunch_validated %}true{% else %}false{% endif %}",
+                    "deductionMinutes": "{{ a.deduction_minutes|default:'0' }}"
+                }
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ]
+        </script>
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-blue-500">
+            <div class="text-sm text-gray-500">Total Records</div>
+            <div class="text-2xl font-bold">{{ attendances|length }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-green-500">
+            <div class="text-sm text-gray-500">Present</div>
+            <div class="text-2xl font-bold text-green-600">{{ present_count|default:0 }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-red-500">
+            <div class="text-sm text-gray-500">Absent</div>
+            <div class="text-2xl font-bold text-red-600">{{ absent_count|default:0 }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-yellow-500">
+            <div class="text-sm text-gray-500">Late</div>
+            <div class="text-2xl font-bold text-yellow-600">{{ late_count|default:0 }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-indigo-500">
+            <div class="text-sm text-gray-500">On Leave</div>
+            <div class="text-2xl font-bold text-indigo-600">{{ on_leave_count|default:0 }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-purple-500">
+            <div class="text-sm text-gray-500">Failed Clock Out</div>
+            <div class="text-2xl font-bold text-purple-600">{{ failed_to_clock_out_count|default:0 }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-orange-500">
+            <div class="text-sm text-gray-500">Overlunch Pending</div>
+            <div class="text-2xl font-bold text-orange-600">{{ overlunch_pending_count|default:0 }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-red-500">
+            <div class="text-sm text-gray-500">Missing Lunch</div>
+            <div class="text-2xl font-bold text-red-600">{{ missing_lunch_count|default:0 }}</div>
+        </div>
+    </div>
+
+    <!-- Calendar View Container -->
+    <div id="calendar-view" class="hidden bg-white dark:bg-gray-800 shadow rounded-lg p-4 mb-6">
+        <style>
+            #attendanceCalendar { min-height: 500px; }
+            .fc { font-size: 13px; font-family: inherit; }
+            .fc-event { cursor: pointer; border-radius: 4px; }
+            .fc .fc-daygrid-day-number { padding: 8px; }
+            .fc .fc-col-header-cell-cushion { padding: 10px; font-weight: 600; }
+            .fc-theme-standard td, .fc-theme-standard th { border-color: #e5e7eb; }
+
+            .fc-theme-standard .fc-scrollgrid  {
+            border: 1px solid #dddddd24;}
+            .fc-theme-standard th
+            {border: 1px solid #dddddd24;}
+
+            .fc-day-today { background-color: #fef3c732 !important; }
+            .fc-event-title { font-weight: 500; }
+            .fc-event-time { font-weight: 400; }
+            .fc .fc-button {
+            text-transform: capitalize;
+            }
+            
+            /* Dark mode calendar support */
+            .dark .fc-theme-standard td, .dark .fc-theme-standard th { border-color: #374151; }
+            .dark .fc .fc-daygrid-day-number { color: #f9fafb; }
+            .dark .fc .fc-col-header-cell-cushion { color: #f9fafb; }
+            .dark .fc .fc-daygrid-day { background-color: #1f2937; }
+            .dark .fc .fc-day-other { background-color: #111827; }
+            .dark .fc-day-today { background-color: #1f2937 !important; }
+            .dark .fc-scrollgrid { background-color: #1f2937; }
+            .dark .fc-day-today .fc-daygrid-day-number { background-color: #3b82f6; color: white; border-radius: 50%; }
+            .dark .fc-button { background-color: #374151 !important; border-color: #4b5563 !important; color: #f9fafb !important; }
+            .dark .fc-button:hover { background-color: #4b5563 !important; }
+            .dark .fc-button-active { background-color: #3b82f6 !important; border-color: #2563eb !important; }
+            .dark .fc-timegrid-slot-label { color: #9ca3af; }
+            .dark .fc-timegrid-axis { color: #9ca3af; }
+            .dark .fc-list-event:hover { background-color: #374151; }
+            .dark .fc-popover { background-color: #1f2937; border-color: #374151; }
+            .dark .fc-popover-header { background-color: #374151; color: #f9fafb; }
+            .dark .fc-more-link { color: #60a5fa; }
+            .dark .fc-week-number { color: #9ca3af; }
+        </style>
+        <div id="attendanceCalendar"></div>
+    </div>
+
+    <!-- Custom Modal for Event Details -->
+    <div id="eventModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" style="background-color: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
+        <!-- Backdrop click closes the modal -->
+        <div style="position:absolute;inset:0;" onclick="closeModal()"></div>
+        
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center">
+            <!-- Modal panel -->
+            <div class="relative inline-block w-full max-w-2xl bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-2xl transform transition-all my-8 align-middle" onclick="event.stopPropagation()">
+                <!-- Modal Header -->
+                <div class="bg-blue-600 px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="h-6 w-6 mr-3 " fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                            </svg>
+                            <h3 class="text-xl leading-6 font-bold " id="modal-title">
+                                Attendance Details
+                            </h3>
+                        </div>
+                        <button onclick="closeModal()" class=" hover:text-gray-200 focus:outline-none rounded-full p-1 hover:bg-white/20 transition">
+                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <!-- Modal Body -->
+                <div class="px-6 py-5 sm:p-6">
+                    <div id="modalContent">
+                        <!-- Date -->
+                        <div class="bg-gray-100 dark:bg-gray-700 mb-5 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                            <div class="flex items-center">
+                                <svg class="h-5 w-5 text-gray-500 dark:text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                <label class="text-sm font-medium text-gray-500 dark:text-gray-400  uppercase mr-2">Date:</label>
+                                <p id="modalDate" class="text-base font-semibold text-gray-900 dark:text-gray-100">-</p>
+                            </div>
+                        </div>
+                        <!-- Employee Name Card -->
+                        <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 mb-5 border-l-4 border-blue-500 dark:border-blue-400">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-12 w-12 bg-blue-500 dark:bg-blue-600 rounded-full flex items-center justify-center">
+                                    <span id="modalEmployeeInitials" class="text-white font-bold text-lg">-</span>
+                                </div>
+                                <div class="ml-4">
+                                    <label class="block text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">Employee</label>
+                                    <p id="modalEmployee" class="text-2xl font-bold text-gray-900 dark:text-gray-100">-</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Status Section -->
+                        <div class="mb-5">
+                            <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Status</label>
+                            <div id="modalStatus" class="flex flex-wrap gap-2">-</div>
+                        </div>
+                        
+                        <!-- Leave Type Section (shown only for on_leave status) -->
+                        <div id="leaveTypeSection" class="mb-5 hidden">
+                            <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Leave Type</label>
+                            <div id="modalLeaveType" class="flex flex-wrap gap-2">-</div>
+                        </div>
+                        
+                        <!-- Leave Reason/Notes Section (shown only for on_leave status) -->
+                        <div id="leaveReasonSection" class="mb-5 hidden">
+                            <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Notes</label>
+                            <div id="modalLeaveReason" class="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600">-</div>
+                        </div>
+                        
+                        <!-- Info Grid -->
+                        <div class="grid grid-cols-2 gap-4 mb-5">
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Department</label>
+                                <p id="modalDepartment" class="text-base font-semibold text-gray-900 dark:text-gray-100">-</p>
+                            </div>
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Position</label>
+                                <p id="modalPosition" class="text-base font-semibold text-gray-900 dark:text-gray-100">-</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Time Details -->
+                        <div class="grid grid-cols-2 gap-4 mb-5">
+                            <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-4 border border-green-200 dark:border-green-700">
+                                <div class="flex items-center mb-2">
+                                    <svg class="h-5 w-5 text-green-600 dark:text-green-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <label class="text-xs font-medium text-green-700 dark:text-green-400 uppercase">Clock In</label>
+                                </div>
+                                <p id="modalClockIn" class="text-2xl font-bold text-green-800 dark:text-green-300">-</p>
+                            </div>
+                            <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                                <div class="flex items-center mb-2">
+                                    <svg class="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <label class="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase">Clock Out</label>
+                                </div>
+                                <p id="modalClockOut" class="text-2xl font-bold text-blue-800 dark:text-blue-300">-</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Lunch Details -->
+                        <div class="grid grid-cols-2 gap-4 mb-5">
+                            <div class="bg-amber-50 dark:bg-amber-900/30 rounded-lg p-4 border border-amber-200 dark:border-amber-700">
+                                <div class="flex items-center mb-2">
+                                    <svg class="h-5 w-5 text-amber-600 dark:text-amber-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <label class="text-xs font-medium text-amber-700 dark:text-amber-400 uppercase">Lunch In</label>
+                                </div>
+                                <p id="modalLunchIn" class="text-2xl font-bold text-amber-800 dark:text-amber-300">-</p>
+                            </div>
+                            <div class="bg-orange-50 dark:bg-orange-900/30 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
+                                <div class="flex items-center mb-2">
+                                    <svg class="h-5 w-5 text-orange-600 dark:text-orange-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <label class="text-xs font-medium text-orange-700 dark:text-orange-400 uppercase">Lunch Out</label>
+                                </div>
+                                <p id="modalLunchOut" class="text-2xl font-bold text-orange-800 dark:text-orange-300">-</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Hours & Late -->
+                        <div class="grid grid-cols-2 gap-4 mb-5">
+                            <div class="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-4 border border-purple-200 dark:border-purple-700">
+                                <div class="flex items-center mb-2">
+                                    <svg class="h-5 w-5 text-purple-600 dark:text-purple-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <label class="text-xs font-medium text-purple-700 dark:text-purple-400 uppercase">Hours Worked</label>
+                                </div>
+                                <p id="modalHours" class="text-2xl font-bold text-purple-800 dark:text-purple-300">-</p>
+                            </div>
+                            <div id="lateContainer" class="bg-red-50 dark:bg-red-900/30 rounded-lg p-4 border border-red-200 dark:border-red-700">
+                                <div class="flex items-center mb-2">
+                                    <svg class="h-5 w-5 text-red-600 dark:text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <label class="text-xs font-medium text-red-700 dark:text-red-400 uppercase">Late Minutes</label>
+                                </div>
+                                <p id="modalLate" class="text-2xl font-bold text-red-800 dark:text-red-300">-</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Overlunch & Deduction -->
+                        <div class="grid grid-cols-2 gap-4 mb-5">
+                            <div id="overlunchContainer" class="bg-cyan-50 dark:bg-cyan-900/30 rounded-lg p-4 border border-cyan-200 dark:border-cyan-700">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center">
+                                        <svg class="h-5 w-5 text-cyan-600 dark:text-cyan-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <label class="text-xs font-medium text-cyan-700 dark:text-cyan-400 uppercase">Overlunch</label>
+                                    </div>
+                                    <span id="modalOverlunchBadge" class="hidden px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700">
+                                        ✓ Validated
+                                    </span>
+                                </div>
+                                <p id="modalOverlunch" class="text-2xl font-bold text-cyan-800 dark:text-cyan-300">-</p>
+                            </div>
+                            <div id="deductionContainer" class="bg-rose-50 dark:bg-rose-900/30 rounded-lg p-4 border border-rose-200 dark:border-rose-700">
+                                <div class="flex items-center mb-2">
+                                    <svg class="h-5 w-5 text-rose-600 dark:text-rose-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                                    </svg>
+                                    <label class="text-xs font-medium text-rose-700 dark:text-rose-400 uppercase">Deduction</label>
+                                </div>
+                                <p id="modalDeduction" class="text-2xl font-bold text-rose-800 dark:text-rose-300">-</p>
+                            </div>
+                        </div>
+                        
+                        
+                    </div>
+                </div>
+                <!-- Modal Footer -->
+                <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4 flex justify-between">
+                    <div id="modalEditBtn"></div>
+                    <button onclick="closeModal()" type="button" class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-2 bg-blue-600 text-base font-medium hover:bg-blue-700 focus:outline-none sm:w-auto sm:text-sm font-medium transition">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Controls -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div class="flex items-center gap-2">
+            <!-- Column Visibility Toggle -->
+            <div class="relative">
+                <button id="columnsBtn" type="button" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 hover:border-gray-400 transition text-sm font-medium shadow-sm flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+                    </svg>
+                    Columns
+                </button>
+                <div id="columnMenu" style="display:none;" class="absolute z-50 mt-1 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                    <div class="p-2 border-b border-gray-200 dark:border-gray-700">
+                        <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Toggle Columns</span>
+                    </div>
+                    <div class="p-2 max-h-64 overflow-y-auto" id="columnCheckboxes">
+                        <label class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                            <input type="checkbox" checked disabled class="col-toggle rounded text-blue-600">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Employee</span>
+                        </label>
+                        <label class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                            <input type="checkbox" checked class="col-toggle rounded text-blue-600" data-col="col-date" onchange="toggleColumn('col-date', this.checked)">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Date</span>
+                        </label>
+                        <label class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                            <input type="checkbox" checked class="col-toggle rounded text-blue-600" data-col="col-dept" onchange="toggleColumn('col-dept', this.checked)">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Department</span>
+                        </label>
+                        <label class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                            <input type="checkbox" checked class="col-toggle rounded text-blue-600" data-col="col-position" onchange="toggleColumn('col-position', this.checked)">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Position</span>
+                        </label>
+                        <label class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                            <input type="checkbox" checked class="col-toggle rounded text-blue-600" data-col="col-status" onchange="toggleColumn('col-status', this.checked)">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Status</span>
+                        </label>
+                        <label class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                            <input type="checkbox" checked class="col-toggle rounded text-blue-600" data-col="col-leave-type" onchange="toggleColumn('col-leave-type', this.checked)">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Leave Type</span>
+                        </label>
+                        <label class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                            <input type="checkbox" checked class="col-toggle rounded text-blue-600" data-col="col-notes" onchange="toggleColumn('col-notes', this.checked)">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Notes</span>
+                        </label>
+                        <label class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                            <input type="checkbox" checked class="col-toggle rounded text-blue-600" data-col="col-time" onchange="toggleColumn('col-time', this.checked)">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Time Details</span>
+                        </label>
+                        <label class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                            <input type="checkbox" checked class="col-toggle rounded text-blue-600" data-col="col-hours" onchange="toggleColumn('col-hours', this.checked)">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Hours Worked</span>
+                        </label>
+                        <label class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                            <input type="checkbox" checked class="col-toggle rounded text-blue-600" data-col="col-late" onchange="toggleColumn('col-late', this.checked)">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Late Minutes</span>
+                        </label>
+                        <label class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                            <input type="checkbox" checked class="col-toggle rounded text-blue-600" data-col="col-overlunch" onchange="toggleColumn('col-overlunch', this.checked)">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Overlunch</span>
+                        </label>
+                        <label class="flex items-center gap-2 py-1.5 px-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                            <input type="checkbox" checked class="col-toggle rounded text-blue-600" data-col="col-deduction" onchange="toggleColumn('col-deduction', this.checked)">
+                            <span class="text-sm text-gray-700 dark:text-gray-300">Deduction</span>
+                        </label>
+                    </div>
+                    <div class="p-2 border-t border-gray-200 dark:border-gray-700 flex gap-2">
+                        <button onclick="toggleAllColumns(true)" class="flex-1 px-2 py-1 text-xs bg-blue-600 dark:bg-black text-white dark:text-gray-200 rounded hover:bg-gray-800 dark:hover:bg-gray-700">Show All</button>
+                        <button onclick="toggleAllColumns(false)" class="flex-1 px-2 py-1 text-xs bg-gray-800 dark:bg-gray-950 text-white dark:text-gray-300 rounded hover:bg-gray-700 dark:hover:bg-gray-600">Hide All</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Compact/Comfortable Toggle -->
+            <button onclick="toggleTableDensity()" id="densityBtn" type="button" class="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 hover:border-gray-400 transition text-sm font-medium shadow-sm" title="Toggle table density">
+                <span id="densityText">Comfortable</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Table with Fixed Header and Scrollable Body -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="overflow-auto max-h-[70vh]" id="tableContainer">
+            <table class="min-w-full divide-y divide-gray-200" id="attendanceTable">
+                <thead class="bg-indigo-50 sticky top-0 z-30" id="tableHead">
+                    <tr>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider min-w-[200px] bg-indigo-50">Employee</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-28 col-date">Date</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-24 col-dept">Department</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-28 col-position">Position</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-32 col-status">Status</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-24 col-leave-type">Leave Type</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-32 col-notes">
+                            Notes
+                            <button onclick="toggleTimeColumns()" id="timeDetailsToggle" title="Toggle time columns"
+                                class="ml-1 cursor-pointer text-indigo-600 hover:text-indigo-900 font-bold bg-indigo-100 hover:bg-indigo-200 px-2 py-0.5 rounded border border-indigo-300 text-xs transition">
+                                ⏱️ Hide
+                            </button>
+                        </th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-24 col-time">Clock In</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-24 col-time">Clock Out</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-amber-600 uppercase tracking-wider w-24 col-time">Lunch In</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-amber-600 uppercase tracking-wider w-24 col-time">Lunch Out</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-20 col-hours">Hours</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-20 col-late">Late</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-20 col-overlunch">Overlunch</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-20 col-deduction">Deduction</th>
+                        <th class="px-3 py-3 text-left text-xs font-medium text-indigo-700 uppercase tracking-wider w-20">Actions</th>
+                    </tr>
+
+                </thead>
+
+                <tbody class="bg-white divide-y divide-gray-200" id="tableBody">
+                    {% for a in attendances %}
+                    <tr class="hover:bg-gray-50 transition row-parent" data-row-id="{{ a.id }}">
+                        <td class="px-3 py-3 whitespace-nowrap bg-white" style="position: sticky; left: 0; z-index: 10;">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-9 w-9 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-sm">
+                                    <span class="text-white font-bold text-xs">{{ a.employee.first_name|get_initials:a.employee.last_name }}</span>
+                                </div>
+                                <div class="ml-3">
+                                    <div class="text-sm font-semibold text-gray-900">{{ a.employee.first_name }} {{ a.employee.last_name }}</div>
+                                    <div class="text-xs text-gray-500">ID: {{ a.employee.id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap col-date">
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center justify-center h-6 w-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold">{{ a.date|date:'d' }}</span>
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-medium text-gray-900">{{ a.date|date:'M' }}</span>
+                                    <span class="text-xs text-gray-500">{{ a.date|date:'Y' }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap col-dept">
+                            <div class="text-sm text-gray-900 truncate max-w-[120px]">
+                                {% if a.employee.departmentlink %}
+                                    {{ a.employee.departmentlink.department_name }}
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap col-position">
+                            <div class="text-sm text-gray-900 truncate max-w-[120px]">
+                                {% if a.employee.positionlink %}
+                                    {{ a.employee.positionlink.position_name }}
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <!-- STATUS CELL with column class -->
+                        <td class="px-3 py-3 whitespace-nowrap status-tooltip-cell col-status">
+                            <div class="relative">
+                                <span class="px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full cursor-help
+                                    {% if a.statuses %}{% if ',' in a.statuses %}bg-indigo-100 text-indigo-800{% else %}{% if a.statuses == 'present' %}bg-green-100 text-green-800{% elif a.statuses == 'absent' %}bg-red-100 text-red-800{% elif a.statuses == 'late' %}bg-yellow-100 text-yellow-800{% elif a.statuses == 'on_leave' %}bg-blue-100 text-blue-800{% elif a.statuses == 'early_leave' %}bg-orange-100 text-orange-800{% elif a.statuses == 'failed_to_clock_out' %}bg-purple-100 text-purple-800{% elif a.statuses == 'overlunch_pending' %}bg-orange-100 text-orange-800{% else %}bg-gray-100 text-gray-800{% endif %}{% endif %}{% elif a.status == 'present' %}bg-green-100 text-green-800
+                                    {% elif a.status == 'absent' %}bg-red-100 text-red-800
+                                    {% elif a.status == 'late' %}bg-yellow-100 text-yellow-800
+                                    {% elif a.status == 'on_leave' %}bg-blue-100 text-blue-800
+                                    {% elif a.status == 'early_leave' %}bg-orange-100 text-orange-800
+                                    {% elif a.status == 'failed_to_clock_out' %}bg-purple-100 text-purple-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {% if a.statuses %}{% if ',' in a.statuses %}{{ a.statuses|split:','|length }} Statuses{% else %}{{ a.statuses|format_status }}{% endif %}{% elif a.status == 'failed_to_clock_out' %}Failed Out{% else %}{{ a.get_status_display|title }}{% endif %}
+                                </span>
+
+                                <!-- Tooltip — will be moved to <body> by JS -->
+                                <div class="status-tooltip-popup" style="display:none; position:fixed; z-index:99999; width:256px;" data-wide="{% if a.statuses and ',' in a.statuses %}true{% else %}false{% endif %}">
+                                    <div class="bg-gray-800 text-white text-xs rounded-lg p-3 shadow-lg whitespace-normal">
+                                        <div class="font-semibold mb-1">Status Details:</div>
+                                        <div class="flex flex-wrap gap-1 mb-2">
+                                            {% if a.statuses %}
+                                                {% with statuses_list=a.statuses|split:',' %}
+                                                {% for s in statuses_list %}
+                                                <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                                                    {% if s.strip == 'present' %}bg-green-500 text-white
+                                                    {% elif s.strip == 'absent' %}bg-red-500 text-white
+                                                    {% elif s.strip == 'late' %}bg-yellow-500 text-black
+                                                    {% elif s.strip == 'on_leave' %}bg-blue-500 text-white
+                                                    {% elif s.strip == 'early_leave' %}bg-orange-500 text-white
+                                                    {% elif s.strip == 'failed_to_clock_out' %}bg-purple-500 text-white
+                                                    {% elif s.strip == 'overlunch_pending' %}bg-orange-500 text-white
+                                                    {% elif s.strip == 'missing_lunch' %}bg-red-500 text-white
+                                                    {% endif %}">
+                                                    {{ s.strip|format_status }}
+                                                </span>
+                                                {% endfor %}
+                                                {% endwith %}
+                                            {% else %}
+                                                <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                                                    {% if a.status == 'present' %}bg-green-500 text-white
+                                                    {% elif a.status == 'absent' %}bg-red-500 text-white
+                                                    {% elif a.status == 'late' %}bg-yellow-500 text-black
+                                                    {% elif a.status == 'on_leave' %}bg-blue-500 text-white
+                                                    {% elif a.status == 'early_leave' %}bg-orange-500 text-white
+                                                    {% elif a.status == 'failed_to_clock_out' %}bg-purple-500 text-white
+                                                    {% else %}bg-gray-500 text-white{% endif %}">
+                                                    {{ a.status|format_status }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        {% if a.overlunch_minutes > 0 %}
+                                        <div class="pt-2 border-t border-gray-600">
+                                            <span class="{% if a.overlunch_validated %}text-green-400{% else %}text-orange-400{% endif %}">
+                                                ☕ Overlunch: {{ a.overlunch_minutes }} min
+                                                {% if a.overlunch_validated %}✓ Validated{% else %}⚠ Pending{% endif %}
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                        {% if a.status == 'on_leave' or a.statuses == 'on_leave' or a.statuses and 'on_leave' in a.statuses %}
+                                            {% if a.leave_request %}
+                                        <div class="pt-2 border-t border-gray-600">
+                                            <div class="text-blue-300 font-semibold mb-2">🏖️ Leave Type:</div>
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                                                {% if a.leave_request.leave_type == 'vl' %}bg-blue-500 text-white
+                                                {% elif a.leave_request.leave_type == 'sl' %}bg-orange-500 text-white
+                                                {% else %}bg-gray-500 text-white{% endif %}">
+                                                {% if a.leave_request.leave_type == 'vl' %}Vacation Leave
+                                                {% elif a.leave_request.leave_type == 'sl' %}Sick Leave
+                                                {% else %}{{ a.leave_request.get_leave_type_display }}{% endif %}
+                                            </span>
+                                            {% if a.leave_request.reason %}
+                                            <div class="mt-1 text-gray-300">
+                                                <span class="font-semibold">📝 Note:</span> {{ a.leave_request.reason }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                            {% endif %}
+                                        {% endif %}
+                                        {% if a.late_minutes > 0 %}
+                                        <div class="text-yellow-400">
+                                            ⏰ Late: {{ a.late_minutes }} min
+                                        </div>
+                                        {% endif %}
+                                        {% if a.deduction_minutes > 0 %}
+                                        <div class="text-red-400">
+                                            ➖ Deduction: {{ a.deduction_minutes }} min
+                                        </div>
+                                        {% endif %}
+                                        {% if a.hours_worked > 0 %}
+                                        <div class="text-blue-400">
+                                            ⏱️ Hours Worked: {{ a.hours_worked }} hrs
+                                        </div>
+                                        {% endif %}
+                                        <!-- Arrow -->
+                                        <div class="tooltip-arrow" style="position:absolute; bottom:-4px; left:50%; transform:translateX(-50%) rotate(45deg); width:8px; height:8px; background:#1f2937;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <!-- LEAVE TYPE with column class -->
+                        <td class="px-3 py-3 whitespace-nowrap col-leave-type">
+                            {% if a.status == 'on_leave' or a.statuses == 'on_leave' or a.statuses and 'on_leave' in a.statuses %}
+                                {% if a.leave_request %}
+                                    <span class="px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full
+                                        {% if a.leave_request.leave_type == 'vl' %}bg-blue-100 text-blue-800
+                                        {% elif a.leave_request.leave_type == 'sl' %}bg-orange-100 text-orange-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {% if a.leave_request.leave_type == 'vl' %}Vacation
+                                        {% elif a.leave_request.leave_type == 'sl' %}Sick
+                                        {% else %}{{ a.leave_request.get_leave_type_display }}{% endif %}
+                                    </span>
+                                {% else %}
+                                    <span class="px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full bg-blue-100 text-blue-800">On Leave</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-3 py-3 whitespace-nowrap col-notes">
+                            {% if a.status == 'on_leave' or a.statuses == 'on_leave' or a.statuses and 'on_leave' in a.statuses %}
+                                {% if a.leave_request %}
+                                    <div class="text-sm text-gray-600 max-w-[150px] truncate" title="{{ a.leave_request.reason|default:'' }}">
+                                        {{ a.leave_request.reason|default:'-' }}
+                                    </div>
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            {% elif a.note %}
+                                <div class="text-sm text-gray-600 max-w-[150px] truncate" title="{{ a.note }}">
+                                    {{ a.note|default:'-' }}
+                                </div>
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <!-- Time Details Columns -->
+                        <td class="px-3 py-3 whitespace-nowrap col-time">
+                            <div class="text-sm {% if a.late_minutes > 0 %}text-red-600{% else %}text-gray-900{% endif %}">
+                                {{ a.clock_in|default:"-" }}
+                            </div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap col-time">
+                            <div class="text-sm text-gray-900">{{ a.clock_out|default:"-" }}</div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap col-time">
+                            <div class="text-sm text-gray-900">{{ a.lunch_in|default:"-" }}</div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap col-time">
+                            <div class="text-sm text-gray-900">{{ a.lunch_out|default:"-" }}</div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap col-hours">
+                            <div class="text-sm font-medium text-gray-900">{{ a.hours_worked|default:"0.0" }}</div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap col-late">
+                            <div class="text-sm {% if a.late_minutes > 0 %}text-red-600 font-bold{% else %}text-gray-400{% endif %}">
+                                {{ a.late_minutes|default:"0" }}
+                            </div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap col-overlunch">
+                            <div class="text-sm {% if a.overlunch_minutes > 0 %}{% if a.overlunch_validated %}text-green-600 font-bold{% else %}text-orange-600 font-bold{% endif %}{% else %}text-gray-400{% endif %}">
+                                {% if a.overlunch_minutes > 0 %}
+                                    {{ a.overlunch_minutes }}{% if a.overlunch_validated %}✓{% endif %}
+                                {% else %}-{% endif %}
+                            </div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap col-deduction">
+                            <div class="text-sm {% if a.deduction_minutes > 0 %}text-red-600 font-bold{% else %}text-gray-400{% endif %}">
+                                {{ a.deduction_minutes|default:"0" }}
+                            </div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm font-medium">
+                            <div class="flex items-center gap-2">
+                                <a href="{% url 'human_resource:attendance_edit' a.id %}" class="text-blue-600 hover:text-blue-900 font-medium">Edit</a>
+                                <button onclick="quickView({{ a.id }})" class="text-gray-500 hover:text-gray-700" title="Quick View">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="16" class="px-4 py-8 text-center text-gray-500">
+                            <div class="flex flex-col items-center">
+                                <svg class="h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                                <p>No attendance records found.</p>
+                                <p class="text-sm">Try adjusting your filters or add new attendance records.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if attendances.has_other_pages %}
+    <div class="mt-6 flex justify-center">
+        <div class="flex space-x-2">
+            {% if attendances.has_previous %}
+            <a href="?page={{ attendances.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if department %}&department={{ department }}{% endif %}" 
+               class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">Previous</a>
+            {% endif %}
+            <span class="px-3 py-1 bg-gray-100 rounded">Page {{ attendances.number }} of {{ attendances.paginator.num_pages }}</span>
+            {% if attendances.has_next %}
+            <a href="?page={{ attendances.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if department %}&department={{ department }}{% endif %}" 
+               class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">Next</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Floating Button for Pending Items (HR) -->
+    {% if pending_count > 0 %}
+    <div class="fixed bottom-6 right-6 z-50">
+        <div class="relative">
+            <button 
+                onclick="togglePendingPanel()"
+                class="w-14 h-14 bg-gradient-to-r from-orange-600 to-red-700 dark:from-orange-700 dark:to-red-800 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center animate-pulse"
+                id="pendingBtn">
+                <svg class="h-7 w-7 text-gray-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <span class="absolute -top-2 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {{ pending_count }}
+                </span>
+            </button>
+            
+            <!-- Dropdown Panel -->
+            <div class="absolute bottom-16 right-0 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-orange-300 dark:border-orange-700 overflow-hidden hidden" id="pendingPanel" style="bottom: 60px; top: auto;">
+                <div class="bg-gradient-to-r from-orange-600 to-red-700 dark:from-orange-700 dark:to-red-800 px-4 py-3">
+                    <h3 class="text-gray-900 dark:text-white font-semibold flex items-center">
+                        <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        Pending Items
+                        <span class="ml-auto bg-white/30 dark:bg-white/20 text-gray-900 dark:text-white text-xs px-2 py-0.5 rounded-full">
+                            {{ pending_count }} pending
+                        </span>
+                    </h3>
+                </div>
+                <div class="p-3 max-h-64 overflow-y-auto">
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        Records requiring HR attention:
+                    </p>
+                    <ul class="space-y-2">
+                        {% if overlunch_pending_count > 0 %}
+                        <li class="flex items-center justify-between p-2 bg-orange-50 dark:bg-orange-900 rounded-lg">
+                            <span class="text-sm text-orange-700 dark:text-orange-300">Overlunch Not Validated</span>
+                            <span class="font-bold text-orange-600">{{ overlunch_pending_count }}</span>
+                        </li>
+                        {% endif %}
+                        {% if failed_to_clock_out_count > 0 %}
+                        <li class="flex items-center justify-between p-2 bg-purple-50 dark:bg-purple-900 rounded-lg">
+                            <span class="text-sm text-purple-700 dark:text-purple-300">Failed to Clock Out</span>
+                            <span class="font-bold text-purple-600">{{ failed_to_clock_out_count }}</span>
+                        </li>
+                        {% endif %}
+                        {% if missing_lunch_count > 0 %}
+                        <li class="flex items-center justify-between p-2 bg-red-50 dark:bg-red-900 rounded-lg">
+                            <span class="text-sm text-red-700 dark:text-red-300">Missing Lunch</span>
+                            <span class="font-bold text-red-600">{{ missing_lunch_count }}</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    <p class="text-xs text-gray-500 mt-3">Use the "Overlunch Pending", "Failed to Clock Out", or "Missing Lunch" filter above to view and process these records.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    function togglePendingPanel() {
+        const panel = document.getElementById('pendingPanel');
+        panel.classList.toggle('hidden');
+    }
+    document.addEventListener('click', function(event) {
+        const panel = document.getElementById('pendingPanel');
+        const btn = document.getElementById('pendingBtn');
+        if (!panel.contains(event.target) && !btn.contains(event.target)) {
+            panel.classList.add('hidden');
+        }
+    });
+    </script>
+    {% endif %}
+
+</div>
+
+<script>
+function exportToCSV() {
+    var table = document.getElementById('attendanceTable');
+    var rows = Array.from(table.querySelectorAll('tr'));
+    var csv = rows.map(function(row) {
+        var cells = Array.from(row.querySelectorAll('th, td'));
+        return cells.map(function(cell) {
+            var text = cell.innerText.trim();
+            if (text.includes(',') || text.includes('"')) {
+                text = '"' + text.replace(/"/g, '""') + '"';
+            }
+            return text;
+        }).join(',');
+    }).join('\n');
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = window.URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'attendance_records_' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+// =============================================
+// ✅ TABLE ENHANCEMENTS - Column Visibility & Sticky
+// =============================================
+
+// Column visibility toggle menu
+document.addEventListener('DOMContentLoaded', function() {
+    var columnsBtn = document.getElementById('columnsBtn');
+    var columnMenu = document.getElementById('columnMenu');
+    
+    if (columnsBtn && columnMenu) {
+        columnsBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (columnMenu.style.display === 'none') {
+                columnMenu.style.display = 'block';
+            } else {
+                columnMenu.style.display = 'none';
+            }
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!columnMenu.contains(e.target) && e.target !== columnsBtn) {
+                columnMenu.style.display = 'none';
+            }
+        });
+    }
+});
+
+function toggleColumn(colClass, show) {
+    var elements = document.querySelectorAll('.' + colClass);
+    elements.forEach(function(el) {
+        if (show) {
+            el.style.display = '';
+        } else {
+            el.style.display = 'none';
+        }
+    });
+}
+
+function toggleAllColumns(show) {
+    var checkboxes = document.querySelectorAll('.col-toggle');
+    checkboxes.forEach(function(checkbox) {
+        if (!checkbox.disabled) {
+            checkbox.checked = show;
+            var colClass = checkbox.dataset.col;
+            if (colClass) {
+                toggleColumn(colClass, show);
+            }
+        }
+    });
+}
+
+// =============================================
+// ✅ TIME COLUMNS TOGGLE
+// Button lives in the Notes <th> — always visible.
+// Toggles all .col-time th/td elements in thead + tbody.
+// =============================================
+var timeColumnsVisible = true;
+
+function toggleTimeColumns() {
+    timeColumnsVisible = !timeColumnsVisible;
+
+    // Toggle ALL .col-time cells (thead th + tbody td) in one pass
+    document.querySelectorAll('.col-time').forEach(function(el) {
+        el.style.display = timeColumnsVisible ? '' : 'none';
+    });
+
+    // Update button label
+    var btn = document.getElementById('timeDetailsToggle');
+    if (btn) {
+        btn.textContent = timeColumnsVisible ? '⏱️ Hide' : '⏱️ Show';
+    }
+}
+
+// Table density toggle
+var isCompact = false;
+function toggleTableDensity() {
+    isCompact = !isCompact;
+    var rows = document.querySelectorAll('#tableBody tr');
+    var densityText = document.getElementById('densityText');
+    
+    rows.forEach(function(row) {
+        if (isCompact) {
+            row.classList.add('compact-row');
+        } else {
+            row.classList.remove('compact-row');
+        }
+    });
+    
+    densityText.textContent = isCompact ? 'Compact' : 'Comfortable';
+}
+
+// Add CSS for compact rows and table enhancements
+var style = document.createElement('style');
+style.textContent = `
+    .compact-row td {
+        padding-top: 0.25rem !important;
+        padding-bottom: 0.25rem !important;
+    }
+    .row-expanded {
+        background-color: #f9fafb !important;
+    }
+    .col-toggle:checked {
+        accent-color: #2563eb;
+    }
+    /* Sticky header */
+    #tableHead {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+    }
+    #tableContainer {
+        max-height: 100vh;
+        overflow-y: auto;
+    }
+`;
+document.head.appendChild(style);
+
+// =============================================
+// ✅ TOOLTIP FIX — Appended to <body> to escape
+//    overflow clipping from overflow-x-auto table
+// =============================================
+document.addEventListener('DOMContentLoaded', function () {
+    var activeTooltip = null;
+
+    document.querySelectorAll('.status-tooltip-cell').forEach(function (cell) {
+        var tooltipWrapper = cell.querySelector('.status-tooltip-popup');
+        if (!tooltipWrapper) return;
+
+        // Move tooltip out of table into <body>
+        document.body.appendChild(tooltipWrapper);
+
+        // Widen tooltip if multi-status
+        if (tooltipWrapper.dataset.wide === 'true') {
+            tooltipWrapper.style.width = '320px';
+        }
+
+        cell.addEventListener('mouseenter', function () {
+            if (activeTooltip && activeTooltip !== tooltipWrapper) {
+                activeTooltip.style.display = 'none';
+            }
+
+            var rect = cell.getBoundingClientRect();
+            var tooltipWidth = parseInt(tooltipWrapper.style.width) || 256;
+
+            tooltipWrapper.style.display = 'block';
+            tooltipWrapper.style.visibility = 'hidden';
+            var tooltipHeight = tooltipWrapper.offsetHeight;
+            tooltipWrapper.style.visibility = 'visible';
+
+            var left = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+            var top = rect.top - tooltipHeight - 10;
+
+            if (left < 8) left = 8;
+            if (left + tooltipWidth > window.innerWidth - 8) {
+                left = window.innerWidth - tooltipWidth - 8;
+            }
+            if (rect.top - tooltipHeight - 10 < 0) {
+                top = rect.bottom + 10;
+            }
+
+            tooltipWrapper.style.left = left + 'px';
+            tooltipWrapper.style.top = top + 'px';
+            activeTooltip = tooltipWrapper;
+        });
+
+        cell.addEventListener('mouseleave', function () {
+            tooltipWrapper.style.display = 'none';
+            activeTooltip = null;
+        });
+    });
+
+    window.addEventListener('scroll', function () {
+        if (activeTooltip) {
+            activeTooltip.style.display = 'none';
+            activeTooltip = null;
+        }
+    });
+});
+
+// Save calendar events to localStorage (called on page load and when filters change)
+function saveCalendarEventsToLocalStorage() {
+    var attendanceDataEl = document.getElementById('attendance-data');
+    if (attendanceDataEl) {
+        try {
+            var events = JSON.parse(attendanceDataEl.textContent);
+            localStorage.setItem('attendance_calendar_events', JSON.stringify(events));
+            console.log('Saved ' + events.length + ' events to localStorage');
+        } catch (e) { 
+            console.error('Error saving events to localStorage:', e); 
+        }
+    }
+}
+
+// Clear calendar localStorage (when filters change significantly)
+function clearCalendarLocalStorage() {
+    localStorage.removeItem('attendance_calendar_events');
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    saveCalendarEventsToLocalStorage();
+    
+    // Clear localStorage when filter form is submitted
+    var filterForm = document.querySelector('form[method="GET"]');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function() {
+            clearCalendarLocalStorage();
+        });
+    }
+});
+
+// View Toggle Functions
+function switchView(view) {
+    var tableView = document.getElementById('attendanceTable').closest('.bg-white');
+    var calendarView = document.getElementById('calendar-view');
+    var btnTable = document.getElementById('btn-table-view');
+    var btnCalendar = document.getElementById('btn-calendar-view');
+    var tableControls = document.querySelector('.flex.flex-wrap.items-center.justify-between.gap-3.mb-3');
+    var paginationControls = document.querySelector('.mt-6.flex.justify-center');
+
+    if (!tableView || !calendarView || !btnTable || !btnCalendar) return;
+
+    if (view === 'calendar') {
+        tableView.classList.add('hidden');
+        calendarView.classList.remove('hidden');
+        btnTable.classList.remove('bg-blue-600', 'text-white');
+        btnTable.classList.add('bg-white', 'border-2', 'border-blue-600', 'text-blue-600');
+        btnCalendar.classList.remove('bg-white', 'border-2', 'border-blue-600', 'text-blue-600');
+        btnCalendar.classList.add('bg-blue-600', 'text-white');
+        // Hide table controls and pagination in calendar view
+        if (tableControls) tableControls.classList.add('hidden');
+        if (paginationControls) paginationControls.classList.add('hidden');
+        if (!window.calendarInitialized) {
+            initCalendar();
+            window.calendarInitialized = true;
+        }
+    } else {
+        tableView.classList.remove('hidden');
+        calendarView.classList.add('hidden');
+        btnCalendar.classList.remove('bg-blue-600', 'text-white');
+        btnCalendar.classList.add('bg-white', 'border-2', 'border-blue-600', 'text-blue-600');
+        btnTable.classList.remove('bg-white', 'border-2', 'border-blue-600', 'text-blue-600');
+        btnTable.classList.add('bg-blue-600', 'text-white');
+        // Show table controls and pagination in table view
+        if (tableControls) tableControls.classList.remove('hidden');
+        if (paginationControls) paginationControls.classList.remove('hidden');
+    }
+}
+
+// FullCalendar Initialization
+function initCalendar() {
+    if (typeof FullCalendar !== 'undefined') { createCalendar(); return; }
+    var script = document.createElement('script');
+    script.src = '{% static 'js/fullcalendar.min.js' %}';
+    script.onload = function () { createCalendar(); };
+    script.onerror = function () { alert('Failed to load FullCalendar script'); };
+    document.head.appendChild(script);
+}
+
+function createCalendar() {
+    var events = [];
+    var attendanceDataEl = document.getElementById('attendance-data');
+    
+    // Try to get events from localStorage first
+    var storedEvents = localStorage.getItem('attendance_calendar_events');
+    if (storedEvents) {
+        try {
+            events = JSON.parse(storedEvents);
+        } catch (e) {
+            console.error('Error parsing localStorage events:', e);
+        }
+    }
+    
+    // If no stored events, use inline data and store in localStorage
+    if (events.length === 0 && attendanceDataEl) {
+        try {
+            events = JSON.parse(attendanceDataEl.textContent);
+            // Store in localStorage for future use
+            localStorage.setItem('attendance_calendar_events', JSON.stringify(events));
+        } catch (e) { console.error(e); }
+    }
+    
+    if (events.length === 0) {
+        events = [{ id: 'no-data', title: 'No attendance records', start: new Date().toISOString().split('T')[0], backgroundColor: '#6b7280', borderColor: '#4b5563', extendedProps: { department: '-', position: '-', status: 'No data', clockIn: '-', clockOut: '-', hoursWorked: '0', lateMinutes: '0' } }];
+    }
+    var calendarEl = document.getElementById('attendanceCalendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listMonth' },
+        events: events,
+        eventClick: function (info) {
+            var props = info.event.extendedProps;
+            showEventModal(info.event.title, props.department, props.position, props.status, props.clockIn, props.clockOut, props.lunchIn, props.lunchOut, props.hoursWorked, props.lateMinutes, props.overlunchMinutes, props.deductionMinutes, info.event.startStr, props.employeeId, info.event.id, props.overlunchValidated, props.leaveType, props.leaveReason, props.leavePurpose, props.attendanceNote);
+        },
+        eventDidMount: function (info) { info.el.title = info.event.title + ' - ' + info.event.extendedProps.status; },
+        height: 'auto',
+        dayMaxEvents: 3,
+        eventDisplay: 'block'
+    });
+    calendar.render();
+}
+
+// Modal Functions
+function showEventModal(employee, department, position, status, clockIn, clockOut, lunchIn, lunchOut, hoursWorked, lateMinutes, overlunchMinutes, deductionMinutes, date, employeeId, eventId, overlunchValidated, leaveType, leaveReason, leavePurpose, attendanceNote) {
+    document.getElementById('modalEmployee').textContent = employee || '-';
+    var initials = '-';
+    if (employee) {
+        var parts = employee.split(' ');
+        initials = parts.map(function (p) { return p.charAt(0); }).join('').substring(0, 2).toUpperCase();
+    }
+    document.getElementById('modalEmployeeInitials').textContent = initials;
+    document.getElementById('modalDepartment').textContent = department || '-';
+    document.getElementById('modalPosition').textContent = position || '-';
+    document.getElementById('modalClockIn').textContent = clockIn || '-';
+    document.getElementById('modalClockOut').textContent = clockOut || '-';
+    document.getElementById('modalLunchIn').textContent = lunchIn || '-';
+    document.getElementById('modalLunchOut').textContent = lunchOut || '-';
+    document.getElementById('modalHours').textContent = hoursWorked + ' hrs';
+    document.getElementById('modalLate').textContent = lateMinutes + ' min';
+
+    var overlunchContainer = document.getElementById('overlunchContainer');
+    var overlunchEl = document.getElementById('modalOverlunch');
+    var overlunchBadge = document.getElementById('modalOverlunchBadge');
+    if (parseInt(overlunchMinutes) > 0) {
+        overlunchEl.textContent = overlunchMinutes + ' min';
+        if (overlunchValidated === true || overlunchValidated === 'true') {
+            overlunchBadge.classList.remove('hidden');
+            overlunchContainer.className = overlunchContainer.className.replace(/from-\S+|to-\S+|border-\S+/g, '');
+            overlunchContainer.classList.add('bg-gradient-to-br', 'from-green-50', 'to-green-100', 'border-green-200');
+            overlunchEl.classList.remove('text-cyan-800'); overlunchEl.classList.add('text-green-800');
+        } else {
+            overlunchBadge.classList.add('hidden');
+            overlunchContainer.classList.add('bg-gradient-to-br', 'from-orange-50', 'to-orange-100', 'border-orange-200');
+            overlunchEl.classList.remove('text-cyan-800'); overlunchEl.classList.add('text-orange-800');
+        }
+    } else {
+        overlunchEl.textContent = '-';
+        overlunchBadge.classList.add('hidden');
+    }
+
+    var deductionEl = document.getElementById('modalDeduction');
+    if (parseInt(deductionMinutes) > 0) {
+        deductionEl.textContent = deductionMinutes + ' min';
+        deductionEl.classList.add('text-red-800');
+    } else {
+        deductionEl.textContent = '-';
+    }
+
+    document.getElementById('modalDate').textContent = date || '-';
+    var lateContainer = document.getElementById('lateContainer');
+    lateContainer.style.display = parseInt(lateMinutes) === 0 ? 'none' : 'block';
+
+    var statusEl = document.getElementById('modalStatus');
+    var statusList = status ? status.split(',') : [];
+    var statusHtml = '';
+    statusList.forEach(function (s) {
+        var st = s.trim();
+        statusHtml += '<span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ' + getStatusBadgeClass(st) + '">' + formatStatus(st) + '</span>';
+    });
+    if (!statusHtml) statusHtml = '<span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Unknown</span>';
+    statusEl.innerHTML = statusHtml;
+
+    var leaveTypeSection = document.getElementById('leaveTypeSection');
+    var leaveReasonSection = document.getElementById('leaveReasonSection');
+    var modalLeaveType = document.getElementById('modalLeaveType');
+    var modalLeaveReason = document.getElementById('modalLeaveReason');
+    var leaveTypeVal = leaveType || '';
+    var leaveReasonVal = leaveReason || '';
+    var leavePurposeVal = leavePurpose || '';
+    var attendanceNoteVal = attendanceNote || '';
+    var isOnLeave = status && status.includes('on_leave');
+
+    var combinedNotes = '';
+    if (isOnLeave) {
+        if (leavePurposeVal) combinedNotes += 'Purpose: ' + leavePurposeVal;
+        if (leaveReasonVal) { if (combinedNotes) combinedNotes += '\n\n'; combinedNotes += 'Reason: ' + leaveReasonVal; }
+        if (!leavePurposeVal && !leaveReasonVal && attendanceNoteVal) combinedNotes = attendanceNoteVal;
+    } else {
+        combinedNotes = attendanceNoteVal;
+    }
+
+    if (isOnLeave) {
+        leaveTypeSection.classList.remove('hidden');
+        var leaveTypeBadgeClass = 'bg-blue-100 text-blue-800 border border-blue-200';
+        if (leaveTypeVal.includes('Vacation')) {
+            leaveTypeBadgeClass = 'bg-blue-100 text-blue-800 border border-blue-200';
+        } else if (leaveTypeVal.includes('Sick')) {
+            leaveTypeBadgeClass = 'bg-orange-100 text-orange-800 border border-orange-200';
+        }
+        modalLeaveType.innerHTML = '<span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full ' + leaveTypeBadgeClass + '">' + (leaveTypeVal || 'On Leave') + '</span>';
+        if (combinedNotes) { leaveReasonSection.classList.remove('hidden'); modalLeaveReason.textContent = combinedNotes; }
+        else { leaveReasonSection.classList.add('hidden'); }
+    } else {
+        leaveTypeSection.classList.add('hidden');
+        if (combinedNotes) { leaveReasonSection.classList.remove('hidden'); modalLeaveReason.textContent = combinedNotes; }
+        else { leaveReasonSection.classList.add('hidden'); }
+    }
+
+    var editBtnContainer = document.getElementById('modalEditBtn');
+    if (eventId && !isOnLeave) {
+        editBtnContainer.innerHTML = '<a href="/hr_dashboard/attendance/edit/' + eventId + '/" class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-base font-medium text-white hover:from-indigo-700 hover:to-purple-700 focus:outline-none sm:w-auto sm:text-sm transition mr-3"><svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>Edit</a>';
+    } else {
+        editBtnContainer.innerHTML = '';
+    }
+
+    document.getElementById('eventModal').classList.remove('hidden');
+}
+
+function formatStatus(status) {
+    var statusMap = { 'present': 'Present', 'absent': 'Absent', 'late': 'Late', 'on_leave': 'On Leave', 'early_leave': 'Early Leave', 'failed_to_clock_out': 'Failed Clock Out', 'overlunch_pending': 'Overlunch Pending', 'missing_lunch': 'Missing Lunch' };
+    return statusMap[status] || status;
+}
+
+function getStatusBadgeClass(status) {
+    var classMap = { 'present': 'bg-green-100 text-green-800 border border-green-200', 'absent': 'bg-red-100 text-red-800 border border-red-200', 'late': 'bg-yellow-100 text-yellow-800 border border-yellow-200', 'on_leave': 'bg-blue-100 text-blue-800 border border-blue-200', 'early_leave': 'bg-orange-100 text-orange-800 border border-orange-200', 'failed_to_clock_out': 'bg-purple-100 text-purple-800 border border-purple-200', 'overlunch_pending': 'bg-amber-100 text-amber-800 border border-amber-200', 'missing_lunch': 'bg-red-100 text-red-800 border border-red-200' };
+    return classMap[status] || 'bg-gray-100 text-gray-800 border border-gray-200';
+}
+
+function closeModal() {
+    document.getElementById('eventModal').classList.add('hidden');
+}
+
+// Quick View function for table rows
+function quickView(id) {
+    // Find the attendance data from the JSON
+    var attendanceDataEl = document.getElementById('attendance-data');
+    var events = [];
+    if (attendanceDataEl) {
+        try {
+            events = JSON.parse(attendanceDataEl.textContent);
+        } catch (e) { console.error(e); }
+    }
+    
+    // Find the event by ID
+    var event = events.find(function(e) { return e.id == id; });
+    
+    if (event) {
+        var props = event.extendedProps;
+        showEventModal(
+            event.title,
+            props.department,
+            props.position,
+            props.status,
+            props.clockIn,
+            props.clockOut,
+            props.lunchIn,
+            props.lunchOut,
+            props.hoursWorked,
+            props.lateMinutes,
+            props.overlunchMinutes,
+            props.deductionMinutes,
+            event.start,
+            props.employeeId,
+            event.id,
+            props.overlunchValidated,
+            props.leaveType,
+            props.leaveReason,
+            props.leavePurpose,
+            props.attendanceNote
+        );
+    } else {
+        // Try to find in localStorage
+        var storedEvents = localStorage.getItem('attendance_calendar_events');
+        if (storedEvents) {
+            try {
+                events = JSON.parse(storedEvents);
+                event = events.find(function(e) { return e.id == id; });
+                if (event) {
+                    var props = event.extendedProps;
+                    showEventModal(
+                        event.title,
+                        props.department,
+                        props.position,
+                        props.status,
+                        props.clockIn,
+                        props.clockOut,
+                        props.lunchIn,
+                        props.lunchOut,
+                        props.hoursWorked,
+                        props.lateMinutes,
+                        props.overlunchMinutes,
+                        props.deductionMinutes,
+                        event.start,
+                        props.employeeId,
+                        event.id,
+                        props.overlunchValidated,
+                        props.leaveType,
+                        props.leaveReason,
+                        props.leavePurpose,
+                        props.attendanceNote
+                    );
+                    return;
+                }
+            } catch (e) { console.error(e); }
+        }
+        alert('Attendance record not found. Please refresh the page.');
+    }
+}
+
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeModal();
+});
+</script>
+{% endblock %}

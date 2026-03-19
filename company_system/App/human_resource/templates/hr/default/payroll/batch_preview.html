@@ -1,0 +1,885 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Batch Payroll Preview - {{ month }}/{{ year }} Cutoff {{ cutoff }}{% endblock %}
+
+{% block content %}
+<!-- Floating Toggle Button -->
+<button type="button" onclick="toggleEmployeePanel()"
+        class="fixed bottom-6 right-6 z-50 bg-orange-600 hover:bg-orange-700 text-white rounded-full w-14 h-14 shadow-lg flex items-center justify-center transition-colors"
+        title="View Employee List">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+    </svg>
+    <span id="employeePanelBadge"
+          class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">{{ skipped_count }}</span>
+</button>
+
+<!-- Floating Employee Panel -->
+<div id="employeePanel"
+     class="fixed bottom-24 right-6 z-40 w-80 max-h-[70vh] bg-white shadow-2xl rounded-lg border border-gray-200 transform transition-transform duration-300 translate-x-full opacity-0">
+    <div class="p-4 border-b bg-gray-50 rounded-t-lg">
+        <div class="flex items-center justify-between">
+            <h3 class="font-semibold text-gray-700">Employee Status</h3>
+            <button type="button" onclick="toggleEmployeePanel()" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+    <div class="max-h-96 overflow-y-auto">
+        <div class="p-3 border-b bg-green-50">
+            <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-green-700">To Process</span>
+                <span class="bg-green-200 text-green-800 text-xs px-2 py-1 rounded-full">{{ to_process_employees|length }}</span>
+            </div>
+            {% for emp in to_process_employees %}
+            <div class="mt-2 text-xs text-gray-600 flex items-center">
+                <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>{{ emp.name }}
+            </div>
+            {% empty %}<p class="text-xs text-gray-400 mt-1">No employees to process</p>
+            {% endfor %}
+        </div>
+        {% if finalized_employees %}
+        <div class="p-3 bg-red-50">
+            <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-red-700">Already Finalized</span>
+                <span class="bg-red-200 text-red-800 text-xs px-2 py-1 rounded-full">{{ finalized_employees|length }}</span>
+            </div>
+            {% for emp in finalized_employees %}
+            <div class="mt-2 text-xs text-gray-600 flex items-center">
+                <span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>{{ emp.name }}
+                <span class="text-gray-400 ml-1">(₱{{ emp.net|floatformat:2 }})</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if draft_employees %}
+        <div class="p-3 bg-yellow-50">
+            <div class="flex items-center justify-between">
+                <span class="text-sm font-medium text-yellow-700">Draft Payouts (Editable)</span>
+                <span class="bg-yellow-200 text-yellow-800 text-xs px-2 py-1 rounded-full">{{ draft_employees|length }}</span>
+            </div>
+            {% for emp in draft_employees %}
+            <div class="mt-2 text-xs text-gray-600 flex items-center">
+                <span class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>{{ emp.name }}
+                <span class="text-gray-400 ml-1">(₱{{ emp.net|floatformat:2 }})</span>
+                <a href="{% url 'human_resource:payout_edit' emp.payout_id %}" class="ml-2 text-blue-600 hover:text-blue-800">Edit</a>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-6 pb-24">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">Batch Payroll Preview</h1>
+        <a href="{% url 'human_resource:payroll_finalize' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Back to Form</a>
+    </div>
+
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+        <h2 class="text-lg font-semibold mb-4 border-b pb-2">Payroll Period</h2>
+        <div class="grid grid-cols-4 gap-4">
+            <div><span class="text-sm text-gray-500">Month</span><p class="font-medium">{{ month }}</p></div>
+            <div><span class="text-sm text-gray-500">Year</span><p class="font-medium">{{ year }}</p></div>
+            <div><span class="text-sm text-gray-500">Cutoff</span>
+                 <p class="font-medium">{% if cutoff == '1' %}1st Cutoff (1-15){% else %}2nd Cutoff (16-End){% endif %}</p></div>
+            <div><span class="text-sm text-gray-500">Period</span>
+                 <p class="font-medium">{{ start|date:"M d" }} - {{ end|date:"M d, Y" }}</p></div>
+        </div>
+    </div>
+
+    {% if skipped_count > 0 %}
+    <div class="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+        <strong>Info:</strong> {{ skipped_count }} employee(s) already have payroll for this period.
+        <ul class="mt-2 text-sm list-disc list-inside">
+            {% if finalized_employees %}<li>{{ finalized_employees|length }} already finalized (cannot be modified)</li>{% endif %}
+            {% if draft_employees %}<li>{{ draft_employees|length }} are drafts (can be edited via Individual Payroll)</li>{% endif %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{% url 'human_resource:batch_payroll_finalize' %}" id="batchPayrollForm">
+        {% csrf_token %}
+        <input type="hidden" name="month" value="{{ month }}">
+        <input type="hidden" name="year" value="{{ year }}">
+        <input type="hidden" name="cutoff" value="{{ cutoff }}">
+
+        <div class="bg-blue-100 rounded-lg p-4 mb-6">
+            <div class="grid grid-cols-5 gap-4 text-center">
+                <div><span class="text-sm text-blue-700">Active Employees</span>
+                     <p class="text-xl font-bold text-blue-800">{{ total_active_employees }}</p></div>
+                <div><span class="text-sm text-blue-700">To Process</span>
+                     <p class="text-xl font-bold text-blue-800">{{ preview_list|length }}</p></div>
+                <div><span class="text-sm text-blue-700">Skipped</span>
+                     <p class="text-xl font-bold text-yellow-700">{{ skipped_count }}</p></div>
+                <div><span class="text-sm text-blue-700">Total Gross</span>
+                     <p class="text-xl font-bold text-blue-800" id="totalGross">₱0.00</p></div>
+                <div><span class="text-sm text-blue-700">Total Net</span>
+                     <p class="text-xl font-bold text-blue-800" id="totalNet">₱0.00</p></div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+        {% for item in preview_list %}
+        <div class="bg-white shadow rounded-lg p-6 employee-section" id="emp_{{ item.employee.id }}">
+            <input type="hidden" name="emp_{{ item.employee.id }}_employee_id" value="{{ item.employee.id }}">
+
+            <!-- Employee Header -->
+            <div class="mb-4 border-b pb-2">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                            {{ item.employee.first_name|first }}{{ item.employee.last_name|first }}
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold">{{ item.employee.first_name }} {{ item.employee.last_name }}</h3>
+                            <p class="text-sm text-gray-500">{{ item.employee.employee_number }} - {{ item.employee.get_department_display|default:"-" }}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">Salary per Cutoff</p>
+                        <p class="text-lg font-bold text-green-600">₱{{ item.salary_per_cutoff|floatformat:2 }}</p>
+                    </div>
+                </div>
+
+                {% if item.salary_per_cutoff and item.salary_per_cutoff > 0 and item.working_days > 0 %}
+                <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                    <strong>Rate Info:</strong>
+                    Daily Rate = ₱{{ item.salary_per_cutoff|floatformat:2 }} ÷ {{ item.working_days }} days
+                    = ₱<span id="info_daily_rate_{{ item.employee.id }}">0.00</span>
+                    {% if item.work_schedule == 'FLEX' %}
+                        &nbsp;|&nbsp;<span class="text-amber-600 font-medium">⚡ Flextime — no hourly rate (salary-based only)</span>
+                    {% elif item.work_schedule == '8H' %}
+                        &nbsp;|&nbsp; Hourly Rate (÷8 hrs) = ₱<span id="info_hourly_rate_{{ item.employee.id }}">0.00</span>
+                    {% else %}
+                        &nbsp;|&nbsp; Hourly Rate (÷9.5 hrs) = ₱<span id="info_hourly_rate_{{ item.employee.id }}">0.00</span>
+                    {% endif %}
+                    <span class="ml-2 px-2 py-0.5 rounded text-xs font-semibold
+                        {% if item.work_schedule == 'FLEX' %}bg-amber-100 text-amber-700
+                        {% elif item.work_schedule == '8H' %}bg-green-100 text-green-700
+                        {% else %}bg-blue-100 text-blue-700{% endif %}">
+                        {% if item.work_schedule == 'FLEX' %}Flextime{% elif item.work_schedule == '8H' %}8H Schedule{% else %}9.5H Schedule{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+
+                {% if not item.salary_per_cutoff or item.salary_per_cutoff == 0 %}
+                <div class="mt-3 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                    <strong>Warning:</strong> No salary setting found for this employee.
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- EARNINGS display (auto-computed) -->
+                <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <h4 class="font-semibold text-green-700 mb-3 flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z"/>
+                        </svg>
+                        EARNINGS (Auto-Computed)
+                    </h4>
+                    <div class="border border-green-200 rounded-lg overflow-hidden">
+                        <table class="w-full text-sm">
+                            <thead class="bg-green-100 border-b border-green-200">
+                                <tr>
+                                    <th class="px-4 py-2.5 text-left text-xs font-semibold text-green-700 uppercase tracking-wider">Description</th>
+                                    <th class="px-4 py-2.5 text-right text-xs font-semibold text-green-700 uppercase tracking-wider">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-green-200">
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">Basic Salary</td>
+                                    <td class="px-4 py-2.5 text-right font-medium">₱{{ item.salary_per_cutoff|floatformat:2 }}</td></tr>
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">Days Present</td>
+                                    <td class="px-4 py-2.5 text-right font-medium">{{ item.days_present }}</td></tr>
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">Overtime Hours</td>
+                                    <td class="px-4 py-2.5 text-right"><span id="ot_hours_disp_{{ item.employee.id }}">{{ item.total_ot_hours|floatformat:2 }}</span> hrs</td></tr>
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">Overtime Pay</td>
+                                    <td class="px-4 py-2.5 text-right font-medium text-green-700">₱<span id="ot_pay_disp_{{ item.employee.id }}">0.00</span></td></tr>
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">NSD Hours</td>
+                                    <td class="px-4 py-2.5 text-right"><span id="nsd_hours_disp_{{ item.employee.id }}">{{ item.total_nsd_hours|floatformat:2 }}</span> hrs</td></tr>
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">NSD Pay</td>
+                                    <td class="px-4 py-2.5 text-right font-medium text-green-700">₱<span id="nsd_pay_disp_{{ item.employee.id }}">0.00</span></td></tr>
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">Leave Days (Paid)</td>
+                                    <td class="px-4 py-2.5 text-right"><span id="leave_paid_disp_{{ item.employee.id }}">0</span> days</td></tr>
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">Leave Addition</td>
+                                    <td class="px-4 py-2.5 text-right font-medium text-green-700">₱<span id="leave_addition_disp_{{ item.employee.id }}">0.00</span></td></tr>
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">Sp. Holiday Hrs</td>
+                                    <td class="px-4 py-2.5 text-right"><span id="holiday_hours_disp_{{ item.employee.id }}">0.00</span> hrs</td></tr>
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">Sp. Holiday Pay</td>
+                                    <td class="px-4 py-2.5 text-right font-medium text-green-700">₱<span id="holiday_pay_disp_{{ item.employee.id }}">0.00</span></td></tr>
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">Reg. Holiday Hrs</td>
+                                    <td class="px-4 py-2.5 text-right"><span id="reg_holiday_hours_disp_{{ item.employee.id }}">0.00</span> hrs</td></tr>
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">Reg. Holiday Pay</td>
+                                    <td class="px-4 py-2.5 text-right font-medium text-green-700">₱<span id="regular_holiday_pay_disp_{{ item.employee.id }}">0.00</span></td></tr>
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">Incentives</td>
+                                    <td class="px-4 py-2.5 text-right font-medium text-green-700">₱<span id="incentive_pay_disp_{{ item.employee.id }}">0.00</span></td></tr>
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">Tips/Others</td>
+                                    <td class="px-4 py-2.5 text-right font-medium text-green-700">₱<span id="tips_others_disp_{{ item.employee.id }}">0.00</span></td></tr>
+                                <tr class="hover:bg-green-50/70 transition-colors"><td class="px-4 py-2.5 text-gray-600">Lodging Allowance</td>
+                                    <td class="px-4 py-2.5 text-right font-medium text-green-700">₱<span id="lodging_allowance_disp_{{ item.employee.id }}">0.00</span></td></tr>
+                            <tr class="bg-green-200 border-t-2 border-green-400">
+                                <td class="px-4 py-3 font-bold text-green-900">TOTAL EARNINGS</td>
+                                <td class="px-4 py-3 text-right font-bold text-green-900">₱<span id="total_earnings_disp_{{ item.employee.id }}">0.00</span></td>
+                            </tr>
+
+                            {% if de_minimis_types %}
+                            <tr class="border-t border-green-300 bg-green-100">
+                                <td colspan="2" class="px-4 py-2 text-xs font-bold text-green-800">▸ DE MINIMIS BENEFITS</td>
+                            </tr>
+                            {% for dm in de_minimis_types %}
+                            <tr class="hover:bg-green-50/70 transition-colors bg-green-50/30">
+                                <td class="px-4 py-2 text-green-700 text-xs">{{ dm.name }}</td>
+                                <td class="px-4 py-2 text-right text-green-700 text-xs">₱<span id="dm_disp_{{ item.employee.id }}_{{ dm.id }}">0.00</span></td>
+                            </tr>
+                            {% endfor %}
+                            {% endif %}
+                            <tr class="bg-green-100 border-t-2 border-green-300">
+                                <td class="px-4 py-2.5 font-bold text-green-800">Total De Minimis</td>
+                                <td class="px-4 py-2.5 text-right font-bold text-green-800">₱<span id="demiminis_{{ item.employee.id }}">0.00</span></td>
+                            </tr>
+
+                            <tr class="bg-red-50 border-t border-red-200">
+                                <td colspan="2" class="px-4 py-2 text-xs font-bold text-red-700">▸ DEDUCTIONS</td>
+                            </tr>
+                            <tr class="hover:bg-red-50/70 transition-colors bg-red-50/30">
+                                <td class="px-4 py-2 text-red-600 text-xs">Days Absent</td>
+                                <td class="px-4 py-2 text-right text-red-600 text-xs"><span id="days_absent_disp_{{ item.employee.id }}">0</span> days</td>
+                            </tr>
+                            <tr class="hover:bg-red-50/70 transition-colors bg-red-50/30">
+                                <td class="px-4 py-2 text-red-600 text-xs">Absence Deduction</td>
+                                <td class="px-4 py-2 text-right text-red-600 text-xs">₱<span id="absence_deduction_disp_{{ item.employee.id }}">0.00</span></td>
+                            </tr>
+                            <tr class="hover:bg-red-50/70 transition-colors bg-red-50/30">
+                                <td class="px-4 py-2 text-red-600 text-xs">Leave (Unpaid) Days</td>
+                                <td class="px-4 py-2 text-right text-red-600 text-xs"><span id="leave_unpaid_disp_{{ item.employee.id }}">0</span> days</td>
+                            </tr>
+                            <tr class="hover:bg-red-50/70 transition-colors bg-red-50/30">
+                                <td class="px-4 py-2 text-red-600 text-xs">Leave Deduction (Unpaid)</td>
+                                <td class="px-4 py-2 text-right text-red-600 text-xs">₱<span id="leave_deduction_disp_{{ item.employee.id }}">0.00</span></td>
+                            </tr>
+                            <tr class="hover:bg-red-50/70 transition-colors bg-red-50/30">
+                                <td class="px-4 py-2 text-red-600 text-xs">Withholding Tax</td>
+                                <td class="px-4 py-2 text-right text-red-600 text-xs">₱<span id="tax_disp_{{ item.employee.id }}">0.00</span></td>
+                            </tr>
+                            <tr class="hover:bg-orange-50/70 transition-colors bg-orange-50/50">
+                                <td class="px-4 py-2 text-orange-700 text-xs">
+                                    Late Deduction
+                                    <span class="block text-gray-400 text-[10px]">
+                                        <span id="late_min_disp_{{ item.employee.id }}">0</span>min →
+                                        <span id="late_hrs_disp_{{ item.employee.id }}">0</span>h ×
+                                        ₱<span id="hourly_rate_disp_{{ item.employee.id }}">0.00</span>
+                                    </span>
+                                </td>
+                                <td class="px-4 py-2 text-right text-orange-700 text-xs font-medium">₱<span id="late_disp_{{ item.employee.id }}">0.00</span></td>
+                            </tr>
+                            <tr class="hover:bg-red-50/70 transition-colors bg-red-50/30">
+                                <td class="px-4 py-2 text-red-600 text-xs">Other Deductions</td>
+                                <td class="px-4 py-2 text-right text-red-600 text-xs">₱<span id="other_ded_disp_{{ item.employee.id }}">0.00</span></td>
+                            </tr>
+                            {% if deduction_types %}
+                            {% for ded in deduction_types %}
+                            <tr class="hover:bg-red-50/70 transition-colors bg-red-50/30">
+                                <td class="px-4 py-2 text-red-600 text-xs">{{ ded.name }}</td>
+                                <td class="px-4 py-2 text-right text-red-600 text-xs">₱<span id="ded_disp_{{ item.employee.id }}_{{ ded.id }}">0.00</span></td>
+                            </tr>
+                            {% endfor %}
+                            {% endif %}
+                            <tr class="bg-red-100 border-t-2 border-red-300">
+                                <td class="px-4 py-2.5 font-bold text-red-800">Total Deductions</td>
+                                <td class="px-4 py-2.5 text-right font-bold text-red-800">₱<span id="total_ded_disp_{{ item.employee.id }}">0.00</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+                <!-- HR INPUT: ADDITIONS -->
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <h4 class="font-semibold text-blue-700 mb-3">HR INPUT: ADDITIONS</h4>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-xs text-gray-600">Overtime Hours</label>
+                            <input type="number" name="emp_{{ item.employee.id }}_overtime_hours"
+                                   id="emp_{{ item.employee.id }}_overtime_hours"
+                                   value="{{ item.total_ot_hours|floatformat:2 }}"
+                                   step="0.01" min="0" class="w-full border border-blue-200 rounded px-2 py-1 text-sm"
+                                   oninput="recalculateEmployee('{{ item.employee.id }}')">
+                            <!-- ✅ Hidden field carries computed OT pay -->
+                            <input type="hidden" name="emp_{{ item.employee.id }}_overtime_pay"   id="ot_pay_hidden_{{ item.employee.id }}"       value="0">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600">NSD Hours</label>
+                            <input type="number" name="emp_{{ item.employee.id }}_nsd_hours"
+                                   id="emp_{{ item.employee.id }}_nsd_hours"
+                                   value="{{ item.total_nsd_hours|floatformat:2 }}"
+                                   step="0.01" min="0" class="w-full border border-blue-200 rounded px-2 py-1 text-sm"
+                                   oninput="recalculateEmployee('{{ item.employee.id }}')">
+                            <input type="hidden" name="emp_{{ item.employee.id }}_night_differential" id="nsd_pay_hidden_{{ item.employee.id }}" value="0">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600">Special Holiday Hours</label>
+                            <input type="number" name="emp_{{ item.employee.id }}_holiday_hours"
+                                   id="emp_{{ item.employee.id }}_holiday_hours"
+                                   value="0" step="0.01" min="0" class="w-full border border-blue-200 rounded px-2 py-1 text-sm"
+                                   oninput="recalculateEmployee('{{ item.employee.id }}')">
+                            <input type="hidden" name="emp_{{ item.employee.id }}_holiday_pay"         id="holiday_pay_hidden_{{ item.employee.id }}"     value="0">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600">Regular Holiday Hours</label>
+                            <input type="number" name="emp_{{ item.employee.id }}_regular_holiday_hours"
+                                   id="emp_{{ item.employee.id }}_regular_holiday_hours"
+                                   value="0" step="0.01" min="0" class="w-full border border-blue-200 rounded px-2 py-1 text-sm"
+                                   oninput="recalculateEmployee('{{ item.employee.id }}')">
+                            <input type="hidden" name="emp_{{ item.employee.id }}_regular_holiday_pay" id="reg_holiday_pay_hidden_{{ item.employee.id }}" value="0">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600">Incentives</label>
+                            <input type="number" name="emp_{{ item.employee.id }}_incentives"
+                                   id="emp_{{ item.employee.id }}_incentives"
+                                   value="0" step="0.01" min="0" class="w-full border border-blue-200 rounded px-2 py-1 text-sm"
+                                   oninput="recalculateEmployee('{{ item.employee.id }}')">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600">Tips/Others</label>
+                            <input type="number" name="emp_{{ item.employee.id }}_tips_others"
+                                   id="emp_{{ item.employee.id }}_tips_others"
+                                   value="0" step="0.01" min="0" class="w-full border border-blue-200 rounded px-2 py-1 text-sm"
+                                   oninput="recalculateEmployee('{{ item.employee.id }}')">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600">Lodging Allowance</label>
+                            <input type="number" name="emp_{{ item.employee.id }}_lodging_allowance"
+                                   id="emp_{{ item.employee.id }}_lodging_allowance"
+                                   value="0" step="0.01" min="0" class="w-full border border-blue-200 rounded px-2 py-1 text-sm"
+                                   oninput="recalculateEmployee('{{ item.employee.id }}')">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-green-700 font-medium">Leave Days (Paid)</label>
+                            <!-- ✅ Has name= so Django receives it directly; no hidden duplicate needed -->
+                            <input type="number" name="emp_{{ item.employee.id }}_leave_days_paid"
+                                   id="emp_{{ item.employee.id }}_leave_days_paid"
+                                   value="0" step="0.5" min="0" class="w-full border border-green-200 rounded px-2 py-1 text-sm"
+                                   oninput="recalculateEmployee('{{ item.employee.id }}')">
+                        </div>
+
+                        {% if de_minimis_types %}
+                        <hr class="my-2 border-blue-200">
+                        <h5 class="text-xs font-semibold text-blue-700 mb-1">De Minimis</h5>
+                        {% for dm in de_minimis_types %}
+                        <div>
+                            <label class="block text-xs text-gray-600">{{ dm.name }}</label>
+                            <input type="number" name="emp_{{ item.employee.id }}_demiminis_{{ dm.id }}"
+                                   id="emp_{{ item.employee.id }}_dm_{{ dm.id }}"
+                                   value="0" step="0.01" min="0" class="w-full border border-blue-200 rounded px-2 py-1 text-sm demiminis-input"
+                                   data-emp-id="{{ item.employee.id }}" data-dm-id="{{ dm.id }}"
+                                   oninput="recalculateEmployee('{{ item.employee.id }}')">
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                            <!-- HR INPUT: DEDUCTIONS -->
+                            <h4 class="font-semibold text-red-700 mb-3">HR INPUT: DEDUCTIONS</h4>
+                        <div class="space-y-2">
+                            <div>
+                                <label class="block text-xs text-gray-600">Withholding Tax (Manual)</label>
+                                <input type="number" name="emp_{{ item.employee.id }}_withholding_tax"
+                                    id="emp_{{ item.employee.id }}_withholding_tax"
+                                    value="0" step="0.01" min="0" class="w-full border border-red-200 rounded px-2 py-1 text-sm"
+                                    oninput="recalculateEmployee('{{ item.employee.id }}')">
+                            </div>
+
+                            <!-- Late Deduction -->
+                            <div class="p-2 bg-orange-50 border border-orange-200 rounded">
+                                <label class="block text-xs font-semibold text-orange-800 mb-1">Late Deduction</label>
+                                <div class="grid grid-cols-2 gap-1 mb-1">
+                                    <div>
+                                        <label class="block text-xs text-gray-500">Minutes Late</label>
+                                        <input type="number" name="emp_{{ item.employee.id }}_late_minutes"
+                                            id="emp_{{ item.employee.id }}_late_minutes"
+                                            value="0" step="1" min="0"
+                                            class="w-full border border-orange-300 rounded px-2 py-1 text-xs"
+                                            oninput="recalculateEmployee('{{ item.employee.id }}')">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500">Hours Equivalent</label>
+                                        <input type="number" name="emp_{{ item.employee.id }}_late_hours_equivalent"
+                                            id="emp_{{ item.employee.id }}_late_hours_equivalent"
+                                            value="0" step="0.5" min="0"
+                                            class="w-full border border-orange-300 rounded px-2 py-1 text-xs"
+                                            oninput="recalculateEmployee('{{ item.employee.id }}')">
+                                    </div>
+                                </div>
+                                <label class="block text-xs text-gray-500">Deduction Amount (Auto)</label>
+                                <input type="number" name="emp_{{ item.employee.id }}_late_deduction"
+                                    id="emp_{{ item.employee.id }}_late_deduction"
+                                    value="0" step="0.01"
+                                    class="w-full border border-orange-200 rounded px-2 py-1 text-xs bg-gray-100 font-medium" readonly>
+                            </div>
+
+                            <!-- Days Absent -->
+                            <div>
+                                <label class="block text-xs text-red-700 font-medium">Days Absent</label>
+                                <input type="number" name="emp_{{ item.employee.id }}_days_absent"
+                                    id="emp_{{ item.employee.id }}_days_absent"
+                                    value="0" step="0.5" min="0" class="w-full border border-red-300 rounded px-2 py-1 text-sm"
+                                    oninput="recalculateEmployee('{{ item.employee.id }}')">
+                                <p class="text-xs text-gray-400 mt-0.5">Auto-calculates deduction below</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500">Absence Deduction (Auto)</label>
+                                <input type="number" name="emp_{{ item.employee.id }}_absence_deduction"
+                                    id="emp_{{ item.employee.id }}_absence_deduction"
+                                    value="0" step="0.01" min="0" class="w-full border border-red-200 rounded px-2 py-1 text-sm bg-gray-100" readonly>
+                            </div>
+
+                            <!-- ✅ Leave Days Unpaid -->
+                            <div>
+                                <label class="block text-xs text-gray-600">Leave Days (Unpaid)</label>
+                                <!-- ✅ Has name= so Django receives it directly -->
+                                <input type="number" name="emp_{{ item.employee.id }}_leave_days_unpaid"
+                                    id="emp_{{ item.employee.id }}_leave_days_unpaid"
+                                    value="0" step="0.5" min="0" class="w-full border border-red-200 rounded px-2 py-1 text-sm"
+                                    oninput="recalculateEmployee('{{ item.employee.id }}')">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs text-gray-600">Other Deductions</label>
+                                <input type="number" name="emp_{{ item.employee.id }}_other_deductions"
+                                    id="emp_{{ item.employee.id }}_other_deductions"
+                                    value="0" step="0.01" min="0" class="w-full border border-red-200 rounded px-2 py-1 text-sm"
+                                    oninput="recalculateEmployee('{{ item.employee.id }}')">
+                            </div>
+
+                            {% if deduction_types %}
+                            <hr class="my-2 border-red-200">
+                            <h5 class="text-xs font-semibold text-gray-600 mb-1">Dynamic Deductions</h5>
+                            {% for ded in deduction_types %}
+                            <div>
+                                <label class="block text-xs text-gray-600">{{ ded.name }}
+                                    {% if ded.is_government %}<span class="text-blue-500">(Gov't)</span>{% endif %}
+                                </label>
+                                <input type="number" name="emp_{{ item.employee.id }}_deduction_{{ ded.id }}"
+                                    id="emp_{{ item.employee.id }}_ded_{{ ded.id }}"
+                                    value="0" step="0.01" min="0" class="w-full border border-red-200 rounded px-2 py-1 text-sm deduction-input"
+                                    data-emp-id="{{ item.employee.id }}" data-ded-id="{{ ded.id }}"
+                                    oninput="recalculateEmployee('{{ item.employee.id }}')">
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                
+               
+
+            </div><!-- end 3-col grid -->
+
+            <!-- Hidden calculated fields submitted with form -->
+            <input type="hidden" name="emp_{{ item.employee.id }}_basic_salary"              value="{{ item.salary_per_cutoff }}">
+            <input type="hidden" name="emp_{{ item.employee.id }}_housing_allowance"         value="0">
+            <input type="hidden" name="emp_{{ item.employee.id }}_transportation_allowance"  value="0">
+            <input type="hidden" name="emp_{{ item.employee.id }}_meal_allowance"            value="0">
+            <input type="hidden" name="emp_{{ item.employee.id }}_medical_allowance"         value="0">
+            <input type="hidden" name="emp_{{ item.employee.id }}_other_allowances"          value="0">
+            <input type="hidden" name="emp_{{ item.employee.id }}_loan_deduction"            value="0">
+
+            <!-- Employee Summary Bar -->
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <div class="grid grid-cols-5 gap-4 text-center">
+                    <div>
+                        <span class="text-xs text-gray-500">Gross</span>
+                        <p class="text-lg font-bold text-green-600" id="gross_{{ item.employee.id }}">₱{{ item.salary_per_cutoff|floatformat:2 }}</p>
+                        <input type="hidden" name="emp_{{ item.employee.id }}_gross"           id="gross_input_{{ item.employee.id }}"      value="{{ item.salary_per_cutoff }}">
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500">Additions</span>
+                        <p class="text-lg font-bold text-blue-600" id="additions_{{ item.employee.id }}">₱0.00</p>
+                        <input type="hidden" name="emp_{{ item.employee.id }}_total_additions" id="additions_input_{{ item.employee.id }}" value="0">
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500">De Minimis</span>
+                        <p class="text-lg font-bold text-purple-600" id="demiminis_total_{{ item.employee.id }}">₱0.00</p>
+                        <input type="hidden" name="emp_{{ item.employee.id }}_total_demiminis" id="demiminis_input_{{ item.employee.id }}" value="0">
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500">Deductions</span>
+                        <p class="text-lg font-bold text-red-600" id="deductions_{{ item.employee.id }}">₱0.00</p>
+                        <input type="hidden" name="emp_{{ item.employee.id }}_total_deductions" id="deductions_input_{{ item.employee.id }}" value="0">
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-500">NET PAY</span>
+                        <p class="text-xl font-bold text-green-700" id="net_{{ item.employee.id }}">₱{{ item.salary_per_cutoff|floatformat:2 }}</p>
+                        <input type="hidden" name="emp_{{ item.employee.id }}_net"              id="net_input_{{ item.employee.id }}"        value="{{ item.salary_per_cutoff }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <label class="block text-xs text-gray-600 mb-1">NOTE / REMARK</label>
+                <textarea name="emp_{{ item.employee.id }}_note" rows="2"
+                          class="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                          placeholder="Enter notes or remarks for this employee..."></textarea>
+            </div>
+        </div>
+        {% empty %}
+        <div class="bg-white shadow rounded-lg p-6 text-center">
+            <p class="text-gray-500">No active employees found.</p>
+        </div>
+        {% endfor %}
+        </div>
+
+        {% if preview_list %}
+        <div class="mt-6 flex justify-end space-x-4">
+            <a href="{% url 'human_resource:payroll_finalize' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Cancel</a>
+            <button type="button" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 font-bold"
+                    onclick="openFinalizeModal()">
+                Finalize Batch Payroll
+            </button>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Finalize Batch Payroll Modal -->
+<div id="finalizeModal" class="fixed inset-0 z-50 hidden">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black bg-opacity-50 transition-opacity" onclick="closeFinalizeModal()"></div>
+    <!-- Modal Content -->
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-white rounded-xl shadow-2xl max-w-lg w-full transform transition-all">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-green-600 to-green-700 rounded-t-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white bg-opacity-20 rounded-full p-2">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-white">Confirm Finalization</h3>
+                    </div>
+                    <button type="button" onclick="closeFinalizeModal()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-1 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <!-- Modal Body -->
+            <div class="p-6">
+                <p class="text-gray-600 mb-4">You are about to finalize the batch payroll for the following period:</p>
+                
+                <!-- Period Info -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div><span class="text-gray-500">Month:</span> <span class="font-medium">{{ month }}</span></div>
+                        <div><span class="text-gray-500">Year:</span> <span class="font-medium">{{ year }}</span></div>
+                        <div><span class="text-gray-500">Cutoff:</span> <span class="font-medium">{% if cutoff == '1' %}1st Cutoff (1-15){% else %}2nd Cutoff (16-End){% endif %}</span></div>
+                        <div><span class="text-gray-500">Employees:</span> <span class="font-medium">{{ preview_list|length }}</span></div>
+                    </div>
+                </div>
+                
+                <!-- Summary -->
+                <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                    <h4 class="font-semibold text-blue-800 mb-3">Payroll Summary</h4>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Active Employees</span>
+                            <span class="font-bold text-blue-800" id="modalActiveEmployees">{{ total_active_employees }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">To Process</span>
+                            <span class="font-bold text-blue-800" id="modalToProcess">{{ preview_list|length }}</span>
+                        </div>
+                        <div class="flex justify-between items-center border-t border-blue-200 pt-2">
+                            <span class="text-gray-700 font-medium">Total Gross</span>
+                            <span class="font-bold text-green-600 text-lg" id="modalTotalGross">₱0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-700 font-medium">Total Net</span>
+                            <span class="font-bold text-green-700 text-xl" id="modalTotalNet">₱0.00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Warning -->
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6">
+                    <div class="flex items-start gap-2">
+                        <svg class="w-5 h-5 text-yellow-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <p class="text-sm text-yellow-800">This action cannot be undone. Once finalized, the payroll records will be locked and cannot be modified.</p>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-3">
+                    <button type="button" onclick="closeFinalizeModal()" 
+                            class="flex-1 bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="button" onclick="submitBatchPayroll()" 
+                            class="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Confirm & Finalize
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modal Animations */
+#finalizeModal {
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+#finalizeModal.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+#finalizeModal.hidden .relative {
+    transform: scale(0.95);
+}
+#finalizeModal .relative {
+    transition: transform 0.3s ease;
+}
+</style>
+
+<script>
+// ── Per-employee constants injected from Django ───────────────────────────────
+const salaryPerCutoff    = {};
+const workingDaysPerEmp  = {};
+const workSchedulePerEmp = {};
+
+{% for item in preview_list %}
+salaryPerCutoff['{{ item.employee.id }}']    = {{ item.salary_per_cutoff|floatformat:2 }};
+workingDaysPerEmp['{{ item.employee.id }}']  = {{ item.working_days|default:11 }};
+workSchedulePerEmp['{{ item.employee.id }}'] = "{{ item.work_schedule|default:'9.5H' }}";
+{% endfor %}
+
+const OVERTIME_RATE    = 1.25;
+const NSD_RATE         = 1.10;
+const SPECIAL_HOL_RATE = 1.30;
+const REGULAR_HOL_RATE = 2.00;
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function getEmpVal(empId, field) {
+    const el = document.getElementById(`emp_${empId}_${field}`);
+    return el ? (parseFloat(el.value) || 0) : 0;
+}
+function setText(id, val)  { const e = document.getElementById(id); if (e) e.textContent = val; }
+function setVal(id, val)   { const e = document.getElementById(id); if (e) e.value = val; }
+
+// ── Per-employee recalculate ─────────────────────────────────────────────────
+function recalculateEmployee(empId) {
+    const basicSalary  = salaryPerCutoff[empId]   || 0;
+    const workDays     = workingDaysPerEmp[empId]  || 11;
+    const schedule     = workSchedulePerEmp[empId] || '9.5H';
+    const dailyRate    = workDays > 0 ? basicSalary / workDays : 0;
+    const hoursPerDay  = schedule === '8H' ? 8 : schedule === '9.5H' ? 9.5 : null;
+    const hourlyRate   = hoursPerDay ? dailyRate / hoursPerDay : 0;
+    const isFlextime   = schedule === 'FLEX';
+
+    // Additions
+    const otHours     = getEmpVal(empId, 'overtime_hours');
+    const otPay       = isFlextime ? 0 : otHours * hourlyRate * OVERTIME_RATE;
+
+    const nsdHours    = getEmpVal(empId, 'nsd_hours');
+    const nsdPay      = isFlextime ? 0 : nsdHours * hourlyRate * NSD_RATE;
+
+    const holHours    = getEmpVal(empId, 'holiday_hours');
+    const holPay      = isFlextime ? 0 : holHours * hourlyRate * SPECIAL_HOL_RATE;
+
+    const regHolHours = getEmpVal(empId, 'regular_holiday_hours');
+    const regHolPay   = isFlextime ? 0 : regHolHours * hourlyRate * REGULAR_HOL_RATE;
+
+    const incentives    = getEmpVal(empId, 'incentives');
+    const tipsOthers    = getEmpVal(empId, 'tips_others');
+    const lodging       = getEmpVal(empId, 'lodging_allowance');
+
+    // ✅ Leave — read directly from named inputs; no hidden duplicate needed
+    const leaveDaysPaid = getEmpVal(empId, 'leave_days_paid');
+    const leaveAddition = leaveDaysPaid * dailyRate;
+
+    // Update hidden computed pay fields
+    setVal(`ot_pay_hidden_${empId}`,          otPay.toFixed(2));
+    setVal(`nsd_pay_hidden_${empId}`,         nsdPay.toFixed(2));
+    setVal(`holiday_pay_hidden_${empId}`,     holPay.toFixed(2));
+    setVal(`reg_holiday_pay_hidden_${empId}`, regHolPay.toFixed(2));
+
+    // Deductions
+    const tax          = getEmpVal(empId, 'withholding_tax');
+    const daysAbsent   = getEmpVal(empId, 'days_absent');
+    const absDeduction = daysAbsent * dailyRate;
+
+    // ✅ Leave unpaid — read directly from named input
+    const leaveDaysUnpaid = getEmpVal(empId, 'leave_days_unpaid');
+    const leaveDeduct     = leaveDaysUnpaid * dailyRate;
+
+    const otherDed       = getEmpVal(empId, 'other_deductions');
+    const lateMinutes    = getEmpVal(empId, 'late_minutes');
+    const lateHoursEquiv = getEmpVal(empId, 'late_hours_equivalent');
+    const lateDeduction  = isFlextime ? 0 : lateHoursEquiv * hourlyRate;
+
+    // Update readonly auto-computed fields
+    setVal(`emp_${empId}_late_deduction`,     lateDeduction.toFixed(2));
+    setVal(`emp_${empId}_absence_deduction`,  absDeduction.toFixed(2));
+
+    // De minimis
+    let totalDemiminis = 0;
+    document.querySelectorAll(`[data-emp-id="${empId}"].demiminis-input`).forEach(input => {
+        const dmId = input.getAttribute('data-dm-id');
+        const amt  = parseFloat(input.value) || 0;
+        totalDemiminis += amt;
+        setText(`dm_disp_${empId}_${dmId}`, amt.toFixed(2));
+    });
+
+    // Dynamic deductions
+    let dynamicDeductions = 0;
+    document.querySelectorAll(`[data-emp-id="${empId}"].deduction-input`).forEach(input => {
+        const dedId = input.getAttribute('data-ded-id');
+        const amt   = parseFloat(input.value) || 0;
+        dynamicDeductions += amt;
+        setText(`ded_disp_${empId}_${dedId}`, amt.toFixed(2));
+    });
+
+    // Rate info display
+    setText(`info_daily_rate_${empId}`,  dailyRate.toFixed(2));
+    if (!isFlextime) setText(`info_hourly_rate_${empId}`, hourlyRate.toFixed(2));
+
+    // Earnings display
+    setText(`ot_hours_disp_${empId}`,            otHours.toFixed(2));
+    setText(`ot_pay_disp_${empId}`,              otPay.toFixed(2));
+    setText(`nsd_hours_disp_${empId}`,           nsdHours.toFixed(2));
+    setText(`nsd_pay_disp_${empId}`,             nsdPay.toFixed(2));
+    setText(`leave_paid_disp_${empId}`,          leaveDaysPaid.toFixed(1));
+    setText(`leave_addition_disp_${empId}`,      leaveAddition.toFixed(2));
+    setText(`holiday_hours_disp_${empId}`,       holHours.toFixed(2));
+    setText(`holiday_pay_disp_${empId}`,         holPay.toFixed(2));
+    setText(`reg_holiday_hours_disp_${empId}`,   regHolHours.toFixed(2));
+    setText(`regular_holiday_pay_disp_${empId}`, regHolPay.toFixed(2));
+    setText(`incentive_pay_disp_${empId}`,       incentives.toFixed(2));
+    setText(`tips_others_disp_${empId}`,         tipsOthers.toFixed(2));
+    setText(`lodging_allowance_disp_${empId}`,   lodging.toFixed(2));
+    
+    // ✅ Total Earnings = Basic Salary + All Additions
+    const totalEarnings = basicSalary + otPay + nsdPay + holPay + regHolPay + incentives + tipsOthers + lodging + leaveAddition;
+    setText(`total_earnings_disp_${empId}`, totalEarnings.toFixed(2));
+    
+    setText(`demiminis_${empId}`,                totalDemiminis.toFixed(2));
+
+    // Late deduction detail display
+    setText(`late_min_disp_${empId}`,    lateMinutes);
+    setText(`late_hrs_disp_${empId}`,    lateHoursEquiv);
+    setText(`hourly_rate_disp_${empId}`, hourlyRate.toFixed(2));
+    setText(`late_disp_${empId}`,        lateDeduction.toFixed(2));
+
+    // ✅ Deductions display — includes both leave types
+    setText(`days_absent_disp_${empId}`,       daysAbsent.toFixed(1));
+    setText(`absence_deduction_disp_${empId}`, absDeduction.toFixed(2));
+    setText(`leave_unpaid_disp_${empId}`,      leaveDaysUnpaid.toFixed(1));
+    setText(`leave_deduction_disp_${empId}`,   leaveDeduct.toFixed(2));
+    setText(`tax_disp_${empId}`,               tax.toFixed(2));
+    setText(`other_ded_disp_${empId}`,         otherDed.toFixed(2));
+
+    const totalDed = tax + lateDeduction + absDeduction + leaveDeduct + otherDed + dynamicDeductions;
+    setText(`total_ded_disp_${empId}`, totalDed.toFixed(2));
+
+    // Summary bar
+    const totalAdditions = otPay + nsdPay + holPay + regHolPay + incentives + tipsOthers + lodging + leaveAddition;
+    const gross          = basicSalary + totalAdditions;
+    const net            = gross + totalDemiminis - totalDed;
+
+    document.getElementById(`gross_${empId}`).textContent           = `₱${gross.toFixed(2)}`;
+    document.getElementById(`gross_input_${empId}`).value           = gross.toFixed(2);
+    document.getElementById(`additions_${empId}`).textContent       = `₱${totalAdditions.toFixed(2)}`;
+    document.getElementById(`additions_input_${empId}`).value       = totalAdditions.toFixed(2);
+    document.getElementById(`demiminis_total_${empId}`).textContent = `₱${totalDemiminis.toFixed(2)}`;
+    document.getElementById(`demiminis_input_${empId}`).value       = totalDemiminis.toFixed(2);
+    document.getElementById(`deductions_${empId}`).textContent      = `₱${totalDed.toFixed(2)}`;
+    document.getElementById(`deductions_input_${empId}`).value      = totalDed.toFixed(2);
+    document.getElementById(`net_${empId}`).textContent             = `₱${net.toFixed(2)}`;
+    document.getElementById(`net_input_${empId}`).value             = net.toFixed(2);
+
+    recalculateTotals();
+}
+
+function recalculateTotals() {
+    let totalGross = 0, totalNet = 0;
+    {% for item in preview_list %}
+    totalGross += parseFloat(document.getElementById(`gross_input_{{ item.employee.id }}`).value) || 0;
+    totalNet   += parseFloat(document.getElementById(`net_input_{{ item.employee.id }}`).value)   || 0;
+    {% endfor %}
+    document.getElementById('totalGross').textContent = `₱${totalGross.toFixed(2)}`;
+    document.getElementById('totalNet').textContent   = `₱${totalNet.toFixed(2)}`;
+}
+
+function toggleEmployeePanel() {
+    const panel = document.getElementById('employeePanel');
+    panel.classList.toggle('translate-x-full');
+    panel.classList.toggle('opacity-0');
+}
+
+// ── Finalize Modal Functions ─────────────────────────────────────────────────
+function openFinalizeModal() {
+    // Get current totals from the page
+    const totalGross = document.getElementById('totalGross').textContent;
+    const totalNet = document.getElementById('totalNet').textContent;
+    
+    // Update modal values
+    document.getElementById('modalTotalGross').textContent = totalGross;
+    document.getElementById('modalTotalNet').textContent = totalNet;
+    
+    // Show modal
+    const modal = document.getElementById('finalizeModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function closeFinalizeModal() {
+    const modal = document.getElementById('finalizeModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = ''; // Restore scrolling
+}
+
+function submitBatchPayroll() {
+    // Show loading state on button
+    const btn = event.target;
+    const originalContent = btn.innerHTML;
+    btn.innerHTML = '<svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Processing...';
+    btn.disabled = true;
+    btn.classList.add('opacity-75', 'cursor-not-allowed');
+    
+    // Close modal
+    closeFinalizeModal();
+    
+    // Submit the form
+    document.getElementById('batchPayrollForm').submit();
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('finalizeModal');
+        if (modal && !modal.classList.contains('hidden')) {
+            closeFinalizeModal();
+        }
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    {% for item in preview_list %}
+    recalculateEmployee('{{ item.employee.id }}');
+    {% endfor %}
+});
+</script>
+{% endblock %}

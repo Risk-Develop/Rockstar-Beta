@@ -1,0 +1,481 @@
+{% extends 'base.html' %}
+{% block title %}Payout Detail - {{ payout.employee.first_name }} {{ payout.employee.last_name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">Payout Detailssss</h1>
+        <div class="flex space-x-2">
+            <a href="{% url 'human_resource:hr_dashboard' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                &larr; Back to Dashboard
+            </a>
+            <a href="{% url 'human_resource:payout_pdf' payout.id %}" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                Download PDF
+            </a>
+            {% if payout.payroll_record.finalized %}
+            <a href="{% url 'human_resource:payout_unfinalize' payout.id %}" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">
+                Unfinalize
+            </a>
+            {% else %}
+            <a href="{% url 'human_resource:payout_edit' payout.id %}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                Edit
+            </a>
+            <a href="{% url 'human_resource:payout_finalize' payout.id %}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                Finalize
+            </a>
+            <a href="{% url 'human_resource:payout_delete' payout.id %}" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                Delete
+            </a>
+            {% endif %}
+            <a href="{% url 'human_resource:payout_list' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                Back to List
+            </a>
+        </div>
+    </div>
+    
+    {% if not payout.payroll_record.finalized %}
+    <div class="mb-4 p-4 bg-yellow-100 border border-yellow-700 rounded">
+        <strong>⚠️ Unfinalized Payroll:</strong> This payout can be edited or deleted because its payroll record has not been finalized yet.
+    </div>
+    {% endif %}
+
+    <!-- Employee Information -->
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+        <h2 class="text-lg font-semibold mb-4 border-b pb-2">Employee Information</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+                <span class="text-sm text-gray-500">Name</span>
+                <p class="font-medium">{{ payout.employee.first_name }} {{ payout.employee.last_name }}</p>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">Employee ID</span>
+                <p class="font-medium">{{ payout.employee.employee_number }}</p>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">Period</span>
+                <p class="font-medium">{{ payout.month }}/{{ payout.year }} - Cutoff {{ payout.cutoff }}</p>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">Status</span>
+                <p class="font-medium {% if payout.payroll_record.finalized %}text-green-600{% else %}text-yellow-600{% endif %}">
+                    {% if payout.payroll_record.finalized %}Finalized{% else %}Draft (Unfinalized){% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Earnings Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-green-700">EARNINGS</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Basic Salary</span>
+                    <span class="font-medium">₱{{ payout.details.basic_salary|default:"0.00"|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between border-t pt-2 mt-2">
+                    <span class="text-gray-600 font-semibold">Tips/Others</span>
+                    <span class="font-medium">₱{{ payout.details.tips_others|default:"0.00"|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600 font-semibold">Lodging Allowance</span>
+                    <span class="font-medium">₱{{ payout.details.lodging_allowance|default:"0.00"|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600 font-semibold">Incentives</span>
+                    <span class="font-medium">₱{{ payout.details.incentives|default:"0.00"|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600 font-semibold">Holiday Pay</span>
+                    <span class="font-medium">₱{{ payout.details.holiday_pay|default:"0.00"|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600 font-semibold">Holiday Hours</span>
+                    <span class="font-medium">{{ payout.details.holiday_hours|default:"0.00"|floatformat:2 }} hrs</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600 font-semibold">Regular Holiday Pay</span>
+                    <span class="font-medium">₱{{ payout.details.regular_holiday_pay|default:"0.00"|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600 font-semibold">Regular Holiday Hours</span>
+                    <span class="font-medium">{{ payout.details.regular_holiday_hours|default:"0.00"|floatformat:2 }} hrs</span>
+                </div>
+                    {% if earning_entries %}
+                <div class="flex justify-between border-t-2 border-green-200 pt-2 mt-2">
+                    <span class="text-gray-600 font-semibold">Dynamic Earnings</span>
+                    <span class="font-medium">₱{{ payout.details.total_dynamic_earnings|default:"0.00"|floatformat:2 }}</span>
+                </div>
+                {% endif %}
+                 {% if de_minimis_entries %}
+                
+                <div class="flex justify-between border-t-2 border-blue-200 pt-2 mt-2 bg-blue-50 rounded p-2">
+                    <span class="text-blue-700 font-semibold">Total De Minimis</span>
+                    <span class="font-bold text-blue-700">₱{{ payout.details.total_de_minimis|default:"0.00"|floatformat:2 }}</span>
+                </div>
+                {% endif %}
+                <div class="flex justify-between border-t-2 border-green-200 pt-2 mt-2 bg-green-50 rounded p-2">
+                    <span class="text-green-700 font-bold">TOTAL EARNINGS</span>
+                    <span class="font-bold text-green-700">₱{{ total_earnings|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-blue-700">OVERTIME & DIFFERENTIALS</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Overtime Hours</span>
+                    <span class="font-medium">{{ payout.details.overtime_hours|default:"0.00"|floatformat:2 }} hrs</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Overtime Pay</span>
+                    <span class="font-medium">₱{{ payout.details.overtime_pay|default:"0.00"|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">NSD Hours</span>
+                    <span class="font-medium">{{ payout.details.nsd_hours|default:"0.00"|floatformat:2 }} hrs</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Night Differential</span>
+                    <span class="font-medium">₱{{ payout.details.night_differential|default:"0.00"|floatformat:2 }}</span>
+                </div>
+                {% if de_minimis_entries %}
+  
+        <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-blue-700">DE MINIMIS ALLOWANCES</h2>
+        <div class="space-y-3">
+            {% for entry in de_minimis_entries %}
+            <div class="flex justify-between">
+                <span class="text-gray-600">{{ entry.de_minimis_type.name }}</span>
+                <span class="font-medium">₱{{ entry.amount|floatformat:2 }}</span>
+            </div>
+            {% endfor %}
+            <div class="flex justify-between border-t pt-2 mt-2">
+                <span class="font-semibold">Total De Minimis</span>
+                <span class="font-bold">₱{{ total_de_minimis|floatformat:2 }}</span>
+            </div>
+        </div>
+
+    {% endif %}
+            </div>
+            <!-- Leave Days Section -->
+                        <h2 class="mt-4 text-lg font-semibold mb-4 border-b pb-2 text-purple-700">LEAVE DAYS</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Leave Days (Paid)</span>
+                    <span class="font-medium">{{ payout.details.leave_days_paid|default:"0.00"|floatformat:2 }} days</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Leave Days (Unpaid)</span>
+                    <span class="font-medium">{{ payout.details.leave_days_unpaid|default:"0.00"|floatformat:2 }} days</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Leave Days Section -->
+
+    </div>
+
+    <!-- Deductions Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white shadow rounded-lg p-6">
+    <h2 class="text-lg font-semibold mb-4 border-b pb-2">DEDUCTIONS</h2>
+    <table class="w-full">
+        <tbody class="divide-y divide-gray-100">
+            
+            <!-- Withholding Tax -->
+            <tr>
+                <td class="py-2 text-gray-600">Withholding Tax</td>
+                <td class="py-2 text-right font-medium text-red-600">
+                    -₱{{ payout.details.withholding_tax|default:"0.00"|floatformat:2 }}
+                </td>
+            </tr>
+            
+            <!-- ✅ LATE DEDUCTION WITH BREAKDOWN -->
+            {% if payout.details.late_deduction > 0 %}
+            <tr class="bg-orange-50">
+                <td class="py-3 text-orange-800">
+                    <div class="font-medium">Late Deduction</div>
+                    {% with breakdown=payout.details.get_late_deduction_breakdown %}
+                    {% if breakdown %}
+                    <div class="text-xs text-gray-600 mt-1 space-y-0.5">
+                        <div>📝 Minutes Late: <span class="font-medium">{{ breakdown.minutes|floatformat:0 }} min</span></div>
+                        <div>⏰ Hours Charged: <span class="font-medium">{{ breakdown.hours_equivalent|floatformat:2 }} hrs</span></div>
+                        <div>💰 Hourly Rate: <span class="font-medium">₱{{ breakdown.hourly_rate|floatformat:2 }}</span></div>
+                        <div class="text-orange-700 font-medium mt-1">
+                            Formula: {{ breakdown.formula }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                </td>
+                <td class="py-3 text-right">
+                    <span class="font-bold text-orange-700">-₱{{ payout.details.late_deduction|floatformat:2 }}</span>
+                </td>
+            </tr>
+            {% endif %}
+            
+            <!-- Absence Deduction -->
+            {% if payout.details.absence_deduction > 0 %}
+            <tr>
+                <td class="py-2 text-gray-600">
+                    Absence Deduction
+                    <span class="block text-xs text-gray-500">
+                        {{ payout.details.days_absent|floatformat:1 }} days × ₱{{ payout.details.get_daily_rate|floatformat:2 }}
+                    </span>
+                </td>
+                <td class="py-2 text-right font-medium text-red-600">
+                    -₱{{ payout.details.absence_deduction|floatformat:2 }}
+                </td>
+            </tr>
+            {% endif %}
+            
+            <!-- Leave Deduction (Unpaid) -->
+            {% if payout.details.leave_days_unpaid > 0 %}
+            <tr>
+                <td class="py-2 text-gray-600">
+                    Leave Deduction (Unpaid)
+                    <span class="block text-xs text-gray-500">
+                        {{ payout.details.leave_days_unpaid|floatformat:1 }} days × ₱{{ payout.details.get_daily_rate|floatformat:2 }}
+                    </span>
+                </td>
+                <td class="py-2 text-right font-medium text-red-600">
+                    -₱{{ leave_deduction_amount|floatformat:2 }}
+                </td>
+            </tr>
+            {% endif %}
+            
+            <!-- Loan Deduction -->
+            {% if payout.details.loan_deduction > 0 %}
+            <tr>
+                <td class="py-2 text-gray-600">
+                    Loan Deduction
+                    <span class="block text-xs text-gray-500">
+                        Applied from approved loans
+                    </span>
+                </td>
+                <td class="py-2 text-right font-medium text-red-600">
+                    -₱{{ payout.details.loan_deduction|floatformat:2 }}
+                </td>
+            </tr>
+            {% endif %}
+            
+            <!-- Other Deductions -->
+            {% if payout.details.other_deductions > 0 %}
+            <tr>
+                <td class="py-2 text-gray-600">Other Deductions</td>
+                <td class="py-2 text-right font-medium text-red-600">
+                    -₱{{ payout.details.other_deductions|floatformat:2 }}
+                </td>
+            </tr>
+            {% endif %}
+            
+            <!-- Dynamic Deductions -->
+            {% for entry in deduction_entries %}
+            <tr>
+                <td class="py-2 text-gray-600">
+                    {{ entry.deduction_type.name }}
+                    {% if entry.deduction_type.is_government %}
+                    <span class="text-xs text-blue-600">(Government)</span>
+                    {% endif %}
+                </td>
+                <td class="py-2 text-right font-medium text-red-600">
+                    -₱{{ entry.amount|floatformat:2 }}
+                </td>
+            </tr>
+            {% endfor %}
+            
+        </tbody>
+        <tfoot class="border-t-2 border-red-500">
+            <tr>
+                <td class="py-3 font-bold text-red-700">Total Deductions</td>
+                <td class="py-3 text-right font-bold text-red-700">
+                    -₱{{ payout.total_deductions|floatformat:2 }}
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+
+ <!-- Deductions Breakdown -->
+    {% if deduction_entries %}
+    <div class="bg-white shadow rounded-lg p-6">
+        <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-red-700">DEDUCTIONS BREAKDOWN</h2>
+        <div class="space-y-3">
+            <div class="flex justify-between">
+                    <span class="text-gray-600">Withholding Tax</span>
+                    <span class="font-medium text-red-600">-₱{{ payout.details.withholding_tax|default:"0.00"|floatformat:2 }}</span>
+                </div>
+            {% for entry in deduction_entries %}
+            <div class="flex justify-between">
+                <span class="text-gray-600">
+                    {{ entry.deduction_type.name }}
+                    {% if entry.deduction_type.is_government %}
+                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded ml-1">Gov't</span>
+                    {% else %}
+                    <span class="text-xs bg-gray-100 text-gray-800 px-2 py-0.5 rounded ml-1">Other</span>
+                    {% endif %}
+                </span>
+                <span class="font-medium text-red-600">-₱{{ entry.amount|floatformat:2 }}</span>
+            </div>
+            {% endfor %}
+            <div class="flex justify-between border-t pt-2 mt-2">
+                <span class="font-semibold">Total Dynamic Deductions</span>
+                <span class="font-bold text-red-600">-₱{{ payout.details.total_dynamic_deductions|default:"0.00"|floatformat:2 }}</span>
+            </div>
+            <div class="flex justify-between border-t pt-2 mt-2">
+                <span class="font-semibold">Total Government Deductions</span>
+                <span class="font-bold text-red-600">-₱{{ payout.details.total_government_deductions|default:"0.00"|floatformat:2 }}</span>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
+        </div>
+
+
+<!-- ============================================================================
+     ADDITIONAL: ATTENDANCE SUMMARY CARD
+     Add this to show working days and rates used
+     ============================================================================ -->
+
+<div class="bg-white shadow rounded-lg p-6 mt-6">
+    <h2 class="text-lg font-semibold mb-4 border-b pb-2">ATTENDANCE & RATES</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+            <span class="text-sm text-gray-500">Working Days (Period)</span>
+            <p class="text-lg font-semibold text-blue-600">{{ payout.details.working_days }} days</p>
+        </div>
+        <div>
+            <span class="text-sm text-gray-500">Days Present</span>
+            <p class="text-lg font-semibold text-green-600">{{ payout.details.days_present|floatformat:1 }}</p>
+        </div>
+        <div>
+            <span class="text-sm text-gray-500">Daily Rate</span>
+            <p class="text-lg font-semibold">₱{{ payout.details.get_daily_rate|floatformat:2 }}</p>
+            <span class="text-xs text-gray-500">
+                ₱{{ payout.details.basic_salary|floatformat:2 }} ÷ {{ payout.details.working_days }} days
+            </span>
+        </div>
+        <div>
+            <span class="text-sm text-gray-500">Hourly Rate</span>
+            <p class="text-lg font-semibold">₱{{ payout.details.get_hourly_rate|floatformat:2 }}</p>
+            <span class="text-xs text-gray-500">Daily Rate ÷ hrs/day</span>
+        </div>
+    </div>
+    
+    {% if payout.details.late_minutes > 0 or payout.details.days_absent > 0 %}
+    <div class="mt-4 pt-4 border-t">
+        <h3 class="text-sm font-semibold text-gray-700 mb-2">Deduction Summary</h3>
+        <div class="grid grid-cols-2 gap-4">
+            {% if payout.details.late_minutes > 0 %}
+            <div class="bg-orange-50 rounded p-3">
+                <div class="text-xs text-gray-600">Late</div>
+                <div class="text-sm font-medium text-orange-700">
+                    {{ payout.details.late_minutes|floatformat:0 }} min → 
+                    {{ payout.details.late_hours_equivalent|floatformat:2 }} hrs charged
+                </div>
+                <div class="text-lg font-bold text-orange-800">
+                    -₱{{ payout.details.late_deduction|floatformat:2 }}
+                </div>
+            </div>
+            {% endif %}
+            {% if payout.details.days_absent > 0 %}
+            <div class="bg-red-50 rounded p-3">
+                <div class="text-xs text-gray-600">Absent</div>
+                <div class="text-sm font-medium text-red-700">
+                    {{ payout.details.days_absent|floatformat:1 }} days
+                </div>
+                <div class="text-lg font-bold text-red-800">
+                    -₱{{ payout.details.absence_deduction|floatformat:2 }}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>        
+
+<!-- ============================================================================
+     PAYSLIP PDF VERSION
+     If you have a payslip PDF template, add this section there too
+     ============================================================================ -->
+{% comment %}
+In payslip PDF template:
+
+DEDUCTIONS:
+Withholding Tax ................... ₱{{ payout.details.withholding_tax|floatformat:2 }}
+
+{% if payout.details.late_deduction > 0 %}
+Late Deduction
+  ({{ payout.details.late_minutes|floatformat:0 }}min → 
+   {{ payout.details.late_hours_equivalent|floatformat:2 }}hrs × 
+   ₱{{ payout.details.get_hourly_rate|floatformat:2 }}) ... ₱{{ payout.details.late_deduction|floatformat:2 }}
+{% endif %}
+
+{% if payout.details.absence_deduction > 0 %}
+Absence ({{ payout.details.days_absent|floatformat:1 }} days) ... ₱{{ payout.details.absence_deduction|floatformat:2 }}
+{% endif %}
+{% endcomment %}
+        
+       <!-- <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-red-700">GOVERNMENT CONTRIBUTIONS</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">SSS Contribution</span>
+                    <span class="font-medium text-red-600">-₱{{ payout.details.sss_contribution|default:"0.00"|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">PhilHealth</span>
+                    <span class="font-medium text-red-600">-₱{{ payout.details.philhealth_contribution|default:"0.00"|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Pag-IBIG</span>
+                    <span class="font-medium text-red-600">-₱{{ payout.details.pagibig_contribution|default:"0.00"|floatformat:2 }}</span>
+                </div>
+                
+            </div>
+        </div>
+    </div>-->
+
+    <!-- De Minimis Breakdown -->
+    
+    
+   
+
+    <!-- Summary Section -->
+    <div class="mt-4 bg-white shadow rounded-lg p-6">
+        <h2 class="text-lg font-semibold mb-4 border-b pb-2">SUMMARY</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+                <span class="text-sm text-gray-500">Gross Pay</span>
+                <p class="font-bold text-xl">₱{{ payout.gross|floatformat:2 }}</p>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">Total Deductions</span>
+                <p class="font-bold text-xl text-red-600">-₱{{ payout.total_deductions|floatformat:2 }}</p>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">NET PAY</span>
+                <p class="font-bold text-2xl text-green-600">₱{{ payout.net|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Note -->
+    {% if payout.details.note %}
+    <div class="mt-4 p-4 bg-gray-100 rounded-lg">
+        <span class="text-sm text-gray-500">Note:</span>
+        <p class="text-gray-700">{{ payout.details.note }}</p>
+    </div>
+    {% endif %}
+
+</div>
+
+
+    
+    
+    
+{% endblock %}

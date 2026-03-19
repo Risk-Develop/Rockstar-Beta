@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-g0)3d2e%+ning)1#8(sq*sea)_gs2ya%ee^g7-4atau5b1av#f
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.1.30','cook-alt-main-charts.trycloudflare.com']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.1.95', 'edges-sat-nikon-presently.trycloudflare.com']
 
 
 # Application definition
@@ -40,16 +40,38 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'finance',
-    'kpi',
-    'sales',
-    'marketing',
-    'employees',
-    'users',
-    'authentication',
-    'master_dashboard',
-    'human_resource',
+    'django.contrib.sites',
+    # Third-party apps
+    'tailwind',
+    'theme',
+    # AllAuth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    # Local apps
+    'App.finance',
+    'App.kpi',
+    'App.sales',
+    'App.marketing',
+    'App.employees',
+    'App.users',
+    'App.authentication',
+    'App.master_dashboard',
+    'App.human_resource',
 ]
+
+# django-allauth settings
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# New allauth settings (recommended)
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # Set to 'mandatory' for email verification
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -59,6 +81,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # django-allauth middleware
+    'allauth.account.middleware.AccountMiddleware',
+    # Custom middleware
+    'App.authentication.middleware.IdleSessionTimeoutMiddleware',
 ]
 
 ROOT_URLCONF = 'sub_company_system.urls'
@@ -73,6 +99,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'App.authentication.context_processors.session_context',
             ],
         },
     },
@@ -92,6 +119,13 @@ DATABASES = {
         'PASSWORD': 'Admin!123',  # password you set during install
         'HOST': 'localhost',
         'PORT': '5432',
+    }
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
     }
 }
 
@@ -129,12 +163,85 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Media files (uploaded files like payslips, loan docs)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Static files (Production)
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'), 
+    os.path.join(BASE_DIR, 'theme', 'static'),
+    os.path.join(BASE_DIR, 'node_modules'),
+]
+
+# Authentication
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = '/hr_dashboard/'
+LOGOUT_REDIRECT_URL = '/'
+
+# Tailwind CSS Configuration
+TAILWIND_APP_NAME = 'theme'
+NPM_BIN_PATH = "npm.cmd"
+
+# Owner/Developer Bypass Login Credentials
+# IMPORTANT: Store hashed password in production!
+OWNER_LOGIN_ID = "OWNER"
+# Use environment variable in production: OWNER_PASSWORD_HASH
+# Generate hash using: from django.contrib.auth.hashers import make_password; print(make_password('your-password'))
+OWNER_PASSWORD_HASH = os.environ.get('OWNER_PASSWORD_HASH', 'pbkdf2_sha256$1000000$8gTNlGe2ULigjruEFdXSGt$P+9bpcF+GBFzaK2VhkUfZXDYCRB/EcU111VefGuRm7E=')
+
+# Session Security
+SESSION_COOKIE_AGE = 3600  # 1 hour (in seconds)
+SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+SESSION_COOKIE_HTTPONLY = True  # Prevent XSS from accessing cookies
+SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Use session age, not browser close
+
+# ====================================================================
+# SESSION TIMEOUT SETTINGS (You edit these values)
+# ====================================================================
+# IDLE_SESSION_TIMEOUT: Total time (seconds) before auto-logout
+#   - 60 = 1 minute (testing)
+#   - 1800 = 30 minutes (production)
+# IDLE_SESSION_TIMEOUT_WARNING: When to show warning banner
+#   - 30 = Show warning 30 seconds before logout
+#   - 300 = Show warning 5 minutes before logout
+# ====================================================================
+
+IDLE_SESSION_TIMEOUT = 7200  # Total timeout: 7200 seconds = 2 hours
+IDLE_SESSION_TIMEOUT_WARNING = 300  # Warning shows when 5 minutes remaining
+
+# ====================================================================
+# RATE LIMITING SETTINGS (You edit these values)
+# ====================================================================
+# MAX_LOGIN_ATTEMPTS: Number of failed attempts before lockout
+#   - 5 = Lock after 5 failed attempts
+# LOCKOUT_DURATION: Time in seconds to lock the account
+#   - 900 = 15 minutes
+#   - 1800 = 30 minutes
+# ====================================================================
+
+MAX_LOGIN_ATTEMPTS = 5  # Lock after 5 failed attempts
+LOCKOUT_DURATION = 900  # 15 minutes lockout
+
+# CSRF Protection
+CSRF_COOKIE_AGE = 3600  # 1 hour
+CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access (needed for some AJAX)
+CSRF_COOKIE_SAMESITE = 'Lax'  # CSRF protection
+CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'  # Custom header for API calls
+CSRF_TRUSTED_ORIGINS = ['https://edges-sat-nikon-presently.trycloudflare.com']
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 

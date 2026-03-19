@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Login {% endblock %}
+
+{% block content %}
+
+<div id="dept-container" class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+    <!-- Dark Mode Toggle -->
+    <button id="theme-toggle" onclick="toggleTheme()" class="absolute top-4 right-4 p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition">
+        <span id="theme-icon" class="text-xl">🌙</span>
+    </button>
+    <div id="dept-card" class="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
+        <!-- Logo Placeholder -->
+        <div class="flex justify-center mb-6">
+            <img src="{% static 'img/Rockstar.png' %}" alt="Logo" class="h-16 w-16">
+        </div>
+
+        <h2 id="dept-title" class="text-2xl font-bold text-center mb-6">Select Department</h2>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-2 text-sm {{ message.tags }} text-center">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        {% if departments %}
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="department" class="block text-sm font-medium mb-1">Choose a department</label>
+                    <select name="department" id="department" required
+                        class="w-full p-2 border rounded focus:ring-2 focus:ring-orange-400 bg-white">
+                        {% for dept in departments %}
+                            <option value="{{ dept }}">{{ dept }}</option>
+                        {% endfor %}
+                        <option value="All">All Departments (Full Access)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="w-full bg-orange-500 text-white py-2 rounded hover:bg-orange-600 transition">
+                    Continue
+                </button>
+            </form>
+        {% else %}
+            <p id="dept-no-dept" class="text-center text-gray-600">No departments available.</p>
+        {% endif %}
+
+        <p id="dept-logout" class="mt-4 text-center text-sm">
+            <form method="post" action="{% url 'logout' %}?next=/login/" id="logout-form-select" style="display: inline;">
+                {% csrf_token %}
+                <button type="button" onclick="confirmLogout('logout-form-select')" class="text-red-500 hover:underline">Logout</button>
+            </form>
+        </p>
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Dark colors
+    const darkBg = '#111827';
+    const darkCard = '#1f2937';
+    const darkText = '#f3f4f6';
+    const darkMuted = '#9ca3af';
+    const darkInputBg = '#374151';
+    const darkInputBorder = '#4b5563';
+    
+    // Light colors
+    const lightBg = '#f3f4f6';
+    const lightCard = '#ffffff';
+    const lightText = '#1f2937';
+    const lightMuted = '#6b7280';
+    const lightInputBg = '#ffffff';
+    const lightInputBorder = '#d1d5cb';
+    
+    let isDark = false;
+
+    function toggleTheme() {
+        const container = document.getElementById('dept-container');
+        const card = document.getElementById('dept-card');
+        const title = document.getElementById('dept-title');
+        const icon = document.getElementById('theme-icon');
+        const noDept = document.getElementById('dept-no-dept');
+        
+        // Toggle select and labels
+        const select = document.getElementById('department');
+        const labels = document.querySelectorAll('label');
+        
+        if (isDark) {
+            // Switch to light mode
+            container.style.backgroundColor = lightBg;
+            card.style.backgroundColor = lightCard;
+            card.style.color = lightText;
+            title.style.color = lightText;
+            if (noDept) noDept.style.color = lightMuted;
+            icon.textContent = '🌙';
+            
+            if (select) {
+                select.style.backgroundColor = lightInputBg;
+                select.style.borderColor = lightInputBorder;
+                select.style.color = lightText;
+            }
+            
+            labels.forEach(label => {
+                label.style.color = lightText;
+            });
+            
+            isDark = false;
+            localStorage.setItem('theme', 'light');
+        } else {
+            // Switch to dark mode
+            container.style.backgroundColor = darkBg;
+            card.style.backgroundColor = darkCard;
+            card.style.color = darkText;
+            title.style.color = darkText;
+            if (noDept) noDept.style.color = darkMuted;
+            icon.textContent = '🌞';
+            
+            if (select) {
+                select.style.backgroundColor = darkInputBg;
+                select.style.borderColor = darkInputBorder;
+                select.style.color = darkText;
+            }
+            
+            labels.forEach(label => {
+                label.style.color = darkText;
+            });
+            
+            isDark = true;
+            localStorage.setItem('theme', 'dark');
+        }
+    }
+
+    // Initialize theme on page load
+    (function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+            toggleTheme();
+        }
+    })();
+</script>
+{% endblock %}

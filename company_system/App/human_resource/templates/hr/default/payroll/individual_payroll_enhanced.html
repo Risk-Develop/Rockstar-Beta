@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Individual Payroll Processing{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 py-6">
+    <div class="max-w-7xl mx-auto px-4">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Individual Payroll Processing</h1>
+            <p class="text-gray-600 mt-2">Process payroll for individual employees with dynamic settings</p>
+        </div>
+
+        {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+            <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700 border border-red-200{% else %}bg-green-100 text-green-700 border border-green-200{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{% url 'human_resource:individual_payroll_preview' %}" id="payrollForm">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Left Column: Period & Employee Selection -->
+                <div class="lg:col-span-1 space-y-6">
+                    
+                    <!-- Period Selection Card -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="px-6 py-4" style="background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);">
+                            <h2 class="text-white font-semibold flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                Period Selection
+                            </h2>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Month</label>
+                                <select name="month" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    {% for num, name in months %}
+                                    <option value="{{ num }}" {% if num == current_month %}selected{% endif %}>{{ name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Year</label>
+                                <input type="number" name="year" value="{{ current_year }}" min="2000" max="2100" 
+                                       class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Cutoff</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <label class="relative cursor-pointer">
+                                        <input type="radio" name="cutoff" value="1" class="peer sr-only" checked>
+                                        <div class="px-4 py-2.5 rounded-lg border-2 border-gray-200 peer-checked:border-blue-500 peer-checked:bg-blue-50 text-center transition-all">
+                                            <span class="text-sm font-medium text-gray-700">1st Cutoff</span>
+                                            <p class="text-xs text-gray-500">Day 1-15</p>
+                                        </div>
+                                    </label>
+                                    <label class="relative cursor-pointer">
+                                        <input type="radio" name="cutoff" value="2" class="peer sr-only">
+                                        <div class="px-4 py-2.5 rounded-lg border-2 border-gray-200 peer-checked:border-blue-500 peer-checked:bg-blue-50 text-center transition-all">
+                                            <span class="text-sm font-medium text-gray-700">2nd Cutoff</span>
+                                            <p class="text-xs text-gray-500">Day 16-End</p>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Employee Selection Card -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="px-6 py-4" style="background: linear-gradient(90deg, #16a34a 0%, #15803d 100%);">
+                            <h2 class="text-white font-semibold flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                                Select Employee
+                            </h2>
+                        </div>
+                        <div class="p-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Employee</label>
+                            <select name="employee" id="employeeSelect" required
+                                    class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                <option value="">-- Select Employee --</option>
+                                {% for emp in employees %}
+                                <option value="{{ emp.pk }}" 
+                                        data-name="{{ emp.first_name }} {{ emp.last_name }}"
+                                        data-id="{{ emp.employee_number }}"
+                                        data-dept="{{ emp.get_department_display }}"
+                                        data-title="{{ emp.get_job_title_display }}">
+                                    {{ emp.last_name }}, {{ emp.first_name }} ({{ emp.employee_number }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" 
+                            class="w-full py-3 px-6 text-white font-semibold rounded-lg shadow-md hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all transform hover:scale-[1.02]"
+                            style="background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);">
+                        <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                        Load Payroll Data
+                    </button>
+                </div>
+
+                <!-- Right Column: Preview (initially hidden) -->
+                <div class="lg:col-span-2" id="previewSection">
+                    <div class="bg-gray-200 rounded-xl p-8 text-center h-full flex items-center justify-center">
+                        <div class="text-center">
+                            <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            <h3 class="text-lg font-medium text-gray-600 mb-2">No Payroll Data Loaded</h3>
+                            <p class="text-gray-500">Select an employee and click "Load Payroll Data" to preview payroll</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Floating Employee Info Panel -->
+<div id="employeeInfoPanel" class="fixed bottom-6 right-6 w-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 hidden">
+    <div class="px-6 py-4 bg-indigo-600 dark:bg-indigo-900 rounded-t-xl">
+        <div class="flex items-center justify-between">
+            <h3 class="text-white font-semibold flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                Employee Information
+            </h3>
+            <button type="button" onclick="toggleEmployeePanel()" class="text-white hover:text-gray-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <div class="p-6 space-y-4">
+        <!-- Employee Basic Info -->
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Name</p>
+                <p class="font-medium text-gray-800 dark:text-gray-200" id="empName">-</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Employee ID</p>
+                <p class="font-medium text-gray-800 dark:text-gray-200" id="empId">-</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Department</p>
+                <p class="font-medium text-gray-800 dark:text-gray-200" id="empDept">-</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Position</p>
+                <p class="font-medium text-gray-800 dark:text-gray-200" id="empTitle">-</p>
+            </div>
+        </div>
+        
+        <!-- Divider -->
+        <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                Leave Credits
+            </h4>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="p-3 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-100 dark:border-green-800">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-green-600 dark:text-green-400 font-semibold">Vacation Leave</span>
+                        <span class="text-lg font-bold text-green-700 dark:text-green-300" id="empVL">-</span>
+                    </div>
+                    <div class="text-xs text-green-500 dark:text-green-400 mt-1" id="empVLDetails">/ -</div>
+                </div>
+                <div class="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-800">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-blue-600 dark:text-blue-400 font-semibold">Sick Leave</span>
+                        <span class="text-lg font-bold text-blue-700 dark:text-blue-300" id="empSL">-</span>
+                    </div>
+                    <div class="text-xs text-blue-500 dark:text-blue-400 mt-1" id="empSLDetails">/ -</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Divider -->
+        <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Attendance This Period
+            </h4>
+            <div class="grid grid-cols-3 gap-2">
+                <div class="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-100 dark:border-green-800 text-center">
+                    <div class="text-lg font-bold text-green-600 dark:text-green-400" id="empPresent">-</div>
+                    <div class="text-xs text-green-500 dark:text-green-400">Present</div>
+                </div>
+                <div class="p-2 bg-red-50 dark:bg-red-900/30 rounded-lg border border-red-100 dark:border-red-800 text-center">
+                    <div class="text-lg font-bold text-red-600 dark:text-red-400" id="empAbsent">-</div>
+                    <div class="text-xs text-red-500 dark:text-red-400">Absent</div>
+                </div>
+                <div class="p-2 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg border border-yellow-100 dark:border-yellow-800 text-center">
+                    <div class="text-lg font-bold text-yellow-600 dark:text-yellow-400" id="empLate">-</div>
+                    <div class="text-xs text-yellow-500 dark:text-yellow-400">Late</div>
+                </div>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+                <div class="p-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Clock In Avg</div>
+                    <div class="font-mono text-sm font-medium text-gray-800 dark:text-gray-200" id="empClockIn">-</div>
+                </div>
+                <div class="p-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Clock Out Avg</div>
+                    <div class="font-mono text-sm font-medium text-gray-800 dark:text-gray-200" id="empClockOut">-</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bank Info -->
+        <div class="border-t border-gray-200 pt-4">
+            <h4 class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                </svg>
+                Bank Account
+            </h4>
+            <p class="text-sm text-gray-600" id="empBank">No bank account registered</p>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Toggle Button -->
+<button type="button" onclick="toggleEmployeePanel()" id="floatingToggleBtn" 
+        class="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg border-2 border-white z-40 hidden"
+        style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">
+    <svg class="w-6 h-6 text-white mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+    </svg>
+</button>
+
+<script>
+let employeePanelOpen = false;
+
+function toggleEmployeePanel() {
+    const panel = document.getElementById('employeeInfoPanel');
+    const btn = document.getElementById('floatingToggleBtn');
+    employeePanelOpen = !employeePanelOpen;
+    
+    if (employeePanelOpen) {
+        panel.classList.remove('hidden');
+        btn.classList.add('hidden');
+    } else {
+        panel.classList.add('hidden');
+        btn.classList.remove('hidden');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const employeeSelect = document.getElementById('employeeSelect');
+    const panel = document.getElementById('employeeInfoPanel');
+    const btn = document.getElementById('floatingToggleBtn');
+    
+    employeeSelect.addEventListener('change', function() {
+        const selected = this.options[this.selectedIndex];
+        
+        if (this.value) {
+            // Show the floating button
+            btn.classList.remove('hidden');
+            
+            // Set basic info
+            document.getElementById('empName').textContent = selected.dataset.name || '-';
+            document.getElementById('empId').textContent = selected.dataset.id || '-';
+            document.getElementById('empDept').textContent = selected.dataset.dept || '-';
+            document.getElementById('empTitle').textContent = selected.dataset.title || '-';
+            
+            // Fetch additional data from API
+            fetch(`/hr_dashboard/api/employee/${this.value}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Bank info
+                    if (data.bank && data.bank.name) {
+                        document.getElementById('empBank').textContent = `${data.bank.name} - ${data.bank.account_number}`;
+                    } else {
+                        document.getElementById('empBank').textContent = 'No bank account registered';
+                    }
+                    
+                    // Leave credits
+                    if (data.leave_credits) {
+                        // VL
+                        const vl = data.leave_credits.VL || { remaining: 0, total: 0 };
+                        document.getElementById('empVL').textContent = vl.remaining;
+                        document.getElementById('empVLDetails').textContent = `/ ${vl.total} days`;
+                        
+                        // SL
+                        const sl = data.leave_credits.SL || { remaining: 0, total: 0 };
+                        document.getElementById('empSL').textContent = sl.remaining;
+                        document.getElementById('empSLDetails').textContent = `/ ${sl.total} days`;
+                    } else {
+                        document.getElementById('empVL').textContent = '-';
+                        document.getElementById('empVLDetails').textContent = '/ -';
+                        document.getElementById('empSL').textContent = '-';
+                        document.getElementById('empSLDetails').textContent = '/ -';
+                    }
+                    
+                    // Attendance
+                    if (data.attendance) {
+                        document.getElementById('empPresent').textContent = data.attendance.present || 0;
+                        document.getElementById('empAbsent').textContent = data.attendance.absent || 0;
+                        document.getElementById('empLate').textContent = data.attendance.late || 0;
+                        document.getElementById('empClockIn').textContent = data.attendance.avg_clock_in || '-';
+                        document.getElementById('empClockOut').textContent = data.attendance.avg_clock_out || '-';
+                    } else {
+                        document.getElementById('empPresent').textContent = '-';
+                        document.getElementById('empAbsent').textContent = '-';
+                        document.getElementById('empLate').textContent = '-';
+                        document.getElementById('empClockIn').textContent = '-';
+                        document.getElementById('empClockOut').textContent = '-';
+                    }
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    document.getElementById('empBank').textContent = 'Error loading bank info';
+                });
+        } else {
+            panel.classList.add('hidden');
+            btn.classList.add('hidden');
+        }
+    });
+});
+</script>
+{% endblock %}

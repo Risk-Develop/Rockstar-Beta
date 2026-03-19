@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% load static %}
+{% load allauth %}
+{% block title %} Login {% endblock %}
+
+{% block content %}
+
+<div id="login-container" class="min-h-screen flex items-center justify-center bg-gray-100 px-4" role="main" aria-label="Login page">
+    <!-- Dark Mode Toggle -->
+    <button id="theme-toggle" onclick="toggleTheme()" class="absolute top-4 right-4 p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2" aria-label="Toggle dark mode" type="button">
+        <span id="theme-icon" class="text-xl" aria-hidden="true">🌙</span>
+    </button>
+    <div id="login-card" class="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
+        <!-- Logo Placeholder -->
+        <div class="flex justify-center mb-6">
+            <img src="{% static 'img/Rockstar.png' %}" alt="Logo" class="h-16 w-16">
+        </div>
+
+        <h2 id="login-title" class="text-2xl font-bold text-center mb-6">Login to Your Account</h2>
+
+        {% if messages %}
+            <div aria-live="polite" aria-atomic="true" class="mb-2">
+                {% for message in messages %}
+                    <div class="text-sm {{ message.tags }} text-center" role="alert">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% element form method="post" action=url form_class="space-y-4" %}
+            {% slot body %}
+                {% csrf_token %}
+                <div>
+                    <label for="id_login" id="label-email" class="block text-sm font-medium mb-1">Email Address</label>
+                    <input type="email" name="login" id="id_login" placeholder="example@email.com" required
+                        class="w-full p-2 border rounded focus:ring-2 focus:ring-orange-400 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2" aria-describedby="login-desc">
+                    <span id="login-desc" class="sr-only">Enter your email address</span>
+                </div>
+                <div>
+                    <label for="id_password" id="label-password" class="block text-sm font-medium mb-1">Password</label>
+                    <div class="relative">
+                        <input type="password" name="password" id="id_password" placeholder="Enter password" required
+                            class="w-full px-3 py-2.5 pr-10 border rounded focus:ring-2 focus:ring-orange-400 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2" aria-describedby="password-desc">
+                        <span id="password-desc" class="sr-only">Enter your password</span>
+                        <button type="button" onclick="togglePassword('id_password')" class="absolute right-2 top-0 bottom-0 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 rounded"
+                            aria-label="Toggle password visibility" aria-pressed="false">
+                            <svg id="id_password-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center">
+                    <input type="checkbox" name="remember" id="id_remember"
+                        class="h-4 w-4 text-orange-500 border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                    <label for="id_remember" id="label-remember" class="ml-2 text-sm text-gray-600">Remember me</label>
+                </div>
+
+                {% if redirect_field_value %}
+                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                {% endif %}
+            {% endslot %}
+
+            {% slot actions %}
+                <button type="submit" id="login-btn" class="w-full bg-orange-500 text-white py-2 rounded hover:bg-orange-600 transition focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                    <span id="login-btn-text">Sign In</span>
+                    <svg id="login-btn-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="hidden animate-spin h-5 w-5 ml-2">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            {% endslot %}
+        {% endelement %}
+
+        <p id="login-link" class="mt-4 text-center text-sm">
+            Don't have an account? <a href="{% url 'account_signup' %}" class="text-orange-500 font-semibold hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 rounded px-1">Sign Up</a>
+        </p>
+
+        <p class="mt-2 text-center text-sm">
+            <a href="{% url 'account_reset_password' %}" class="text-orange-500 hover:underline">Forgot your password?</a>
+        </p>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Dark colors
+    const darkBg = '#111827';
+    const darkCard = '#1f2937';
+    const darkText = '#f3f4f6';
+    const darkMuted = '#9ca3af';
+    const darkInputBg = '#374151';
+    const darkInputBorder = '#4b5563';
+    
+    // Light colors
+    const lightBg = '#f3f4f6';
+    const lightCard = '#ffffff';
+    const lightText = '#1f2937';
+    const lightMuted = '#6b7280';
+    const lightInputBg = '#ffffff';
+    const lightInputBorder = '#d1d5db';
+    
+    // Loading state handler
+    const loginForm = document.querySelector('form');
+    const loginBtn = document.getElementById('login-btn');
+    const loginBtnText = document.getElementById('login-btn-text');
+    const loginBtnSpinner = document.getElementById('login-btn-spinner');
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', function() {
+            // Show loading state
+            if (loginBtn) {
+                loginBtn.disabled = true;
+                loginBtnText.textContent = 'Logging in...';
+                loginBtnSpinner.classList.remove('hidden');
+            }
+            
+            // Re-enable after 10 seconds as fallback
+            setTimeout(function() {
+                if (loginBtn) {
+                    loginBtn.disabled = false;
+                    loginBtnText.textContent = 'Sign In';
+                    loginBtnSpinner.classList.add('hidden');
+                }
+            }, 10000);
+        });
+    }
+    
+    let isDark = false;
+
+    function togglePassword(fieldId) {
+        const field = document.getElementById(fieldId);
+        const icon = document.getElementById(fieldId + '-icon');
+        const button = field.nextElementSibling;
+        const eyePath = '<path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />';
+        const eyeSlashPath = '<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />';
+        
+        if (field.type === 'password') {
+            field.type = 'text';
+            if (icon) icon.innerHTML = eyeSlashPath;
+            if (button) button.setAttribute('aria-pressed', 'true');
+        } else {
+            field.type = 'password';
+            if (icon) icon.innerHTML = eyePath;
+            if (button) button.setAttribute('aria-pressed', 'false');
+        }
+    }
+
+    function toggleTheme() {
+        const container = document.getElementById('login-container');
+        const card = document.getElementById('login-card');
+        const title = document.getElementById('login-title');
+        const icon = document.getElementById('theme-icon');
+        
+        // Toggle inputs and labels
+        const inputs = document.querySelectorAll('input');
+        const labels = document.querySelectorAll('label');
+        
+        if (isDark) {
+            // Switch to light mode
+            if (container) container.style.backgroundColor = lightBg;
+            if (card) {
+                card.style.backgroundColor = lightCard;
+                card.style.color = lightText;
+            }
+            if (title) title.style.color = lightText;
+            if (icon) icon.textContent = '🌙';
+            
+            inputs.forEach(input => {
+                if (input.type !== 'checkbox') {
+                    input.style.backgroundColor = lightInputBg;
+                    input.style.borderColor = lightInputBorder;
+                    input.style.color = lightText;
+                }
+            });
+            
+            labels.forEach(label => {
+                if (label.htmlFor !== 'id_remember') {
+                    label.style.color = lightText;
+                } else {
+                    label.style.color = lightMuted;
+                }
+            });
+            
+            isDark = false;
+            localStorage.setItem('theme', 'light');
+        } else {
+            // Switch to dark mode
+            if (container) container.style.backgroundColor = darkBg;
+            if (card) {
+                card.style.backgroundColor = darkCard;
+                card.style.color = darkText;
+            }
+            if (title) title.style.color = darkText;
+            if (icon) icon.textContent = '🌞';
+            
+            inputs.forEach(input => {
+                if (input.type !== 'checkbox') {
+                    input.style.backgroundColor = darkInputBg;
+                    input.style.borderColor = darkInputBorder;
+                    input.style.color = darkText;
+                }
+            });
+            
+            labels.forEach(label => {
+                if (label.htmlFor !== 'id_remember') {
+                    label.style.color = darkText;
+                } else {
+                    label.style.color = darkMuted;
+                }
+            });
+            
+            isDark = true;
+            localStorage.setItem('theme', 'dark');
+        }
+    }
+
+    // Initialize theme on page load
+    (function initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+            toggleTheme();
+        }
+    })();
+</script>
+{% endblock %}

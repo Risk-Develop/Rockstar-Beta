@@ -1,0 +1,14 @@
+{
+    "name": "theme",
+    "version": "1.0.0",
+    "description": "Tailwind CSS theme for the project",
+    "scripts": {
+        "build": "tailwindcss --input ./src/styles.css --output ./static/styles.css --minify"
+    },
+    "dependencies": {
+        "flowbite": "^4.0.1"
+    },
+    "devDependencies": {
+        "tailwindcss": "^3.4.0"
+    }
+}

@@ -1,0 +1,541 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ page_title }} - Survey{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'hr/dashboard/hr_sidebar.html' %}
+
+<main id="mainContent" class="md:ml-64 pt-20 min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+
+    <!-- Header -->
+    <div class="bg-white shadow-sm py-6 px-4 mb-6">
+        <div class="max-w-2xl mx-auto text-center">
+            <h1 class="text-3xl font-bold text-gray-800">{{ survey.name }}</h1>
+            {% if survey.description %}
+            <p class="text-gray-600 mt-2">{{ survey.description }}</p>
+            {% endif %}
+            
+            <!-- Current Period Badge -->
+            <div class="mt-3 inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                {{ current_period|default:"Monthly Survey" }}
+            </div>
+            
+            <!-- Progress Indicator -->
+            <div class="mt-4">
+                <div class="flex items-center justify-between text-sm text-gray-500 mb-2">
+                    <span>Question <span x-text="currentPage + 1">1</span> of <span x-text="totalPages">1</span></span>
+                    <span><span x-text="answeredCount">0</span> of <span x-text="requiredCount">0</span> required answered</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                         :style="'width: ' + ((currentPage + 1) / totalPages * 100) + '%'"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-2xl mx-auto px-4 pb-8" x-data="surveyManager()">
+
+        <!-- Survey Card -->
+        <div class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+
+            {% if already_responded %}
+            <!-- Already Responded Message -->
+            <div class="text-center py-8">
+                <div class="text-6xl mb-4">✅</div>
+                <h2 class="text-xl font-semibold text-gray-800 mb-2">Thank You!</h2>
+                <p class="text-gray-600">You have already submitted your feedback for <span class="font-semibold">{{ responded_period|default:current_period }}</span>.</p>
+                <p class="text-gray-500 mt-2 text-sm">You can submit again next month!</p>
+            </div>
+            {% else %}
+
+            <!-- Anonymous Toggle - Only show if survey allows anonymous -->
+            {% if survey.allow_anonymous %}
+            <div class="flex items-center justify-between mb-8 p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center">
+                    <input type="checkbox" id="anonymous-toggle" x-model="is_anonymous"
+                           class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="anonymous-toggle" class="ml-2 text-sm font-medium text-gray-700">
+                        Submit Anonymously
+                    </label>
+                </div>
+                <span class="text-xs text-gray-500" x-show="!is_anonymous">
+                    Your response is confidential
+                </span>
+                <span class="text-xs text-gray-500" x-show="is_anonymous">
+                    No tracking information stored
+                </span>
+            </div>
+            {% endif %}
+
+            <!-- Questions Container -->
+            <div class="space-y-8">
+                <template x-for="(question, qIndex) in currentQuestions" :key="question.id">
+                    <div class="question-block">
+                        <!-- Question Text -->
+                        <label class="block mb-4 text-lg font-medium text-gray-800">
+                            <span x-text="(currentPage * questionsPerPage) + qIndex + 1"></span>. 
+                            <span x-text="question.question_text"></span>
+                            <span x-show="question.is_required" class="text-red-500">*</span>
+                        </label>
+
+                        <!-- NPS Score Question -->
+                        <div x-show="question.question_type === 'nps'" class="mb-6">
+                            <!-- Score Labels -->
+                            <div class="flex justify-between mb-3 px-2">
+                                <span class="text-sm font-bold text-red-500">Not Likely</span>
+                                <span class="text-sm font-bold text-green-500">Very Likely</span>
+                            </div>
+                            
+                            <!-- Custom Slider -->
+                            <div class="custom-slider-wrap mb-4"
+                                 @mousedown="startDrag($event, question.id)"
+                                 @touchstart.prevent="startDrag($event, question.id)">
+                                <div class="custom-slider-track">
+                                    <div class="custom-slider-fill" :style="'width:' + (getScore(question.id) !== null ? getScore(question.id) / 10 * 100 : 50) + '%'"></div>
+                                    <div class="custom-slider-thumb" :style="'left:' + (getScore(question.id) !== null ? getScore(question.id) / 10 * 100 : 50) + '%'"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Score Display -->
+                            <div class="text-center">
+                                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-2">
+                                    <span class="text-3xl font-bold" :class="getScore(question.id) !== null ? getScoreColor(question.id) : 'text-gray-400'" x-text="getScore(question.id) !== null ? getScore(question.id) : '-'"></span>
+                                </div>
+                                <p class="text-sm font-medium" :class="getScore(question.id) !== null ? getScoreColor(question.id) : 'text-gray-400'" x-text="getScore(question.id) !== null ? getScoreLabel(question.id) : 'Drag to select'"></p>
+                            </div>
+                        </div>
+
+                        <!-- Rating 1-5 Question -->
+                        <div x-show="question.question_type === 'rating_5'" class="mb-6">
+                            <div class="flex justify-center gap-2">
+                                <template x-for="star in [1,2,3,4,5]" :key="star">
+                                    <button type="button"
+                                            @click="setRating(question.id, star)"
+                                            class="w-12 h-12 rounded-full text-2xl transition-all"
+                                            :class="getRating(question.id) >= star ? 'bg-yellow-400 text-white' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'">
+                                        ★
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Rating 1-3 Question -->
+                        <div x-show="question.question_type === 'rating_3'" class="mb-6">
+                            <div class="flex justify-center gap-4">
+                                <template x-for="rating in [{val:1, label:'Poor'},{val:2, label:'Average'},{val:3, label:'Good'}]" :key="rating.val">
+                                    <button type="button"
+                                            @click="setRating(question.id, rating.val)"
+                                            class="px-4 py-3 rounded-lg font-medium transition-all"
+                                            :class="getRating(question.id) === rating.val ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">
+                                        <span x-text="rating.val"></span>
+                                        <span class="block text-xs" x-text="rating.label"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Text Question -->
+                        <div x-show="question.question_type === 'text'" class="mb-6">
+                            <textarea x-model="answers[question.id].text"
+                                      rows="3"
+                                      class="block w-full p-3 text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="Enter your answer..."></textarea>
+                        </div>
+
+                        <!-- Yes/No Question -->
+                        <div x-show="question.question_type === 'yes_no'" class="mb-6">
+                            <div class="flex justify-center gap-4">
+                                <button type="button"
+                                        @click="setBoolean(question.id, true)"
+                                        class="px-6 py-3 rounded-lg font-medium transition-all"
+                                        :class="answers[question.id].boolean === true ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">
+                                    Yes
+                                </button>
+                                <button type="button"
+                                        @click="setBoolean(question.id, false)"
+                                        class="px-6 py-3 rounded-lg font-medium transition-all"
+                                        :class="answers[question.id].boolean === false ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'">
+                                    No
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Required indicator -->
+                        <p x-show="question.is_required && !isAnswered(question.id)" class="text-red-500 text-sm mt-2">
+                            This question is required
+                        </p>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+                <!-- Previous Button -->
+                <button type="button"
+                        x-show="currentPage > 0"
+                        @click="previousPage()"
+                        class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+                    ← Previous
+                </button>
+                <div x-show="currentPage === 0"></div>
+
+                <!-- Next/Submit Button -->
+                <button type="button"
+                        x-show="currentPage < totalPages - 1"
+                        @click="nextPage()"
+                        :disabled="!canProceed()"
+                        class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Next →
+                </button>
+
+                <button type="button"
+                        x-show="currentPage === totalPages - 1"
+                        @click="submitSurvey()"
+                        :disabled="!canSubmit() || submitting"
+                        class="px-5 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span x-show="!submitting">Submit Survey</span>
+                    <span x-show="submitting">Submitting...</span>
+                </button>
+            </div>
+
+            {% endif %}
+        </div>
+
+        <!-- Privacy Notice -->
+        <div class="text-center mt-6 text-sm text-gray-500">
+            <p>Your feedback helps us improve the workplace for everyone.</p>
+            <p class="mt-1">All responses are treated confidentially.</p>
+        </div>
+    </div>
+
+</main>
+
+<script>
+// Toast notification function
+function showToast(message, type = 'info') {
+    const existingToast = document.getElementById('survey-toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    const toast = document.createElement('div');
+    toast.id = 'survey-toast';
+    toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-y-0 ${
+        type === 'success' ? 'bg-green-500 text-white' : 
+        type === 'error' ? 'bg-red-500 text-white' : 
+        type === 'warning' ? 'bg-yellow-500 text-white' : 'bg-blue-500 text-white'
+    }`;
+    toast.innerHTML = `
+        <div class="flex items-center gap-3">
+            <span class="text-lg">
+                ${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}
+            </span>
+            <span class="font-medium">${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translate-y-2';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+function surveyManager() {
+    return {
+        // Configuration
+        questionsPerPage: 5,
+        currentPage: 0,
+        submitting: false,
+        is_anonymous: {% if survey.allow_anonymous %}true{% else %}false{% endif %},
+        
+        // All questions from the survey
+        allQuestions: [
+            {% for question in survey.questions.all %}
+            {
+                id: {{ question.id }},
+                question_text: "{{ question.question_text|escapejs }}",
+                question_type: "{{ question.question_type }}",
+                is_required: {% if question.is_required %}true{% else %}false{% endif %},
+                order: {{ question.order }}
+            }{% if not forloop.last %},{% endif %}
+            {% empty %}
+            // Fallback if no questions exist
+            {
+                id: 0,
+                question_text: "How likely are you to recommend this company as a great place to work?",
+                question_type: "nps",
+                is_required: true,
+                order: 0
+            }
+            {% endfor %}
+        ],
+        
+        // Answers storage
+        answers: {
+            {% for question in survey.questions.all %}
+            {{ question.id }}: { score: null, rating: null, text: '', boolean: null }{% if not forloop.last %},{% endif %}
+            {% empty %}
+            0: { score: null, rating: null, text: '', boolean: null }
+            {% endfor %}
+        },
+        
+        // Drag state
+        _dragQuestionId: null,
+        _rafPending: false,
+        
+        get totalPages() {
+            return Math.ceil(this.allQuestions.length / this.questionsPerPage) || 1;
+        },
+        
+        get currentQuestions() {
+            const start = this.currentPage * this.questionsPerPage;
+            return this.allQuestions.slice(start, start + this.questionsPerPage);
+        },
+        
+        get requiredCount() {
+            return this.allQuestions.filter(q => q.is_required).length;
+        },
+        
+        get answeredCount() {
+            return this.allQuestions.filter(q => this.isAnswered(q.id)).length;
+        },
+        
+        getScore(questionId) {
+            return this.answers[questionId]?.score;
+        },
+        
+        getRating(questionId) {
+            return this.answers[questionId]?.rating || null;
+        },
+        
+        setRating(questionId, value) {
+            if (!this.answers[questionId]) {
+                this.answers[questionId] = { score: null, rating: null, text: '', boolean: null };
+            }
+            this.answers[questionId].rating = value;
+        },
+        
+        setBoolean(questionId, value) {
+            if (!this.answers[questionId]) {
+                this.answers[questionId] = { score: null, rating: null, text: '', boolean: null };
+            }
+            this.answers[questionId].boolean = value;
+        },
+        
+        setScore(questionId, value) {
+            if (!this.answers[questionId]) {
+                this.answers[questionId] = { score: null, rating: null, text: '', boolean: null };
+            }
+            this.answers[questionId].score = value;
+        },
+        
+        isAnswered(questionId) {
+            const ans = this.answers[questionId];
+            if (!ans) return false;
+            // Check for NPS score (including 0), rating, text, or boolean
+            return ans.score !== null || ans.rating !== null || (ans.text && ans.text.trim() !== '') || ans.boolean !== null;
+        },
+        
+        canProceed() {
+            // Check if all required questions on current page are answered
+            const currentQ = this.currentQuestions;
+            return currentQ.every(q => !q.is_required || this.isAnswered(q.id));
+        },
+        
+        canSubmit() {
+            // Check if ALL required questions are answered
+            return this.allQuestions.every(q => !q.is_required || this.isAnswered(q.id));
+        },
+        
+        nextPage() {
+            if (this.canProceed() && this.currentPage < this.totalPages - 1) {
+                this.currentPage++;
+            }
+        },
+        
+        previousPage() {
+            if (this.currentPage > 0) {
+                this.currentPage--;
+            }
+        },
+        
+        getScoreColor(questionId) {
+            const s = this.getScore(questionId);
+            if (s === null || s === undefined) return 'text-gray-400';
+            if (s >= 9) return 'text-green-500';
+            if (s >= 7) return 'text-lime-500';
+            if (s >= 5) return 'text-yellow-500';
+            if (s >= 3) return 'text-orange-500';
+            return 'text-red-500';
+        },
+        
+        getScoreLabel(questionId) {
+            const s = this.getScore(questionId);
+            if (s === null || s === undefined) return 'Drag to select';
+            if (s >= 9) return 'Promoter';
+            if (s >= 7) return 'Passive';
+            if (s >= 5) return 'Neutral';
+            return 'Detractor';
+        },
+        
+        // Custom slider drag
+        startDrag(event, questionId) {
+            this._dragQuestionId = questionId;
+            const track = event.currentTarget.querySelector('.custom-slider-track');
+            if (!track) return;
+            
+            const updateScore = (e) => {
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const rect = track.getBoundingClientRect();
+                const ratio = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
+                this.setScore(questionId, Math.round(ratio * 10));
+            };
+            
+            updateScore(event);
+            
+            const onMove = (e) => {
+                if (this._rafPending) return;
+                this._rafPending = true;
+                requestAnimationFrame(() => {
+                    updateScore(e);
+                    this._rafPending = false;
+                });
+            };
+            
+            const onUp = () => {
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+                window.removeEventListener('touchmove', onMove);
+                window.removeEventListener('touchend', onUp);
+                this._dragQuestionId = null;
+            };
+            
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+            window.addEventListener('touchmove', onMove, { passive: false });
+            window.addEventListener('touchend', onUp);
+        },
+        
+        async submitSurvey() {
+            if (!this.canSubmit()) {
+                showToast('Please answer all required questions before submitting.', 'warning');
+                return;
+            }
+            
+            this.submitting = true;
+            showToast('Submitting your feedback...', 'info');
+            
+            const formData = new FormData();
+            formData.append('is_anonymous', this.is_anonymous ? '1' : '0');
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            
+            // Add all answers
+            for (const [questionId, ans] of Object.entries(this.answers)) {
+                if (ans.score != null) formData.append(`score_${questionId}`, ans.score);
+                if (ans.rating != null) formData.append(`rating_${questionId}`, ans.rating);
+                if (ans.text) formData.append(`text_${questionId}`, ans.text);
+                if (ans.boolean != null) formData.append(`boolean_${questionId}`, ans.boolean ? '1' : '0');
+            }
+            
+            try {
+                const response = await fetch('{% url "human_resource:enps_submit" survey.id %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Remove any existing toast
+                    const existingToast = document.getElementById('survey-toast');
+                    if (existingToast) existingToast.remove();
+                    
+                    // Show success
+                    const card = document.querySelector('.bg-white.rounded-xl');
+                    card.innerHTML = `
+                        <div class="text-center py-12">
+                            <div class="text-7xl mb-4">✅</div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-2">Thank You!</h2>
+                            <p class="text-gray-600">${data.message || 'Your feedback has been submitted successfully.'}</p>
+                        </div>
+                    `;
+                } else {
+                    showToast(data.error || 'Something went wrong. Please try again.', 'error');
+                    this.submitting = false;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('An error occurred. Please try again.', 'error');
+                this.submitting = false;
+            }
+        }
+    }
+}
+</script>
+
+<style>
+/* Custom slider */
+.custom-slider-wrap {
+    padding: 14px 0;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.custom-slider-track {
+    position: relative;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(to right,
+        #ef4444 0%,
+        #f97316 20%,
+        #eab308 40%,
+        #84cc16 60%,
+        #22c55e 80%,
+        #10b981 100%
+    );
+}
+
+.custom-slider-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    border-radius: 4px;
+    background: transparent;
+    transition: width 0.12s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    pointer-events: none;
+}
+
+.custom-slider-thumb {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #3b82f6;
+    border: 3px solid #ffffff;
+    box-shadow: 0 0 0 2px #3b82f6, 0 2px 8px rgba(0,0,0,0.3);
+    transition: left 0.12s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    pointer-events: none;
+}
+
+.custom-slider-wrap:active .custom-slider-thumb {
+    transform: translate(-50%, -50%) scale(1.1);
+    background: #2563eb;
+}
+</style>
+
+{% endblock %}

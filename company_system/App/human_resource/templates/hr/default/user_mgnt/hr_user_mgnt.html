@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}User Management{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'hr/dashboard/hr_sidebar.html' %}
+
+<main id="mainContent" class="md:ml-64 pt-20 min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">User Management</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage employee accounts and roles</p>
+      </div>
+      <div class="flex gap-2">
+        <a href="{% url 'human_resource:dashboard_user_add' %}" 
+           class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg w-full sm:w-auto justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+          </svg>
+          Add Employee
+        </a>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</p>
+            <p class="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">{{ staff_list|length }}</p>
+          </div>
+          <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Active Users</p>
+            <p class="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
+              {{ staff_list|length }}
+            </p>
+          </div>
+          <div class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Departments</p>
+            <p class="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">
+              {{ departments_count|default:0 }}
+            </p>
+          </div>
+          <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Roles Assigned</p>
+            <p class="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">
+            {% if roles_assigned %}{{ roles_assigned }}{% else %}0{% endif %}
+            </p>
+          </div>
+          <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-600 dark:text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+      <div class="flex flex-col sm:flex-row gap-4">
+        <!-- Search Input -->
+        <div style="position: relative; flex: 1;">
+          <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); z-index: 10;">
+            <svg xmlns="http://www.w3.org/2000/svg" style="width: 18px; height: 18px; color: #9ca3af;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </span>
+          <input type="text" id="searchInput" placeholder="Search by name or email..." 
+                 class="dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                 style="padding: 10px 16px 10px 40px !important; width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; outline: none; box-sizing: border-box; font-size: 14px; display: block;">
+        </div>
+        
+        <!-- Role Filter -->
+        <select id="roleFilter" class="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 16px; min-width: 180px; outline: none;">
+          <option value="">All Roles</option>
+          {% for role in roles %}
+            <option value="{{ role.id }}">{{ role.role_name }}</option>
+          {% endfor %}
+        </select>
+        
+        <!-- Status Filter -->
+        <select id="statusFilter" class="dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 16px; min-width: 150px; outline: none;">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="resigned">Resigned</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Staff Table -->
+    <div class="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+      <!-- Desktop Table -->
+      <div class="block w-full overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Employee</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Email</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Department</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Role</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="staffTableBody" class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
+            {% for staff in staff_list %}
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
+              <td class="px-6 py-4">
+                <div class="flex items-center">
+                  <div class="h-10 w-10 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-semibold">
+                    {{ staff.first_name.0|upper }}{{ staff.last_name.0|upper }}
+                  </div>
+                  <div class="ml-4">
+                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">{{ staff.last_name }}, {{ staff.first_name }}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ staff.employee_number|default:"No ID" }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="text-sm text-gray-600 dark:text-gray-400">{{ staff.email_address|default:"-" }}</span>
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
+                  {{ staff.get_department_display|default:"Unassigned" }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <form method="post" action="{% url 'human_resource:update_staff_role' %}" class="flex gap-2 items-center">
+                  {% csrf_token %}
+                  <input type="hidden" name="staff_id" value="{{ staff.id }}">
+                  <select name="role" class="role-select text-sm border border-gray-200 dark:border-gray-600 rounded-md px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 dark:text-gray-100">
+                    <option value="">-- None --</option>
+                    {% for role in roles %}
+                      <option value="{{ role.id }}" {% if staff.role_id == role.id %}selected{% endif %}>{{ role.role_name }}</option>
+                    {% endfor %}
+                  </select>
+                  <button type="submit" class="p-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-md transition-colors" title="Save Role">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                </form>
+              </td>
+              <td class="px-6 py-4">
+                {% if staff.status == 'active' %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">Active</span>
+                {% elif staff.status == 'inactive' %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">Inactive</span>
+                {% elif staff.status == 'resigned' %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">Resigned</span>
+                {% else %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">{{ staff.get_status_display }}</span>
+                {% endif %}
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-2">
+                  <a href="{% url 'human_resource:dashboard_user_detail' staff.id %}" class="p-2 text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900 rounded-lg transition-colors" title="View Details">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </a>
+                  <a href="{% url 'human_resource:dashboard_user_edit' staff.id %}" class="p-2 text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900 rounded-lg transition-colors" title="Edit">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </a>
+                  <button data-staff-id="{{ staff.id }}" class="deleteBtn p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900 rounded-lg transition-colors" title="Delete">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="px-6 py-12 text-center">
+                <div class="flex flex-col items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-300 dark:text-gray-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <p class="text-gray-500 dark:text-gray-400 font-medium">No staff members found</p>
+                  <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">Add your first employee to get started</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Cards -->
+      <div class="md:hidden">
+        <div id="staffTableBodyMobile" class="divide-y divide-gray-100 dark:divide-gray-700">
+          {% for staff in staff_list %}
+          <div class="p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="h-12 w-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-semibold text-sm">
+                  {{ staff.first_name.0|upper }}{{ staff.last_name.0|upper }}
+                </div>
+                <div>
+                  <div class="font-semibold text-gray-900 dark:text-gray-100">{{ staff.last_name }}, {{ staff.first_name }}</div>
+                  <div class="text-xs text-gray-500 dark:text-gray-400">{{ staff.employee_number|default:"No ID" }}</div>
+                </div>
+              </div>
+              {% if staff.status == 'active' %}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">Active</span>
+              {% elif staff.status == 'inactive' %}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">Inactive</span>
+              {% else %}
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">{{ staff.get_status_display }}</span>
+              {% endif %}
+            </div>
+            <div class="text-sm text-gray-600 dark:text-gray-400">{{ staff.email_address|default:"-" }}</div>
+            <div class="flex items-center gap-2 text-xs">
+              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
+                {{ staff.get_department_display|default:"Unassigned" }}
+              </span>
+            </div>
+            <form method="post" action="{% url 'human_resource:update_staff_role' %}" class="flex gap-2 items-center pt-2 border-t dark:border-gray-700">
+              {% csrf_token %}
+              <input type="hidden" name="staff_id" value="{{ staff.id }}">
+              <select name="role" class="role-select-mobile text-sm border border-gray-200 dark:border-gray-600 rounded-md px-2 py-1.5 flex-1 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-700 dark:text-gray-100">
+                <option value="">-- Select Role --</option>
+                {% for role in roles %}
+                  <option value="{{ role.id }}" {% if staff.role_id == role.id %}selected{% endif %}>{{ role.role_name }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="p-2 bg-orange-500 hover:bg-orange-600 text-white rounded-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+            </form>
+            <div class="flex gap-2 pt-2 border-t dark:border-gray-700">
+              <a href="{% url 'human_resource:dashboard_user_detail' staff.id %}" class="flex-1 text-center py-2 text-orange-600 bg-orange-50 dark:bg-orange-900 dark:text-orange-200 rounded-lg hover:bg-orange-100 dark:hover:bg-orange-800 transition-colors text-sm font-medium">View</a>
+              <a href="{% url 'human_resource:dashboard_user_edit' staff.id %}" class="flex-1 text-center py-2 text-green-600 bg-green-50 dark:bg-green-900 dark:text-green-200 rounded-lg hover:bg-green-100 dark:hover:bg-green-800 transition-colors text-sm font-medium">Edit</a>
+              <button data-staff-id="{{ staff.id }}" class="deleteBtn flex-1 text-center py-2 text-red-600 bg-red-50 dark:bg-red-900 dark:text-red-200 rounded-lg hover:bg-red-100 dark:hover:bg-red-800 transition-colors text-sm font-medium">Delete</button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if staff_list.paginator.num_pages > 1 %}
+    <div class="flex justify-center items-center gap-2 flex-wrap">
+      {% if staff_list.has_previous %}
+        <button class="ajax-page bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-200 transition-colors" data-page="{{ staff_list.previous_page_number }}">
+          <span class="flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="="0 0none" viewBox 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Previous
+          </span>
+        </button>
+      {% endif %}
+      <span class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">Page {{ staff_list.number }} of {{ staff_list.paginator.num_pages }}</span>
+      {% if staff_list.has_next %}
+        <button class="ajax-page bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-200 transition-colors" data-page="{{ staff_list.next_page_number }}">
+          <span class="flex items-center gap-1">
+            Next
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </span>
+        </button>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</main>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 backdrop-blur-sm">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 transform transition-all">
+    <div class="flex items-center justify-center w-14 h-14 rounded-full bg-red-100 dark:bg-red-900 mx-auto mb-4">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    </div>
+    <h3 class="text-xl font-bold text-center text-gray-800 dark:text-gray-100 mb-2">Confirm Delete</h3>
+    <p class="text-gray-600 dark:text-gray-400 text-center mb-6" id="deleteModalText">Are you sure you want to delete this staff member? This action cannot be undone.</p>
+    <div class="flex gap-3">
+      <button id="cancelDelete" class="flex-1 px-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium transition-colors">Cancel</button>
+      <form id="deleteForm" method="post" class="flex-1">
+        {% csrf_token %}
+        <button type="submit" class="w-full px-4 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors">Delete</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Fix select dropdown dark mode for role selects
+(function() {
+    function updateSelectDarkMode() {
+        const isDark = document.documentElement.classList.contains('dark') || 
+                       localStorage.getItem('theme') === 'dark' ||
+                       (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        
+        const selects = document.querySelectorAll('.role-select, .role-select-mobile');
+        selects.forEach(function(select) {
+            if (isDark) {
+                select.style.backgroundColor = '#374151';
+                select.style.color = '#f3f4f6';
+                select.style.borderColor = '#4b5563';
+            } else {
+                select.style.backgroundColor = '#ffffff';
+                select.style.color = '#1f2937';
+                select.style.borderColor = '#d1d5db';
+            }
+        });
+    }
+    
+    updateSelectDarkMode();
+    setInterval(updateSelectDarkMode, 500);
+})();
+
+document.addEventListener("DOMContentLoaded", function() {
+
+  const deleteModal = document.getElementById('deleteModal');
+  const deleteForm = document.getElementById('deleteForm');
+  const cancelDelete = document.getElementById('cancelDelete');
+  const deleteModalText = document.getElementById('deleteModalText');
+  const staffTableBody = document.getElementById('staffTableBody');
+
+  // DELETE MODAL
+  staffTableBody.addEventListener('click', function(e) {
+    if (e.target.closest('.deleteBtn')) {
+      const btn = e.target.closest('.deleteBtn');
+      const staffId = btn.dataset.staffId;
+      deleteForm.action = "{% url 'human_resource:user_delete_dash' 0 %}".replace("0", staffId);
+      deleteModalText.textContent = `Are you sure you want to delete staff ID ${staffId}? This action cannot be undone.`;
+      deleteModal.classList.remove('hidden');
+    }
+  });
+
+  cancelDelete.addEventListener('click', () => deleteModal.classList.add('hidden'));
+
+  deleteModal.addEventListener('click', (e) => {
+    if (e.target === deleteModal) deleteModal.classList.add('hidden');
+  });
+
+  // SEARCH FILTER
+  const searchInput = document.getElementById('searchInput');
+  searchInput.addEventListener('input', function() {
+    const query = this.value.toLowerCase();
+    document.querySelectorAll('#staffTableBody tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+    });
+    // Mobile
+    const mobileContainer = document.getElementById('staffTableBodyMobile');
+    if (mobileContainer) {
+      mobileContainer.querySelectorAll('div.p-4').forEach(card => {
+        card.style.display = card.textContent.toLowerCase().includes(query) ? '' : 'none';
+      });
+    }
+  });
+
+  // ROLE FILTER
+  const roleFilter = document.getElementById('roleFilter');
+  roleFilter.addEventListener('change', function() {
+    const roleId = this.value;
+    document.querySelectorAll('#staffTableBody tr').forEach(row => {
+      const select = row.querySelector('select[name="role"]');
+      row.style.display = (!roleId || (select && select.value == roleId)) ? '' : 'none';
+    });
+  });
+
+  // STATUS FILTER
+  const statusFilter = document.getElementById('statusFilter');
+  statusFilter.addEventListener('change', function() {
+    const status = this.value.toLowerCase();
+    document.querySelectorAll('#staffTableBody tr').forEach(row => {
+      const statusText = row.textContent.toLowerCase();
+      row.style.display = (!status || statusText.includes(status)) ? '' : 'none';
+    });
+  });
+
+});
+</script>
+{% endblock %}

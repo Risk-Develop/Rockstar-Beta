@@ -1,0 +1,484 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ action }} Employee{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'includes/sidebar.html' %}
+
+<main id="mainContent" class="md:ml-64 pt-20 min-h-screen p-4 sm:p-6 bg-gray-50">
+
+  <div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800">{{ action }} Employee</h2>
+        <p class="text-sm text-gray-500 mt-1">Fill in the employee information below</p>
+      </div>
+      <a href="{% url 'user_list' %}" 
+         class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        Cancel
+      </a>
+    </div>
+
+    <form method="post" novalidate class="space-y-6">
+      {% csrf_token %}
+
+      <!-- PERSONAL INFORMATION -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800">Personal Information</h3>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.first_name.label }}</label>
+              {{ form.first_name }}
+              {% if form.first_name.errors %}
+                <p class="text-red-500 text-xs">{{ form.first_name.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.middle_name.label }}</label>
+              {{ form.middle_name }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.last_name.label }}</label>
+              {{ form.last_name }}
+              {% if form.last_name.errors %}
+                <p class="text-red-500 text-xs">{{ form.last_name.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.birthdate.label }}</label>
+              {{ form.birthdate }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.age.label }}</label>
+              {{ form.age }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.sex.label }}</label>
+              {{ form.sex }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EMPLOYMENT DETAILS -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 bg-gradient-to-r from-green-50 to-green-100 border-b border-green-200">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800">Employment Details</h3>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 required">{{ form.start_date.label }}</label>
+              {{ form.start_date }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 required">{{ form.tenure_active.label }}</label>
+              {{ form.tenure_active }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.employee_number.label }}</label>
+              {% if action == 'Edit' %}
+                <input type="text" value="{{ staff.employee_number }}" readonly class="bg-gray-100 cursor-not-allowed" style="background-color: #f3f4f6; cursor: not-allowed;">
+                <input type="hidden" name="employee_number" value="{{ staff.employee_number }}">
+              {% else %}
+                {{ form.employee_number }}
+              {% endif %}
+              <p id="emp-duplicate-warning" class="text-sm hidden"></p>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.status.label }}</label>
+              {{ form.status }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.positionlink.label }}</label>
+              {{ form.positionlink }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.type.label }}</label>
+              {{ form.type }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.departmentlink.label }}</label>
+              {{ form.departmentlink }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.rank.label }}</label>
+              {{ form.rank }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.shift.label }}</label>
+              {{ form.shift }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GOVERNMENT NUMBERS -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 bg-gradient-to-r from-yellow-50 to-yellow-100 border-b border-yellow-200">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-yellow-500 rounded-xl flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800">Government Numbers</h3>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.sss_number.label }}</label>
+              {{ form.sss_number }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.pagibig_number.label }}</label>
+              {{ form.pagibig_number }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.philhealth_number.label }}</label>
+              {{ form.philhealth_number }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTACT INFORMATION -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800">Contact Information</h3>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 required">{{ form.email_address.label }}</label>
+              {{ form.email_address }}
+              {% if form.email_address.errors %}
+                <p class="text-red-500 text-xs">{{ form.email_address.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 required">{{ form.phone_number.label }}</label>
+              {{ form.phone_number }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 required">{{ form.emergency_contact_name.label }}</label>
+              {{ form.emergency_contact_name }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 required">{{ form.emergency_contact_number.label }}</label>
+              {{ form.emergency_contact_number }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="flex flex-wrap gap-4 justify-end">
+        <a href="{% url 'user_list' %}" 
+           class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">
+          Cancel
+        </a>
+        <button id="saveBtn" type="submit" 
+                class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5">
+          <span class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            {{ action }} Employee
+          </span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+</main>
+
+<style>
+  /* Form field styling */
+  input[type="text"],
+  input[type="email"],
+  input[type="date"],
+  input[type="number"],
+  input[type="tel"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    background-color: #f9fafb;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+  }
+  
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background-color: white;
+  }
+  
+  input:hover,
+  select:hover {
+    border-color: #d1d5db;
+  }
+  
+  input.error,
+  select.error {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+  }
+  
+  input::placeholder,
+  textarea::placeholder {
+    color: #9ca3af;
+  }
+  
+  /* Label styling */
+  label {
+    font-weight: 500;
+  }
+  
+  /* Required indicator */
+  .required::after {
+    content: " *";
+    color: #ef4444;
+  }
+</style>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const startDateInput = document.getElementById("id_start_date");
+    const tenureInput = document.getElementById("id_tenure_active");
+    const birthInput = document.getElementById("id_birthdate");
+    const ageInput = document.getElementById("id_age");
+    const empInput = document.getElementById("id_employee_number");
+    const saveBtn = document.getElementById("saveBtn");
+    const form = document.querySelector('form');
+
+    // Make these fields REQUIRED
+    const requiredFields = ['id_start_date', 'id_tenure_active', 'id_email_address', 'id_phone_number', 'id_emergency_contact_name', 'id_emergency_contact_number'];
+    requiredFields.forEach(function(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.setAttribute('required', 'required');
+        }
+    });
+
+    // Form validation styling
+    form.addEventListener('submit', (e) => {
+        const requiredFields = form.querySelectorAll('[required]');
+        let valid = true;
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                valid = false;
+                field.classList.add('error');
+            } else {
+                field.classList.remove('error');
+            }
+        });
+        if (!valid) {
+            e.preventDefault();
+            // Scroll to first error
+            const firstError = form.querySelector('.error');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    });
+
+    // Add error class on blur
+    form.querySelectorAll('input, select, textarea').forEach(field => {
+        field.addEventListener('blur', function() {
+            if (this.hasAttribute('required') && !this.value.trim()) {
+                this.classList.add('error');
+            } else {
+                this.classList.remove('error');
+            }
+        });
+        
+        field.addEventListener('input', function() {
+            this.classList.remove('error');
+        });
+    });
+
+    // --------------------------------------------------
+    // TENURE CALCULATION
+    // --------------------------------------------------
+    function calculateFullTenure() {
+        if (!startDateInput || !startDateInput.value) return;
+        
+        const start = new Date(startDateInput.value);
+        const today = new Date();
+        
+        // Validate the date
+        if (isNaN(start.getTime())) return;
+        
+        let years = today.getFullYear() - start.getFullYear();
+        let months = today.getMonth() - start.getMonth();
+        let days = today.getDate() - start.getDate();
+        
+        // Adjust for negative days
+        if (days < 0) {
+            months--;
+            // Get days in previous month
+            const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+            days += prevMonth.getDate();
+        }
+        
+        // Adjust for negative months
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+        
+        // Prevent negative values
+        if (years < 0) years = 0;
+        if (months < 0) months = 0;
+        if (days < 0) days = 0;
+        
+        tenureInput.value = years + " years, " + months + " months, " + days + " days";
+    }
+
+    if (startDateInput) {
+        startDateInput.addEventListener("change", () => {
+            calculateFullTenure();
+            // Only generate employee number when creating new employee
+            if (!isEditing) {
+                generateEmployeeNumber();
+            }
+        });
+    }
+
+    // --------------------------------------------------
+    // AGE CALCULATION
+    // --------------------------------------------------
+    function calculateAge() {
+        if (!birthInput.value) return;
+        const birth = new Date(birthInput.value);
+        const today = new Date();
+        let age = today.getFullYear() - birth.getFullYear();
+        const m = today.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+        ageInput.value = age >= 0 ? age : 0;
+    }
+
+    if (birthInput) {
+        birthInput.addEventListener("change", calculateAge);
+    }
+
+    // --------------------------------------------------
+    // EMPLOYEE NUMBER GENERATION
+    // --------------------------------------------------
+    // Only generate employee number when CREATING a new employee (not editing)
+    const staffId = "{{ staff.id|default:'' }}";
+    const isEditing = staffId && staffId.length > 0;
+    const originalEmpNo = "{{ staff.employee_number|default:'' }}";
+    
+    // IMMEDIATELY restore and lock employee number when editing (runs before anything else)
+    if (isEditing && empInput && originalEmpNo) {
+        empInput.value = originalEmpNo;
+        empInput.setAttribute('readonly', 'readonly');
+        empInput.style.backgroundColor = '#f3f4f6';
+        empInput.style.cursor = 'not-allowed';
+    }
+    
+    async function generateEmployeeNumber() {
+        // Don't auto-generate when editing existing employee
+        if (isEditing || !startDateInput || !startDateInput.value) return;
+
+        // For new employees: always generate new employee number with random digits
+        const start = new Date(startDateInput.value);
+        const year = start.getFullYear().toString();
+        const month = ("0" + (start.getMonth() + 1)).slice(-2);
+        const randomId = Math.floor(1000 + Math.random() * 9000);
+        const empNo = `EMP-${year}${month}-${randomId}`;
+
+        empInput.value = empNo;
+
+        const warning = document.getElementById("emp-duplicate-warning");
+        if (warning) {
+            warning.textContent = "Employee number auto-generated ✓";
+            warning.classList.remove("hidden", "text-red-600");
+            warning.classList.add("text-green-600", "block");
+        }
+    }
+
+    // Only run employee number check on blur when editing (not auto-generate)
+    if (empInput) {
+        empInput.addEventListener("blur", async () => {
+            const empNo = empInput.value.trim();
+            if (!empNo) return;
+            
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.classList.add('opacity-50');
+            }
+
+            try {
+                const response = await fetch(`/hr_dashboard/check-emp-number/?emp_no=${empNo}&staff_id=${staffId}`);
+                const data = await response.json();
+                const warning = document.getElementById("emp-duplicate-warning");
+
+                if (warning) {
+                    if (data.exists) {
+                        warning.textContent = "This employee number already exists!";
+                        warning.classList.remove("hidden", "text-green-600");
+                        warning.classList.add("text-red-600", "block");
+                        if (saveBtn) saveBtn.disabled = true;
+                    } else {
+                        warning.textContent = "Employee number is available ✓";
+                        warning.classList.remove("hidden", "text-red-600");
+                        warning.classList.add("text-green-600", "block");
+                        if (saveBtn) saveBtn.disabled = false;
+                    }
+                }
+            } catch (e) {
+                // Allow save if API fails
+                if (saveBtn) saveBtn.disabled = false;
+            }
+            
+            if (saveBtn) saveBtn.classList.remove('opacity-50');
+        });
+    }
+    
+});
+</script>
+{% endblock %}

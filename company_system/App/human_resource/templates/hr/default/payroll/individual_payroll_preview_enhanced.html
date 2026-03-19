@@ -1,0 +1,905 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Individual Payroll Preview{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6 max-w-10xl">
+    <h1 class="text-2xl font-bold mb-6">Individual Payroll Preview</h1>
+
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="p-4 rounded {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{% url 'human_resource:individual_payroll_finalize' %}" id="payrollForm">
+        {% csrf_token %}
+        <input type="hidden" name="employee_id" value="{{ employee.id }}">
+        <input type="hidden" name="month" value="{{ month }}">
+        <input type="hidden" name="year" value="{{ year }}">
+        <input type="hidden" name="cutoff" value="{{ cutoff }}">
+        <input type="hidden" name="reprocess" value="{% if reprocess %}true{% else %}false{% endif %}">
+        <input type="hidden" name="start_date" id="filterStartDate" value="{{ start_date }}">
+        <input type="hidden" name="end_date" id="filterEndDate" value="{{ end_date }}">
+
+        <!-- ══════════════════════════════════════════════════════════════
+             ALL HIDDEN POST FIELDS — named h_* so they NEVER conflict
+             with any visible <input>. JS syncs these on every change.
+        ══════════════════════════════════════════════════════════════ -->
+        <input type="hidden" name="salary_per_cutoff"       value="{{ salary_per_cutoff|default:0 }}">
+        <input type="hidden" name="working_days"            id="h_working_days"            value="{{ working_days|default:0 }}">
+        <!-- Additions -->
+        <input type="hidden" name="overtime_hours"          id="h_overtime_hours"          value="0">
+        <input type="hidden" name="overtime_amount"         id="h_overtime_amount"         value="0">
+        <input type="hidden" name="nsd_hours"               id="h_nsd_hours"               value="0">
+        <input type="hidden" name="nsd_amount"              id="h_nsd_amount"              value="0">
+        <input type="hidden" name="holiday_hours"           id="h_holiday_hours"           value="0">
+        <input type="hidden" name="holiday_pay"             id="h_holiday_pay"             value="0">
+        <input type="hidden" name="regular_holiday_hours"   id="h_regular_holiday_hours"   value="0">
+        <input type="hidden" name="regular_holiday_pay"     id="h_regular_holiday_pay"     value="0">
+        <input type="hidden" name="incentives"              id="h_incentives"              value="0">
+        <input type="hidden" name="tips_others"             id="h_tips_others"             value="0">
+        <input type="hidden" name="lodging_allowance"       id="h_lodging_allowance"       value="0">
+        <!-- ✅ Leave days — these carry the actual POST values -->
+        <input type="hidden" name="leave_days_paid"         id="h_leave_days_paid"         value="0">
+        <input type="hidden" name="leave_days_unpaid"       id="h_leave_days_unpaid"       value="0">
+        <!-- Deductions -->
+        <input type="hidden" name="days_absent"             id="h_days_absent"             value="0">
+        <input type="hidden" name="absence_deduction"       id="h_absence_deduction"       value="0">
+        <input type="hidden" name="late_minutes"            id="h_late_minutes"            value="0">
+        <input type="hidden" name="late_hours_equivalent"   id="h_late_hours_equivalent"   value="0">
+        <input type="hidden" name="late_deduction"          id="h_late_deduction"          value="0">
+        <input type="hidden" name="loan_deduction"          id="h_loan_deduction"          value="{{ loan_deduction|default:0 }}">
+        <input type="hidden" name="tax"                     id="h_tax"                     value="0">
+        <input type="hidden" name="other_deductions"        id="h_other_deductions"        value="0">
+        <!-- Computed totals -->
+        <input type="hidden" name="total_deductions"        id="h_total_deductions"        value="0">
+        <input type="hidden" name="total_earnings"          id="h_total_earnings"          value="0">
+        <input type="hidden" name="net_pay"                 id="h_net_pay"                 value="0">
+
+        <!-- Employee Information -->
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2">Employee Information</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div><span class="text-sm text-gray-500">Name</span>
+                     <p class="font-medium">{{ employee.first_name }} {{ employee.last_name }}</p></div>
+                <div><span class="text-sm text-gray-500">Employee ID</span>
+                     <p class="font-medium">{{ employee.employee_number }}</p></div>
+                <div><span class="text-sm text-gray-500">Department</span>
+                     <p class="font-medium">{{ employee.get_department_display|default:"-" }}</p></div>
+                <div><span class="text-sm text-gray-500">Position</span>
+                     <p class="font-medium">{{ employee.get_job_title_display|default:"-" }}</p></div>
+            </div>
+        </div>
+
+        <!-- Period Info -->
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2">Payroll Period</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div><span class="text-sm text-gray-500">Period</span>
+                     <p class="font-medium">{{ month }}/{{ year }}</p></div>
+                <div><span class="text-sm text-gray-500">Cutoff</span>
+                     <p class="font-medium">{% if cutoff == '1' %}1st Cutoff (1-15){% else %}2nd Cutoff (16-End){% endif %}</p></div>
+                <div><span class="text-sm text-gray-500">Working Days</span>
+                     <p class="font-medium text-blue-600">{{ working_days }} days</p></div>
+                <div><span class="text-sm text-gray-500">Salary per Cutoff</span>
+                     <p class="font-medium text-green-600">₱{{ salary_per_cutoff|floatformat:2 }}</p></div>
+            </div>
+
+            {% if salary_per_cutoff and salary_per_cutoff > 0 and working_days > 0 %}
+            <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+                <strong>Rate Info:</strong>
+                Daily Rate = ₱{{ salary_per_cutoff|floatformat:2 }} ÷ {{ working_days }} days
+                = ₱<span id="info_daily_rate">0.00</span>
+                {% if work_schedule == 'FLEX' %}
+                    &nbsp;|&nbsp;<span class="text-amber-600 font-medium">⚡ Flextime — no hourly rate (salary-based only)</span>
+                {% elif work_schedule == '8H' %}
+                    &nbsp;|&nbsp; Hourly Rate (÷8 hrs) = ₱<span id="info_hourly_rate">0.00</span>
+                {% else %}
+                    &nbsp;|&nbsp; Hourly Rate (÷9.5 hrs) = ₱<span id="info_hourly_rate">0.00</span>
+                {% endif %}
+                <span class="ml-2 px-2 py-0.5 rounded text-xs font-semibold
+                    {% if work_schedule == 'FLEX' %}bg-amber-100 text-amber-700
+                    {% elif work_schedule == '8H' %}bg-green-100 text-green-700
+                    {% else %}bg-blue-100 text-blue-700{% endif %}">
+                    {% if work_schedule == 'FLEX' %}Flextime{% elif work_schedule == '8H' %}8H Schedule{% else %}9.5H Schedule{% endif %}
+                </span>
+            </div>
+            {% endif %}
+
+            {% if not salary_per_cutoff or salary_per_cutoff == 0 %}
+            <div class="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                <strong>Warning:</strong> No salary setting found for this employee.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Earnings -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- Auto-computed display -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-green-700">EARNINGS (Auto-Computed)</h2>
+                <table class="w-full">
+                    <tbody class="divide-y divide-gray-100">
+                        <tr><td class="py-2 text-gray-600">Basic Salary (per cutoff)</td>
+                            <td class="py-2 text-right font-medium">₱{{ salary_per_cutoff|floatformat:2 }}</td></tr>
+                        <tr><td class="py-2 text-gray-600">Leave Addition (Paid)</td>
+                            <td class="py-2 text-right font-medium text-green-600">₱<span id="display_leave_addition">0.00</span></td></tr>
+                        <tr><td class="py-2 text-gray-600">Overtime Pay</td>
+                            <td class="py-2 text-right font-medium">₱<span id="display_overtime">0.00</span></td></tr>
+                        <tr><td class="py-2 text-gray-600">NSD Pay</td>
+                            <td class="py-2 text-right font-medium">₱<span id="display_nsd">0.00</span></td></tr>
+                        <tr><td class="py-2 text-gray-600">Special Holiday Pay</td>
+                            <td class="py-2 text-right font-medium">₱<span id="display_holiday">0.00</span></td></tr>
+                        <tr><td class="py-2 text-gray-600">Regular Holiday Pay</td>
+                            <td class="py-2 text-right font-medium">₱<span id="display_regular_holiday">0.00</span></td></tr>
+                        <tr><td class="py-2 text-gray-600">Incentives</td>
+                            <td class="py-2 text-right font-medium">₱<span id="display_incentives">0.00</span></td></tr>
+                        <tr><td class="py-2 text-gray-600">Tips/Others</td>
+                            <td class="py-2 text-right font-medium">₱<span id="display_tips_others">0.00</span></td></tr>
+                        <tr><td class="py-2 text-gray-600">Lodging Allowance</td>
+                            <td class="py-2 text-right font-medium">₱<span id="display_lodging_allowance">0.00</span></td></tr>
+                    </tbody>
+                    <tfoot class="border-t-2 border-green-500">
+                        <tr><td class="py-3 font-bold text-green-700">Total Earnings</td>
+                            <td class="py-3 text-right font-bold text-green-700">₱<span id="display_total_earnings">0.00</span></td></tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- HR Input: Additions -->
+            <!-- ✅ Visible inputs use id="v_*" only — NO name= attribute.
+                 JS reads them by id and writes the result to the hidden h_* fields. -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-blue-700">HR INPUT: ADDITIONS</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Leave Days (Paid)</label>
+                        <input type="number" id="v_leave_days_paid" value="{{ leave_days_paid|default:'0' }}"
+                               step="0.5" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2" oninput="recalculate()">
+                        <p class="text-xs text-gray-500 mt-1">Adds to earnings (paid leave)</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Overtime Hours</label>
+                        <input type="number" id="v_overtime_hours" value="{{ overtime_hours|default:'0' }}"
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2" oninput="recalculate()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">NSD Hours</label>
+                        <input type="number" id="v_nsd_hours" value="{{ nsd_hours|default:'0' }}"
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2" oninput="recalculate()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Special Holiday Hours</label>
+                        <input type="number" id="v_holiday_hours" value="{{ holiday_hours|default:'0' }}"
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2" oninput="recalculate()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Regular Holiday Hours</label>
+                        <input type="number" id="v_regular_holiday_hours" value="{{ regular_holiday_hours|default:'0' }}"
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2" oninput="recalculate()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Incentives/Bonus</label>
+                        <input type="number" id="v_incentives" value="{{ incentives|default:'0' }}"
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2" oninput="recalculate()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tips/Others</label>
+                        <input type="number" id="v_tips_others" value="{{ tips_others|default:'0' }}"
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2" oninput="recalculate()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Lodging Allowance</label>
+                        <input type="number" id="v_lodging_allowance" value="{{ lodging_allowance|default:'0' }}"
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2" oninput="recalculate()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- De Minimis -->
+        {% if de_minimis_types %}
+        <div class="bg-white shadow rounded-lg p-6 mt-6">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-blue-700">HR INPUT: DE MINIMIS ALLOWANCES</h2>
+            <p class="text-sm text-gray-500 mb-4">Enter amounts for each de minimis type. Leave blank or 0 if not applicable.</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {% for dm_type in de_minimis_types %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ dm_type.name }}{% if dm_type.is_taxable %}<span class="text-xs text-gray-500"> (Taxable)</span>{% endif %}
+                    </label>
+                    <!-- ✅ De minimis keep name= — view reads them directly by key -->
+                    <input type="number" name="demiminis_{{ dm_type.id }}" id="demiminis_{{ dm_type.id }}"
+                           value="0" step="0.01" min="0"
+                           class="w-full border border-gray-300 rounded-md px-3 py-2 demiminis-input"
+                           oninput="recalculate()">
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mt-4 pt-4 border-t text-right">
+                <span class="text-lg font-bold text-blue-700">Total De Minimis: ₱<span id="total_demiminis">0.00</span></span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Deductions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+
+            <!-- HR Input: Deductions -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-red-700">HR INPUT: DEDUCTIONS</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tax (Manual Entry)</label>
+                        <!-- ✅ No name= — JS syncs to h_tax -->
+                        <input type="number" id="v_tax_amount" value="{{ tax_amount|default:'0' }}"
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2" oninput="recalculate()">
+                        <p class="text-xs text-gray-500 mt-1">Enter withholding tax manually</p>
+                    </div>
+
+                    <div class="p-3 bg-orange-50 border border-orange-200 rounded-md">
+                        <label class="block text-sm font-semibold text-orange-800 mb-2">Late Deduction</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Late (minutes)</label>
+                                <!-- ✅ No name= — JS syncs to h_late_minutes -->
+                                <input type="number" id="v_late_minutes" value="0"
+                                       step="1" min="0" class="w-full border border-orange-300 rounded px-2 py-1.5 text-sm" oninput="recalculate()">
+                                <p class="text-xs text-gray-400 mt-0.5">Actual minutes late</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-600 mb-1">Hours Equivalent (deduction)</label>
+                                <!-- ✅ No name= — JS syncs to h_late_hours_equivalent -->
+                                <input type="number" id="v_late_hours_equivalent" value="0"
+                                       step="0.5" min="0" class="w-full border border-orange-300 rounded px-2 py-1.5 text-sm" oninput="recalculate()">
+                                <p class="text-xs text-gray-400 mt-0.5">Hours charged as penalty</p>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <label class="block text-xs text-gray-500 mb-1">Late Deduction Amount (Auto)</label>
+                            <input type="text" id="late_deduction_display" value="₱0.00"
+                                   class="w-full border border-orange-200 rounded px-2 py-1.5 text-sm bg-gray-100 font-medium text-orange-700" readonly>
+                            <p class="text-xs text-gray-400 mt-0.5">
+                                = Hours Equivalent × Hourly Rate (₱<span id="display_hourly_rate_hint">0.00</span>)
+                            </p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Days Absent</label>
+                        <!-- ✅ No name= — JS syncs to h_days_absent -->
+                        <input type="number" id="v_days_absent" value="{{ days_absent|default:'0' }}"
+                               step="0.5" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2" oninput="recalculate()">
+                        <p class="text-xs text-gray-500 mt-1">Deducts from earnings (absent days)</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Leave Days (Unpaid)</label>
+                        <!-- ✅ No name= — JS syncs to h_leave_days_unpaid -->
+                        <input type="number" id="v_leave_days_unpaid" value="{{ leave_days_unpaid|default:'0' }}"
+                               step="0.5" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2" oninput="recalculate()">
+                        <p class="text-xs text-gray-500 mt-1">Deducts from earnings (unpaid leave)</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Other Deductions</label>
+                        <!-- ✅ No name= — JS syncs to h_other_deductions -->
+                        <input type="number" id="v_other_deductions" value="{{ other_deductions|default:'0' }}"
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2" oninput="recalculate()">
+                    </div>
+                </div>
+
+                {% if deduction_types %}
+                <hr class="my-4">
+                <h3 class="text-sm font-semibold text-gray-700 mb-3">Dynamic Deductions</h3>
+                <div class="space-y-3">
+                    {% for deduction in deduction_types %}
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">
+                            {{ deduction.name }}
+                            {% if deduction.is_government %}<span class="text-xs text-blue-500">(Government)</span>{% endif %}
+                        </label>
+                        <!-- ✅ Dynamic deductions keep name= — view reads them directly -->
+                        <input type="number" name="deduction_{{ deduction.id }}" id="deduction_{{ deduction.id }}"
+                               value="0" step="0.01" min="0"
+                               class="w-full border border-gray-300 rounded-md px-3 py-2 deduction-input"
+                               data-category="{{ deduction.category }}"
+                               oninput="recalculate()">
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Computed Deductions Display -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-red-700">DEDUCTIONS (Auto-Computed)</h2>
+                <table class="w-full">
+                    <tbody class="divide-y divide-gray-100">
+                        <tr><td class="py-2 text-gray-600">Tax (Manual)</td>
+                            <td class="py-2 text-right font-medium">₱<span id="display_tax">0.00</span></td></tr>
+                        <tr class="bg-orange-50">
+                            <td class="py-2 text-orange-700">
+                                Late Deduction
+                                <span class="block text-xs text-gray-500">
+                                    <span id="display_late_minutes_detail">0</span> min →
+                                    <span id="display_late_hours_detail">0</span> hrs × ₱<span id="display_hourly_rate_detail">0.00</span>
+                                </span>
+                            </td>
+                            <td class="py-2 text-right font-medium text-orange-700">₱<span id="display_late_deduction">0.00</span></td>
+                        </tr>
+                        <tr><td class="py-2 text-gray-600">Absence Deduction</td>
+                            <td class="py-2 text-right font-medium text-red-600">₱<span id="display_absence_deduction">0.00</span></td></tr>
+                        <tr><td class="py-2 text-gray-600">Leave Deduction (Unpaid)</td>
+                            <td class="py-2 text-right font-medium">₱<span id="display_leave_deduction">0.00</span></td></tr>
+                        <tr><td class="py-2 text-gray-600">Other Deductions</td>
+                            <td class="py-2 text-right font-medium">₱<span id="display_other_deductions">0.00</span></td></tr>
+                        <tr><td class="py-2 text-gray-600 font-medium">Loan Deduction</td>
+                            <td class="py-2 text-right font-medium text-red-600">₱<span id="display_loan_deduction">0.00</span></td></tr>
+                        {% for deduction in deduction_types %}
+                        <tr><td class="py-2 text-gray-600">{{ deduction.name }}</td>
+                            <td class="py-2 text-right font-medium">₱<span id="display_deduction_{{ deduction.id }}">0.00</span></td></tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="border-t-2 border-red-500">
+                        <tr><td class="py-3 font-bold text-red-700">Total Deductions</td>
+                            <td class="py-3 text-right font-bold text-red-700">₱<span id="display_total_deductions">0.00</span></td></tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="rounded-lg p-6 mt-6 text-white" style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 50%, #1e40af 100%);">
+            <h2 class="text-lg font-semibold mb-4 pb-2">PAYROLL SUMMARY</h2>
+            <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+                <div><span class="text-sm text-blue-200">Basic Salary</span>
+                     <p class="text-xl font-bold">₱{{ salary_per_cutoff|floatformat:2 }}</p></div>
+                <div><span class="text-sm text-blue-200">Total Earnings</span>
+                     <p class="text-xl font-bold">₱<span id="summary_earnings">0.00</span></p></div>
+                <div><span class="text-sm text-blue-200">De Minimis</span>
+                     <p class="text-xl font-bold">₱<span id="summary_demiminis">0.00</span></p></div>
+                <div><span class="text-sm text-blue-200">Leave (Paid)</span>
+                     <p class="text-xl font-bold text-green-300">₱<span id="summary_leave_paid">0.00</span></p></div>
+                <div><span class="text-sm text-blue-200">Total Deductions</span>
+                     <p class="text-xl font-bold">₱<span id="summary_deductions">0.00</span></p></div>
+                <div><span class="text-sm text-blue-200">NET PAY</span>
+                     <p class="text-2xl font-bold text-green-400">₱<span id="summary_net_pay">0.00</span></p></div>
+            </div>
+            <div class="mt-4">
+                <div id="errorMessage" class="p-4 bg-red-100 border border-red-400 text-red-700 rounded hidden">
+                    <strong>Error:</strong> <span id="errorText"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Note -->
+        <div class="bg-white shadow rounded-lg p-6 mt-6">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-gray-700">NOTE / REMARK</h2>
+            <textarea name="note" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                      placeholder="Enter any notes or remarks about this payroll...">{{ payroll.note|default:'' }}</textarea>
+        </div>
+
+        <!-- Confirmation -->
+        <div class="bg-white shadow rounded-lg p-6 mt-6">
+            <div class="flex items-center mb-4">
+                <input type="checkbox" id="confirmCheck" required class="w-4 h-4 mr-2">
+                <label for="confirmCheck" class="text-sm text-gray-700">
+                    I confirm that I have reviewed all payroll details and they are correct.
+                </label>
+            </div>
+            <div class="flex justify-end space-x-4">
+                <a href="{% url 'human_resource:individual_payroll' %}"
+                   class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Cancel</a>
+                <button type="button" onclick="window.print()"
+                        class="px-6 py-2 border border-blue-500 text-blue-500 rounded-md hover:bg-blue-50">Print Preview</button>
+                <button type="submit" id="submitBtn" disabled
+                        class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    Confirm & Save
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+// ── Constants from Django context ────────────────────────────────────────────
+const SALARY     = {{ salary_per_cutoff|default:0 }};
+const WORK_DAYS  = {{ working_days|default:11 }};
+const SCHEDULE   = "{{ work_schedule|default:'9.5H' }}";
+
+const DAILY_RATE    = WORK_DAYS > 0 ? SALARY / WORK_DAYS : 0;
+const HOURS_PER_DAY = SCHEDULE === '8H' ? 8 : SCHEDULE === '9.5H' ? 9.5 : null;
+const HOURLY_RATE   = HOURS_PER_DAY ? DAILY_RATE / HOURS_PER_DAY : 0;  // 0 for FLEX
+const IS_FLEX       = SCHEDULE === 'FLEX';
+
+const OT_RATE      = 1.25;
+const NSD_RATE     = 1.10;
+const SPL_HOL_RATE = 1.30;
+const REG_HOL_RATE = 2.00;
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function v(id)          { return parseFloat(document.getElementById(id)?.value) || 0; }
+function setText(id, t) { const e = document.getElementById(id); if (e) e.textContent = t; }
+function setVal(id, t)  { const e = document.getElementById(id); if (e) e.value = t; }
+
+// ── Main recalculate ─────────────────────────────────────────────────────────
+function recalculate() {
+
+    // Read HR-entered values from the visible (v_*) inputs
+    const leavePaid    = v('v_leave_days_paid');
+    const leaveUnpaid  = v('v_leave_days_unpaid');
+    const otHours      = v('v_overtime_hours');
+    const nsdHours     = v('v_nsd_hours');
+    const holHours     = v('v_holiday_hours');
+    const regHolHours  = v('v_regular_holiday_hours');
+    const incentives   = v('v_incentives');
+    const tipsOthers   = v('v_tips_others');
+    const lodging      = v('v_lodging_allowance');
+    const taxAmount    = v('v_tax_amount');
+    const daysAbsent   = v('v_days_absent');
+    const otherDed     = v('v_other_deductions');
+    const lateMin      = v('v_late_minutes');
+    const lateHrsEq    = v('v_late_hours_equivalent');
+    
+    // Loan deduction from approved loans (read from hidden field)
+    const loanDed      = v('h_loan_deduction');
+
+    // Compute amounts
+    const otAmt      = IS_FLEX ? 0 : otHours    * HOURLY_RATE * OT_RATE;
+    const nsdAmt     = IS_FLEX ? 0 : nsdHours   * HOURLY_RATE * NSD_RATE;
+    const holAmt     = IS_FLEX ? 0 : holHours   * HOURLY_RATE * SPL_HOL_RATE;
+    const regHolAmt  = IS_FLEX ? 0 : regHolHours* HOURLY_RATE * REG_HOL_RATE;
+    const leaveAdd   = leavePaid   * DAILY_RATE;
+    const leaveDed   = leaveUnpaid * DAILY_RATE;
+    const absenceDed = daysAbsent  * DAILY_RATE;
+    const lateDed    = IS_FLEX ? 0 : lateHrsEq  * HOURLY_RATE;
+
+    // De minimis
+    let totalDemiminis = 0;
+    document.querySelectorAll('.demiminis-input').forEach(el => {
+        totalDemiminis += parseFloat(el.value) || 0;
+    });
+
+    // Dynamic deductions
+    let dynDed = 0;
+    document.querySelectorAll('.deduction-input').forEach(el => {
+        const amt = parseFloat(el.value) || 0;
+        dynDed += amt;
+        setText('display_deduction_' + el.id.replace('deduction_', ''), amt.toFixed(2));
+    });
+
+    // Totals
+    const totalEarnings   = SALARY + otAmt + nsdAmt + holAmt + regHolAmt + incentives + tipsOthers + lodging + leaveAdd;
+    const totalDeductions = taxAmount + lateDed + absenceDed + leaveDed + otherDed + dynDed + loanDed;
+    const netPay          = totalEarnings + totalDemiminis - totalDeductions;
+
+    // ── Update rate info ──────────────────────────────────────────────────────
+    setText('info_daily_rate',            DAILY_RATE.toFixed(2));
+    setText('info_hourly_rate',           HOURLY_RATE.toFixed(2));
+    setText('display_hourly_rate_hint',   HOURLY_RATE.toFixed(2));
+    setText('display_hourly_rate_detail', HOURLY_RATE.toFixed(2));
+
+    // ── Update earnings display ───────────────────────────────────────────────
+    setText('display_leave_addition',    leaveAdd.toFixed(2));
+    setText('display_overtime',          otAmt.toFixed(2));
+    setText('display_nsd',               nsdAmt.toFixed(2));
+    setText('display_holiday',           holAmt.toFixed(2));
+    setText('display_regular_holiday',   regHolAmt.toFixed(2));
+    setText('display_incentives',        incentives.toFixed(2));
+    setText('display_tips_others',       tipsOthers.toFixed(2));
+    setText('display_lodging_allowance', lodging.toFixed(2));
+    setText('display_total_earnings',    totalEarnings.toFixed(2));
+    setText('total_demiminis',           totalDemiminis.toFixed(2));
+
+    // ── Update deductions display ─────────────────────────────────────────────
+    setText('display_tax',                taxAmount.toFixed(2));
+    setText('display_late_minutes_detail',lateMin);
+    setText('display_late_hours_detail',  lateHrsEq);
+    setText('display_late_deduction',     lateDed.toFixed(2));
+    setVal('late_deduction_display',      '₱' + lateDed.toFixed(2));
+    setText('display_absence_deduction',  absenceDed.toFixed(2));
+    setText('display_leave_deduction',    leaveDed.toFixed(2));
+    setText('display_other_deductions',   otherDed.toFixed(2));
+    setText('display_loan_deduction',     loanDed.toFixed(2));
+    setText('display_total_deductions',   totalDeductions.toFixed(2));
+
+    // ── Update summary bar ────────────────────────────────────────────────────
+    setText('summary_earnings',   totalEarnings.toFixed(2));
+    setText('summary_demiminis',  totalDemiminis.toFixed(2));
+    setText('summary_leave_paid', leaveAdd.toFixed(2));
+    setText('summary_deductions', totalDeductions.toFixed(2));
+    setText('summary_net_pay',    netPay.toFixed(2));
+
+    // ── Validation ────────────────────────────────────────────────────────────
+    const errMsg    = document.getElementById('errorMessage');
+    const submitBtn = document.getElementById('submitBtn');
+    if (SALARY <= 0) {
+        errMsg.classList.remove('hidden');
+        document.getElementById('errorText').textContent = 'No salary setting found.';
+        submitBtn.disabled = true;
+    } else if (netPay < 0) {
+        errMsg.classList.remove('hidden');
+        document.getElementById('errorText').textContent = 'Net pay cannot be negative. Check your deductions.';
+        submitBtn.disabled = true;
+    } else {
+        errMsg.classList.add('hidden');
+        submitBtn.disabled = !document.getElementById('confirmCheck').checked;
+    }
+
+    // ✅ Sync ALL hidden POST fields (h_*) — these are what Django receives
+    setVal('h_working_days',            WORK_DAYS);
+    setVal('h_overtime_hours',          otHours);
+    setVal('h_overtime_amount',         otAmt.toFixed(2));
+    setVal('h_nsd_hours',               nsdHours);
+    setVal('h_nsd_amount',              nsdAmt.toFixed(2));
+    setVal('h_holiday_hours',           holHours);
+    setVal('h_holiday_pay',             holAmt.toFixed(2));
+    setVal('h_regular_holiday_hours',   regHolHours);
+    setVal('h_regular_holiday_pay',     regHolAmt.toFixed(2));
+    setVal('h_incentives',              incentives);
+    setVal('h_tips_others',             tipsOthers);
+    setVal('h_lodging_allowance',       lodging);
+    // ✅ Leave — HR-entered values written to hidden POST fields
+    setVal('h_leave_days_paid',         leavePaid);
+    setVal('h_leave_days_unpaid',       leaveUnpaid);
+    setVal('h_days_absent',             daysAbsent);
+    setVal('h_absence_deduction',       absenceDed.toFixed(2));
+    setVal('h_late_minutes',            lateMin);
+    setVal('h_late_hours_equivalent',   lateHrsEq);
+    setVal('h_late_deduction',          lateDed.toFixed(2));
+    setVal('h_tax',                     taxAmount);
+    setVal('h_other_deductions',        otherDed);
+    setVal('h_total_deductions',        totalDeductions.toFixed(2));
+    setVal('h_total_earnings',          totalEarnings.toFixed(2));
+    setVal('h_net_pay',                 netPay.toFixed(2));
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    recalculate();
+    document.getElementById('confirmCheck').addEventListener('change', function () {
+        const hasError = !document.getElementById('errorMessage').classList.contains('hidden');
+        document.getElementById('submitBtn').disabled = !this.checked || hasError;
+    });
+});
+</script>
+
+<!-- Floating Employee Info Panel -->
+<div id="employeeInfoPanel" class="fixed bottom-6 right-6 w-96 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 hidden">
+    <div class="px-6 py-4 bg-indigo-600 dark:bg-indigo-900 rounded-t-xl">
+        <div class="flex items-center justify-between">
+            <h3 class="text-white font-semibold flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                Employee Info
+            </h3>
+            <button type="button" onclick="toggleEmployeePanel()" class="text-white hover:text-gray-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <div class="p-6 space-y-4">
+        <!-- Employee Basic Info -->
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Name</p>
+                <p class="font-medium text-gray-800 dark:text-gray-200">{{ employee.first_name }} {{ employee.last_name }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">ID</p>
+                <p class="font-medium text-gray-800 dark:text-gray-200">{{ employee.employee_number }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Department</p>
+                <p class="font-medium text-gray-800 dark:text-gray-200">{% if employee.departmentlink %}{{ employee.departmentlink.department_name }}{% else %}--{% endif %}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Position</p>
+                <p class="font-medium text-gray-800 dark:text-gray-200">{% if employee.positionlink %}{{ employee.positionlink.position_name }}{% else %}--{% endif %}</p>
+            </div>
+        </div>
+        
+        <!-- Leave Credits -->
+        <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                Leave Credits
+            </h4>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="p-3 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-100 dark:border-green-800">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-green-600 dark:text-green-400 font-semibold">Vacation Leave</span>
+                        <span class="text-lg font-bold text-green-700 dark:text-green-300">{{ vl_credit.remaining|default:"0" }}</span>
+                    </div>
+                    <div class="text-xs text-green-500 dark:text-green-400 mt-1">/ {{ vl_credit.total|default:"0" }} days</div>
+                </div>
+                <div class="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-800">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-blue-600 dark:text-blue-400 font-semibold">Sick Leave</span>
+                        <span class="text-lg font-bold text-blue-700 dark:text-blue-300">{{ sl_credit.remaining|default:"0" }}</span>
+                    </div>
+                    <div class="text-xs text-blue-500 dark:text-blue-400 mt-1">/ {{ sl_credit.total|default:"0" }} days</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Attendance This Period -->
+        <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Attendance ({{ start_date|date:"M d" }} - {{ end_date|date:"M d, Y" }})
+            </h4>
+            <div class="grid grid-cols-3 gap-2">
+                <div class="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-100 dark:border-green-800 text-center">
+                    <div class="text-lg font-bold text-green-600 dark:text-green-400">{{ attendance_present|default:"0" }}</div>
+                    <div class="text-xs text-green-500 dark:text-green-400">Present</div>
+                </div>
+                <div class="p-2 bg-red-50 dark:bg-red-900/30 rounded-lg border border-red-100 dark:border-red-800 text-center">
+                    <div class="text-lg font-bold text-red-600 dark:text-red-400">{{ attendance_absent|default:"0" }}</div>
+                    <div class="text-xs text-red-500 dark:text-red-400">Absent</div>
+                </div>
+                <div class="p-2 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg border border-yellow-100 dark:border-yellow-800 text-center">
+                    <div class="text-lg font-bold text-yellow-600 dark:text-yellow-400">{{ attendance_late|default:"0" }}</div>
+                    <div class="text-xs text-yellow-500 dark:text-yellow-400">Late</div>
+                </div>
+            </div>
+            {% if attendance_half_day > 0 or total_late_minutes > 0 %}
+            <div class="mt-2 grid grid-cols-2 gap-2">
+                {% if attendance_half_day > 0 %}
+                <div class="p-2 bg-orange-50 dark:bg-orange-900/30 rounded-lg border border-orange-100 dark:border-orange-800 text-center">
+                    <div class="text-lg font-bold text-orange-600 dark:text-orange-400">{{ attendance_half_day }}</div>
+                    <div class="text-xs text-orange-500 dark:text-orange-400">Half Day</div>
+                </div>
+                {% endif %}
+                {% if total_late_minutes > 0 %}
+                <div class="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg border border-purple-100 dark:border-purple-800 text-center">
+                    <div class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ total_late_minutes }}</div>
+                    <div class="text-xs text-purple-500 dark:text-purple-400">Late Mins</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Floating Toggle Button with Employee Info & Hover Panel -->
+<div class="fixed bottom-6 right-6 z-40 group">
+    <!-- Hover Panel - Shows on hover with Attendance Details & Date Filter -->
+    <div id="attendanceHoverPanel" class="absolute bottom-20 right-0 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+        <div class="p-4 space-y-4">
+            <!-- Header -->
+            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 border-b dark:border-gray-700 pb-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                Attendance Details
+            </h4>
+            
+            <!-- Employee Quick Info -->
+            <div class="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div class="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm">
+                    {{ employee.first_name.0|upper }}{{ employee.last_name.0|upper }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{{ employee.first_name }} {{ employee.last_name }}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ employee.employee_number }}</div>
+                </div>
+            </div>
+            
+            <!-- Date Range Filter in Hover Panel -->
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-gray-600 dark:text-gray-400">Payroll Period (Date Range)</label>
+                <div class="flex gap-2">
+                    <div class="flex-1">
+                        <label class="block text-xs text-gray-400 mb-1">Start</label>
+                        <input type="date" id="filterStartDateHover" value="{{ start_date }}" 
+                            class="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-xs text-gray-400 mb-1">End</label>
+                        <input type="date" id="filterEndDateHover" value="{{ end_date }}" 
+                            class="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    </div>
+                </div>
+                <button type="button" onclick="applyHoverDateFilter()" class="w-full px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition">
+                    Apply Filter
+                </button>
+            </div>
+            
+            <!-- Attendance Stats -->
+            <div class="grid grid-cols-2 gap-2">
+                <div class="p-2 bg-green-50 rounded-lg border border-green-100 text-center">
+                    <div class="text-lg font-bold text-green-600" id="ajaxPresent">0</div>
+                    <div class="text-xs text-green-500">Present</div>
+                </div>
+                <div class="p-2 bg-red-50 rounded-lg border border-red-100 text-center">
+                    <div class="text-lg font-bold text-red-600" id="ajaxAbsent">0</div>
+                    <div class="text-xs text-red-500">Absent</div>
+                </div>
+                <div class="p-2 bg-yellow-50 rounded-lg border border-yellow-100 text-center">
+                    <div class="text-lg font-bold text-yellow-600" id="ajaxLate">0</div>
+                    <div class="text-xs text-yellow-500">Late</div>
+                </div>
+                <div class="p-2 bg-purple-50 rounded-lg border border-purple-100 text-center">
+                    <div class="text-lg font-bold text-purple-600" id="ajaxLateMins">0m</div>
+                    <div class="text-xs text-purple-500">Late Duration</div>
+                </div>
+            </div>
+            
+            <!-- Date Range Display -->
+            <div class="text-xs text-center text-gray-400" id="attendanceDateRange">{{ start_date|date:"M d" }} - {{ end_date|date:"M d, Y" }}</div>
+        </div>
+    </div>
+    
+    <!-- Main Floating Button with Person Icon -->
+    <button type="button" id="floatingToggleBtn" 
+            class="w-14 h-14 rounded-full shadow-lg border-2 border-white flex items-center justify-center text-white transition-all hover:scale-105"
+            style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">
+        <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+    </button>
+</div>
+
+<script>
+// Employee ID for AJAX calls
+const EMPLOYEE_ID = '{{ employee.id }}';
+
+// Initialize attendance data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    fetchAttendanceData();
+    syncDateInputs();
+    
+    // Add event listeners for automatic date filtering (original inputs)
+    const startDateInput = document.getElementById('filterStartDate');
+    const endDateInput = document.getElementById('filterEndDate');
+    
+    if (startDateInput) {
+        startDateInput.addEventListener('change', function() {
+            // Sync to hover panel
+            document.getElementById('filterStartDateHover').value = this.value;
+            fetchAttendanceData();
+            updateFormWithNewDates();
+        });
+    }
+    
+    if (endDateInput) {
+        endDateInput.addEventListener('change', function() {
+            // Sync to hover panel
+            document.getElementById('filterEndDateHover').value = this.value;
+            fetchAttendanceData();
+            updateFormWithNewDates();
+        });
+    }
+    
+    // Add event listeners for hover panel date inputs
+    const startDateHover = document.getElementById('filterStartDateHover');
+    const endDateHover = document.getElementById('filterEndDateHover');
+    
+    if (startDateHover) {
+        startDateHover.addEventListener('change', function() {
+            // Sync to original
+            document.getElementById('filterStartDate').value = this.value;
+        });
+    }
+    
+    if (endDateHover) {
+        endDateHover.addEventListener('change', function() {
+            // Sync to original
+            document.getElementById('filterEndDate').value = this.value;
+        });
+    }
+});
+
+// Sync date inputs between original and hover panels
+function syncDateInputs() {
+    const startDate = document.getElementById('filterStartDate')?.value;
+    const endDate = document.getElementById('filterEndDate')?.value;
+    
+    if (startDate && document.getElementById('filterStartDateHover')) {
+        document.getElementById('filterStartDateHover').value = startDate;
+    }
+    if (endDate && document.getElementById('filterEndDateHover')) {
+        document.getElementById('filterEndDateHover').value = endDate;
+    }
+}
+
+// Fetch attendance data via AJAX
+function fetchAttendanceData() {
+    const startDate = document.getElementById('filterStartDate')?.value || document.getElementById('filterStartDateHover')?.value;
+    const endDate = document.getElementById('filterEndDate')?.value || document.getElementById('filterEndDateHover')?.value;
+    
+    if (!startDate || !endDate) return;
+    
+    const url = `/human_resource/api/attendance/?employee_id=${EMPLOYEE_ID}&start_date=${startDate}&end_date=${endDate}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error fetching attendance:', data.error);
+                return;
+            }
+            
+            // Update floating panel
+            document.getElementById('ajaxPresent').textContent = data.attendance.present;
+            document.getElementById('ajaxAbsent').textContent = data.attendance.absent;
+            document.getElementById('ajaxLate').textContent = data.attendance.late;
+            
+            // Format late duration
+            const lateHours = data.attendance.late_hours;
+            const lateMins = data.attendance.late_minutes;
+            document.getElementById('ajaxLateMins').textContent = lateHours > 0 ? `${lateHours}h ${lateMins}m` : `${lateMins}m`;
+            
+            // Update date range display
+            document.getElementById('attendanceDateRange').textContent = `${data.date_range.start} - ${data.date_range.end}`;
+        })
+        .catch(error => {
+            console.error('AJAX Error:', error);
+        });
+}
+
+// Apply filter from hover panel
+function applyHoverDateFilter() {
+    const startDate = document.getElementById('filterStartDateHover').value;
+    const endDate = document.getElementById('filterEndDateHover').value;
+    
+    if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+    }
+    
+    // Sync to original inputs
+    document.getElementById('filterStartDate').value = startDate;
+    document.getElementById('filterEndDate').value = endDate;
+    
+    // Fetch new data
+    fetchAttendanceData();
+    updateFormWithNewDates();
+}
+
+// Update the form hidden fields with new dates (triggers recalculation)
+function updateFormWithNewDates() {
+    // Trigger recalculation if the function exists
+    if (typeof recalculate === 'function') {
+        recalculate();
+    }
+}
+
+function applyDateFilter() {
+    const startDate = document.getElementById('filterStartDate').value;
+    const endDate = document.getElementById('filterEndDate').value;
+    const employeeId = '{{ employee.id }}';
+    const month = '{{ month }}';
+    const year = '{{ year }}';
+    const cutoff = '{{ cutoff }}';
+    
+    if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+    }
+    
+    // Build URL with query parameters
+    const url = `/human_resource/payroll/individual/preview/?employee=${employeeId}&month=${month}&year=${year}&cutoff=${cutoff}&start_date=${startDate}&end_date=${endDate}`;
+    
+    // Reload page with new dates
+    window.location.href = url;
+}
+</script>
+{% endblock %}

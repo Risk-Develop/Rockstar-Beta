@@ -1,0 +1,280 @@
+<!-- Combined Partial: Breakdown Card + Responses Table -->
+<!-- This template is returned via HTMX when filters are applied -->
+
+<div class="flex-1 min-w-0 space-y-6">
+    <!-- Response Breakdown Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Response Breakdown</p>
+            <span class="text-xs text-gray-400">Filtered</span>
+        </div>
+        <div class="space-y-2">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Promoters (9-10)</span>
+                </div>
+                <span class="text-sm font-semibold text-green-600">{{ promoter_count|default:0 }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Passives (7-8)</span>
+                </div>
+                <span class="text-sm font-semibold text-yellow-600">{{ passive_count|default:0 }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Detractors (0-6)</span>
+                </div>
+                <span class="text-sm font-semibold text-red-600">{{ detractor_count|default:0 }}</span>
+            </div>
+        </div>
+        {% if main_question_type == 'nps' %}
+        <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between text-xs">
+                <span class="text-gray-500">Filtered eNPS:</span>
+                <span class="font-bold {% if enps_score > 0 %}text-green-600{% elif enps_score < 0 %}text-red-600{% else %}text-gray-600{% endif %}">
+                    {% if enps_score > 0 %}+{% endif %}{{ enps_score|default:0 }}
+                </span>
+            </div>
+            <div class="flex items-center justify-between text-xs mt-1">
+                <span class="text-gray-500">Filtered Responses:</span>
+                <span class="font-semibold text-gray-700 dark:text-gray-300">{{ total_responses|default:0 }}</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Responses Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden" id="responses-card">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Recent Responses</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Click <span class="font-medium text-blue-500">View</span> on any row to expand question details</p>
+            </div>
+            
+            <!-- Search & Filters with HTMX -->
+            <form hx-get="{% url 'human_resource:enps_survey_detail' survey.id %}"
+                  hx-target="#responses-section"
+                  hx-push-url="false"
+                  hx-trigger="change delay:300ms, submit"
+                  hx-swap="outerHTML"
+                  class="flex flex-wrap items-center gap-3">
+                
+                <!-- Search by Employee ID/Name -->
+                <div class="relative">
+                    <input type="text" 
+                           name="search"
+                           value="{{ current_search|default:'' }}"
+                           placeholder="Search Employee..." 
+                           class="pl-10 pr-4 py-2 w-44 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+                
+                <!-- Department Filter -->
+                <div class="relative">
+                    <select name="department"
+                            onchange="this.form.dispatchEvent(new Event('submit'))"
+                            class="pl-3 pr-8 py-2 w-36 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer">
+                        <option value="">All Depts</option>
+                        {% for dept in all_departments %}
+                        <option value="{{ dept }}" {% if current_department == dept %}selected{% endif %}>{{ dept }}</option>
+                        {% endfor %}
+                    </select>
+                    <svg class="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                
+                <!-- Category Filter -->
+                <div class="relative">
+                    <select name="category"
+                            onchange="this.form.dispatchEvent(new Event('submit'))"
+                            class="pl-3 pr-8 py-2 w-32 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer">
+                        <option value="">All</option>
+                        {% for cat in all_categories %}
+                        <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat|title }}</option>
+                        {% endfor %}
+                    </select>
+                    <svg class="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                
+                <!-- Date Start with Label -->
+                <div class="flex items-center gap-1">
+                    <label class="text-xs text-gray-500 dark:text-gray-400">From:</label>
+                    <input type="date" 
+                           name="date_start"
+                           onchange="this.form.requestSubmit()"
+                           value="{{ current_date_start|default:'' }}"
+                           class="pl-3 pr-2 py-2 w-32 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                
+                <!-- Date End with Label -->
+                <div class="flex items-center gap-1">
+                    <label class="text-xs text-gray-500 dark:text-gray-400">To:</label>
+                    <input type="date" 
+                           name="date_end"
+                           onchange="this.form.requestSubmit()"
+                           value="{{ current_date_end|default:'' }}"
+                           class="pl-3 pr-2 py-2 w-32 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                
+                <!-- Filter Button -->
+                <button type="submit"
+                        class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+                    Filter
+                </button>
+                
+                <!-- Clear Filters -->
+                {% if current_department or current_category or current_date_start or current_date_end or current_search %}
+                <a href="{% url 'human_resource:enps_survey_detail' survey.id %}"
+                   class="px-2 py-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                   title="Clear">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </a>
+                {% endif %}
+                
+                <div class="htmx-indicator text-xs text-gray-500">
+                    Loading...
+                </div>
+            </form>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                    <tr>
+                        {% if not allow_anonymous %}
+                        <th class="px-6 py-3 font-medium">Employee ID</th>
+                        <th class="px-6 py-3 font-medium">Department</th>
+                        {% endif %}
+                        <th class="px-6 py-3 font-medium">Date</th>
+                        <th class="px-6 py-3 font-medium">
+                            {% if main_question_type == 'text' %}Response{% else %}Score{% endif %}
+                        </th>
+                        <th class="px-6 py-3 font-medium">Category</th>
+                        <th class="px-6 py-3 font-medium">Emoji</th>
+                        <th class="px-6 py-3 font-medium">Questions</th>
+                        <th class="px-6 py-3 font-medium">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for response in page_obj %}
+                    <tr class="bg-white dark:bg-gray-800 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                        {% if not allow_anonymous %}
+                        <td class="px-6 py-4">
+                            {% if response.employee %}
+                            <span class="font-medium text-gray-900 dark:text-gray-100">{{ response.employee.employee_number|default:"-" }}</span>
+                            {% else %}
+                            <span class="text-gray-400 dark:text-gray-500">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-gray-500 dark:text-gray-400">
+                            {% if response.department %}{{ response.department }}{% else %}-{% endif %}
+                        </td>
+                        {% endif %}
+                        <td class="px-6 py-4 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            {{ response.created_at|date:"M d, Y" }}
+                        </td>
+                        <td class="px-6 py-4 font-bold">
+                            {% if main_question_type == 'text' %}
+                            <span class="text-gray-700 dark:text-gray-300 text-sm line-clamp-1">
+                                {% for q_response in response.question_responses.all %}{% if q_response.text_value %}{{ q_response.text_value|truncatewords:5 }}{% endif %}{% endfor %}
+                            </span>
+                            {% else %}
+                            <span class="{% if response.category == 'promoter' %}text-green-600 dark:text-green-400{% elif response.category == 'passive' %}text-yellow-600 dark:text-yellow-400{% else %}text-red-600 dark:text-red-400{% endif %}">
+                                {{ response.score }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if main_question_type != 'text' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if response.category == 'promoter' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                {% elif response.category == 'passive' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                {% else %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{% endif %}">
+                                {{ response.category|title }}
+                            </span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-xl">
+                            {% if main_question_type != 'text' %}{{ response.emoji_feedback }}{% else %}-{% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 text-xs font-semibold">
+                                {{ response.question_responses.count }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <button onclick="toggleQuestions('{{ response.id }}')"
+                                    type="button"
+                                    class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                View
+                            </button>
+                        </td>
+                    </tr>
+                    <tr x-show="expandedRows.includes('{{ response.id }}')" 
+                        x-transition
+                        style="display: none;">
+                        <td colspan="8" class="px-6 py-4">
+                            <div class="mb-3 flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                        {% if response.employee %}{{ response.employee.first_name }} {{ response.employee.last_name }} ({{ response.employee.employee_number }}){% else %}Anonymous{% endif %}
+                                    </span>
+                                </div>
+                                <span class="text-xs text-gray-500">{{ response.created_at|date:"M d, Y H:i" }}</span>
+                            </div>
+                            <div class="space-y-2">
+                                {% for q_response in response.question_responses.all %}
+                                <div class="flex items-start justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border">
+                                    <span class="text-xs font-medium text-gray-500">{{ q_response.question.question_text }}</span>
+                                    <span class="text-sm font-bold 
+                                        {% if q_response.question.question_type == 'yes_no' %}{% if q_response.boolean_value %}text-green-600{% else %}text-red-600{% endif %}
+                                        {% else %}{% if q_response.score_value >= 9 %}text-green-600{% elif q_response.score_value >= 7 %}text-yellow-600{% else %}text-red-600{% endif %}{% endif %}">
+                                        {% if q_response.question.question_type == 'yes_no' %}{% if q_response.boolean_value %}Yes{% else %}No{% endif %}{% else %}{{ q_response.score_value }}{% endif %}
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                            No responses found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% with current_department|default:"" as dept %}{% with current_category|default:"" as cat %}{% with current_date_start|default:"" as ds %}{% with current_date_end|default:"" as de %}{% with current_search|default:"" as search %}{% with filter_params="&department="|add:dept|add:"&category="|add:cat|add:"&date_start="|add:ds|add:"&date_end="|add:de|add:"&search="|add:search %}{% endwith %}{% endwith %}{% endwith %}{% endwith %}{% endwith %}
+        {% if page_obj.has_other_pages %}
+        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <p class="text-sm text-gray-500">Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</p>
+            <div class="flex gap-1">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{{ filter_params }}" 
+                   class="px-3 py-1.5 text-sm bg-white border rounded hover:bg-gray-50">Prev</a>
+                {% endif %}
+                <span class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded">{{ page_obj.number }}</span>
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{{ filter_params }}" 
+                   class="px-3 py-1.5 text-sm bg-white border rounded hover:bg-gray-50">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+</div>

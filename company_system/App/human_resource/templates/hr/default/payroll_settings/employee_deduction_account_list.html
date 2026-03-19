@@ -1,0 +1,584 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Employee Deduction Accounts{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Employee Deduction Accounts</h1>
+            <p class="text-sm text-gray-500 mt-1">Manage government, attendance, and insurance account numbers for employees</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'human_resource:hr_dashboard' %}" class="inline-flex items-center gap-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                <span class="material-icons text-sm">arrow_back</span>
+                Back to Dashboard
+            </a>
+            <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors shadow-sm">
+                <span class="material-icons text-sm">add</span>
+                Add Deduction Account
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-blue-100 rounded-lg">
+                    <span class="material-icons text-blue-600">account_balance_wallet</span>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Total Accounts</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ accounts|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-green-100 rounded-lg">
+                    <span class="material-icons text-green-600">check_circle</span>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Active</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ active_count|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-orange-100 rounded-lg">
+                    <span class="material-icons text-orange-600">account_balance</span>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Government</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ government_count|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-teal-100 rounded-lg">
+                    <span class="material-icons text-teal-600">health_and_safety</span>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">With Insurance</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ insurance_count|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+        <form method="GET" class="flex flex-wrap gap-4 items-end">
+            <div class="flex-1 min-w-[150px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Only</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive Only</option>
+                </select>
+            </div>
+
+            <div class="flex-1 min-w-[180px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select name="category" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                    <option value="" {% if not category_filter %}selected{% endif %}>All Categories</option>
+                    <option value="ATTENDANCE" {% if category_filter == 'ATTENDANCE' %}selected{% endif %}>Attendance</option>
+                    <option value="GOVERNMENT" {% if category_filter == 'GOVERNMENT' %}selected{% endif %}>Government</option>
+                    <option value="LOAN" {% if category_filter == 'LOAN' %}selected{% endif %}>Loan/Cash Advance</option>
+                    <option value="INSURANCE" {% if category_filter == 'INSURANCE' %}selected{% endif %}>Insurance</option>
+                    <option value="OTHER" {% if category_filter == 'OTHER' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <input type="text" name="search" value="{{ search_query|default:'' }}" placeholder="Employee name or account number..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+            </div>
+
+            <div class="flex gap-2">
+                <button type="submit" class="inline-flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors">
+                    <span class="material-icons text-sm">search</span>
+                    Filter
+                </button>
+                <a href="{% url 'human_resource:employee_deduction_account_list' %}" class="inline-flex items-center gap-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                    <span class="material-icons text-sm">clear</span>
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {% if accounts %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200">
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Employee</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Deduction Type</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Account Number</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Insurance</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Effective Date</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for account in accounts %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                    <span class="material-icons text-blue-600">person</span>
+                                </div>
+                                <div>
+                                    <span class="font-medium text-gray-900">{{ account.employee.first_name }} {{ account.employee.last_name }}</span>
+                                    <p class="text-xs text-gray-500">{{ account.employee.employee_number }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if account.deduction_type.category == 'ATTENDANCE' %}
+                            <span class="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">schedule</span>
+                                {{ account.deduction_type.name }}
+                            </span>
+                            {% elif account.deduction_type.category == 'GOVERNMENT' %}
+                            <span class="inline-flex items-center gap-1 bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">account_balance</span>
+                                {{ account.deduction_type.name }}
+                            </span>
+                            {% elif account.deduction_type.category == 'LOAN' %}
+                            <span class="inline-flex items-center gap-1 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">payments</span>
+                                {{ account.deduction_type.name }}
+                            </span>
+                            {% elif account.deduction_type.category == 'INSURANCE' %}
+                            <span class="inline-flex items-center gap-1 bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">health_and_safety</span>
+                                {{ account.deduction_type.name }}
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">more_horiz</span>
+                                {{ account.deduction_type.name }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if account.account_number %}
+                            <span class="font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded text-sm">{{ account.account_number }}</span>
+                            {% else %}
+                            <span class="text-gray-400 italic">Not set</span>
+                            {% endif %}
+                            {% if account.employer_account_number %}
+                            <p class="text-xs text-gray-500 mt-1">Employer: {{ account.employer_account_number }}</p>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if account.has_insurance %}
+                            <span class="inline-flex items-center gap-1 bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">check_circle</span>
+                                Yes
+                            </span>
+                            {% if account.insurance_policy_number %}
+                            <p class="text-xs text-gray-500 mt-1">Policy: {{ account.insurance_policy_number }}</p>
+                            {% endif %}
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 text-gray-400">
+                                <span class="material-icons text-sm">cancel</span>
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="text-sm text-gray-600">
+                                {{ account.effective_start_date }}
+                                {% if account.effective_end_date %}
+                                - {{ account.effective_end_date }}
+                                {% else %}
+                                - Present
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if account.is_active %}
+                            <span class="inline-flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">check_circle</span>
+                                Active
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">pause_circle</span>
+                                Inactive
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button type="button" onclick="openEditModal('{{ account.pk }}', '{{ account.employee.pk }}', '{{ account.deduction_type.pk }}', '{{ account.account_number|default:'' }}', '{{ account.employer_account_number|default:'' }}', {{ account.is_active|yesno:'true,false' }}, '{{ account.effective_start_date|default:'' }}', '{{ account.effective_end_date|default:'' }}', '{{ account.notes|default:''|escapejs }}', '{{ account.deduction_type.category }}', {{ account.has_insurance|yesno:'true,false' }}, '{{ account.insurance_policy_number|default:'' }}')"
+                                        class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                                    <span class="material-icons text-sm">edit</span>
+                                </button>
+                                <button type="button" onclick="openDeleteModal('{{ account.pk }}', '{{ account.employee.first_name }} {{ account.employee.last_name }}', '{{ account.deduction_type.name }}')"
+                                        class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                    <span class="material-icons text-sm">delete</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-12 text-center">
+            <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <span class="material-icons text-gray-400 text-2xl">account_balance_wallet</span>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-1">No deduction accounts found</h3>
+            <p class="text-gray-500 mb-4">Get started by adding a deduction account for an employee</p>
+            <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700">
+                <span class="material-icons text-sm">add</span>
+                Add Deduction Account
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div id="deductionAccountModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50 backdrop-blur-sm">
+    <div class="relative top-20 mx-auto p-0 border-0 w-full max-w-2xl shadow-2xl rounded-xl bg-white">
+        <div class="flex items-center justify-between p-4 border-b border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800" id="modalTitle">Add Employee Deduction Account</h3>
+            <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+
+        <form method="POST" action="{% url 'human_resource:employee_deduction_account_add' %}" id="deductionAccountForm" class="p-4">
+            {% csrf_token %}
+            <input type="hidden" name="pk" id="accountPk">
+
+            <!-- Category Selection -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Select Category *</label>
+                <div class="flex flex-wrap gap-3">
+                    <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors category-radio">
+                        <input type="radio" name="category" id="catGOVERNMENT" value="GOVERNMENT"
+                               class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
+                               onchange="filterDeductionTypes(); toggleFieldsByCategory('GOVERNMENT')">
+                        <span class="ml-2 text-sm font-medium text-gray-700">
+                            <span class="material-icons text-orange-500 align-middle text-sm">account_balance</span>
+                            Government
+                        </span>
+                    </label>
+                    <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors category-radio">
+                        <input type="radio" name="category" id="catINSURANCE" value="INSURANCE"
+                               class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300"
+                               onchange="filterDeductionTypes(); toggleFieldsByCategory('INSURANCE')">
+                        <span class="ml-2 text-sm font-medium text-gray-700">
+                            <span class="material-icons text-teal-500 align-middle text-sm">health_and_safety</span>
+                            Insurance
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Employee *</label>
+                    <div class="relative">
+                        <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">person</span>
+                        <select name="employee" id="accountEmployee" required
+                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white">
+                            <option value="">-- Select Employee --</option>
+                            {% for employee in employees %}
+                            <option value="{{ employee.pk }}">{{ employee.employee_number }} - {{ employee.first_name }} {{ employee.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Deduction Type *</label>
+                    <div class="relative">
+                        <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">category</span>
+                        <select name="deduction_type" id="accountDeductionType" required
+                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white">
+                            <option value="">-- Select Category First --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Government Fields -->
+            <div id="accountNumberField" class="hidden">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Employee Account Number</label>
+                        <div class="relative">
+                            <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">credit_card</span>
+                            <input type="text" name="account_number" id="accountNumber"
+                                   placeholder="e.g., SSS Number, PhilHealth ID"
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Government-provided account number</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Employer Account Number</label>
+                        <div class="relative">
+                            <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">business</span>
+                            <input type="text" name="employer_account_number" id="employerAccountNumber"
+                                   placeholder="Employer's account number"
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Insurance Fields -->
+            <div id="insuranceSection" class="hidden">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Insurance Policy Number</label>
+                    <div class="relative">
+                        <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">credit_card</span>
+                        <input type="text" name="insurance_policy_number" id="insuranceAccountNumber"
+                               placeholder="Insurance policy number"
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                        <input type="checkbox" name="has_insurance" id="hasInsurance" value="on"
+                               class="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded">
+                        <span class="ml-3 text-sm text-gray-700">Employee has insurance coverage</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Effective Start Date</label>
+                    <div class="relative">
+                        <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">event</span>
+                        <input type="date" name="effective_start_date" id="accountStartDate"
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Effective End Date</label>
+                    <div class="relative">
+                        <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">event</span>
+                        <input type="date" name="effective_end_date" id="accountEndDate"
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Leave empty for indefinite</p>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea name="notes" id="accountNotes" rows="2"
+                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="Additional notes..."></textarea>
+            </div>
+
+            <div class="mb-6">
+                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" name="is_active" id="accountIsActive" value="on" checked
+                           class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
+                    <span class="ml-3 text-sm text-gray-700">Active</span>
+                </label>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
+                    Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50 backdrop-blur-sm">
+    <div class="relative top-20 mx-auto p-0 border-0 w-full max-w-md shadow-2xl rounded-xl bg-white">
+        <div class="p-6 text-center">
+            <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 mb-4">
+                <span class="material-icons text-red-600 text-2xl">warning</span>
+            </div>
+            <h3 class="text-lg leading-6 font-bold text-gray-900 mb-2" id="deleteModalTitle">Delete Deduction Account</h3>
+            <p class="text-sm text-gray-500 mb-6" id="deleteModalMessage">
+                Are you sure you want to delete this deduction account?
+            </p>
+            <form method="POST" id="deleteForm" class="flex justify-center gap-3">
+                {% csrf_token %}
+                <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const deductionTypesByCategory = {
+    'GOVERNMENT': [
+        {% for dtype in deduction_types %}{% if dtype.category == 'GOVERNMENT' %}{pk: '{{ dtype.pk }}', name: '{{ dtype.name }}'},{% endif %}{% endfor %}
+    ],
+    'INSURANCE': [
+        {% for dtype in deduction_types %}{% if dtype.category == 'INSURANCE' %}{pk: '{{ dtype.pk }}', name: '{{ dtype.name }}'},{% endif %}{% endfor %}
+    ],
+    'ATTENDANCE': [
+        {% for dtype in deduction_types %}{% if dtype.category == 'ATTENDANCE' %}{pk: '{{ dtype.pk }}', name: '{{ dtype.name }}'},{% endif %}{% endfor %}
+    ],
+    'LOAN': [
+        {% for dtype in deduction_types %}{% if dtype.category == 'LOAN' %}{pk: '{{ dtype.pk }}', name: '{{ dtype.name }}'},{% endif %}{% endfor %}
+    ],
+    'OTHER': [
+        {% for dtype in deduction_types %}{% if dtype.category == 'OTHER' %}{pk: '{{ dtype.pk }}', name: '{{ dtype.name }}'},{% endif %}{% endfor %}
+    ]
+};
+
+function filterDeductionTypes() {
+    const selectedCategory = document.querySelector('input[name="category"]:checked');
+    const deductionTypeSelect = document.getElementById('accountDeductionType');
+
+    deductionTypeSelect.innerHTML = '<option value="">-- Select Deduction Type --</option>';
+
+    if (selectedCategory) {
+        const category = selectedCategory.value;
+        const types = deductionTypesByCategory[category] || [];
+
+        types.forEach(function(type) {
+            const option = document.createElement('option');
+            option.value = type.pk;
+            option.textContent = type.name;
+            deductionTypeSelect.appendChild(option);
+        });
+
+        if (types.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No deduction types for this category';
+            option.disabled = true;
+            deductionTypeSelect.appendChild(option);
+        }
+    }
+}
+
+function toggleFieldsByCategory(category) {
+    const accountNumberField = document.getElementById('accountNumberField');
+    const insuranceSection = document.getElementById('insuranceSection');
+
+    accountNumberField.classList.add('hidden');
+    insuranceSection.classList.add('hidden');
+
+    if (category === 'GOVERNMENT') {
+        accountNumberField.classList.remove('hidden');
+    } else if (category === 'INSURANCE') {
+        insuranceSection.classList.remove('hidden');
+    }
+}
+
+function openAddModal() {
+    document.getElementById('modalTitle').textContent = 'Add Employee Deduction Account';
+    document.getElementById('accountPk').value = '';
+    document.getElementById('accountEmployee').value = '';
+
+    document.querySelectorAll('input[name="category"]').forEach(r => r.checked = false);
+    document.getElementById('accountDeductionType').innerHTML = '<option value="">-- Select Category First --</option>';
+
+    document.getElementById('accountNumber').value = '';
+    document.getElementById('employerAccountNumber').value = '';
+    document.getElementById('insuranceAccountNumber').value = '';
+    document.getElementById('hasInsurance').checked = false;
+    document.getElementById('accountStartDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('accountEndDate').value = '';
+    document.getElementById('accountNotes').value = '';
+    document.getElementById('accountIsActive').checked = true;
+
+    toggleFieldsByCategory(null);
+
+    document.getElementById('deductionAccountModal').classList.remove('hidden');
+}
+
+function openEditModal(pk, employeeId, deductionTypeId, accountNumber, employerAccountNumber, isActive, startDate, endDate, notes, deductionTypeCategory, hasInsurance, insurancePolicyNumber) {
+    document.getElementById('modalTitle').textContent = 'Edit Employee Deduction Account';
+    document.getElementById('accountPk').value = pk;
+    document.getElementById('accountEmployee').value = employeeId;
+
+    document.querySelectorAll('input[name="category"]').forEach(r => r.checked = false);
+    if (deductionTypeCategory) {
+        const categoryRadio = document.getElementById('cat' + deductionTypeCategory);
+        if (categoryRadio) categoryRadio.checked = true;
+    }
+
+    filterDeductionTypes();
+    document.getElementById('accountDeductionType').value = deductionTypeId;
+
+    document.getElementById('accountNumber').value = accountNumber || '';
+    document.getElementById('employerAccountNumber').value = employerAccountNumber || '';
+    document.getElementById('insuranceAccountNumber').value = insurancePolicyNumber || '';
+    document.getElementById('hasInsurance').checked = (hasInsurance === 'true' || hasInsurance === true);
+
+    document.getElementById('accountIsActive').checked = (isActive === 'true' || isActive === true);
+    document.getElementById('accountStartDate').value = startDate || '';
+    document.getElementById('accountEndDate').value = endDate || '';
+    document.getElementById('accountNotes').value = notes || '';
+
+    toggleFieldsByCategory(deductionTypeCategory);
+
+    document.getElementById('deductionAccountModal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('deductionAccountModal').classList.add('hidden');
+}
+
+
+document.getElementById('deductionAccountModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+function openDeleteModal(pk, employeeName, deductionName) {
+    document.getElementById('deleteModalTitle').textContent = 'Delete Deduction Account';
+    document.getElementById('deleteModalMessage').textContent =
+        'Are you sure you want to delete the deduction account for "' + employeeName + '" (' + deductionName + ')? This action cannot be undone.';
+    document.getElementById('deleteForm').action =
+        '{% url "human_resource:employee_deduction_account_delete" 0 %}'.replace('0', pk);
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+        closeDeleteModal();
+    }
+});
+</script>
+{% endblock %}

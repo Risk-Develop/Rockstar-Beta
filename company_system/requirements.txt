@@ -1,8 +1,13 @@
 asgiref==3.10.0
 beautifulsoup4==4.14.2
 bs4==0.0.2
+celery==5.4.0
+channels==4.2.0
+channels-redis==4.2.0
 dj-database-url==3.0.1
 Django==5.2.7
+django-allauth==65.15.0
+django-celery-beat==2.9.0
 et_xmlfile==2.0.0
 gunicorn==23.0.0
 numpy==2.3.4
@@ -14,6 +19,7 @@ psycopg2-binary==2.9.11
 python-dateutil==2.9.0.post0
 python-decouple==3.8
 pytz==2025.2
+redis==5.2.1
 six==1.17.0
 soupsieve==2.8
 sqlparse==0.5.3

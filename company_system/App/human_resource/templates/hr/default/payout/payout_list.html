@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payout List{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">Payout List</h1>
+        <div class="flex space-x-2">
+            <a href="{% url 'human_resource:hr_dashboard' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                &larr; Back to Dashboard
+            </a>
+            <a href="{% url 'human_resource:batch_payroll_preview' %}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                + Batch Payroll
+            </a>
+            <a href="{% url 'human_resource:individual_payroll' %}" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">
+                + Individual Payroll
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <form method="GET" class="bg-white shadow rounded-lg p-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-8 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                <select name="year" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    <option value="">All Years</option>
+                    {% for year in years %}
+                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                <select name="month" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    <option value="">All Months</option>
+                    {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {# Added: Department filter with dynamic employee filtering #}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <select name="department" id="filter-department" class="w-full border border-gray-300 rounded-md px-3 py-2" onchange="filterEmployeesByDepartment()">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept.pk }}" {% if dept.pk == selected_department %}selected{% endif %}>{{ dept.department_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {# Changed: Employee dropdown now has data-dept attribute for filtering #}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+                <select name="employee" id="filter-employee" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    <option value="">All Employees</option>
+                    {% for emp in employees %}
+                    <option value="{{ emp.pk }}" data-dept="{{ emp.departmentlink_id }}" {% if emp.pk == selected_employee %}selected{% endif %}>{{ emp.last_name }}, {{ emp.first_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="status" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    <option value="">All Status</option>
+                    <option value="finalized" {% if selected_status == 'finalized' %}selected{% endif %}>Finalized</option>
+                    <option value="draft" {% if selected_status == 'draft' %}selected{% endif %}>Draft</option>
+                </select>
+            </div>
+            {# Added: Release Status filter #}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Release Status</label>
+                <select name="released" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    <option value="">All</option>
+                    <option value="released" {% if selected_released == 'released' %}selected{% endif %}>Released</option>
+                    <option value="unreleased" {% if selected_released == 'unreleased' %}selected{% endif %}>Unreleased</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 w-full">
+                    Filter
+                </button>
+            </div>
+            <div class="flex items-end">
+                <a href="{% url 'human_resource:payout_list' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 w-full text-center block">
+                    Clear
+                </a>
+            </div>
+        </div>
+        {# Added: Export button row #}
+        <div class="mt-4 flex justify-end">
+            <a href="{% url 'human_resource:payout_export_csv' %}?{% if selected_year %}year={{ selected_year }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_released %}&released={{ selected_released }}{% endif %}" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                Export CSV
+            </a>
+        </div>
+    </form>
+
+    <!-- Summary Section -->
+    {% if payouts %}
+    <div class="bg-white shadow rounded-lg p-4 mb-6">
+        <h3 class="text-lg font-semibold mb-3">Summary</h3>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="text-sm text-gray-500">Total Earnings</div>
+                <div class="text-xl font-bold text-gray-900">₱{{ total_earnings|floatformat:2 }}</div>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="text-sm text-gray-500">Total De Minimis</div>
+                <div class="text-xl font-bold text-orange-600">₱{{ total_de_minimis|floatformat:2 }}</div>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="text-sm text-gray-500">Total Gross</div>
+                <div class="text-xl font-bold text-gray-900">₱{{ total_gross|floatformat:2 }}</div>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="text-sm text-gray-500">Total Deductions</div>
+                <div class="text-xl font-bold text-red-600">₱{{ total_deductions|floatformat:2 }}</div>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="text-sm text-gray-500">Total Net Pay</div>
+                <div class="text-xl font-bold text-green-600">₱{{ total_net|floatformat:2 }}</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Payout Table -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        {% if payouts %}
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gross</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deductions</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Net Pay</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Release</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for payout in payouts %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">
+                            {{ payout.employee.first_name }} {{ payout.employee.last_name }}
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            {{ payout.employee.employee_number }}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if payout.employee.status == 'active' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Active
+                        </span>
+                        {% elif payout.employee.status == 'inactive' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                            Inactive
+                        </span>
+                        {% elif payout.employee.status == 'on_leave' %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            On Leave
+                        </span>
+                        {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            {{ payout.employee.status|title }}
+                        </span>
+                        {% endif %}
+                    </td>
+                    {# Changed: Use departmentlink (ForeignKey) instead of department (CharField) #}
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if payout.employee.departmentlink %}
+                        {{ payout.employee.departmentlink.department_name|title }}
+                        {% else %}
+                        {{ payout.employee.get_department_display|title|default:"-" }}
+                        {% endif %}
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">{{ payout.get_month_display }} {{ payout.year }}</div>
+                        <div class="text-sm text-gray-500">Cutoff {{ payout.cutoff }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">₱{{ payout.gross|floatformat:2 }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-red-600">-₱{{ payout.total_deductions|floatformat:2 }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-bold text-green-600">₱{{ payout.net|floatformat:2 }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if payout.payroll_record.finalized %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Finalized
+                        </span>
+                        {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            Draft
+                        </span>
+                        {% endif %}
+                    </td>
+                    {# Added: Release status column #}
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if payout.released %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            Released
+                        </span>
+                        {% elif payout.payroll_record.finalized %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                            Pending
+                        </span>
+                        {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-500">
+                            -
+                        </span>
+                        {% endif %}
+                    </td>
+                    {# Changed: Actions now use dropdown menu instead of individual links #}
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="relative">
+                            <button type="button" class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none" id="options-menu-{{ payout.id }}" onclick="toggleDropdown('{{ payout.id }}')">
+                                Actions
+                                <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                            <div id="dropdown-{{ payout.id }}" class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                <div class="py-1">
+                                    <a href="{% url 'human_resource:payout_detail' payout.id %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        View
+                                    </a>
+                                    {% if not payout.payroll_record.finalized %}
+                                    <a href="{% url 'human_resource:payout_edit' payout.id %}" class="block px-4 py-2 text-sm text-indigo-700 hover:bg-gray-100">
+                                        Edit
+                                    </a>
+                                    <a href="{% url 'human_resource:payout_finalize' payout.id %}" class="block px-4 py-2 text-sm text-green-700 hover:bg-gray-100">
+                                        Finalize
+                                    </a>
+                                    <a href="{% url 'human_resource:payout_delete' payout.id %}" class="block px-4 py-2 text-sm text-red-700 hover:bg-gray-100">
+                                        Delete
+                                    </a>
+                                    {% elif payout.payroll_record.finalized and not payout.released %}
+                                    <a href="{% url 'human_resource:payout_release' payout.id %}" class="block px-4 py-2 text-sm text-blue-700 hover:bg-gray-100">
+                                        Release Salary
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="p-6 text-center text-gray-500">
+            No payouts found for the selected criteria.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// ============================================================================
+// DEPENDENT DROPDOWN FILTER - Employee filtered by Department
+// ============================================================================
+// Purpose: When user selects a department, filter the employee dropdown
+//          to show only employees from that department
+// Solution: Store all employees in global variable on page load, then filter
+// ============================================================================
+
+// Global variable to store all employees (initialized on page load)
+var allEmployeesData = [];
+
+// Initialize: Store all employees from dropdown when page loads
+function initEmployeeData() {
+    var empSelect = document.getElementById('filter-employee');
+    if (!empSelect) return;
+    
+    var options = empSelect.options;
+    for (var i = 0; i < options.length; i++) {
+        var deptAttr = options[i].getAttribute('data-dept');
+        allEmployeesData.push({
+            value: options[i].value,
+            text: options[i].text,
+            dept: deptAttr || ''
+        });
+    }
+    console.log('Stored', allEmployeesData.length, 'employees');
+}
+
+// Toggle dropdown menu for actions (View, Edit, Finalize, Delete)
+function toggleDropdown(id) {
+    var dropdown = document.getElementById('dropdown-' + id);
+    if (dropdown) {
+        dropdown.classList.toggle('hidden');
+    }
+}
+
+// Filter employees based on selected department
+// Called when user changes the department dropdown
+function filterEmployeesByDepartment() {
+    var deptSelect = document.getElementById('filter-department');
+    var empSelect = document.getElementById('filter-employee');
+    
+    if (!deptSelect || !empSelect) return;
+    
+    var selectedDept = deptSelect.value;
+    
+    // Use stored data instead of current dropdown options (prevents data loss)
+    if (allEmployeesData.length === 0) {
+        console.log('No stored data, re-initializing');
+        initEmployeeData();
+    }
+    
+    // Clear and rebuild dropdown from stored data
+    empSelect.length = 0;
+    empSelect.add(new Option('All Employees', ''));
+    
+    // Add only employees that match the selected department
+    for (var j = 0; j < allEmployeesData.length; j++) {
+        var opt = allEmployeesData[j];
+        if (opt.value === '') continue;
+        
+        // Compare as strings
+        var optDept = String(opt.dept || '');
+        var selected = String(selectedDept || '');
+        
+        // Show all if no department selected, or matching department
+        if (!selected || optDept === selected) {
+            var newOpt = new Option(opt.text, opt.value);
+            if (opt.dept) {
+                newOpt.setAttribute('data-dept', opt.dept);
+            }
+            empSelect.add(newOpt);
+        }
+    }
+}
+
+// Initialize on page load - store employee data first
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        initEmployeeData();
+    });
+} else {
+    initEmployeeData();
+}
+
+// Also run filter after short delay (handles pre-selected department from URL)
+setTimeout(function() {
+    var deptSelect = document.getElementById('filter-department');
+    if (deptSelect && deptSelect.value) {
+        filterEmployeesByDepartment();
+    }
+}, 100);
+
+// Close action dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    var dropdowns = document.querySelectorAll('[id^="dropdown-"]');
+    for (var i = 0; i < dropdowns.length; i++) {
+        var dropdown = dropdowns[i];
+        var button = document.getElementById('options-menu-' + dropdown.id.replace('dropdown-', ''));
+        if (dropdown && !dropdown.contains(event.target) && button && !button.contains(event.target)) {
+            dropdown.classList.add('hidden');
+        }
+    }
+});
+</script>
+{% endblock %}

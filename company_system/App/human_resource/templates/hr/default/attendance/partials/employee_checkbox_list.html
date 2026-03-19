@@ -1,0 +1,25 @@
+{% if employees %}
+<div class="space-y-2 max-h-96 overflow-y-auto">
+    {% for emp in employees %}
+    <label class="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition">
+        <input type="checkbox" name="employees" value="{{ emp.id }}"
+               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+        <div class="ml-3">
+            <p class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ emp.first_name }} {{ emp.last_name }}
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ emp.employee_number|default:"No ID" }}
+            </p>
+        </div>
+    </label>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-8 text-gray-500 dark:text-gray-400">
+    <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <p class="text-sm">All employees have attendance records for this date!</p>
+</div>
+{% endif %}

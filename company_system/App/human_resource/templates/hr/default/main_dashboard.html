@@ -1,0 +1,139 @@
+
+  <div class="max-w-7xl mx-auto">
+    <!-- Page Title -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold mb-4 md:mb-0">{% if is_owner %}Welcome, Owner!{% else %}Welcome, {{ employee.first_name }}!{% endif %}</h1>
+    
+  </div>
+
+    <!-- Responsive Info Cards -->
+    <div
+      class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+    >
+      <div
+        class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow hover:shadow-2xl hover:-translate-y-1 border border-transparent hover:border-orange-500/20"
+      >
+        <h3 class="text-lg font-semibold mb-2">Sales Revenue</h3>
+        <p class="text-3xl font-bold text-green-500">$24,800</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          +12% this month
+        </p>
+      </div>
+
+      <div
+        class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow hover:shadow-2xl hover:-translate-y-1 border border-transparent hover:border-orange-500/20"
+      >
+        <h3 class="text-lg font-semibold mb-2">Active Users</h3>
+        <p class="text-3xl font-bold text-orange-500">1,240</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          +8% vs last week
+        </p>
+      </div>
+
+      <div
+        class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow hover:shadow-2xl hover:-translate-y-1 border border-transparent hover:border-orange-500/20"
+      >
+        <h3 class="text-lg font-semibold mb-2">Projects</h3>
+        <p class="text-3xl font-bold text-purple-500">76</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          3 new this week
+        </p>
+      </div>
+
+      <div
+        class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow hover:shadow-2xl hover:-translate-y-1 border border-transparent hover:border-orange-500/20"
+      >
+        <h3 class="text-lg font-semibold mb-2">Support Tickets</h3>
+        <p class="text-3xl font-bold text-red-500">12</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">2 pending</p>
+      </div>
+
+      <div
+        class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow hover:shadow-2xl hover:-translate-y-1 border border-transparent hover:border-orange-500/20"
+      >
+        <h3 class="text-lg font-semibold mb-2">Retention Rate</h3>
+        <p class="text-3xl font-bold text-yellow-500">92%</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          +3% from last month
+        </p>
+      </div>
+    </div>
+
+    <!-- Section Divider -->
+    <div class="border-t dark:border-gray-700 my-10"></div>
+
+    <!-- Content Section with Cards -->
+    <h3 class="text-2xl font-bold mb-4">Recent Reports</h3>
+    <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+      <div
+        class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow hover:shadow-lg border border-transparent hover:border-orange-500/20"
+      >
+        <h4 class="font-semibold mb-2">Sales Analysis</h4>
+        <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">
+          Overview of product performance and regional breakdowns.
+        </p>
+        <button
+          class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all"
+        >
+          View
+        </button>
+      </div>
+
+      <div
+        class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow hover:shadow-lg border border-transparent hover:border-orange-500/20"
+      >
+        <h4 class="font-semibold mb-2">Customer Insights</h4>
+        <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">
+          Learn about engagement metrics and behavior analysis.
+        </p>
+        <button
+          class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all"
+        >
+          Open
+        </button>
+      </div>
+
+      <div
+        class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow hover:shadow-lg border border-transparent hover:border-orange-500/20"
+      >
+        <h4 class="font-semibold mb-2">System Logs</h4>
+        <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">
+          Track activity, errors, and security alerts for admins.
+        </p>
+        <button
+          class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all"
+        >
+          Inspect
+        </button>
+      </div>
+    </div>
+
+    <!-- Analytics Section -->
+    <div class="mt-10">
+      <h3 class="text-2xl font-bold mb-4">Analytics</h3>
+      <div class="grid gap-6 md:grid-cols-2">
+        <div
+          class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow hover:shadow-xl"
+        >
+          <h4 class="font-semibold mb-2">User Growth</h4>
+          <div
+            class="h-48 bg-gradient-to-r from-orange-500/20 to-orange-300/20 rounded-lg flex items-center justify-center text-orange-500 font-semibold"
+          >
+            Chart Placeholder
+          </div>
+        </div>
+
+        <div
+          class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow hover:shadow-xl"
+        >
+          <h4 class="font-semibold mb-2">System Activity</h4>
+          <div
+            class="h-48 bg-gradient-to-r from-green-500/20 to-green-300/20 rounded-lg flex items-center justify-center text-green-500 font-semibold"
+          >
+            Graph Placeholder
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+

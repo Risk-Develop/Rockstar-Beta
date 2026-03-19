@@ -1,34 +1,227 @@
 {% load static %}
-<header class="flex items-center justify-between p-4 bg-gray-800 text-white md:ml-64 transition-all duration-300 shadow">
-  <!-- Left section: Sidebar toggle + Logo + Title -->
+<header class="flex items-center justify-between p-4 bg-gray-800 text-white md:ml-64 shadow z-40" id="mainHeader">
+  <!-- Left section: Sidebar toggle + Page Title -->
   <div class="flex items-center gap-4">
+    <!-- Sidebar toggle (mobile and desktop medium) -->
+    <button id="sidebarToggleDesktop" class="hidden md:flex lg:hidden items-center justify-center p-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white" title="Toggle Sidebar">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+      </svg>
+    </button>
     <!-- Sidebar toggle (mobile only) -->
-    <button id="sidebarOpen" class="md:hidden bg-gray-700 px-3 py-2 rounded">
-      ☰
+    <button id="sidebarOpen" class="md:hidden flex items-center justify-center p-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+      </svg>
     </button>
 
-    <!-- Logo 
-    <img src="" alt="Rockstar Logo" class="h-10 w-10">-->
-
-    <!-- Title -->
-    <!--<h1 class="text-xl font-bold">Master Dashboard</h1>-->
+    <!-- Page Title -->
+    {% block page_title %}{% endblock %}
   </div>
 
-  <!-- Right section: Theme toggle + Logout -->
-  <div class="flex items-center gap-4">
-    <!-- Theme toggle button -->
-    <button
-      id="themeToggle"
-      class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:scale-110 transition-all duration-300"
-      title="Toggle Dark/Light Mode"
-    >
-      <span id="themeIcon">🌙</span>
+  <!-- Right section: Messages + Theme toggle + User Menu -->
+  <div class="flex items-center gap-2">
+    <!-- Messages Button with Badge -->
+    <button id="messages-btn" class="relative p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors" title="Messages">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+      </svg>
+      <span class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-gray-700" id="messageBadge"></span>
     </button>
 
-    <!-- Logout -->
-    <!--<a href="{% url 'logout' %}" class="text-red-500 font-semibold hover:underline">Logout</a>-->
+    <!-- Theme toggle button -->
+    <button id="theme-toggle" type="button" class="p-2 rounded-full bg-gray-700 dark:bg-gray-600 hover:bg-gray-600 dark:hover:bg-gray-500 hover:scale-110 transition-all" title="Toggle Dark/Light Mode">
+      <!-- Sun Icon (shown in dark mode) -->
+      <svg id="sun-icon" class="w-5 h-5 hidden text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+      </svg>
+      <!-- Moon Icon (shown in light mode) -->
+      <svg id="moon-icon" class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+      </svg>
+    </button>
+
+    <!-- User Profile Dropdown - Icon Only -->
+    <div class="relative" style="z-index: 60;">
+      <button id="user-menu-btn" class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors" title="User Menu">
+        <!-- User Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      </button>
+
+      <!-- Dropdown Menu - with dark mode styles -->
+      <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 rounded-lg shadow-lg py-1" 
+           style="z-index: 70; background-color: #374151; color: #e5e7eb;">
+        <!-- User Info Header -->
+        <div class="px-4 py-2 border-b" style="border-color: #4b5563;">
+          <p class="text-sm font-semibold" style="color: #f9fafb;">
+            {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}
+          </p>
+          <p class="text-xs" style="color: #9ca3af;">{{ user.email|default:"User" }}</p>
+        </div>
+        
+        <a href="#" class="flex items-center px-4 py-2 hover:bg-gray-600" style="color: #e5e7eb;">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          Profile
+        </a>
+        <a href="#" class="flex items-center px-4 py-2 hover:bg-gray-600" style="color: #e5e7eb;">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Settings
+        </a>
+        <div class="border-t my-1" style="border-color: #4b5563;"></div>
+        <form method="post" action="{% url 'logout' %}?next=/login/" id="navbar-logout-form">
+          {% csrf_token %}
+          <button type="button" onclick="confirmLogout('navbar-logout-form')" class="flex items-center w-full text-left px-4 py-2 hover:bg-gray-600" style="color: #f87171;">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+          </button>
+        </form>
+      </div>
+    </div>
   </div>
 </header>
 
+<!-- Logout Confirmation Modal -->
+<div id="logout-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+  <div class="rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl" style="background-color: #1f2937; color: #ffffff;">
+    <h3 class="text-lg font-semibold mb-4">Confirm Logout</h3>
+    <p class="mb-6" style="color: #d1d5db;">Are you sure you want to logout?</p>
+    <div class="flex justify-end gap-3">
+      <button onclick="cancelLogout()" class="px-4 py-2 rounded-lg hover:bg-gray-600" style="background-color: #4b5563; color: white;">Cancel</button>
+      <button onclick="submitLogout()" class="px-4 py-2 rounded-lg hover:bg-red-500" style="background-color: #dc2626; color: white;">Logout</button>
+    </div>
+  </div>
+</div>
 
+<script>
+  // Initialize theme toggle after a small delay to ensure base.html has run
+  setTimeout(function() {
+    // Hide page loader on initial load
+    var pageLoader = document.getElementById('page-loader');
+    if (pageLoader) {
+      pageLoader.classList.remove('active');
+    }
+    
+    var themeToggle = document.getElementById('theme-toggle');
+    var sunIcon = document.getElementById('sun-icon');
+    var moonIcon = document.getElementById('moon-icon');
+    
+    if (!themeToggle) return;
+    
+    // Check current dark state (set by base.html or localStorage)
+    var isDark = document.documentElement.classList.contains('dark');
+    
+    // If localStorage says light, force remove dark class
+    if (localStorage.getItem('theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+      isDark = false;
+    }
+    
+    // Update icon visibility
+    function updateThemeIcons() {
+      if (sunIcon && moonIcon) {
+        sunIcon.classList.toggle('hidden', !isDark);
+        moonIcon.classList.toggle('hidden', isDark);
+      }
+    }
+    
+    // Set initial state
+    updateThemeIcons();
+    
+    // Click handler
+    themeToggle.onclick = function() {
+      isDark = !isDark;
+      
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+      updateThemeIcons();
+    };
+  }, 50);
 
+  // Desktop sidebar toggle button functionality - triggers collapse
+  var sidebarToggleDesktop = document.getElementById('sidebarToggleDesktop');
+  if (sidebarToggleDesktop) {
+    sidebarToggleDesktop.addEventListener('click', function() {
+      var sidebar = document.getElementById('sidebar');
+      if (!sidebar) return;
+      
+      // Check current width to determine collapsed state
+      var currentWidth = sidebar.style.width;
+      var isCollapsed = currentWidth === '64px';
+      
+      var mainContent = document.getElementById('mainContent');
+      var header = document.getElementById('mainHeader');
+      var toggleText = document.getElementById('toggleText');
+      var sidebarTextElements = document.querySelectorAll('.sidebar-text');
+      
+      if (isCollapsed) {
+        // Expand
+        sidebar.style.width = '256px';
+        if (toggleText) toggleText.textContent = 'Collapse';
+        if (sidebarTextElements) sidebarTextElements.forEach(el => el.style.display = '');
+        if (mainContent) mainContent.style.marginLeft = '256px';
+        if (header) header.style.marginLeft = '256px';
+        localStorage.setItem('sidebarCollapsed', 'false');
+      } else {
+        // Collapse
+        sidebar.style.width = '64px';
+        if (toggleText) toggleText.textContent = '';
+        if (sidebarTextElements) sidebarTextElements.forEach(el => el.style.display = 'none');
+        if (mainContent) mainContent.style.marginLeft = '64px';
+        if (header) header.style.marginLeft = '64px';
+        localStorage.setItem('sidebarCollapsed', 'true');
+      }
+    });
+  }
+
+  // User dropdown
+  (function() {
+    var userMenuBtn = document.getElementById('user-menu-btn');
+    var userDropdown = document.getElementById('user-dropdown');
+    
+    if (userMenuBtn && userDropdown) {
+      userMenuBtn.onclick = function(e) {
+        e.stopPropagation();
+        userDropdown.classList.toggle('hidden');
+      };
+      
+      document.onclick = function(e) {
+        if (!userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+          userDropdown.classList.add('hidden');
+        }
+      };
+    }
+  })();
+
+  // Logout modal functions
+  function confirmLogout(formId) {
+    document.getElementById('logout-modal').classList.remove('hidden');
+    document.getElementById('logout-modal').dataset.formId = formId;
+  }
+
+  function cancelLogout() {
+    document.getElementById('logout-modal').classList.add('hidden');
+  }
+
+  function submitLogout() {
+    var formId = document.getElementById('logout-modal').dataset.formId;
+    document.getElementById(formId).submit();
+  }
+
+  document.getElementById('logout-modal').onclick = function(e) {
+    if (e.target === e.currentTarget) cancelLogout();
+  };
+</script>

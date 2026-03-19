@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payroll Preview - {{ employee }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">Payroll Preview</h1>
+        <a href="{% url 'human_resource:individual_payroll' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+            &larr; Back to Payroll
+        </a>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Employee Info Card -->
+        <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
+            <div class="bg-blue-50 p-4 border-b">
+                <div class="grid grid-cols-4 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-500">Employee</p>
+                        <p class="font-bold text-lg">{{ employee.get_full_name }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Department</p>
+                        <p class="font-medium">{{ employee.department|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Position</p>
+                        <p class="font-medium">{{ employee.position|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Payroll Period</p>
+                        <p class="font-medium">{{ cutoff_start }} - {{ cutoff_end }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Salary Info -->
+            <div class="p-4 border-b bg-gray-50">
+                <h2 class="font-bold text-lg mb-3 text-blue-700">Salary Information</h2>
+                <div class="grid grid-cols-4 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-500">Monthly Salary</p>
+                        <p class="font-mono text-lg">₱{{ salary_setting.base_salary_monthly|floatformat:2 }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Per Cutoff</p>
+                        <p class="font-mono text-lg">₱{{ salary_setting.salary_per_cutoff|floatformat:2 }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Tier</p>
+                        <p class="font-medium">{{ tier.tier_name|default:"-" }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Threshold %</p>
+                        <p class="font-medium">{{ tier.threshold_percentage|default:"-" }}%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Earnings Section -->
+        <div class="grid grid-cols-2 gap-6 mb-6">
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="bg-green-50 p-3 border-b">
+                    <h2 class="font-bold text-lg text-green-700">Earnings</h2>
+                </div>
+                <div class="p-4">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Base Salary (Cutoff)</label>
+                        <input type="text" readonly value="₱{{ salary_setting.salary_per_cutoff|floatformat:2 }}" class="w-full p-2 bg-gray-100 border rounded text-gray-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Overtime</label>
+                        <input type="number" name="overtime" value="{{ form.overtime.value|default:0 }}" min="0" step="0.01" class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Night Shift Differential (NSD)</label>
+                        <input type="number" name="nsd" value="{{ form.nsd.value|default:0 }}" min="0" step="0.01" class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Holiday</label>
+                        <input type="number" name="holiday" value="{{ form.holiday.value|default:0 }}" min="0" step="0.01" class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Incentives</label>
+                        <input type="number" name="incentives" value="{{ form.incentives.value|default:0 }}" min="0" step="0.01" class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="bg-gray-100 p-3 rounded">
+                        <div class="flex justify-between">
+                            <span class="font-bold text-gray-700">Total Earnings:</span>
+                            <span class="font-mono font-bold text-green-700" id="total_earnings">₱{{ total_earnings|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deductions Section -->
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="bg-red-50 p-3 border-b">
+                    <h2 class="font-bold text-lg text-red-700">Deductions</h2>
+                </div>
+                <div class="p-4">
+                    <!-- Attendance Deductions -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Late</label>
+                        <input type="number" name="late_deduction" value="{{ form.late_deduction.value|default:0 }}" min="0" step="0.01" class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Absent</label>
+                        <input type="number" name="absent_deduction" value="{{ form.absent_deduction.value|default:0 }}" min="0" step="0.01" class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Leave Deduction</label>
+                        <input type="number" name="leave_deduction" value="{{ form.leave_deduction.value|default:0 }}" min="0" step="0.01" class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <!-- Other Deductions -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cash Advance</label>
+                        <input type="number" name="cash_advance" value="{{ form.cash_advance.value|default:0 }}" min="0" step="0.01" class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Other Deductions</label>
+                        <input type="number" name="other_deductions" value="{{ form.other_deductions.value|default:0 }}" min="0" step="0.01" class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <!-- Tax (Manual) -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tax</label>
+                        <input type="number" name="tax" value="{{ form.tax.value|default:0 }}" min="0" step="0.01" class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div class="bg-gray-100 p-3 rounded">
+                        <div class="flex justify-between">
+                            <span class="font-bold text-gray-700">Total Deductions:</span>
+                            <span class="font-mono font-bold text-red-700" id="total_deductions">₱{{ total_deductions|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- De Minimis Section -->
+        <div class="bg-white shadow rounded-lg overflow-hidden mb-6">
+            <div class="bg-yellow-50 p-3 border-b">
+                <h2 class="font-bold text-lg text-yellow-700">De Minimis Allowances</h2>
+            </div>
+            <div class="p-4">
+                <div class="grid grid-cols-3 gap-4">
+                    {% for type in deminimis_types %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ type.name }}</label>
+                        <input type="number" name="dem_{{ type.code }}" value="0" min="0" step="0.01" class="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500" placeholder="₱0.00">
+                        <p class="text-xs text-gray-500 mt-1">
+                            {% if type.is_taxable %}Taxable{% else %}Non-Taxable{% endif %}
+                        </p>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-4 bg-yellow-100 p-3 rounded">
+                    <div class="flex justify-between">
+                        <span class="font-bold text-yellow-800">Total De Minimis:</span>
+                        <span class="font-mono font-bold text-yellow-800" id="total_deminimis">₱0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Net Pay Summary -->
+        <div class="bg-gray-900 text-white shadow rounded-lg overflow-hidden mb-6">
+            <div class="p-6">
+                <div class="grid grid-cols-4 gap-4 text-center">
+                    <div>
+                        <p class="text-sm text-gray-400">Gross Pay</p>
+                        <p class="text-2xl font-mono">₱{{ total_earnings|floatformat:2 }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">De Minimis</p>
+                        <p class="text-2xl font-mono text-yellow-400">₱{{ total_deminimis|floatformat:2 }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Total Deductions</p>
+                        <p class="text-2xl font-mono text-red-400">₱{{ total_deductions|floatformat:2 }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Net Pay</p>
+                        <p class="text-3xl font-bold font-mono text-green-400" id="net_pay">₱{{ net_pay|floatformat:2 }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Validation Messages -->
+        {% if form.errors %}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <strong>Please correct the following errors:</strong>
+            <ul class="list-disc pl-5 mt-2">
+                {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-4">
+            <a href="{% url 'human_resource:individual_payroll' %}" class="bg-gray-500 text-white px-6 py-3 rounded hover:bg-gray-600 font-medium">
+                Cancel
+            </a>
+            <button type="submit" name="action" value="preview" class="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 font-medium">
+                Recalculate
+            </button>
+            <button type="submit" name="action" value="post" class="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 font-bold" onclick="return confirm('Are you sure you want to POST this payroll? This action cannot be undone.')">
+                Post Payroll
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

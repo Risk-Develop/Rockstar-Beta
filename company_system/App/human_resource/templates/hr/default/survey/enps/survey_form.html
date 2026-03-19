@@ -1,0 +1,1151 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{% if survey %}Edit{% else %}Create{% endif %} Survey{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        transition: all 0.3s ease;
+    }
+    .form-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    }
+    .question-card {
+        transition: all 0.2s ease;
+    }
+    .question-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    .question-card.dragging {
+        opacity: 0.5;
+        transform: scale(0.98);
+    }
+    
+    /* SortableJS ghost element styling */
+    .sortable-ghost {
+        opacity: 0.4;
+        background-color: #e5e7eb !important;
+        border: 2px dashed #9ca3af !important;
+    }
+    
+    .sortable-chosen {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+        transform: scale(1.02);
+    }
+    
+    .sortable-drag {
+        opacity: 1 !important;
+        background-color: #fef3c7 !important;  /* Yellow highlight */
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+        transform: scale(1.05) !important;
+        z-index: 9999 !important;
+        border: 3px solid #f59e0b !important;
+        /* Floating/flying effect while dragging */
+        animation: float 0.5s ease-in-out infinite !important;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: scale(1.05) translateY(0) !important; }
+        50% { transform: scale(1.05) translateY(-15px) !important; }
+    }
+    
+    /* Drop/boom animation */
+    .question-card.drop-shake {
+        animation: dropShake 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) both !important;
+    }
+    
+    @keyframes dropShake {
+        0% { transform: scale(1); }
+        20% { transform: scale(1.25) rotate(-10deg); }
+        40% { transform: scale(1.25) rotate(10deg); }
+        60% { transform: scale(1.25) rotate(-6deg); }
+        80% { transform: scale(1.25) rotate(4deg); }
+        100% { transform: scale(1) rotate(0); }
+    }
+    
+    /* Impact/boom effect on surrounding cards */
+    .question-card.impact-effect {
+        animation: impactPulse 0.2s ease-out !important;
+    }
+    
+    @keyframes impactPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(0.85); }
+        100% { transform: scale(1); }
+    }
+    .cursor-move:hover {
+        color: #6b7280 !important;
+        cursor: grab;
+    }
+    .cursor-move:active {
+        cursor: grabbing;
+    }
+    .type-badge {
+        font-size: 0.65rem;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .type-nps { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .type-rating_5 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+    .type-rating_3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+    .type-text { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: #1a1a1a; }
+    .type-yes_no { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: #1a1a1a; }
+
+    .preview-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    .checkbox-slider {
+        position: relative;
+        width: 44px;
+        height: 24px;
+    }
+    .checkbox-slider input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .checkbox-slider .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #cbd5e1;
+        transition: .3s;
+        border-radius: 24px;
+    }
+    .checkbox-slider .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .checkbox-slider input:checked + .slider {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+    .checkbox-slider input:checked + .slider:before {
+        transform: translateX(20px);
+    }
+    .checkbox-slider input:disabled + .slider {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .shake {
+        animation: shake 0.5s ease-in-out;
+    }
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'hr/dashboard/hr_sidebar.html' %}
+
+<main id="mainContent" class="md:ml-64 pt-20 min-h-screen p-4 sm:p-6 bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 text-gray-800 dark:text-gray-100">
+
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="{% url 'human_resource:enps_survey_list' %}" class="p-2 rounded-lg bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
+                        {% if survey %}Edit Survey{% else %}Create Survey{% endif %}
+                    </h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {% if survey %}Update your employee survey settings{% else %}Set up a new employee survey{% endif %}
+                    </p>
+                </div>
+            </div>
+            {% if survey %}
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full {% if survey.is_active %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400{% else %}bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400{% endif %}">
+                <span class="w-2 h-2 rounded-full {% if survey.is_active %}bg-green-500 animate-pulse{% else %}bg-gray-400{% endif %}"></span>
+                <span class="text-sm font-medium">{% if survey.is_active %}Active{% else %}Inactive{% endif %}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ============================================================
+         OUTER WRAPPER: Alpine root for the whole page
+         surveyPage() owns: showDeleteModal, questionToDelete
+         surveyFormValidator() owns: nameError, dateError, validateForm
+         We merge them into one root component to avoid scope issues.
+    ============================================================ -->
+    <div x-data="surveyPage()">
+
+        <!-- Form + Sidebar grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+
+            <!-- ── Main Form (col-span-3) ── -->
+            <div class="lg:col-span-3 space-y-6">
+                <form method="post" id="surveyForm" class="space-y-6">
+                    {% csrf_token %}
+
+                    <!-- ── Basic Info Card ── -->
+                    <div class="form-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                                <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                            </div>
+                            <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Basic Information</h2>
+                        </div>
+
+                        <!-- Survey Name -->
+                        <div class="mb-5">
+                            <div class="flex items-center gap-2 mb-2">
+                                <label for="id_name" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                    Survey Name <span class="text-red-500">*</span>
+                                </label>
+                                <div class="group relative">
+                                    <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <div class="absolute left-full top-0 ml-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 w-48 break-words">
+                                        Give your survey a clear, descriptive name
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="text" name="name" id="id_name" required
+                                   value="{{ survey.name|default:'' }}"
+                                   class="block w-full px-4 py-3 text-sm text-gray-900 bg-gray-50 dark:bg-gray-700 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-500 dark:focus:border-blue-500 transition-all"
+                                   placeholder="e.g., Q1 2024 Employee Satisfaction Survey"
+                                   @input="validateName()">
+                            <p x-show="nameError" class="mt-1 text-xs text-red-500" x-text="nameError"></p>
+                        </div>
+
+                        <!-- Description -->
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <label for="id_description" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                    Description <span class="text-gray-400 font-normal">(Optional)</span>
+                                </label>
+                                <div class="group relative">
+                                    <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <div class="absolute left-full top-0 ml-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 w-48 break-words">
+                                        Explain the purpose and goals of this survey
+                                    </div>
+                                </div>
+                            </div>
+                            <textarea name="description" id="id_description" rows="3"
+                                      class="block w-full px-4 py-3 text-sm text-gray-900 bg-gray-50 dark:bg-gray-700 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-500 dark:focus:border-blue-500 transition-all resize-none"
+                                      placeholder="e.g., This quarterly survey helps us understand employee satisfaction and identify areas for improvement...">{{ survey.description|default:'' }}</textarea>
+                        </div>
+                    </div>
+
+                    <!-- ── Schedule Card ── -->
+                    <div class="form-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                                <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Survey Schedule</h2>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <label for="id_start_date" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                        Start Date <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="group relative">
+                                        <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <div class="absolute left-full top-0 ml-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 w-48 break-words">
+                                                    When respondents can start taking the survey
+                                                </div>
+                                    </div>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"></path>
+                                        </svg>
+                                    </div>
+                                    <input type="date" name="start_date" id="id_start_date" required
+                                           value="{{ survey.start_date|date:'Y-m-d'|default:'' }}"
+                                           class="block w-full pl-10 pr-4 py-3 text-sm text-gray-900 bg-gray-50 dark:bg-gray-700 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-500 dark:focus:border-blue-500 transition-all"
+                                           @input="validateDates()">
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <label for="id_end_date" class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                        End Date <span class="text-gray-400 font-normal">(Optional)</span>
+                                    </label>
+                                    <div class="group relative">
+                                        <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                            <div class="absolute left-full top-0 ml-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 w-48 break-words">
+                                                Leave empty for ongoing surveys with no end date
+                                            </div>
+                                    </div>
+                                </div>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"></path>
+                                        </svg>
+                                    </div>
+                                    <input type="date" name="end_date" id="id_end_date"
+                                           value="{{ survey.end_date|date:'Y-m-d'|default:'' }}"
+                                           class="block w-full pl-10 pr-4 py-3 text-sm text-gray-900 bg-gray-50 dark:bg-gray-700 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-500 dark:focus:border-blue-500 transition-all"
+                                           placeholder="Leave empty for ongoing"
+                                           @input="validateDates()">
+                                </div>
+                                <p x-show="dateError" class="mt-1 text-xs text-red-500" x-text="dateError"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Settings Card ── -->
+                    <div class="form-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
+                        <div class="flex items-center gap-3 mb-5">
+                            <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                                <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                            </div>
+                            <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Survey Settings</h2>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- Anonymous Toggle -->
+                            <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                                        <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2">
+                                            <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">Allow Anonymous Responses</p>
+                                            <div class="group relative">
+                                                <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                                <div class="absolute left-full top-0 ml-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 w-48 break-words">
+                                                    When enabled, identities are hidden. Locked when survey has responses.
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">Employees can submit without identifying themselves</p>
+                                    </div>
+                                </div>
+                                <label class="checkbox-slider">
+                                    {% if survey and survey.responses.exists %}
+                                    <input class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" type="hidden" name="allow_anonymous" value="{% if survey.allow_anonymous %}1{% else %}0{% endif %}">
+                                    {% endif %}
+                                    <input class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" type="checkbox" name="allow_anonymous" id="id_allow_anonymous"
+                                           {% if survey.allow_anonymous %}checked{% endif %}
+                                           {% if survey and survey.responses.exists %}disabled{% endif %}>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            {% if survey and survey.responses.exists %}
+                            <div class="flex items-start gap-2 px-3 py-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg text-amber-700 dark:text-amber-400 text-sm">
+                                <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                </svg>
+                                <div>
+                                    <p class="font-medium">Anonymous setting is locked</p>
+                                    <p class="text-xs mt-1 opacity-80">This survey already has {{ survey.responses.count }} response(s). Changing anonymity would affect data analysis.</p>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if survey %}
+                            <!-- Active Toggle -->
+                            <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2 {% if survey.is_active %}bg-green-100 dark:bg-green-900/30{% else %}bg-gray-100 dark:bg-gray-600{% endif %} rounded-lg">
+                                        <svg class="w-5 h-5 {% if survey.is_active %}text-green-600 dark:text-green-400{% else %}text-gray-500 dark:text-gray-400{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">Survey Status</p>
+                                            <div class="group relative">
+                                                <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                                <div class="absolute left-full top-0 ml-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 w-48 break-words">
+                                                    Inactive surveys cannot be accessed by employees
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{% if survey.is_active %}Currently accepting responses{% else %}Not accepting responses{% endif %}</p>
+                                    </div>
+                                </div>
+                                <label class="checkbox-slider">
+                                    <input class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" type="checkbox" name="is_active" id="id_is_active"
+                                           {% if survey.is_active %}checked{% endif %}>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- ── Questions Card ── -->
+                    <div class="form-card bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                                    <svg class="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Survey Questions</h2>
+                                        <div class="group relative">
+                                            <svg class="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            <div class="absolute left-full top-0 ml-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 w-48 break-words">
+                                                Drag questions to reorder. Add different question types: NPS, Rating, Text, or Yes/No
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">Add questions to gather employee feedback</p>
+                                </div>
+                            </div>
+                            <button type="button"
+                                    @click="addQuestion()"
+                                    class="inline-flex items-center px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-medium rounded-xl hover:from-blue-700 hover:to-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900 transition-all shadow-lg shadow-blue-600/25">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Add Question
+                            </button>
+                        </div>
+
+                        <!-- Questions Counter -->
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full" x-text="questionCount"></span>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">question(s) in this survey</span>
+                        </div>
+
+                        <!-- Questions List -->
+                        <div id="questionsContainer" class="space-y-4">
+                            {% if survey and survey.questions.all %}
+                                {% for question in survey.questions.all %}
+                                <div class="question-card bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border-2 border-gray-100 dark:border-gray-600 fade-in" data-question-id="{{ question.id }}">
+                                    <div class="flex items-start gap-4">
+                                        <!-- Drag Handle -->
+                                        <div class="hidden md:flex flex-col items-center pt-2 text-gray-300">
+                                            <svg class="w-5 h-5 cursor-move" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"></path>
+                                            </svg>
+                                            <span class="text-xs font-bold text-gray-400 mt-1 question-number">{{ forloop.counter }}</span>
+                                        </div>
+
+                                        <div class="flex-1 space-y-4">
+                                            <!-- Type Badge + Required -->
+                                            <div class="flex items-center gap-2">
+                                                <span class="type-badge type-{{ question.question_type }} js-type-badge">{{ question.get_question_type_display }}</span>
+                                                {% if question.is_required %}
+                                                <span class="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-semibold rounded">Required</span>
+                                                {% endif %}
+                                            </div>
+
+                                            <!-- Question Text -->
+                                            <div>
+                                                <textarea name="question_text_{{ question.id }}" rows="2"
+                                                          class="block w-full px-4 py-3 text-sm text-gray-900 bg-white dark:bg-gray-700 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+                                                          placeholder="Enter your question..."
+                                                          oninput="this.closest('.question-card').querySelector('.js-preview-text').textContent = this.value || 'Your question will appear here...'">{{ question.question_text }}</textarea>
+                                            </div>
+
+                                            <!-- Question Options -->
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="block mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Question Type</label>
+                                                    <select name="question_type_{{ question.id }}"
+                                                            class="js-type-select block w-full px-4 py-2.5 text-sm text-gray-900 bg-white dark:bg-gray-700 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+                                                            onchange="updateTypeBadge(this)">
+                                                        <option value="nps" {% if question.question_type == 'nps' %}selected{% endif %}>📊 NPS Score (0-10)</option>
+                                                        <option value="rating_5" {% if question.question_type == 'rating_5' %}selected{% endif %}>⭐ Rating (1-5 Stars)</option>
+                                                        <option value="rating_3" {% if question.question_type == 'rating_3' %}selected{% endif %}>🔥 Rating (1-3)</option>
+                                                        <option value="text" {% if question.question_type == 'text' %}selected{% endif %}>📝 Text Answer</option>
+                                                        <option value="yes_no" {% if question.question_type == 'yes_no' %}selected{% endif %}>✓✗ Yes/No</option>
+                                                    </select>
+                                                </div>
+                                                <div class="flex items-center pt-6">
+                                                    <label class="flex items-center cursor-pointer">
+                                                        <input type="checkbox" name="question_required_{{ question.id }}"
+                                                               {% if question.is_required %}checked{% endif %}
+                                                               class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+                                                        <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">This question is required</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <!-- Question Preview -->
+                                            <div class="mt-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                                                <p class="text-xs text-gray-400 mb-2">Preview:</p>
+                                                <div class="text-sm font-medium text-gray-700 dark:text-gray-300 js-preview-text">{{ question.question_text|default:'Your question will appear here...' }}</div>
+                                                <div class="mt-3 js-preview-area">
+                                                    {% if question.question_type == 'nps' %}
+                                                    <div class="flex flex-wrap gap-2">
+                                                        {% for i in "0123456789"|make_list %}
+                                                        <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">{{ i }}</button>
+                                                        {% endfor %}
+                                                        <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">10</button>
+                                                    </div>
+                                                    {% elif question.question_type == 'rating_5' %}
+                                                    <div class="flex gap-1">
+                                                        {% for i in "12345"|make_list %}
+                                                        <button type="button" class="text-2xl text-gray-300 hover:text-yellow-400 transition-colors">★</button>
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% elif question.question_type == 'rating_3' %}
+                                                    <div class="flex gap-2">
+                                                        <button type="button" class="px-3 py-1 rounded bg-gray-100 dark:bg-gray-700 text-sm">1</button>
+                                                        <button type="button" class="px-3 py-1 rounded bg-gray-100 dark:bg-gray-700 text-sm">2</button>
+                                                        <button type="button" class="px-3 py-1 rounded bg-gray-100 dark:bg-gray-700 text-sm">3</button>
+                                                    </div>
+                                                    {% elif question.question_type == 'yes_no' %}
+                                                    <div class="flex gap-3">
+                                                        <button type="button" class="px-4 py-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-sm font-medium">Yes</button>
+                                                        <button type="button" class="px-4 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-medium">No</button>
+                                                    </div>
+                                                    {% else %}
+                                                    <textarea rows="2" class="block w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600" placeholder="Type your answer here..."></textarea>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Delete Button -->
+                                        <button type="button"
+                                                @click="promptDelete($el)"
+                                                class="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="question_id_{{ question.id }}" value="{{ question.id }}">
+                                    <input type="hidden" name="question_order_{{ question.id }}" value="{{ question.order }}">
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <!-- Default first question (new survey) -->
+                                <div class="question-card bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border-2 border-gray-100 dark:border-gray-600 fade-in">
+                                    <div class="flex items-start gap-4">
+                                        <div class="hidden md:flex flex-col items-center pt-2 text-gray-300">
+                                            <svg class="w-5 h-5 cursor-move" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"></path>
+                                            </svg>
+                                            <span class="text-xs font-bold text-gray-400 mt-1 question-number">1</span>
+                                        </div>
+
+                                        <div class="flex-1 space-y-4">
+                                            <div class="flex items-center gap-2">
+                                                <span class="type-badge type-nps js-type-badge">NPS</span>
+                                                <span class="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-semibold rounded">Required</span>
+                                            </div>
+
+                                            <div>
+                                                <textarea name="question_text_new_0" rows="2"
+                                                          class="block w-full px-4 py-3 text-sm text-gray-900 bg-white dark:bg-gray-700 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+                                                          placeholder="Enter your question..."
+                                                          oninput="this.closest('.question-card').querySelector('.js-preview-text').textContent = this.value || 'Your question will appear here...'">How likely are you to recommend this company as a great place to work?</textarea>
+                                            </div>
+
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="block mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Question Type</label>
+                                                    <select name="question_type_new_0"
+                                                            class="js-type-select block w-full px-4 py-2.5 text-sm text-gray-900 bg-white dark:bg-gray-700 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+                                                            onchange="updateTypeBadge(this)">
+                                                        <option value="nps" selected>📊 NPS Score (0-10)</option>
+                                                        <option value="rating_5">⭐ Rating (1-5 Stars)</option>
+                                                        <option value="rating_3">🔥 Rating (1-3)</option>
+                                                        <option value="text">📝 Text Answer</option>
+                                                        <option value="yes_no">✓✗ Yes/No</option>
+                                                    </select>
+                                                </div>
+                                                <div class="flex items-center pt-6">
+                                                    <label class="flex items-center cursor-pointer">
+                                                        <input type="checkbox" name="question_required_new_0" checked
+                                                               class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+                                                        <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">This question is required</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                                                <p class="text-xs text-gray-400 mb-2">Preview:</p>
+                                                <div class="text-sm font-medium text-gray-700 dark:text-gray-300 js-preview-text">How likely are you to recommend this company as a great place to work?</div>
+                                                <div class="mt-3 js-preview-area flex flex-wrap gap-2">
+                                                    {% for i in "0123456789"|make_list %}
+                                                    <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">{{ i }}</button>
+                                                    {% endfor %}
+                                                    <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">10</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button type="button"
+                                                @click="promptDelete($el)"
+                                                class="text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Empty State -->
+                        <div x-show="questionCount === 0" class="text-center py-12" style="display: none;">
+                            <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
+                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">No questions yet</h3>
+                            <p class="text-gray-500 dark:text-gray-400 mb-4">Add your first question to get started</p>
+                            <button type="button"
+                                    @click="addQuestion()"
+                                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Add First Question
+                            </button>
+                        </div>
+                    </div>
+                    <!-- /Questions Card -->
+
+                    <!-- ── Form Actions ── -->
+                    <div class="flex items-center justify-between pt-6 mt-2">
+                        <a href="{% url 'human_resource:enps_survey_list' %}"
+                           class="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 dark:bg-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            Cancel
+                        </a>
+                        <button type="submit"
+                                @click="validateForm($event)"
+                                class="px-6 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900 transition-all flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            {% if survey %}Save Changes{% else %}Create Survey{% endif %}
+                        </button>
+                    </div>
+
+                </form><!-- /form -->
+            </div><!-- /col-span-3 -->
+
+            <!-- ── Sidebar ── -->
+            <div class="lg:col-span-1" style="position: sticky; top: 6rem; align-self: start;">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-5">
+                    <h3 class="font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+                        <span class="p-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </span>
+                        Survey Guide
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
+                            <p class="font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+                                <span class="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs">1</span>
+                                Survey Name
+                            </p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Use a clear, descriptive name like "Q1 2024 Employee Feedback"</p>
+                        </div>
+                        <div class="p-4 bg-white dark:bg-orange-700/50 rounded-xl border border-gray-200 dark:border-orange-600">
+                            <p class="font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+                                <span class="w-6 h-6 text-white rounded-full flex items-center justify-center text-xs" style="background-color: rgb(147 51 234);">2</span>
+                                Schedule
+                            </p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Set dates. Leave end date empty for ongoing surveys.</p>
+                        </div>
+                        <div class="p-4 bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
+                            <p class="font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+                                <span class="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">3</span>
+                                Anonymous
+                            </p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300">Unchecked = employee tracked. Checked = completely anonymous.</p>
+                        </div>
+                        <div class="p-4 bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
+                            <p class="font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+                                <span class="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs">4</span>
+                                Question Types
+                            </p>
+                            <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                                <li>• <strong>NPS</strong> — 0-10 score (Recommended)</li>
+                                <li>• <strong>Rating</strong> — Stars or 1-3</li>
+                                <li>• <strong>Yes/No</strong> — Binary</li>
+                                <li>• <strong>Text</strong> — Open response</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {% if survey %}
+                    <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                        <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-3">Survey Stats</h4>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ survey.questions.count }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Questions</p>
+                            </div>
+                            <div class="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ survey.responses.count }}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Responses</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div><!-- /sidebar -->
+
+        </div><!-- /grid -->
+
+        <!-- ── Delete Confirmation Modal ──
+             Lives inside x-data="surveyPage()" so showDeleteModal is always in scope. -->
+        <div x-show="showDeleteModal"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-50 flex items-center justify-center"
+             style="display: none;">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showDeleteModal = false"></div>
+            <!-- Dialog -->
+            <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 m-4 w-full max-w-md"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 @click.stop>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">Delete Question?</h3>
+                    <p class="text-gray-500 dark:text-gray-400 mb-6">Are you sure you want to remove this question? This action cannot be undone.</p>
+                    <div class="flex gap-3 justify-center">
+                        <button @click="showDeleteModal = false"
+                                class="px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 font-medium transition-colors">
+                            Cancel
+                        </button>
+                        <button @click="confirmDelete()"
+                                class="px-5 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition-colors">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /x-data="surveyPage()" -->
+
+    <!-- Warning Modal - Outside x-data for proper fixed positioning -->
+    <div x-data="{ showWarningModal: false }" 
+         x-show="showWarningModal"
+         @open-warning-modal.window="showWarningModal = true"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-[100] flex"
+         style="display: none; align-items: center; justify-content: center;">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="showWarningModal = false"></div>
+        <!-- Modal Content -->
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4" style="margin: auto;">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">Cannot Delete</h3>
+                <p class="text-gray-500 dark:text-gray-400 mb-6">You must have at least one question in your survey.</p>
+                <button @click="showWarningModal = false" 
+                        class="px-5 py-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 font-medium transition-colors">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question HTML template (outside Alpine; cloned by JS) -->
+    <template id="questionTemplate">
+        <div class="question-card bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border-2 border-gray-100 dark:border-gray-600 fade-in">
+            <div class="flex items-start gap-4">
+                <div class="hidden md:flex flex-col items-center pt-2 text-gray-300">
+                    <svg class="w-5 h-5 cursor-move" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z"></path>
+                    </svg>
+                    <span class="text-xs font-bold text-gray-400 mt-1 question-number"></span>
+                </div>
+
+                <div class="flex-1 space-y-4">
+                    <div class="flex items-center gap-2">
+                        <span class="type-badge type-nps js-type-badge">NPS</span>
+                    </div>
+
+                    <div>
+                        <textarea name="question_text_new_{index}" rows="2"
+                                  class="block w-full px-4 py-3 text-sm text-gray-900 bg-white dark:bg-gray-700 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Enter your question..."
+                                  oninput="this.closest('.question-card').querySelector('.js-preview-text').textContent = this.value || 'Your question will appear here...'"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Question Type</label>
+                            <select name="question_type_new_{index}"
+                                    class="js-type-select block w-full px-4 py-2.5 text-sm text-gray-900 bg-white dark:bg-gray-700 rounded-xl border-2 border-gray-200 dark:border-gray-600 focus:ring-blue-500 focus:border-blue-500"
+                                    onchange="updateTypeBadge(this)">
+                                <option value="nps">📊 NPS Score (0-10)</option>
+                                <option value="rating_5">⭐ Rating (1-5 Stars)</option>
+                                <option value="rating_3">🔥 Rating (1-3)</option>
+                                <option value="text">📝 Text Answer</option>
+                                <option value="yes_no">✓✗ Yes/No</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center pt-6">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" name="question_required_new_{index}" checked
+                                       class="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+                                <span class="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">This question is required</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <p class="text-xs text-gray-400 mb-2">Preview:</p>
+                        <div class="text-sm font-medium text-gray-700 dark:text-gray-300 js-preview-text">Your question will appear here...</div>
+                        <div class="mt-3 js-preview-area">
+                            <!-- filled by updateTypeBadge() on first change, default NPS -->
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">0</button>
+                                <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">1</button>
+                                <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">2</button>
+                                <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">3</button>
+                                <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">4</button>
+                                <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">5</button>
+                                <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">6</button>
+                                <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">7</button>
+                                <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">8</button>
+                                <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">9</button>
+                                <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">10</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button"
+                        class="delete-btn text-gray-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </template>
+
+</main>
+
+<!-- SortableJS CDN (for production, copy node_modules/sortablejs/Sortable.js to your static files folder) -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+<script>
+// ─── SortableJS for drag and drop ───────────────────────────────────────
+// Note: SortableJS loaded via CDN. For production, copy node_modules/sortablejs/Sortable.js to static folder
+// or configure a bundler like webpack/vite.
+
+// ─── Preview HTML for each question type ───────────────────────────────────
+const PREVIEW_HTML = {
+    nps: `<div class="flex flex-wrap gap-2">${
+        [0,1,2,3,4,5,6,7,8,9,10].map(i =>
+            `<button type="button" class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 text-sm font-medium hover:bg-blue-500 hover:text-white transition-colors">${i}</button>`
+        ).join('')
+    }</div>`,
+    rating_5: `<div class="flex gap-1">${'<button type="button" class="text-2xl text-gray-300 hover:text-yellow-400 transition-colors">★</button>'.repeat(5)}</div>`,
+    rating_3: `<div class="flex gap-2">
+        <button type="button" class="px-3 py-1 rounded bg-gray-100 dark:bg-gray-700 text-sm">1</button>
+        <button type="button" class="px-3 py-1 rounded bg-gray-100 dark:bg-gray-700 text-sm">2</button>
+        <button type="button" class="px-3 py-1 rounded bg-gray-100 dark:bg-gray-700 text-sm">3</button>
+    </div>`,
+    yes_no: `<div class="flex gap-3">
+        <button type="button" class="px-4 py-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-sm font-medium">Yes</button>
+        <button type="button" class="px-4 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-medium">No</button>
+    </div>`,
+    text: `<textarea rows="2" class="block w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600" placeholder="Type your answer here..."></textarea>`,
+};
+
+const TYPE_LABELS = {
+    nps: 'NPS',
+    rating_5: '★ 5',
+    rating_3: '★ 3',
+    text: 'Text',
+    yes_no: 'Y/N',
+};
+
+// Called by onchange on every type <select> (vanilla JS — works across Alpine boundaries)
+function updateTypeBadge(select) {
+    const card = select.closest('.question-card');
+    const badge = card.querySelector('.js-type-badge');
+    const preview = card.querySelector('.js-preview-area');
+    const type = select.value;
+
+    if (badge) {
+        badge.className = 'type-badge type-' + type + ' js-type-badge';
+        badge.textContent = TYPE_LABELS[type] || type;
+    }
+    if (preview) {
+        preview.innerHTML = PREVIEW_HTML[type] || '';
+    }
+}
+
+// ─── Single Alpine component for the whole page ────────────────────────────
+function surveyPage() {
+    return {
+        // question management
+        questionCount: {{ survey.questions.count|default:1 }},
+        newQuestionIndex: {{ survey.questions.count|default:1 }},
+
+        // delete modal
+        showDeleteModal: false,
+        questionToDelete: null,
+
+        // form validation
+        nameError: '',
+        dateError: '',
+
+        // SortableJS instance
+        sortableInstance: null,
+
+        // ── question management ──────────────────────────────────────
+        addQuestion() {
+            this.newQuestionIndex++;
+            const container = document.getElementById('questionsContainer');
+            const template  = document.getElementById('questionTemplate');
+            const clone     = template.content.cloneNode(true);
+
+            // Replace {index} placeholder with unique index
+            const wrapper   = document.createElement('div');
+            wrapper.appendChild(clone);
+            wrapper.innerHTML = wrapper.innerHTML.replace(/\{index\}/g, this.newQuestionIndex);
+
+            const newCard = wrapper.firstElementChild;
+            newCard.classList.add('fade-in');
+
+            // Wire up the delete button (template is outside Alpine scope)
+            const delBtn = newCard.querySelector('.delete-btn');
+            if (delBtn) {
+                delBtn.addEventListener('click', () => this.promptDelete(delBtn));
+            }
+
+            container.appendChild(newCard);
+            this.questionCount = document.querySelectorAll('.question-card').length;
+            this.updateQuestionNumbers();
+        },
+
+        promptDelete(button) {
+            if (document.querySelectorAll('.question-card').length <= 1) {
+                window.dispatchEvent(new CustomEvent('open-warning-modal'));
+                return;
+            }
+            this.questionToDelete = button;
+            this.showDeleteModal  = true;
+        },
+
+        confirmDelete() {
+            if (this.questionToDelete) {
+                this.questionToDelete.closest('.question-card').remove();
+                this.questionCount = document.querySelectorAll('.question-card').length;
+                this.updateQuestionNumbers();
+            }
+            this.showDeleteModal  = false;
+            this.questionToDelete = null;
+        },
+
+        updateQuestionNumbers() {
+            document.querySelectorAll('.question-card .question-number').forEach((el, i) => {
+                el.textContent = i + 1;
+            });
+        },
+
+        // ── form validation ──────────────────────────────────────────
+        validateName() {
+            const name = document.getElementById('id_name').value;
+            this.nameError = name.length < 3 ? 'Survey name must be at least 3 characters' : '';
+        },
+
+        validateDates() {
+            const start = document.getElementById('id_start_date').value;
+            const end   = document.getElementById('id_end_date').value;
+            this.dateError = (end && start > end) ? 'End date must be after start date' : '';
+        },
+
+        validateForm(event) {
+            this.validateName();
+            this.validateDates();
+            if (this.nameError || this.dateError) {
+                event.preventDefault();
+                if (this.nameError) {
+                    const el = document.getElementById('id_name');
+                    el.classList.add('shake');
+                    setTimeout(() => el.classList.remove('shake'), 500);
+                }
+            }
+        },
+
+        // ── initialize drag and drop ──────────────────────────────────────
+        initSortable() {
+            const container = document.getElementById('questionsContainer');
+            console.log('Initializing Sortable, container:', container);
+            if (container && !this.sortableInstance) {
+                this.sortableInstance = new Sortable(container, {
+                    animation: 150,
+                    handle: '.cursor-move',  // Only drag from the handle icon
+                    ghostClass: 'sortable-ghost',   // Class applied to the ghost element
+                    chosenClass: 'sortable-chosen',  // Class applied to the chosen element
+                    dragClass: 'sortable-drag',      // Class applied during dragging
+                    forceFallback: true,  // Force custom drag implementation
+                    fallbackTolerance: 3,
+                    onStart: (evt) => {
+                        console.log('Drag started on:', evt.item);
+                        // Add floating animation + shadow + slight rotation while dragging
+                        evt.item.style.boxShadow = '0 15px 30px rgba(0,0,0,0.15)';
+                        evt.item.style.transform = 'scale(1.03) rotate(1deg)';
+                        evt.item.style.animation = 'float 0.5s ease-in-out infinite';
+                    },
+                    onEnd: (evt) => {
+                        console.log('Drag ended, item:', evt.item);
+                        // Remove styles
+                        evt.item.style.boxShadow = '';
+                        evt.item.style.transform = '';
+                        evt.item.style.animation = '';
+                        this.updateQuestionOrder();
+                        // Add boom/shake effect on drop
+                        this.addDropEffect(evt.item);
+                    }
+                });
+                console.log('Sortable initialized successfully');
+            } else {
+                console.log('Container not found or Sortable already initialized');
+            }
+        },
+        
+        addDropEffect(draggedItem) {
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                // Add shake effect to the dropped item
+                draggedItem.classList.add('drop-shake');
+                
+                // Add impact effect to nearby cards
+                const allCards = document.querySelectorAll('.question-card');
+                allCards.forEach(card => {
+                    if (card !== draggedItem) {
+                        card.classList.add('impact-effect');
+                        setTimeout(() => {
+                            card.classList.remove('impact-effect');
+                        }, 250);
+                    }
+                });
+                
+                // Remove shake effect after animation completes
+                setTimeout(() => {
+                    draggedItem.classList.remove('drop-shake');
+                }, 500);
+            }, 50);
+        },
+
+        updateQuestionOrder() {
+            const cards = document.querySelectorAll('.question-card');
+            cards.forEach((card, index) => {
+                // Update visual number
+                const numberEl = card.querySelector('.question-number');
+                if (numberEl) {
+                    numberEl.textContent = index + 1;
+                }
+                
+                // Update hidden order input
+                const orderInput = card.querySelector('input[name^="question_order"]');
+                if (orderInput) {
+                    orderInput.value = index + 1;
+                }
+            });
+        },
+    };
+}
+
+// Initialize Sortable when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait for Alpine to initialize the surveyPage
+    setTimeout(() => {
+        const surveyApp = Alpine.$data(document.querySelector('[x-data="surveyPage()"]'));
+        if (surveyApp) {
+            surveyApp.initSortable();
+        }
+    }, 100);
+});
+</script>
+
+{% endblock %}

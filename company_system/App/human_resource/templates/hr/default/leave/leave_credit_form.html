@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+
+{% block title %}{% if leave_credit %}Edit{% else %}Add{% endif %} Leave Credit{% endblock %}
+
+{% block content %}
+<style>
+    /* Enhanced form field styling for Django-rendered inputs */
+    .leave-credit-form input[type="text"],
+    .leave-credit-form input[type="number"],
+    .leave-credit-form select,
+    .leave-credit-form textarea {
+        width: 100%;
+        padding: 0.625rem 0.875rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        background-color: #fff;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        color: #111827;
+    }
+    
+    .leave-credit-form input:focus,
+    .leave-credit-form select:focus,
+    .leave-credit-form textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        background-color: white;
+    }
+    
+    /* Dark mode support */
+    .dark .leave-credit-form input[type="text"],
+    .dark .leave-credit-form input[type="number"],
+    .dark .leave-credit-form select,
+    .dark .leave-credit-form textarea {
+        background-color: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+    
+    .dark .leave-credit-form input:focus,
+    .dark .leave-credit-form select:focus,
+    .dark .leave-credit-form textarea:focus {
+        background-color: #374151;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+</style>
+
+<div class="container mx-auto px-4 py-6 max-w-6xl" data-csrf-token="{{ csrf_token }}">
+
+    <!-- Breadcrumb -->
+    <nav class="mb-4">
+        <ol class="flex items-center space-x-2 text-sm">
+            <li><a href="{% url 'human_resource:hr_dashboard' %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition">Dashboard</a></li>
+            <li class="text-gray-400">/</li>
+            <li><a href="{% url 'human_resource:leave_credit_list' %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition">Leave Credits</a></li>
+            <li class="text-gray-400">/</li>
+            <li class="text-gray-600 dark:text-gray-400">{% if leave_credit %}Edit{% else %}Add{% endif %} Leave Credit</li>
+        </ol>
+    </nav>
+
+    <!-- Header 
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-3">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{% if leave_credit %}Edit{% else %}Add{% endif %} Leave Credit</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage employee leave credits and allocations</p>
+        </div>
+        <div class="flex space-x-2">
+            <a href="{% url 'human_resource:leave_credit_list' %}" class="bg-gray-500 dark:bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-600 dark:hover:bg-gray-700 transition flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+                Back to Credits
+            </a>
+        </div>
+    </div>
+-->
+    <div class="flex flex-col lg:flex-row gap-6">
+
+        <!-- Form -->
+        <div class="w-full lg:w-3/5">
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                <div class="px-6 py-4 h-32" style="background: linear-gradient(to right, #f97316, #ea580c);">
+                    <h2 class="text-white font-semibold text-lg flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        {% if leave_credit %}Edit{% else %}Add{% endif %} Leave Credit
+                    </h2>
+                    <p class="text-sm text-white dark:text-gray-300 mt-1">Manage employee leave credits and allocations</p>
+                </div>
+                
+                <form method="post" class="p-6 space-y-5 leave-credit-form">
+                    {% csrf_token %}
+
+                    <!-- Employee Select -->
+                    <div>
+                        <label for="id_employee" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Employee <span class="text-red-500">*</span></label>
+                        {{ form.employee }}
+                        {% if form.employee.errors %}
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.employee.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Rank (readonly) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rank</label>
+                        <input type="text" id="rankField" class="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-gray-600 dark:text-gray-300" readonly 
+                               placeholder="Select an employee to see rank">
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Auto-filled based on employee selection (read-only)</p>
+                    </div>
+
+                    <!-- Leave Type & Year -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Leave Type <span class="text-red-500">*</span></label>
+                            {{ form.leave_type }}
+                            {% if form.leave_type.errors %}
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.leave_type.errors.0 }}</p>
+                            {% endif %}
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">VL</span> = Vacation Leave
+                                <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">SL</span> = Sick Leave
+                            </p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Year <span class="text-red-500">*</span></label>
+                            {{ form.year }}
+                            {% if form.year.errors %}
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.year.errors.0 }}</p>
+                            {% endif %}
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave credits are reset/updated annually</p>
+                        </div>
+                    </div>
+
+                    <!-- Total and Used -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Total Days <span class="text-red-500">*</span></label>
+                            {{ form.total }}
+                            {% if form.total.errors %}
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.total.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Used Days</label>
+                            {{ form.used }}
+                            {% if form.used.errors %}
+                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.used.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Remaining Preview -->
+                    <div id="remainingPreview" class="hidden p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600 dark:text-gray-300">Remaining Days:</span>
+                            <span id="remainingValue" class="text-lg font-bold text-green-600 dark:text-green-400">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.notes.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Optional: Use for carry-overs, corrections, or special cases</p>
+                    </div>
+
+                    <!-- Form Errors -->
+                    {% if form.non_field_errors %}
+                    <div class="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+                        {% for error in form.non_field_errors %}
+                        <p class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Buttons -->
+                    <div class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <button type="submit" class="px-6 py-2.5 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition font-medium flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            Save
+                        </button>
+                        <a href="{% url 'human_resource:leave_credit_list' %}" class="px-6 py-2.5 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition font-medium flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sidebar - Instructions -->
+        <div class="w-full lg:w-1/3">
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden sticky top-6">
+                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                    <h3 class="font-semibold text-gray-800 dark:text-gray-100 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Instructions
+                    </h3>
+                </div>
+                
+                <div class="p-6 space-y-4">
+                    <!-- Field Details -->
+                    <div class="space-y-4">
+                        <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border-l-4 border-blue-500">
+                            <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">Employee <span class="text-red-500">*</span></p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Select the staff member. Rank auto-fills based on selection.</p>
+                        </div>
+                        
+                        <div class="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg border-l-4 border-emerald-500">
+                            <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">Leave Type <span class="text-red-500">*</span></p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 dark:bg-emerald-800 text-emerald-800 dark:text-emerald-200">VL</span> <strong>Vacation Leave</strong> - Regular paid time off<br>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 mt-1">SL</span> <strong>Sick Leave</strong> - Medical/emergency leave
+                            </p>
+                        </div>
+                        
+                        <div class="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border-l-4 border-purple-500">
+                            <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">Year <span class="text-red-500">*</span></p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Credits reset each year (January). Ensure correct year is selected for accurate tracking.</p>
+                        </div>
+                        
+                        <div class="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border-l-4 border-amber-500">
+                            <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">Total Days <span class="text-red-500">*</span></p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Annual allocation (typically 5-15 days depending on rank/position).</p>
+                        </div>
+                        
+                        <div class="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border-l-4 border-red-500">
+                            <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">Used Days</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Days already taken this year from approved leave requests. System auto-calculates from filed leaves.</p>
+                        </div>
+                        
+                        <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg border-l-4 border-gray-400">
+                            <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">Notes</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Use for carry-overs, adjustments, or special circumstances. Optional field.</p>
+                        </div>
+                    </div>
+
+                    <!-- Warning Box -->
+                    <div class="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+                        <div class="flex items-start">
+                            <svg class="h-5 w-5 text-yellow-600 dark:text-yellow-400 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium text-yellow-800 dark:text-yellow-200">Important Reminder</p>
+                                <p class="text-xs text-yellow-700 dark:text-yellow-300 mt-1">Leave credits are typically reset every January. Make sure to update used days based on approved leave requests. Track carefully to avoid negative balances.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Reference Table -->
+                    <div class="mt-4">
+                        <p class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 flex items-center">
+                            <svg class="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            Typical Annual Allocation:
+                        </p>
+                        <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg overflow-hidden">
+                            <table class="min-w-full text-xs">
+                                <thead class="bg-gray-100 dark:bg-gray-600">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-gray-600 dark:text-gray-300 font-medium">Position</th>
+                                        <th class="px-3 py-2 text-center text-gray-600 dark:text-gray-300 font-medium">VL</th>
+                                        <th class="px-3 py-2 text-center text-gray-600 dark:text-gray-300 font-medium">SL</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
+                                    <tr>
+                                        <td class="px-3 py-2 text-gray-700 dark:text-gray-300">Supervisors/Managers</td>
+                                        <td class="px-3 py-2 text-center text-gray-700 dark:text-gray-300">10 days</td>
+                                        <td class="px-3 py-2 text-center text-gray-700 dark:text-gray-300">10 days</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-3 py-2 text-gray-700 dark:text-gray-300">Rank and File</td>
+                                        <td class="px-3 py-2 text-center text-gray-700 dark:text-gray-300">6 days</td>
+                                        <td class="px-3 py-2 text-center text-gray-700 dark:text-gray-300">6 days</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-3 py-2 text-gray-500 dark:text-gray-400 italic">Executives</td>
+                                        <td colspan="2" class="px-3 py-2 text-center text-gray-500 dark:text-gray-400 italic">Special arrangements</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tips Section -->
+                    <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <p class="text-xs font-semibold text-blue-800 dark:text-blue-300 mb-2">💡 Quick Tips</p>
+                        <ul class="text-xs text-blue-700 dark:text-blue-400 space-y-1">
+                            <li>• Use <span class="font-medium">Notes</span> for carry-over from previous year</li>
+                            <li>• Verify <span class="font-medium">Used Days</span> matches approved requests</li>
+                            <li>• Check remaining balance before approving new leaves</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const employeeSelect = document.getElementById("id_employee");
+    const rankField = document.getElementById("rankField");
+    const totalField = document.getElementById("id_total");
+    const usedField = document.getElementById("id_used");
+    const remainingPreview = document.getElementById("remainingPreview");
+    const remainingValue = document.getElementById("remainingValue");
+
+    // Check if dark mode is active
+    function isDarkMode() {
+        return document.documentElement.classList.contains('dark') || 
+               document.body.classList.contains('dark') ||
+               window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
+    async function updateRank() {
+        const empId = employeeSelect.value;
+        if (!empId) { 
+            rankField.value = ""; 
+            return; 
+        }
+
+        try {
+            const response = await fetch(`/hr_dashboard/leave-credits/get-rank/?employee_id=${empId}`);
+            const data = await response.json();
+            rankField.value = data.rank || "No rank";
+        } catch (error) {
+            rankField.value = "Error";
+        }
+    }
+
+    function updateRemaining() {
+        const total = parseFloat(totalField.value) || 0;
+        const used = parseFloat(usedField.value) || 0;
+        const remaining = total - used;
+        const dark = isDarkMode();
+        
+        if (totalField.value && usedField.value) {
+            remainingPreview.classList.remove('hidden');
+            remainingValue.textContent = remaining.toFixed(1);
+            
+            // Color coding with dark mode support
+            if (remaining <= 0) {
+                remainingValue.className = "text-lg font-bold text-red-600 dark:text-red-400";
+            } else if (remaining <= 2) {
+                remainingValue.className = "text-lg font-bold text-yellow-600 dark:text-yellow-400";
+            } else {
+                remainingValue.className = "text-lg font-bold text-green-600 dark:text-green-400";
+            }
+        } else {
+            remainingPreview.classList.add('hidden');
+        }
+    }
+
+    employeeSelect.addEventListener("change", updateRank);
+    totalField.addEventListener("input", updateRemaining);
+    usedField.addEventListener("input", updateRemaining);
+    
+    // Listen for dark mode changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateRemaining);
+    
+    // Initial calls
+    updateRank();
+    updateRemaining();
+});
+</script>
+{% endblock %}

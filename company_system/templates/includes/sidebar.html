@@ -1,114 +1,125 @@
 <!-- Sidebar -->{% load static %}
 <aside
   id="sidebar"
-  class="fixed inset-y-0 left-0 w-64 bg-gray-900 text-white transform -translate-x-full md:translate-x-0 transition-transform duration-500 ease-in-out z-30"
+  class="fixed inset-y-0 left-0 w-64 bg-gray-900 text-white transform -translate-x-full md:translate-x-0 md:w-64 transition-transform duration-300 ease-in-out z-30"
+  role="navigation"
+  aria-label="Main Navigation"
 >
   <!-- Header -->
-  <div
-    class="flex items-center justify-between px-4 py-4 border-b border-gray-700"
-  >
+  <div class="flex items-center justify-between px-4 py-4 border-b border-gray-700">
     <!-- Logo Section -->
     <div class="flex items-center space-x-2">
-      <img
-        src="{% static 'img/rockstar.png' %}"
-        alt="Logo"
-        class="h-8 w-8 object-contain"
-      />
-      <span class="text-lg font-semibold">Rockstar Web Design Services</span>
+      <img src="{% static 'img/rockstar.png' %}" alt="Logo" class="h-8 w-8 object-contain" />
+      <span class="text-lg font-semibold sidebar-text">Rockstar Web Design Services</span>
     </div>
-    <button id="sidebarClose" class="md:hidden text-gray-400 hover:text-white">
-      ✕
+    <button id="sidebarClose" class="md:hidden text-gray-400 hover:text-white p-2" aria-label="Close sidebar">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
     </button>
   </div>
 
+  <!-- User Profile Card -->
+  {% if employee %}
+  <div class="px-4 py-3 bg-gray-800 border-b border-gray-700">
+    <div class="flex items-center space-x-3">
+      <div class="relative flex-shrink-0">
+        {% if employee.profile_image %}
+          <img src="{{ employee.profile_image.url }}" class="h-10 w-10 rounded-full object-cover">
+        {% else %}
+          <div class="h-10 w-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-semibold">
+            {{ employee.first_name|default:"U"|slice:":1" }}{{ employee.last_name|default:"" |slice:":1" }}
+          </div>
+        {% endif %}
+        <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-gray-800 rounded-full"></span>
+      </div>
+      <div class="flex-1 min-w-0 sidebar-text">
+        <p class="text-sm font-medium text-white truncate">{{ employee.first_name }} {{ employee.last_name }}</p>
+        <p class="text-xs text-gray-400 truncate">{{ employee.role.role_name|default:"Staff" }}</p>
+      </div>
+      <!-- Quick Actions Dropdown -->
+      <div class="relative flex-shrink-0 sidebar-text" id="userMenuContainer">
+        <button id="userMenuBtn" class="text-gray-400 hover:text-white p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+          </svg>
+        </button>
+        <div id="userMenu" class="hidden absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg py-1 z-50 border border-gray-700">
+          <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">
+            <span class="mr-2">👤</span> My Profile
+          </a>
+          <a href="#" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">
+            <span class="mr-2">⚙️</span> Settings
+          </a>
+          <div class="border-t border-gray-700 my-1"></div>
+          <form method="post" action="{% url 'logout' %}?next=/login/" id="sidebar-logout-form">
+            {% csrf_token %}
+            <button type="button" onclick="confirmLogout('sidebar-logout-form')" class="flex items-center w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300">
+              <span class="mr-2">🚪</span> Logout
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Menu -->
-  <nav class="p-4 space-y-2 overflow-y-auto h-[calc(100%-4rem)]">
-    <a
-      href={% url 'master_dashboard' %}
-      class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
-    >
-      <span class="mr-3">🏠</span> Dashboard
-    </a>
+  <nav class="p-2 space-y-1 overflow-y-auto h-[calc(100%-4rem)]">
+    <ul class="space-y-1">
+      <!-- Dashboard -->
+      <li>
+        <a href="/master_dashboard/" class="nav-item flex items-center justify-start w-full text-left px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200" data-url-name="master_dashboard">
+          <span class="text-lg sidebar-icon">🏠</span><span class="sidebar-text ml-3">Dashboard</span>
+        </a>
+      </li>
 
-   <!-- <a
-      href="{% url 'user_list' %}"
-      class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
-    >
-      <span class="mr-3">👤</span> User Management
-    </a>-->
-      <a href="{% url 'dashboard_user_mgnt' %}"
-      class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
-    >
-      <span class="mr-3">👤</span> User Management
-  </a>
+      <!-- User Management -->
+      <li>
+        <a href="{% url 'dashboard_user_mgnt' %}" class="nav-item flex items-center justify-start w-full text-left px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200" data-url-name="dashboard_user_mgnt">
+          <span class="text-lg sidebar-icon">👤</span><span class="sidebar-text ml-3">User Management</span>
+        </a>
+      </li>
 
-    <button
-      class="flex items-center w-full text-left p-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
-      data-collapse="projectsMenu"
-    >
-      <span class="mr-3">📁</span>
-      <span class="flex-1">Projects</span>
-      <span class="transition-transform duration-300">▸</span>
-    </button>
+      <!-- Projects Section -->
+      <li>
+        <button class="nav-collapse flex items-center w-full text-left p-2 rounded-lg hover:bg-gray-700 transition-colors duration-200" data-collapse="projectsMenu" aria-expanded="false">
+          <span class="text-lg sidebar-icon">📁</span>
+          <span class="flex-1 sidebar-text ml-3">Projects</span>
+          <span class="transition-transform duration-300 arrow">▸</span>
+        </button>
+        <ul id="projectsMenu" class="pl-4 space-y-1 hidden">
+          <li><a href="/master_dashboard/?filter=active" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text">Active Projects</a></li>
+          <li><a href="/master_dashboard/?filter=archived" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text">Archived Projects</a></li>
+        </ul>
+      </li>
 
-    <div
-      id="projectsMenu"
-      class="max-h-0 overflow-hidden transition-all duration-300 pl-8 space-y-1"
-    >
-      <a
-        href="#"
-        class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
-        >Active</a
-      >
-      <a
-        href="#"
-        class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
-        >Archived</a
-      >
-    </div>
+      <li class="border-t border-gray-700 my-3"></li>
 
-    <div class="border-t border-gray-700 my-3"></div>
-
-    <button
-      data-collapse="submenu-2"
-      class="flex items-center w-full text-left p-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
-    >
-      <span class="mr-3">⚙️</span>
-      <span class="flex-1">Settings</span>
-      <span class="transition-transform duration-300">▸</span>
-    </button>
-    <div
-      id="submenu-2"
-      class="max-h-0 overflow-hidden transition-all duration-300 pl-4"
-    >
-      <a
-        href="#"
-        class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
-        >Profile</a
-      >
-      <a
-        href="#"
-        class="block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
-        >Billing</a
-      >
-    </div>
-
-    <div class="border-t border-gray-700 my-3"></div>
-
-    <a
-      href="#"
-      class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
-    >
-      <span class="mr-3">📨</span> Messages
-    </a>
-
-    <a
-      href="{% url 'logout' %}"
-      class="flex items-center px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
-    >
-      <span class="mr-3">🚪</span> Logout
-    </a>
+      <!-- Settings Section -->
+      <li>
+        <button data-collapse="submenu-2" class="nav-collapse flex items-center w-full text-left p-2 rounded-lg hover:bg-gray-700 transition-colors duration-200" aria-expanded="false">
+          <span class="text-lg sidebar-icon">⚙️</span>
+          <span class="flex-1 sidebar-text ml-3">Settings</span>
+          <span class="transition-transform duration-300 arrow">▸</span>
+        </button>
+        <ul id="submenu-2" class="pl-4 space-y-1 hidden">
+          <li><a href="/master_dashboard/?section=profile" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text">Profile Settings</a></li>
+          <li><a href="#" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text">Billing</a></li>
+        </ul>
+      </li>
+    </ul>
   </nav>
+
+  <!-- Sidebar Toggle Button (Collapse to Icons) - Desktop Only -->
+  <div class="px-2 py-2 border-b border-gray-700 hidden md:block">
+    <button id="sidebarToggleIcons" class="flex items-center justify-start w-full px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors" title="Toggle Sidebar">
+      <svg id="collapseIcon" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+      </svg>
+      <span class="ml-2 sidebar-text" id="toggleText">Collapse</span>
+    </button>
+  </div>
 </aside>
 
 <!-- Overlay -->
@@ -117,58 +128,273 @@
   class="fixed inset-0 bg-black bg-opacity-50 hidden md:hidden transition-opacity duration-300 z-20"
 ></div>
 
-
-
-
-
-<!-- JavaScript -->
-<script>
-  const sidebar = document.getElementById("sidebar");
-  const sidebarOpenBtn = document.getElementById("sidebarOpen");
-  const sidebarCloseBtn = document.getElementById("sidebarClose");
-  const overlay = document.getElementById("overlay");
-  const submenus = document.querySelectorAll("[data-collapse]");
-  const themeToggle = document.getElementById("themeToggle");
-  const themeIcon = document.getElementById("themeIcon");
-
-  // Sidebar open
-  sidebarOpenBtn.addEventListener("click", () => {
-    sidebar.classList.remove("-translate-x-full");
-    overlay.classList.remove("hidden");
-    setTimeout(() => overlay.classList.add("opacity-100"), 10);
-    sidebarOpenBtn.classList.add("opacity-0", "pointer-events-none");
-  });
-
-  // Sidebar close
-  function closeSidebar() {
-    sidebar.classList.add("-translate-x-full");
-    overlay.classList.remove("opacity-100");
-    setTimeout(() => overlay.classList.add("hidden"), 300);
-    sidebarOpenBtn.classList.remove("opacity-0", "pointer-events-none");
+<style>
+  /* Sidebar collapsed state styles */
+  #sidebar.sidebar-collapsed .nav-item {
+    padding: 0.5rem !important;
+    justify-content: center !important;
   }
-  sidebarCloseBtn.addEventListener("click", closeSidebar);
-  overlay.addEventListener("click", closeSidebar);
+  #sidebar.sidebar-collapsed .sidebar-icon {
+    margin-right: 0 !important;
+  }
+  #sidebar.sidebar-collapsed .sidebar-text {
+    display: none !important;
+  }
+</style>
 
-  // Collapse toggle
-  submenus.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const target = document.getElementById(btn.dataset.collapse);
-      const arrow = btn.querySelector("span:last-child");
-      const isOpen = target.classList.contains("max-h-40");
-      target.classList.toggle("max-h-0", isOpen);
-      target.classList.toggle("max-h-40", !isOpen);
-      arrow.classList.toggle("rotate-90", !isOpen);
+<!-- JavaScript - Execute immediately to prevent flash -->
+<script>
+  // Execute immediately to prevent flash of unstyled content
+  (function() {
+    const sidebar = document.getElementById("sidebar");
+    if (!sidebar) return;
+    
+    const mainContent = document.getElementById('mainContent');
+    const header = document.getElementById('mainHeader');
+    const toggleText = document.getElementById('toggleText');
+    const collapseIcon = document.getElementById('collapseIcon');
+    const sidebarTextElements = document.querySelectorAll('.sidebar-text');
+    const sidebarIcons = document.querySelectorAll('.sidebar-icon');
+    const navItems = document.querySelectorAll('.nav-item');
+    
+    const isMobile = window.innerWidth < 768;
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    
+    // Add collapsed class if needed (for CSS styling)
+    if (isCollapsed && !isMobile) {
+      sidebar.classList.add('sidebar-collapsed');
+    }
+    
+    // On mobile, don't apply margin - sidebar is hidden by default
+    if (isMobile) {
+      sidebar.style.width = '256px';
+      if (mainContent) mainContent.style.marginLeft = '0';
+      if (header) header.style.marginLeft = '0';
+    } else if (isCollapsed) {
+      sidebar.style.width = '64px';
+      if (toggleText) toggleText.textContent = '';
+      if (collapseIcon) collapseIcon.style.transform = 'rotate(180deg)';
+      navItems.forEach((el) => {
+        // Keep left alignment, just remove horizontal padding
+        el.style.paddingLeft = '0';
+        el.style.paddingRight = '0';
+      });
+      sidebarIcons.forEach((el) => (el.style.marginRight = '0'));
+      sidebarTextElements.forEach((el) => (el.style.display = 'none'));
+      if (mainContent) mainContent.style.marginLeft = '64px';
+      if (header) header.style.marginLeft = '64px';
+    } else {
+      sidebar.style.width = '256px';
+      if (toggleText) toggleText.textContent = 'Collapse';
+      if (collapseIcon) collapseIcon.style.transform = 'rotate(0deg)';
+      navItems.forEach((el) => {
+        el.style.justifyContent = 'flex-start';
+        el.style.paddingLeft = '1rem';
+        el.style.paddingRight = '1rem';
+      });
+      sidebarIcons.forEach((el) => (el.style.marginRight = '0.75rem'));
+      sidebarTextElements.forEach((el) => {
+        el.style.display = el.tagName === 'SPAN' ? 'inline' : '';
+        el.style.textAlign = 'left';
+      });
+      if (mainContent) mainContent.style.marginLeft = '256px';
+      if (header) header.style.marginLeft = '256px';
+    }
+  })();
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOpenBtn = document.getElementById("sidebarOpen");
+    const sidebarCloseBtn = document.getElementById("sidebarClose");
+    const sidebarToggleIcons = document.getElementById("sidebarToggleIcons");
+    const overlay = document.getElementById("overlay");
+    const collapses = document.querySelectorAll(".nav-collapse");
+    const navItems = document.querySelectorAll(".nav-item");
+    const toggleText = document.getElementById('toggleText');
+    const collapseIcon = document.getElementById('collapseIcon');
+    
+    // User Menu Dropdown
+    const userMenuBtn = document.getElementById('userMenuBtn');
+    const userMenu = document.getElementById('userMenu');
+    if (userMenuBtn && userMenu) {
+      userMenuBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        userMenu.classList.toggle('hidden');
+      });
+      document.addEventListener('click', function() {
+        userMenu.classList.add('hidden');
+      });
+    }
+    
+    // Check saved state - use let for reassignment
+    let isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    
+    function updateSidebarState(collapsed) {
+      const mainContent = document.getElementById('mainContent');
+      const header = document.getElementById('mainHeader');
+      const sidebarIcons = document.querySelectorAll('.sidebar-icon');
+      const sidebarTextElements = document.querySelectorAll('.sidebar-text');
+      const allNavItems = document.querySelectorAll('.nav-item');
+      const isMobile = window.innerWidth < 768;
+      
+      // Add or remove collapsed class for CSS styling
+      if (collapsed && !isMobile) {
+        sidebar.classList.add('sidebar-collapsed');
+      } else {
+        sidebar.classList.remove('sidebar-collapsed');
+      }
+      
+      // On mobile, don't apply margin - sidebar is hidden by default
+      if (isMobile) {
+        sidebar.style.width = '256px';
+        if (toggleText) toggleText.textContent = '';
+        allNavItems.forEach((el) => (el.style.justifyContent = 'flex-start'));
+        sidebarIcons.forEach((el) => (el.style.marginRight = '0.75rem'));
+        sidebarTextElements.forEach((el) => (el.style.display = ''));
+        // On mobile, sidebar is hidden, so no margin needed
+        if (mainContent) mainContent.style.marginLeft = '0';
+        if (header) header.style.marginLeft = '0';
+        return;
+      }
+      
+      if (collapsed) {
+        sidebar.style.width = '64px';
+        if (toggleText) toggleText.textContent = '';
+        if (collapseIcon) collapseIcon.style.transform = 'rotate(180deg)';
+        // Keep left alignment, just remove horizontal padding
+        allNavItems.forEach((el) => {
+          el.style.paddingLeft = '0';
+          el.style.paddingRight = '0';
+        });
+        // Remove margin from icons
+        sidebarIcons.forEach((el) => (el.style.marginRight = '0'));
+        sidebarTextElements.forEach((el) => (el.style.display = 'none'));
+        // Adjust main content margin
+        if (mainContent) {
+          mainContent.style.marginLeft = '64px';
+        }
+        // Adjust header margin
+        if (header) {
+          header.style.marginLeft = '64px';
+        }
+      } else {
+        sidebar.style.width = '256px';
+        if (toggleText) toggleText.textContent = 'Collapse';
+        if (collapseIcon) collapseIcon.style.transform = 'rotate(0deg)';
+        // Restore normal layout when expanded - force left alignment
+        allNavItems.forEach((el) => {
+          el.style.justifyContent = 'flex-start';
+          el.style.paddingLeft = '1rem';
+          el.style.paddingRight = '1rem';
+        });
+        // Restore icon margin so text sits to the right of the icon
+        sidebarIcons.forEach((el) => (el.style.marginRight = '0.75rem'));
+        // Show text — spans must be inline so they flow next to the icon
+        sidebarTextElements.forEach((el) => {
+          el.style.display = el.tagName === 'SPAN' ? 'inline' : '';
+          el.style.textAlign = 'left';
+        });
+        // Adjust main content margin
+        if (mainContent) {
+          mainContent.style.marginLeft = '256px';
+        }
+        // Adjust header margin
+        if (header) {
+          header.style.marginLeft = '256px';
+        }
+      }
+    }
+    
+    // Initialize state
+    updateSidebarState(isCollapsed);
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+      updateSidebarState(isCollapsed);
     });
-  });
+    
+    if (sidebarToggleIcons) {
+      sidebarToggleIcons.addEventListener('click', function() {
+        // Don't allow collapse on mobile
+        if (window.innerWidth < 768) return;
+        
+        isCollapsed = localStorage.getItem('sidebarCollapsed') !== 'true';
+        localStorage.setItem('sidebarCollapsed', isCollapsed);
+        updateSidebarState(isCollapsed);
+      });
+    }
+    
+    // Get current URL name from Django template variable
+    const currentUrlName = "{{ request.resolver_match.url_name|default:'' }}";
 
-  // Smooth fade/slide-in animation on load
-  window.addEventListener("DOMContentLoaded", () => {
+    // Set active state for navigation items based on exact URL path
+    navItems.forEach(item => {
+      const href = item.getAttribute('href');
+      const currentPath = window.location.pathname;
+      
+      // Remove trailing slash for comparison
+      const cleanHref = href ? href.replace(/\/$/, '') : '';
+      const cleanPath = currentPath.replace(/\/$/, '');
+      
+      // Exact match only
+      if (href && href !== '#' && cleanPath === cleanHref) {
+        item.classList.add('bg-gray-700', 'text-white');
+        item.classList.remove('text-gray-400');
+        // Add orange rounded left border indicator
+        item.style.borderLeft = '4px solid #f97316';
+        item.style.borderRadius = '4px 0 0 4px';
+      }
+    });
+
+    // Sidebar open
+    if (sidebarOpenBtn) {
+      sidebarOpenBtn.addEventListener("click", () => {
+        sidebar.classList.remove("-translate-x-full");
+        overlay.classList.remove("hidden");
+        setTimeout(() => overlay.classList.add("opacity-100"), 10);
+        if (sidebarOpenBtn) {
+          sidebarOpenBtn.classList.add("opacity-0", "pointer-events-none");
+        }
+      });
+    }
+
+    // Sidebar close
+    function closeSidebar() {
+      sidebar.classList.add("-translate-x-full");
+      overlay.classList.remove("opacity-100");
+      setTimeout(() => overlay.classList.add("hidden"), 300);
+      if (sidebarOpenBtn) {
+        sidebarOpenBtn.classList.remove("opacity-0", "pointer-events-none");
+      }
+    }
+    
+    if (sidebarCloseBtn) {
+      sidebarCloseBtn.addEventListener("click", closeSidebar);
+    }
+    if (overlay) {
+      overlay.addEventListener("click", closeSidebar);
+    }
+
+    // Collapse toggle for all menus
+    collapses.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = document.getElementById(btn.dataset.collapse);
+        const arrow = btn.querySelector(".arrow");
+        const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+        
+        target.classList.toggle("hidden");
+        arrow.classList.toggle("rotate-90");
+        btn.setAttribute('aria-expanded', !isExpanded);
+      });
+    });
+
+    // Smooth fade/slide-in animation on load
     const main = document.getElementById("mainContent");
-    setTimeout(() => {
-      main.classList.remove("opacity-0", "translate-y-4");
-      main.classList.add("opacity-100", "translate-y-0");
-    }, 100);
+    if (main) {
+      setTimeout(() => {
+        main.classList.remove("opacity-0", "translate-y-4");
+        main.classList.add("opacity-100", "translate-y-0");
+      }, 100);
+    }
   });
-
-  
 </script>

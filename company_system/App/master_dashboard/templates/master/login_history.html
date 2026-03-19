@@ -1,0 +1,414 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} Login History {% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'master/master_sidebar.html' %}
+
+<!-- Help Button (Floating) -->
+<button onclick="toggleHelp()" class="fixed bottom-6 right-6 z-50 bg-orange-500 hover:bg-orange-600 text-white rounded-full w-12 h-12 shadow-lg flex items-center justify-center" title="Help">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+</button>
+
+<!-- Help Banner -->
+<div id="helpBanner" class="hidden fixed bottom-20 right-6 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 max-w-sm border-l-4 border-orange-500">
+    <div class="flex justify-between items-start mb-2">
+        <h3 class="font-semibold text-gray-800 dark:text-gray-100">How to Use Login History</h3>
+        <button onclick="toggleHelp()" class="text-gray-500 hover:text-gray-700">&times;</button>
+    </div>
+    <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+        <li class="flex items-start gap-2">
+            <span class="text-green-500">✓</span>
+            <span><strong>Filter:</strong> Use search, status, or date filters - no page reload needed!</span>
+        </li>
+        <li class="flex items-start gap-2">
+            <span class="text-green-500">✓</span>
+            <span><strong>Pagination:</strong> Click page numbers to navigate without reload</span>
+        </li>
+        <li class="flex items-start gap-2">
+            <span class="text-blue-500">ℹ</span>
+            <span><strong>Browser:</strong> Click on browser name to see full user agent details</span>
+        </li>
+        <li class="flex items-start gap-2">
+            <span class="text-purple-500">📱</span>
+            <span><strong>Device:</strong> Shows Desktop/Mobile/Tablet</span>
+        </li>
+        <li class="flex items-start gap-2">
+            <span class="text-orange-500">🌍</span>
+            <span><strong>Location:</strong> IP address or network location</span>
+        </li>
+        <li class="flex items-start gap-2">
+            <span class="text-gray-500">📋</span>
+            <span><strong>Status:</strong> ✓ Success (green) or ✗ Failed (red)</span>
+        </li>
+    </ul>
+</div>
+
+<main
+  id="mainContent"
+  class="md:ml-64 pt-10 min-h-screen p-6 bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+>
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Login History / Audit Trail</h1>
+        <p class="text-gray-600 dark:text-gray-400">Track all login attempts and security events</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border-l-4 border-green-500">
+            <div class="text-gray-500 dark:text-gray-400 text-sm">Total Successful Logins</div>
+            <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ total_logins }}</div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border-l-4 border-red-500">
+            <div class="text-gray-500 dark:text-gray-400 text-sm">Failed Attempts</div>
+            <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ total_failed }}</div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow border-l-4 border-blue-500">
+            <div class="text-gray-500 dark:text-gray-400 text-sm">Unique Users Logged In</div>
+            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ unique_users }}</div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow mb-6">
+        <form id="filterForm" class="flex flex-wrap gap-4 items-end">
+            <div class="flex-1 min-w-48">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                <input type="text" id="search" value="{{ search }}" 
+                    placeholder="Employee # or IP Address"
+                    class="w-full p-2 border rounded focus:ring-2 focus:ring-orange-400 bg-white dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
+            </div>
+            <div class="w-40">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                <select id="status" class="w-full p-2 border rounded focus:ring-2 focus:ring-orange-400 bg-white dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
+                    <option value="">All</option>
+                    <option value="success" {% if status_filter == 'success' %}selected{% endif %}>Success</option>
+                    <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Failed</option>
+                </select>
+            </div>
+            <div class="w-40">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Start</label>
+                <input type="date" id="start_date" value="{{ start_date }}" 
+                    class="w-full p-2 border rounded focus:ring-2 focus:ring-orange-400 bg-white dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
+            </div>
+            <div class="w-40">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date End</label>
+                <input type="date" id="end_date" value="{{ end_date }}" 
+                    class="w-full p-2 border rounded focus:ring-2 focus:ring-orange-400 bg-white dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600">
+            </div>
+            <div class="flex gap-2">
+                <button type="button" onclick="applyFilters()" class="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
+                    Filter
+                </button>
+                <button type="button" onclick="clearFilters()" class="px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-100 text-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-500">
+                    Clear
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- History Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Date/Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Employee #</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Device</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Browser</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Location</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Failure Reason</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for log in page_obj %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                            {{ log.login_time|date:"M d, Y H:i:s" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {{ log.employee_number|default:"-" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if log.status == 'success' %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                    ✓ Success
+                                </span>
+                            {% else %}
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                    ✗ Failed
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            <span class="px-2 py-1 text-xs font-medium rounded-full 
+                                {% if log.get_device_type == 'Desktop' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
+                                {% elif log.get_device_type == 'Mobile' %}bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200
+                                {% elif log.get_device_type == 'Tablet' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                {% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200{% endif %}">
+                                {{ log.get_device_type }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                            {{ log.ip_address|default:"-" }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            <button 
+                                type="button"
+                                onclick="showUserAgentModal('{{ log.user_agent|escapejs }}')"
+                                class="text-blue-600 dark:text-blue-400 hover:underline text-left"
+                                title="Click to see full details"
+                            >
+                                {{ log.get_browser_name }} on {{ log.get_os_name }}
+                            </button>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                            {{ log.get_location }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-red-500 dark:text-red-400">
+                            {{ log.failure_reason|default:"-" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                            No login history found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="mt-4 flex justify-center" id="pagination-container">
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+            {% if page_obj.has_previous %}
+                <a href="?page=1&search={{ search }}&status={{ status_filter }}&start_date={{ start_date }}&end_date={{ end_date }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    « First
+                </a>
+                <a href="?page={{ page_obj.previous_page_number }}&search={{ search }}&status={{ status_filter }}&start_date={{ start_date }}&end_date={{ end_date }}" class="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    ‹ Prev
+                </a>
+            {% endif %}
+
+            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&search={{ search }}&status={{ status_filter }}&start_date={{ start_date }}&end_date={{ end_date }}" class="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    Next ›
+                </a>
+                <a href="?page={{ page_obj.paginator.num_pages }}&search={{ search }}&status={{ status_filter }}&start_date={{ start_date }}&end_date={{ end_date }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    Last »
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% else %}
+    <div class="mt-4 flex justify-center" id="pagination-container"></div>
+    {% endif %}
+</main>
+
+<!-- User Agent Modal -->
+<div id="userAgentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center overflow-x-hidden" onclick="closeUserAgentModal(event)">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto overflow-x-hidden" onclick="event.stopPropagation()">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-800">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Full User Agent Details</h3>
+            <button onclick="closeUserAgentModal()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-2xl leading-none">&times;</button>
+        </div>
+        <div class="p-4">
+            <div id="userAgentContent" class="text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-900 p-3 rounded overflow-x-hidden break-all"></div>
+        </div>
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700 sticky bottom-0 bg-white dark:bg-gray-800">
+            <button onclick="closeUserAgentModal()" class="w-full px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleHelp() {
+    const banner = document.getElementById('helpBanner');
+    banner.classList.toggle('hidden');
+}
+
+function showUserAgentModal(userAgent) {
+    document.getElementById('userAgentContent').textContent = userAgent;
+    document.getElementById('userAgentModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+}
+
+function closeUserAgentModal(event) {
+    if (!event || event.target === document.getElementById('userAgentModal')) {
+        document.getElementById('userAgentModal').classList.add('hidden');
+        document.body.style.overflow = ''; // Restore scrolling
+    }
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeUserAgentModal();
+    }
+});
+
+// AJAX functions for filtering and pagination
+let currentPage = 1;
+
+function getFilterParams() {
+    return {
+        search: document.getElementById('search').value,
+        status: document.getElementById('status').value,
+        start_date: document.getElementById('start_date').value,
+        end_date: document.getElementById('end_date').value
+    };
+}
+
+function applyFilters() {
+    currentPage = 1;
+    loadLoginHistory();
+}
+
+function clearFilters() {
+    document.getElementById('search').value = '';
+    document.getElementById('status').value = '';
+    document.getElementById('start_date').value = '';
+    document.getElementById('end_date').value = '';
+    currentPage = 1;
+    loadLoginHistory();
+}
+
+function goToPage(page) {
+    currentPage = page;
+    loadLoginHistory();
+}
+
+function loadLoginHistory() {
+    const params = getFilterParams();
+    const url = new URL(window.location.origin + '/master/login_history/');
+    
+    // Add filter params
+    if (params.search) url.searchParams.set('search', params.search);
+    if (params.status) url.searchParams.set('status', params.status);
+    if (params.start_date) url.searchParams.set('start_date', params.start_date);
+    if (params.end_date) url.searchParams.set('end_date', params.end_date);
+    url.searchParams.set('page', currentPage);
+    
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        renderTable(data.logs);
+        renderPagination(data);
+        updateURL(params);
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function renderTable(logs) {
+    const tbody = document.querySelector('tbody');
+    if (logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">No login history found.</td></tr>`;
+        return;
+    }
+    
+    tbody.innerHTML = logs.map(log => `
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${log.login_time}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${log.employee_number}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+                ${log.status === 'success' 
+                    ? '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">✓ Success</span>'
+                    : '<span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">✗ Failed</span>'
+                }
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                <span class="px-2 py-1 text-xs font-medium rounded-full ${getDeviceClass(log.device_type)}">${log.device_type}</span>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                <button type="button" onclick="showUserAgentModal('${escapeHtml(log.user_agent)}')" class="text-blue-600 dark:text-blue-400 hover:underline text-left" title="Click to see full details">
+                    ${log.browser} on ${log.os}
+                </button>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">${log.location}</td>
+            <td class="px-6 py-4 text-sm text-red-500 dark:text-red-400">${log.failure_reason}</td>
+        </tr>
+    `).join('');
+}
+
+function getDeviceClass(deviceType) {
+    const classes = {
+        'Desktop': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+        'Mobile': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+        'Tablet': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+    };
+    return classes[deviceType] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+}
+
+function renderPagination(data) {
+    const pagination = document.getElementById('pagination-container');
+    if (!pagination) return;
+    
+    if (data.num_pages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+    
+    let html = '';
+    
+    // Previous button
+    if (data.has_previous) {
+        html += `<button onclick="goToPage(1)" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">« First</button>`;
+        html += `<button onclick="goToPage(${data.current_page - 1})" class="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">‹ Prev</button>`;
+    }
+    
+    // Page info
+    html += `<span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">Page ${data.current_page} of ${data.num_pages}</span>`;
+    
+    // Next button
+    if (data.has_next) {
+        html += `<button onclick="goToPage(${data.current_page + 1})" class="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">Next ›</button>`;
+        html += `<button onclick="goToPage(${data.num_pages})" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700">Last »</button>`;
+    }
+    
+    pagination.innerHTML = html;
+}
+
+function updateURL(params) {
+    const url = new URL(window.location);
+    url.searchParams.set('page', currentPage);
+    if (params.search) url.searchParams.set('search', params.search); else url.searchParams.delete('search');
+    if (params.status) url.searchParams.set('status', params.status); else url.searchParams.delete('status');
+    if (params.start_date) url.searchParams.set('start_date', params.start_date); else url.searchParams.delete('start_date');
+    if (params.end_date) url.searchParams.set('end_date', params.end_date); else url.searchParams.delete('end_date');
+    window.history.pushState({}, '', url);
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Load data on page load if we have filters
+document.addEventListener('DOMContentLoaded', function() {
+    // Don't auto-load on initial page load - let server render first
+    // This prevents the help button from disappearing
+});
+</script>
+{% endblock %}

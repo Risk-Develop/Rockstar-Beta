@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+
+{% block title %}Leave Credits{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-3">
+        <div>
+            <h1 class="text-2xl font-bold">Leave Credits</h1>
+            <p class="text-sm text-gray-500 mt-1">Manage employee leave credits</p>
+        </div>
+        <div class="flex space-x-2">
+            <a href="{% url 'human_resource:hr_dashboard' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition">
+                &larr; Dashboard
+            </a>
+            <a href="{% url 'human_resource:leave_request_list' %}" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition">
+                📋 Leave Requests
+            </a>
+            <a href="{% url 'human_resource:leave_credit_add' %}" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                + Add Leave Credit
+            </a>
+        </div>
+    </div>
+
+    <!-- Notifications / Alerts - Floating Buttons -->
+    {% if low_credits or zero_credits %}
+    <div class="fixed bottom-6 right-6 z-50 space-y-2">
+        {% if low_credits %}
+        <button onclick="document.getElementById('lowCreditsModal').classList.remove('hidden')" 
+                class="flex items-center gap-2 px-4 py-3 bg-yellow-500 text-white rounded-full shadow-lg hover:bg-yellow-600 transition transform hover:scale-105">
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+            <span class="font-medium">Low Credits ({{ low_credits_count }})</span>
+            <span class="bg-white text-yellow-600 text-xs font-bold px-2 py-0.5 rounded-full">{{ low_credits_count }}</span>
+        </button>
+        {% endif %}
+        {% if zero_credits %}
+        <button onclick="document.getElementById('zeroCreditsModal').classList.remove('hidden')" 
+                class="flex items-center gap-2 px-4 py-3 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600 transition transform hover:scale-105">
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+            <span class="font-medium">Zero Credits ({{ zero_credits|length }})</span>
+            <span class="bg-white text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">{{ zero_credits|length }}</span>
+        </button>
+        {% endif %}
+    </div>
+    
+    <!-- Low Credits Modal -->
+    {% if low_credits %}
+    <div id="lowCreditsModal" class="hidden fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="flex justify-between items-center p-4 border-b border-yellow-200 bg-yellow-50">
+                <h3 class="text-lg font-semibold text-yellow-800">Low Leave Credits Warning</h3>
+                <button onclick="document.getElementById('lowCreditsModal').classList.add('hidden')" class="text-yellow-600 hover:text-yellow-800">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-4">
+                <p class="text-sm text-gray-600 mb-3">Employees with less than 2 days remaining:</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for credit in low_credits %}
+                    <a href="{% url 'human_resource:leave_credit_list' %}?q={{ credit.employee.first_name|urlencode }}%20{{ credit.employee.last_name|urlencode }}" 
+                       class="px-3 py-2 bg-yellow-100 text-yellow-800 text-sm rounded-lg hover:bg-yellow-200 transition flex flex-col items-start gap-1">
+                        <span class="font-medium">{{ credit.employee.first_name }} {{ credit.employee.last_name }}</span>
+                        <span class="text-xs bg-yellow-200 px-2 py-0.5 rounded">
+                            {{ credit.leave_type|upper }}: {{ credit.remaining }} day{{ credit.remaining|pluralize }}
+                        </span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Zero Credits Modal -->
+    {% if zero_credits %}
+    <div id="zeroCreditsModal" class="hidden fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="flex justify-between items-center p-4 border-b border-red-200 bg-red-50">
+                <h3 class="text-lg font-semibold text-red-800">No Leave Credits Available</h3>
+                <button onclick="document.getElementById('zeroCreditsModal').classList.add('hidden')" class="text-red-600 hover:text-red-800">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-4">
+                <p class="text-sm text-gray-600 mb-3">Employees with 0 days remaining:</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for credit in zero_credits %}
+                    <a href="{% url 'human_resource:leave_credit_list' %}?q={{ credit.employee.first_name|urlencode }}%20{{ credit.employee.last_name|urlencode }}" 
+                       class="px-3 py-2 bg-red-100 text-red-800 text-sm rounded-lg hover:bg-red-200 transition flex flex-col items-start gap-1">
+                        <span class="font-medium">{{ credit.employee.first_name }} {{ credit.employee.last_name }}</span>
+                        <span class="text-xs bg-red-200 px-2 py-0.5 rounded">
+                            {{ credit.leave_type|upper }}: 0 days
+                        </span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Year Filter -->
+    <div class="bg-white shadow rounded-lg p-4 mb-6">
+        <form method="get" class="flex flex-wrap gap-4 items-end">
+            <div class="min-w-[150px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Year</label>
+                <select name="year" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Years</option>
+                    {% for year in available_years %}
+                    <option value="{{ year }}" {% if selected_year == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="min-w-[150px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Leave Type</label>
+                <select name="leave_type" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Types</option>
+                    <option value="vl" {% if request.GET.leave_type == 'vl' %}selected{% endif %}>Vacation Leave</option>
+                    <option value="sl" {% if request.GET.leave_type == 'sl' %}selected{% endif %}>Sick Leave</option>
+                </select>
+            </div>
+            <div class="min-w-[150px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Filter by Status</label>
+                <select name="status" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Status</option>
+                    <option value="low" {% if request.GET.status == 'low' %}selected{% endif %}>Low Credits (≤2 days)</option>
+                    <option value="zero" {% if request.GET.status == 'zero' %}selected{% endif %}>Zero Credits (0 days)</option>
+                    <option value="healthy" {% if request.GET.status == 'healthy' %}selected{% endif %}>Healthy (>2 days)</option>
+                </select>
+            </div>
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search Employee</label>
+                <input type="text" name="q" placeholder="Search by name..." value="{{ request.GET.q|default:'' }}" 
+                       class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="flex items-end gap-2">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                    Filter
+                </button>
+                <a href="{% url 'human_resource:leave_credit_list' %}" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition">
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-blue-500">
+            <div class="text-sm text-gray-500">Total Records</div>
+            <div class="text-2xl font-bold">{{ leave_credits|length }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-green-500">
+            <div class="text-sm text-gray-500">Vacation Leave Days</div>
+            <div class="text-2xl font-bold text-green-600">{{ total_vl_remaining|default:"0" }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-blue-500">
+            <div class="text-sm text-gray-500">Sick Leave Days</div>
+            <div class="text-2xl font-bold text-blue-600">{{ total_sl_remaining|default:"0" }}</div>
+        </div>
+        <div class="bg-white shadow rounded-lg p-4 border-l-4 border-yellow-500">
+            <div class="text-sm text-gray-500">Low Credits</div>
+            <div class="text-2xl font-bold text-yellow-600">{{ low_credits_count|default:"0" }}</div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Leave Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Used</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remaining</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for credit in leave_credits %}
+                    <tr class="hover:bg-gray-50 transition {% if credit.remaining == 0 %}bg-red-50{% elif credit.remaining <= 2 %}bg-yellow-50{% endif %}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <span class="text-blue-600 font-bold">{{ credit.employee.first_name.0|upper }}{{ credit.employee.last_name.0|upper }}</span>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">{{ credit.employee.first_name }} {{ credit.employee.last_name }}</div>
+                                    <div class="text-sm text-gray-500">ID: {{ credit.employee.id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if credit.employee.rank == 'regular' %}bg-green-100 text-green-800
+                                {% elif credit.employee.rank == 'probationary' %}bg-blue-100 text-blue-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ credit.employee.rank|title }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if credit.leave_type == 'vl' %}bg-green-100 text-green-800
+                                {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                {{ credit.get_leave_type_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ credit.total|floatformat:1 }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ credit.used|floatformat:1 }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 rounded text-xs font-semibold
+                                {% if credit.remaining == 0 %}bg-red-200 text-red-800
+                                {% elif credit.remaining <= 2 %}bg-yellow-200 text-yellow-800
+                                {% else %}bg-green-200 text-green-800{% endif %}">
+                                {% if credit.remaining == 0 %}
+                                <a href="{% url 'human_resource:leave_credit_list' %}?status=zero{% if selected_year %}&year={{ selected_year }}{% endif %}" class="hover:underline">Zero</a>
+                                {% elif credit.remaining <= 2 %}
+                                <a href="{% url 'human_resource:leave_credit_list' %}?status=low{% if selected_year %}&year={{ selected_year }}{% endif %}" class="hover:underline">Low ({{ credit.remaining|floatformat:1 }})</a>
+                                {% else %}
+                                {{ credit.remaining|floatformat:1 }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ credit.year }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if credit.notes %}
+                            <span class="truncate max-w-[150px] block" title="{{ credit.notes }}">{{ credit.notes }}</span>
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <a href="{% url 'human_resource:leave_credit_edit' credit.id %}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="px-6 py-8 text-center text-gray-500">
+                            <div class="flex flex-col items-center">
+                                <svg class="h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                                <p>No leave credits found.</p>
+                                <p class="text-sm">Click "Add Leave Credit" to create one.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if leave_credits.has_other_pages %}
+    <div class="mt-6 flex justify-center">
+        <div class="flex space-x-2">
+            {% if leave_credits.has_previous %}
+            <a href="?page={{ leave_credits.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.year %}&year={{ request.GET.year }}{% endif %}{% if request.GET.leave_type %}&leave_type={{ request.GET.leave_type }}{% endif %}" 
+               class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">Previous</a>
+            {% endif %}
+            <span class="px-3 py-1 bg-gray-100 rounded">Page {{ leave_credits.number }} of {{ leave_credits.paginator.num_pages }}</span>
+            {% if leave_credits.has_next %}
+            <a href="?page={{ leave_credits.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.year %}&year={{ request.GET.year }}{% endif %}{% if request.GET.leave_type %}&leave_type={{ request.GET.leave_type }}{% endif %}" 
+               class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">Next</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

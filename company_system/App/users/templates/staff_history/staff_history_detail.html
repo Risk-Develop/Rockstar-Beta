@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Staff History - {{ staff.first_name }} {{ staff.last_name }}{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'includes/sidebar.html' %}
+
+<main id="mainContent" class="md:ml-64 pt-20 min-h-screen p-4 sm:p-6 bg-gray-50">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-800">Staff History - {{ staff.first_name }} {{ staff.last_name }}</h1>
+        <p class="text-gray-600">Employee Number: {{ staff.employee_number|default:"N/A" }}</p>
+      </div>
+      <a href="{% url 'staff_history_list' %}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        Back to All History
+      </a>
+    </div>
+
+    <!-- Employee Info Card -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+                <p class="text-sm text-gray-500">Job Title</p>
+                <p class="font-medium">{{ staff.get_job_title_display }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Employment Type</p>
+                <p class="font-medium">{{ staff.get_type_display }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Department</p>
+                <p class="font-medium">{{ staff.get_department_display }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Status</p>
+                <p class="font-medium">{{ staff.get_status_display }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Table -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Field</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Old Value</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Value</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Changed By</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for record in history_records %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ record.changed_at|date:"M d, Y H:i" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{ record.get_field_display_name }}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate" title="{{ record.old_value }}">
+                        {{ record.old_value|default:"-" }}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate" title="{{ record.new_value }}">
+                        {{ record.new_value|default:"-" }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {{ record.changed_by.username|default:"System" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                        No history records found for this employee.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if history_records.has_other_pages %}
+    <div class="flex justify-center mt-4">
+        <nav class="flex items-center gap-2">
+            {% if history_records.has_previous %}
+            <a href="?page={{ history_records.previous_page_number }}" 
+               class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">Previous</a>
+            {% endif %}
+            
+            <span class="px-3 py-1">Page {{ history_records.number }} of {{ history_records.paginator.num_pages }}</span>
+            
+            {% if history_records.has_next %}
+            <a href="?page={{ history_records.next_page_number }}" 
+               class="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300">Next</a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

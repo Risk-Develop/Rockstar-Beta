@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Payroll Preview - {{ employee.first_name }} {{ employee.last_name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Payroll Preview</h1>
+        <div class="text-sm text-gray-500">
+            Period: {{ payroll.period.month }}/{{ payroll.period.year }} - 
+            {% if payroll.period.cutoff == '1' %}1st Cutoff{% else %}2nd Cutoff{% endif %}
+        </div>
+    </div>
+    
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="p-4 rounded {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <form method="POST" action="{% url 'human_resource:individual_payroll_finalize' %}" id="finalizeForm">
+        {% csrf_token %}
+        
+        <!-- Employee Information -->
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2">Employee Information</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <span class="text-sm text-gray-500">Name</span>
+                    <p class="font-medium">{{ employee.first_name }} {{ employee.middle_name|default:"" }} {{ employee.last_name }}</p>
+                </div>
+                <div>
+                    <span class="text-sm text-gray-500">Employee ID</span>
+                    <p class="font-medium">{{ employee.employee_number }}</p>
+                </div>
+                <div>
+                    <span class="text-sm text-gray-500">Department</span>
+                    <p class="font-medium">{{ employee.get_department_display }}</p>
+                </div>
+                <div>
+                    <span class="text-sm text-gray-500">Position</span>
+                    <p class="font-medium">{{ employee.get_job_title_display }}</p>
+                </div>
+            </div>
+            {% if payroll.bank_account %}
+            <div class="mt-4 pt-4 border-t">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <span class="text-sm text-gray-500">Bank</span>
+                        <p class="font-medium">{{ payroll.bank_account.bank.name }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-500">Account Number</span>
+                        <p class="font-medium">{{ payroll.bank_account.account_number }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Earnings Section -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-green-700">EARNINGS</h2>
+                <table class="w-full">
+                    <tbody class="divide-y divide-gray-100">
+                        <tr>
+                            <td class="py-2 text-gray-600">Basic Salary</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.earnings.basic_salary|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Food Allowance</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.earnings.housing_allowance|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Gas/Lodging Allowance</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.earnings.transportation_allowance|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Rice Allowance</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.earnings.meal_allowance|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Laundry Allowance</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.earnings.meal_allowance|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Performance Bonus</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.earnings.medical_allowance|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Medical Cash Allowance</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.earnings.medical_allowance|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Other Allowances</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.earnings.other_allowances|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Overtime Pay ({{ payroll.earnings.overtime_hours }} hrs)</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.earnings.overtime_pay|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Night Differential ({{ payroll.earnings.nsd_hours }} hrs)</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.earnings.night_differential|floatformat:2 }}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot class="border-t-2 border-green-500">
+                        <tr>
+                            <td class="py-3 font-bold text-green-700">Total Earnings</td>
+                            <td class="py-3 text-right font-bold text-green-700">₱{{ payroll.earnings.total|floatformat:2 }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            
+            <!-- Deductions Section -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-red-700">DEDUCTIONS</h2>
+                <table class="w-full">
+                    <tbody class="divide-y divide-gray-100">
+                        <tr>
+                            <td class="py-2 text-gray-600">Absence ({{ payroll.attendance.days_absent }} days)</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.deductions.absence_deduction|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Late Arrivals ({{ payroll.attendance.late_occurrences }}x, {{ payroll.attendance.late_minutes }} mins)</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.deductions.late_deduction|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Loan Repayment</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.deductions.loan_deduction|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Other Deductions</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.deductions.other_deductions|floatformat:2 }}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot class="border-t-2 border-red-500">
+                        <tr>
+                            <td class="py-3 font-bold text-red-700">Total Deductions</td>
+                            <td class="py-3 text-right font-bold text-red-700">₱{{ payroll.deductions.total|floatformat:2 }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <!-- Government Contributions -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-blue-700">GOVERNMENT CONTRIBUTIONS</h2>
+                <table class="w-full">
+                    <tbody class="divide-y divide-gray-100">
+                        <tr>
+                            <td class="py-2 text-gray-600">SSS (Employee Share)</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.government.sss|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">PhilHealth (Employee Share)</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.government.philhealth|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Pag-IBIG (Employee Share)</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.government.pagibig|floatformat:2 }}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot class="border-t-2 border-blue-500">
+                        <tr>
+                            <td class="py-3 font-bold text-blue-700">Total Contributions</td>
+                            <td class="py-3 text-right font-bold text-blue-700">₱{{ payroll.government.total|floatformat:2 }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            
+            <!-- Tax Section -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-purple-700">TAX</h2>
+                <table class="w-full">
+                    <tbody class="divide-y divide-gray-100">
+                        <tr>
+                            <td class="py-2 text-gray-600">Taxable Income</td>
+                            <td class="py-2 text-right font-medium">₱{{ payroll.tax.taxable_income|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Tax Bracket</td>
+                            <td class="py-2 text-right font-medium">{{ payroll.tax.tax_bracket }}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot class="border-t-2 border-purple-500">
+                        <tr>
+                            <td class="py-3 font-bold text-purple-700">Withholding Tax</td>
+                            <td class="py-3 text-right font-bold text-purple-700">₱{{ payroll.tax.withholding_tax|floatformat:2 }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Attendance Summary -->
+        <div class="bg-white shadow rounded-lg p-6 mt-6">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2">Attendance Summary</h2>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+                <div class="bg-gray-50 rounded p-3">
+                    <p class="text-2xl font-bold text-gray-700">{{ payroll.attendance.working_days }}</p>
+                    <p class="text-sm text-gray-500">Working Days</p>
+                </div>
+                <div class="bg-green-50 rounded p-3">
+                    <p class="text-2xl font-bold text-green-700">{{ payroll.attendance.days_present }}</p>
+                    <p class="text-sm text-gray-500">Days Present</p>
+                </div>
+                <div class="bg-red-50 rounded p-3">
+                    <p class="text-2xl font-bold text-red-700">{{ payroll.attendance.days_absent }}</p>
+                    <p class="text-sm text-gray-500">Days Absent</p>
+                </div>
+                <div class="bg-blue-50 rounded p-3">
+                    <p class="text-2xl font-bold text-blue-700">{{ payroll.attendance.leave_days }}</p>
+                    <p class="text-sm text-gray-500">Leave Days</p>
+                </div>
+                <div class="bg-yellow-50 rounded p-3">
+                    <p class="text-2xl font-bold text-yellow-700">{{ payroll.attendance.late_occurrences }}</p>
+                    <p class="text-sm text-gray-500">Late Arrivals</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary Section - Using inline styles for gradient -->
+        <div style="background: linear-gradient(to right, #2563eb, #1e40af); box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 8px; padding: 24px; margin-top: 24px; color: white;">
+            <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #60a5fa;">PAYROLL SUMMARY</h2>
+            <div style="margin-top: 12px;">
+                <div class="flex justify-between items-center" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span>Gross Salary</span>
+                    <span style="font-size: 20px; font-weight: 500;">₱{{ payroll.summary.gross|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between items-center" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; color: #bfdbfe;">
+                    <span>Less: Deductions</span>
+                    <span>(₱{{ payroll.summary.total_deductions|floatformat:2 }})</span>
+                </div>
+                <div class="flex justify-between items-center" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; color: #bfdbfe;">
+                    <span>Less: Government Contributions</span>
+                    <span>(₱{{ payroll.summary.total_contributions|floatformat:2 }})</span>
+                </div>
+                <div class="flex justify-between items-center" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; color: #bfdbfe;">
+                    <span>Less: Withholding Tax</span>
+                    <span>(₱{{ payroll.summary.total_tax|floatformat:2 }})</span>
+                </div>
+                <div style="border-top: 1px solid #60a5fa; padding-top: 12px; margin-top: 12px;">
+                    <div class="flex justify-between items-center" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 20px; font-weight: bold;">NET PAY</span>
+                        <span style="font-size: 30px; font-weight: bold;">₱{{ payroll.summary.net|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Override Section (Collapsible) -->
+        <div class="bg-white shadow rounded-lg p-6 mt-6">
+            <button type="button" onclick="toggleOverride()" class="flex items-center justify-between w-full text-left" style="display: flex; align-items: center; justify-content: space-between; text-align: left; width: 100%; cursor: pointer; border: none; background: none;">
+                <h2 class="text-lg font-semibold text-gray-700" style="font-size: 18px; font-weight: 600; color: #374151;">Manual Override (Optional)</h2>
+                <svg id="overrideArrow" class="w-5 h-5 transform transition-transform" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>
+                </svg>
+            </button>
+            <div id="overrideSection" class="hidden mt-4 pt-4 border-t" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                <p class="text-sm text-gray-500 mb-4" style="font-size: 14px; color: #6b7280; margin-bottom: 16px;">Override calculated values if needed. All overrides will be logged.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 16px;">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px;">Gross Salary</label>
+                        <input type="number" step="0.01" name="override_gross" value="{{ payroll.summary.gross }}"
+                               style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px;">Total Deductions</label>
+                        <input type="number" step="0.01" name="override_total_deductions" value="{{ payroll.summary.total_deductions }}"
+                               style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px;">Net Pay</label>
+                        <input type="number" step="0.01" name="override_net" value="{{ payroll.summary.net }}"
+                               style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box;">
+                    </div>
+                </div>
+                <div class="mt-4" style="margin-top: 16px;">
+                    <label class="block text-sm font-medium text-gray-700 mb-1" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px;">Reason for Override</label>
+                    <textarea name="override_reason" rows="2" 
+                              style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box; min-height: 80px;"
+                              placeholder="Enter reason for manual adjustment (required if values are changed)"></textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Note/Remark Section -->
+        <div class="bg-white shadow rounded-lg p-6 mt-6">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-gray-700">NOTE / REMARK</h2>
+            <p class="text-sm text-gray-500 mb-4">Add any notes or remarks for this payroll (optional)</p>
+            <textarea name="note" rows="3" 
+                      style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box; min-height: 80px;"
+                      placeholder="Enter any notes or remarks about this payroll...">{{ payroll.note|default:'' }}</textarea>
+        </div>
+        
+        <!-- Confirmation -->
+        <div class="bg-white shadow rounded-lg p-6 mt-6">
+            <div class="flex items-center mb-4" style="display: flex; align-items: center; margin-bottom: 16px;">
+                <input type="checkbox" id="confirmCheck" required style="width: 16px; height: 16px; margin-right: 8px;">
+                <label for="confirmCheck" class="ml-2 text-sm text-gray-700" style="margin-left: 8px; font-size: 14px; color: #374151;">
+                    I confirm that I have reviewed all payroll details and they are correct.
+                </label>
+            </div>
+            
+            <div class="flex justify-end space-x-4" style="display: flex; justify-content: flex-end; gap: 16px;">
+                <a href="{% url 'human_resource:individual_payroll' %}" 
+                   style="padding: 8px 16px; border: 1px solid #d1d5db; border-radius: 6px; color: #374151; text-decoration: none; display: inline-block;"
+                   onmouseover="this.style.background='#f9fafb'"
+                   onmouseout="this.style.background='transparent'">
+                    Cancel
+                </a>
+                <button type="button" onclick="window.print()" 
+                        style="padding: 8px 16px; border: 1px solid #3b82f6; color: #3b82f6; border-radius: 6px; background: transparent; cursor: pointer;"
+                        onmouseover="this.style.background='#eff6ff'"
+                        onmouseout="this.style.background='transparent'">
+                    Print Preview
+                </button>
+                <button type="submit" 
+                        style="padding: 8px 16px; background: #16a34a; color: white; border-radius: 6px; border: none; cursor: pointer; font-size: 14px;"
+                        onmouseover="this.style.background='#15803d'"
+                        onmouseout="this.style.background='#16a34a'">
+                    Confirm & Save
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function toggleOverride() {
+    const section = document.getElementById('overrideSection');
+    const arrow = document.getElementById('overrideArrow');
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+        arrow.style.transform = 'rotate(180deg)';
+    } else {
+        section.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+    }
+}
+</script>
+
+<style>
+@media print {
+    .no-print { display: none !important; }
+    body { background: white; }
+    .shadow { box-shadow: none !important; }
+}
+</style>
+{% endblock %}

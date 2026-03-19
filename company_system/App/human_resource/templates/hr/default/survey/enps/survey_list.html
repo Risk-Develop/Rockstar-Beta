@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}ENPS Surveys{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'hr/dashboard/hr_sidebar.html' %}
+
+<main id="mainContent" class="md:ml-64 pt-20 min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">ENPS Surveys</h1>
+                <p class="text-gray-500 text-sm mt-1">Employee Net Promoter Score Surveys</p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <a href="{% url 'human_resource:enps_survey_create' %}"
+                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Create Survey
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 p-4 border border-gray-100 dark:border-gray-700">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Total Surveys</p>
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ surveys|length }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 p-4 border border-gray-100 dark:border-gray-700">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-xl bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Active</p>
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ active_count|default:0 }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 p-4 border border-gray-100 dark:border-gray-700">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Total Responses</p>
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ total_responses|default:0 }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 p-4 border border-gray-100 dark:border-gray-700">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-xl bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Avg ENPS Score</p>
+                        <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ avg_enps|default:0|floatformat:1 }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-300">
+                        <tr>
+                            <th class="px-6 py-3">Survey Name</th>
+                            <th class="px-6 py-3">Status</th>
+                            <th class="px-6 py-3">Anonymous</th>
+                            <th class="px-6 py-3">Duration</th>
+                            <th class="px-6 py-3">Questions</th>
+                            <th class="px-6 py-3">Responses</th>
+                            <th class="px-6 py-3">Score</th>
+                            <th class="px-6 py-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for survey in surveys %}
+                        <tr class="bg-white dark:bg-gray-800 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-150">
+                            <td class="px-6 py-4 font-medium text-gray-900">
+                                <div>{{ survey.name }}</div>
+                                {% if survey.description %}
+                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ survey.description|truncatewords:10 }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if survey.is_active %}
+                                <span class="px-2.5 py-1 text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 rounded-full">Active</span>
+                                {% else %}
+                                <span class="px-2.5 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 rounded-full">Closed</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if survey.allow_anonymous %}
+                                <span class="px-2.5 py-1 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 rounded-full">
+                                    <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                    </svg>
+                                    Yes
+                                </span>
+                                {% else %}
+                                <span class="px-2.5 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
+                                    <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
+                                    </svg>
+                                    No
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-gray-500 dark:text-gray-400">
+                                {{ survey.start_date }}
+                                {% if survey.end_date %}- {{ survey.end_date }}{% else %}- Ongoing{% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                                    {{ survey.question_count }} question{{ survey.question_count|pluralize }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="font-medium text-gray-900 dark:text-gray-100">{{ survey.annotated_response_count }}</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if survey.question_type_display == 'nps' %}
+                                    {% if survey.enps_score_val > 0 %}
+                                    <span class="text-green-600 font-bold">+{{ survey.enps_score_val }}</span>
+                                    {% elif survey.enps_score_val < 0 %}
+                                    <span class="text-red-600 font-bold">{{ survey.enps_score_val }}</span>
+                                    {% elif survey.avg_score_display %}
+                                    <span class="text-yellow-600 font-bold">{{ survey.avg_score_display|floatformat:1 }}</span>
+                                    {% else %}
+                                    <span class="text-gray-400 font-bold">0</span>
+                                    {% endif %}
+                                {% elif survey.question_type_display == 'rating_5' %}
+                                    {% if survey.enps_score_val > 0 %}
+                                    <span class="text-yellow-600 font-bold">{{ survey.enps_score_val|floatformat:1 }}/5</span>
+                                    {% else %}
+                                    <span class="text-gray-400 font-bold">-</span>
+                                    {% endif %}
+                                {% elif survey.question_type_display == 'rating_3' %}
+                                    {% if survey.enps_score_val > 0 %}
+                                    <span class="text-yellow-600 font-bold">{{ survey.enps_score_val|floatformat:1 }}/3</span>
+                                    {% else %}
+                                    <span class="text-gray-400 font-bold">-</span>
+                                    {% endif %}
+                                {% elif survey.question_type_display == 'yes_no' %}
+                                    {% if survey.enps_score_val > 0 %}
+                                    <span class="text-green-600 font-bold">{{ survey.enps_score_val|floatformat:0 }}%</span>
+                                    {% else %}
+                                    <span class="text-gray-400 font-bold">-</span>
+                                    {% endif %}
+                                {% else %}
+                                    {% if survey.enps_score_val > 0 %}
+                                    <span class="text-green-600 font-bold">+{{ survey.enps_score_val }}</span>
+                                    {% elif survey.enps_score_val < 0 %}
+                                    <span class="text-red-600 font-bold">{{ survey.enps_score_val }}</span>
+                                    {% elif survey.avg_score_display %}
+                                    <span class="text-yellow-600 font-bold">{{ survey.avg_score_display|floatformat:1 }}</span>
+                                    {% else %}
+                                    <span class="text-gray-400 font-bold">0</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                <button type="button"
+                                        onclick="toggleDropdown('{{ survey.id }}', this)"
+                                        class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="6" r="2"/>
+                                        <circle cx="12" cy="12" r="2"/>
+                                        <circle cx="12" cy="18" r="2"/>
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                                <div class="flex flex-col items-center">
+                                    <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    <p class="text-gray-600 dark:text-gray-400">No surveys yet. Create your first ENPS survey!</p>
+                                    <a href="{% url 'human_resource:enps_survey_create' %}" class="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                        Create Survey
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+</main>
+
+<!-- Portal dropdowns — rendered here, moved to <body> by JS so they escape ALL overflow contexts -->
+{% for survey in surveys %}
+<div id="dm-{{ survey.id }}"
+     class="enps-dropdown hidden fixed w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1"
+     style="z-index:9999;">
+    <a href="{% url 'human_resource:enps_survey_detail' survey.id %}"
+       class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+        </svg>
+        View
+    </a>
+    <a href="{% url 'human_resource:enps_survey_edit' survey.id %}"
+       class="flex items-center px-4 py-2 text-sm text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+        </svg>
+        Edit
+    </a>
+    <a href="{% url 'human_resource:enps_analytics' survey.id %}"
+       class="flex items-center px-4 py-2 text-sm text-purple-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+        </svg>
+        Analytics
+    </a>
+    <a href="{% url 'human_resource:enps_take_survey' survey.id %}"
+       class="flex items-center px-4 py-2 text-sm text-green-600 hover:bg-gray-100 dark:hover:bg-gray-700" target="_blank">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        Take Survey
+    </a>
+    <hr class="my-1 border-gray-200 dark:border-gray-600">
+    <button type="button"
+            onclick="showDeleteModal('{{ survey.id }}', '{{ survey.name|escapejs }}')"
+            class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+        </svg>
+        Delete
+    </button>
+</div>
+{% endfor %}
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 transition-all duration-300">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full transform transition-all scale-100">
+        <div class="text-center">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-gray-800 dark:text-white">Delete Survey</h3>
+            <p class="text-gray-600 dark:text-gray-300 mb-6">
+                Are you sure you want to delete <span id="deleteSurveyName" class="font-semibold text-red-600 dark:text-red-400"></span>?<br>
+                <span class="text-sm text-red-500 dark:text-red-400">This action cannot be undone and all responses will be lost.</span>
+            </p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeDeleteModal()" class="px-5 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all font-medium">Cancel</button>
+                <form id="deleteForm" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all font-medium shadow-lg shadow-red-500/25 hover:shadow-red-500/40">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Move all dropdown menus to <body> — escapes every overflow:hidden/auto ancestor
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.enps-dropdown').forEach(el => document.body.appendChild(el));
+});
+
+function toggleDropdown(surveyId, btn) {
+    const menu = document.getElementById('dm-' + surveyId);
+    const isOpen = !menu.classList.contains('hidden');
+
+    // Close all first
+    closeAllDropdowns();
+    if (isOpen) return;
+
+    // Position using viewport coords from getBoundingClientRect (no scroll offset needed for fixed)
+    const r = btn.getBoundingClientRect();
+    menu.style.top  = r.bottom + 4 + 'px';
+    menu.style.left = r.right  - 192 + 'px';
+    menu.classList.remove('hidden');
+
+    // Close on outside click
+    setTimeout(() => {
+        document.addEventListener('click', function outsideHandler(e) {
+            if (!menu.contains(e.target) && e.target !== btn) {
+                menu.classList.add('hidden');
+                document.removeEventListener('click', outsideHandler);
+            }
+        });
+    }, 0);
+}
+
+function closeAllDropdowns() {
+    document.querySelectorAll('.enps-dropdown').forEach(m => m.classList.add('hidden'));
+}
+
+// Close on scroll (menu would drift otherwise)
+window.addEventListener('scroll', closeAllDropdowns, true);
+
+function showDeleteModal(surveyId, surveyName) {
+    // Close all dropdowns first
+    document.querySelectorAll('.enps-dropdown').forEach(m => {
+        m.dispatchEvent(new CustomEvent('dropdown-close', { detail: { id: surveyId } }));
+    });
+    
+    document.getElementById('deleteSurveyName').textContent = surveyName;
+    document.getElementById('deleteForm').action = '/human_resource/enps/' + surveyId + '/delete/';
+    
+    const modal = document.getElementById('deleteModal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+}
+
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+});
+</script>
+
+{% endblock %}

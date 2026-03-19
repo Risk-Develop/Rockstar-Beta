@@ -1,0 +1,944 @@
+{% extends "base.html" %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Add{% endif %} Leave Request{% endblock %}
+
+{% block content %}
+<style>
+  /* Form field styling for Django-rendered inputs */
+  input[type="text"],
+  input[type="date"],
+  input[type="number"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    background-color: #fff;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+    color: #111827;
+  }
+  
+  /* Dark mode support */
+  .dark input[type="text"],
+  .dark input[type="date"],
+  .dark input[type="number"],
+  .dark select,
+  .dark textarea {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+  
+  /* Focus states */
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background-color: white;
+  }
+  
+  .dark input:focus,
+  .dark select:focus,
+  .dark textarea:focus {
+    background-color: #374151;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+  
+  /* Hover states */
+  input:hover,
+  select:hover {
+    border-color: #9ca3af;
+  }
+  
+  .dark input:hover,
+  .dark select:hover {
+    border-color: #6b7280;
+  }
+  
+  /* Checkbox styling */
+  input[type="checkbox"] {
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.25rem;
+    background-color: #fff;
+    cursor: pointer;
+  }
+  
+  .dark input[type="checkbox"] {
+    background-color: #374151;
+    border-color: #4b5563;
+  }
+  
+  /* Error state */
+  input.error,
+  select.error {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+  }
+  
+  .dark input.error,
+  .dark select.error {
+    background-color: #450a0a;
+  }
+  
+  /* Placeholder */
+  input::placeholder,
+  textarea::placeholder {
+    color: #9ca3af;
+  }
+</style>
+<div class="container mx-auto px-4 py-6">
+
+    <!-- Breadcrumb -->
+    <nav class="mb-4">
+        <ol class="flex items-center space-x-2 text-sm">
+            <li><a href="{% url 'human_resource:hr_dashboard' %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">Dashboard</a></li>
+            <li class="text-gray-400 dark:text-gray-500">/</li>
+            <li><a href="{% url 'human_resource:leave_request_list' %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">Leave Requests</a></li>
+            <li class="text-gray-400 dark:text-gray-500">/</li>
+            <li class="text-gray-600 dark:text-gray-300">{% if form.instance.pk %}Edit{% else %}Add{% endif %} Leave Request</li>
+        </ol>
+    </nav>
+
+    <div class="flex flex-col lg:flex-row gap-6">
+        
+        <!-- Main Form -->
+        <div class="flex-1">
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                <div class="px-6 py-4" style="background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);">
+                    <h2 class="text-white font-semibold text-lg">{% if form.instance.pk %}Edit{% else %}Add{% endif %} Leave Request</h2>
+                </div>
+
+                <form method="post" id="leaveRequestForm" class="p-6 space-y-5 leave-request-form">
+                    {% csrf_token %}
+                    {{ form.employee }}
+
+                    {# Show all form errors at the top #}
+                    {% if form.errors %}
+                    <div class="p-4 bg-red-100 dark:bg-red-900/50 border-2 border-red-500 dark:border-red-400 rounded-lg">
+                        <h4 class="text-red-700 dark:text-red-300 font-bold mb-2">Please correct the following errors:</h4>
+                        <ul class="list-disc list-inside text-red-600 dark:text-red-400 text-sm">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li><strong>{{ field|title }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    {% if form.non_field_errors %}
+                    <div class="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+                        <ul class="list-disc list-inside">
+                            {% for error in form.non_field_errors %}
+                                <li class="text-red-600 dark:text-red-400">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <!-- Employee Selection (for new requests) -->
+                    {% if not form.instance.pk %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Employee <span class="text-red-500">*</span></label>
+                        <select id="employeeSelect" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400">
+                            <option value="">-- Select Employee --</option>
+                            {% for emp in employees %}
+                            <option value="{{ emp.id }}" {% if form.instance.employee_id == emp.id %}selected{% endif %} data-position-id="{% if emp.positionlink %}{{ emp.positionlink.id }}{% endif %}" data-position-name="{% if emp.positionlink %}{{ emp.positionlink.position_name }}{% endif %}" data-department-id="{% if emp.departmentlink %}{{ emp.departmentlink.id }}{% endif %}" data-department-name="{% if emp.departmentlink %}{{ emp.departmentlink.department_name }}{% endif %}" data-rank="{% if emp.rank %}{{ emp.rank }}{% endif %}" data-rank-display="{% if emp.rank %}{{ emp.get_rank_display }}{% endif %}" data-employee-number="{% if emp.employee_number %}{{ emp.employee_number }}{% endif %}">
+                                {{ emp.first_name }} {{ emp.last_name }} ({{ emp.employee_number }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% else %}
+                    <!-- For edit mode, display employee info as read-only -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Employee</label>
+                        <div class="p-3 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md">
+                            <p class="font-medium text-gray-900 dark:text-gray-100">
+                                {% if employee %}{{ employee.first_name }} {{ employee.last_name }}{% else %}{{ form.instance.employee.first_name }} {{ form.instance.employee.last_name }}{% endif %}
+                                <span class="text-gray-500 dark:text-gray-400">
+                                    ({% if employee %}{{ employee.employee_number }}{% else %}{{ form.instance.employee.employee_number }}{% endif %})
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Employee Info Banner -->
+                    <div id="employeeInfo" class="p-4 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg" {% if not form.instance.employee %}style="display:none;"{% endif %}>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-12 w-12 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center">
+                                    <span class="text-blue-600 dark:text-blue-400 font-bold text-lg" id="empInitials">--</span>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-blue-900 dark:text-blue-100" id="empName">Select an employee</p>
+                                    <p class="text-xs text-blue-700 dark:text-blue-300" id="empDetails">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Leave Credits Warning -->
+                    <div id="leaveCreditsWarning" class="hidden p-4 rounded-lg">
+                        <div class="flex items-start">
+                            <svg class="h-5 w-5 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-medium" id="leaveCreditsWarningTitle"></p>
+                                <p class="text-xs mt-1" id="leaveCreditsWarningText"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Position, Department & Rank (Auto-populated from Employee - Hidden with Label Display) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Position <span class="text-red-500">*</span></label>
+                            <input type="hidden" id="id_position" name="position" value="">
+                            <div id="positionDisplay" class="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 text-sm font-medium">--</div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Department <span class="text-red-500">*</span></label>
+                            <input type="hidden" id="id_department" name="department" value="">
+                            <div id="departmentDisplay" class="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 text-sm font-medium">--</div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rank <span class="text-red-500">*</span></label>
+                            <input type="hidden" id="id_rank" name="rank" value="">
+                            <div id="rankDisplay" class="w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 text-sm font-medium">--</div>
+                        </div>
+                    </div>
+
+                    <!-- Date Filed & Leave Type -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Filed <span class="text-red-500">*</span></label>
+                            {{ form.date_filed }}
+                            {% if form.date_filed.errors %}
+                                <p class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.date_filed.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Leave Type <span class="text-red-500">*</span></label>
+                            {{ form.leave_type }}
+                            {% if form.leave_type.errors %}
+                                <p class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.leave_type.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Start & End Date -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Start Date <span class="text-red-500">*</span></label>
+                            {{ form.start_date }}
+                            {% if form.start_date.errors %}
+                                <p class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.start_date.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">End Date <span class="text-red-500">*</span></label>
+                            {{ form.end_date }}
+                            {% if form.end_date.errors %}
+                                <p class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.end_date.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Half Day, Total Days & Is Paid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                        <div class="flex items-center gap-2 pb-2">
+                            {{ form.half_day }}
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Half Day?</label>
+                        </div>
+                        <div class="sm:col-span-1">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Total Days</label>
+                            {{ form.total_days }}
+                            {% if form.total_days.errors %}
+                                <p class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.total_days.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center gap-2 pb-2">
+                            {{ form.is_paid }}
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Is Paid?</label>
+                        </div>
+                    </div>
+
+                    <!-- Purpose -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Purpose <span class="text-red-500">*</span></label>
+                        {{ form.purpose }}
+                        {% if form.purpose.errors %}
+                            <p class="text-red-600 dark:text-red-400 text-sm mt-1">{{ form.purpose.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+            <!-- Status & Disapproval -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+                    <div class="flex items-center gap-3">
+                        <select id="id_status" name="status" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400">
+                            <option value="pending" {% if form.instance.status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="approved" {% if form.instance.status == 'approved' %}selected{% endif %}>Approved</option>
+                            <option value="disapproved" {% if form.instance.status == 'disapproved' %}selected{% endif %}>Disapproved</option>
+                        </select>
+                        <!-- Status Badge Indicator -->
+                        <span id="statusBadge" class="px-3 py-2 rounded-md text-sm font-bold uppercase tracking-wide whitespace-nowrap
+                            {% if form.instance.status == 'pending' %}bg-amber-100 dark:bg-amber-600 text-amber-800 dark:text-amber-100 border border-amber-300 dark:border-amber-500
+                            {% elif form.instance.status == 'approved' %}bg-emerald-100 dark:bg-emerald-600 text-emerald-800 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-500
+                            {% elif form.instance.status == 'disapproved' %}bg-red-100 dark:bg-red-600 text-red-800 dark:text-red-100 border border-red-300 dark:border-red-500
+                            {% else %}bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-500{% endif %}">
+                            {% if form.instance.status == 'pending' %}⏳ Pending
+                            {% elif form.instance.status == 'approved' %}✅ Approved
+                            {% elif form.instance.status == 'disapproved' %}❌ Disapproved
+                            {% else %}⏳ Pending{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Disapproval Reason</label>
+                    {{ form.disapproval_reason }}
+                </div>
+            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const statusSelect = document.getElementById('id_status');
+                    if (statusSelect) {
+                        statusSelect.addEventListener('change', function() {
+                            const badge = document.getElementById('statusBadge');
+                            const status = this.value;
+                            badge.className = 'px-3 py-2 rounded-md text-sm font-bold uppercase tracking-wide whitespace-nowrap';
+                            if (status === 'pending') {
+                                badge.classList.add('bg-amber-100', 'dark:bg-amber-600', 'text-amber-800', 'dark:text-amber-100', 'border', 'border-amber-300', 'dark:border-amber-500');
+                                badge.textContent = '⏳ Pending';
+                            } else if (status === 'approved') {
+                                badge.classList.add('bg-emerald-100', 'dark:bg-emerald-600', 'text-emerald-800', 'dark:text-emerald-100', 'border', 'border-emerald-300', 'dark:border-emerald-500');
+                                badge.textContent = '✅ Approved';
+                            } else if (status === 'disapproved') {
+                                badge.classList.add('bg-red-100', 'dark:bg-red-600', 'text-red-800', 'dark:text-red-100', 'border', 'border-red-300', 'dark:border-red-500');
+                                badge.textContent = '❌ Disapproved';
+                            }
+                        });
+                    }
+                });
+            </script>
+
+            <!-- Buttons -->
+            <div class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button type="submit" class="px-6 py-2.5 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-800 transition font-medium">
+                    Save
+                </button>
+                <a href="{% url 'human_resource:leave_request_list' %}" class="px-6 py-2.5 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition font-medium">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Sidebar - Leave Credits & Employee Info -->
+<div class="w-full lg:w-80">
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden sticky top-6">
+        <!-- Leave Credits Status -->
+        <div class="px-4 py-3" style="background: linear-gradient(90deg, #10b981 0%, #059669 100%);">
+            <h3 class="text-white font-semibold text-sm">Leave Credits Status</h3>
+        </div>
+        <div class="p-4">
+            <!-- VL Card -->
+            <div class="mb-4 p-3 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="h-10 w-10 bg-emerald-100 dark:bg-emerald-800 rounded-lg flex items-center justify-center mr-3">
+                            <span class="text-emerald-600 dark:text-emerald-400 text-lg">🌴</span>
+                        </div>
+                        <div>
+                            <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Vacation Leave</p>
+                            <p class="text-lg font-bold text-emerald-700 dark:text-emerald-300" id="vlRemaining">{{ vl_remaining|default:"0" }}</p>
+                        </div>
+                    </div>
+                    <span class="text-xs text-emerald-600 dark:text-emerald-400">days left</span>
+                </div>
+                <div class="mt-2 bg-emerald-200 dark:bg-emerald-800 rounded-full h-2">
+                    <div id="vlPercentageBar" class="bg-emerald-500 dark:bg-emerald-400 h-2 rounded-full" style="width: {{ vl_percentage|default:"0" }}%"></div>
+                </div>
+            </div>
+            
+            <!-- SL Card -->
+            <div class="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="h-10 w-10 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center mr-3">
+                            <span class="text-blue-600 dark:text-blue-400 text-lg">🏥</span>
+                        </div>
+                        <div>
+                            <p class="text-xs text-blue-600 dark:text-blue-400 font-medium">Sick Leave</p>
+                            <p class="text-lg font-bold text-blue-700 dark:text-blue-300" id="slRemaining">{{ sl_remaining|default:"0" }}</p>
+                        </div>
+                    </div>
+                    <span class="text-xs text-blue-600 dark:text-blue-400">days left</span>
+                </div>
+                <div class="mt-2 bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+                    <div id="slPercentageBar" class="bg-blue-500 dark:bg-blue-400 h-2 rounded-full" style="width: {{ sl_percentage|default:"0" }}%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Employee Details -->
+        <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+            <h3 class="text-gray-700 dark:text-gray-200 font-semibold text-sm">Employee Details</h3>
+        </div>
+        <div class="p-4" id="sidebarEmployeeInfo">
+            <div id="noEmployeeSelected" class="text-center text-gray-500 dark:text-gray-400 py-4">
+                <svg class="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                <p class="text-sm">Select an employee to view details</p>
+            </div>
+            <div id="employeeDetails" class="hidden space-y-3">
+                <div class="flex items-center">
+                    <div class="h-12 w-12 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center">
+                        <span class="text-indigo-600 dark:text-indigo-400 font-bold text-lg" id="sideEmpInitials">--</span>
+                    </div>
+                    <div class="ml-3">
+                        <p class="font-medium text-gray-900 dark:text-gray-100" id="sideEmpName">-</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400" id="sideEmpNumber">-</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-sm">
+                    <div>
+                        <p class="text-gray-500 dark:text-gray-400 text-xs">Rank</p>
+                        <p class="font-medium dark:text-gray-200" id="sideEmpRank">-</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 dark:text-gray-400 text-xs">Department</p>
+                        <p class="font-medium dark:text-gray-200" id="sideEmpDept">-</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 dark:text-gray-400 text-xs">Position</p>
+                        <p class="font-medium dark:text-gray-200" id="sideEmpPosition">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const startField = document.getElementById("id_start_date");
+    const endField = document.getElementById("id_end_date");
+    const totalDaysField = document.getElementById("id_total_days");
+    const halfDayCheckbox = document.getElementById("id_half_day");
+    const leaveTypeSelect = document.getElementById("id_leave_type");
+    const isPaidCheckbox = document.getElementById("id_is_paid");
+    
+    // Leave credits from context
+    let vlRemaining = parseFloat('{{ vl_remaining|default:"0" }}') || 0;
+    let slRemaining = parseFloat('{{ sl_remaining|default:"0" }}') || 0;
+    let hasLeaveCredits = {{ employees|yesno:'true,false' }} && ({{ vl_remaining|default:0 }} > 0 || {{ sl_remaining|default:0 }} > 0);
+
+    const positionSelect = document.getElementById("id_position");
+    const positionOther = document.getElementById("positionOtherDiv");
+    const departmentSelect = document.getElementById("id_department");
+    const departmentOther = document.getElementById("departmentOtherDiv");
+    const rankSelect = document.getElementById("id_rank");
+    const rankOther = document.getElementById("rankOtherDiv");
+    
+    // Employee selection elements
+    const employeeSelect = document.getElementById("employeeSelect");
+    const employeeInput = document.getElementById("id_employee"); // Hidden Django form field for employee
+    const employeeInfo = document.getElementById("employeeInfo");
+    const empInitials = document.getElementById("empInitials");
+    const empName = document.getElementById("empName");
+    const empDetails = document.getElementById("empDetails");
+    
+    // Sidebar elements
+    const sidebarNoEmployee = document.getElementById("noEmployeeSelected");
+    const sidebarEmployeeDetails = document.getElementById("employeeDetails");
+    const sideEmpInitials = document.getElementById("sideEmpInitials");
+    const sideEmpName = document.getElementById("sideEmpName");
+    const sideEmpNumber = document.getElementById("sideEmpNumber");
+    const sideEmpRank = document.getElementById("sideEmpRank");
+    const sideEmpDept = document.getElementById("sideEmpDept");
+    const sideEmpPosition = document.getElementById("sideEmpPosition");
+    const vlRemainingDisplay = document.getElementById("vlRemaining");
+    const slRemainingDisplay = document.getElementById("slRemaining");
+    const vlPercentageBar = document.getElementById("vlPercentageBar");
+    const slPercentageBar = document.getElementById("slPercentageBar");
+    
+    // Leave credits warning elements
+    const warningBox = document.getElementById("leaveCreditsWarning");
+    const warningTitle = document.getElementById("leaveCreditsWarningTitle");
+    const warningText = document.getElementById("leaveCreditsWarningText");
+
+    // Position, Department, Rank - hidden inputs with display elements
+    const positionInput = document.getElementById('id_position');
+    const positionDisplay = document.getElementById('positionDisplay');
+    const departmentInput = document.getElementById('id_department');
+    const departmentDisplay = document.getElementById('departmentDisplay');
+    const rankInput = document.getElementById('id_rank');
+    const rankDisplay = document.getElementById('rankDisplay');
+    
+    // Check if we're in edit mode (form.instance.pk exists)
+    const isEditMode = {% if form.instance.pk %}true{% else %}false{% endif %};
+    
+    // Get employee info from context (passed from view for edit mode)
+    const editEmployeeData = {% if employee %}{
+        id: '{{ employee.id }}',
+        first_name: '{{ employee.first_name }}',
+        last_name: '{{ employee.last_name }}',
+        employee_number: '{{ employee.employee_number|default:"" }}',
+        position: '{% if employee.positionlink %}{{ employee.positionlink.position_name }}{% endif %}',
+        department: '{% if employee.departmentlink %}{{ employee.departmentlink.department_name }}{% endif %}',
+        rank: '{% if employee.rank %}{{ employee.get_rank_display }}{% endif %}'
+    }{% elif form.instance.employee %}{
+        id: '{{ form.instance.employee.id }}',
+        first_name: '{{ form.instance.employee.first_name }}',
+        last_name: '{{ form.instance.employee.last_name }}',
+        employee_number: '{{ form.instance.employee.employee_number|default:"" }}',
+        position: '{% if form.instance.employee.positionlink %}{{ form.instance.employee.positionlink.position_name }}{% endif %}',
+        department: '{% if form.instance.employee.departmentlink %}{{ form.instance.employee.departmentlink.department_name }}{% endif %}',
+        rank: '{% if form.instance.employee.rank %}{{ form.instance.employee.get_rank_display }}{% endif %}'
+    }{% else %}null{% endif %};
+    
+    // For edit mode, populate employee info from the existing leave request
+    if (isEditMode && editEmployeeData) {
+        // Show employee info banner
+        if (employeeInfo) {
+            employeeInfo.style.display = 'block';
+            // Populate employee info
+            if (empInitials) empInitials.textContent = (editEmployeeData.first_name[0] || '') + (editEmployeeData.last_name[0] || '');
+            if (empName) empName.textContent = editEmployeeData.first_name + ' ' + editEmployeeData.last_name;
+            if (empDetails) empDetails.textContent = (editEmployeeData.department || '-') + ' | ' + (editEmployeeData.position || '-');
+        }
+        // Show sidebar employee details
+        if (sidebarNoEmployee) sidebarNoEmployee.classList.add('hidden');
+        if (sidebarEmployeeDetails) {
+            sidebarEmployeeDetails.classList.remove('hidden');
+            if (sideEmpInitials) sideEmpInitials.textContent = (editEmployeeData.first_name[0] || '') + (editEmployeeData.last_name[0] || '');
+            if (sideEmpName) sideEmpName.innerHTML = editEmployeeData.first_name + ' ' + editEmployeeData.last_name + '<br><span class="text-xs text-gray-500 dark:text-gray-400 font-normal">' + (editEmployeeData.employee_number || '-') + '</span>';
+            if (sideEmpRank) sideEmpRank.textContent = editEmployeeData.rank || '-';
+            if (sideEmpDept) sideEmpDept.textContent = editEmployeeData.department || '-';
+            if (sideEmpPosition) sideEmpPosition.textContent = editEmployeeData.position || '-';
+        }
+        
+        // Set the hidden employee input value
+        if (employeeInput) employeeInput.value = editEmployeeData.id;
+        
+        // Populate position, department, rank fields from form instance or leave request
+        const leavePosition = '{{ form.instance.position|default:"" }}';
+        const leaveDepartment = '{{ form.instance.department|default:"" }}';
+        const leaveRank = '{{ form.instance.rank|default:"" }}';
+        
+        // Update hidden inputs and display elements
+        // In edit mode, prioritize the saved leave request values (leavePosition, etc.)
+        // then fall back to the employee's current position
+        if (positionInput) {
+            positionInput.value = leavePosition || editEmployeeData.position;
+        }
+        if (positionDisplay) {
+            positionDisplay.textContent = leavePosition || editEmployeeData.position || '--';
+        }
+        if (departmentInput) {
+            departmentInput.value = leaveDepartment || editEmployeeData.department;
+        }
+        if (departmentDisplay) {
+            departmentDisplay.textContent = leaveDepartment || editEmployeeData.department || '--';
+        }
+        if (rankInput) {
+            rankInput.value = leaveRank || editEmployeeData.rank;
+        }
+        if (rankDisplay) {
+            rankDisplay.textContent = leaveRank || editEmployeeData.rank || '--';
+        }
+        
+        // Update leave credits display with context values
+        if (vlRemainingDisplay) vlRemainingDisplay.textContent = vlRemaining.toFixed(1);
+        if (slRemainingDisplay) slRemainingDisplay.textContent = slRemaining.toFixed(1);
+        if (vlPercentageBar) vlPercentageBar.style.width = '{{ vl_percentage|default:0 }}%';
+        if (slPercentageBar) slPercentageBar.style.width = '{{ sl_percentage|default:0 }}%';
+    }
+    
+    // Add form submit handler
+    const formElement = document.getElementById('leaveRequestForm');
+    if (formElement) {
+        formElement.addEventListener('submit', function(e) {
+            // In add mode, if no employee selected from dropdown, prevent submission
+            if (!isEditMode && employeeSelect && !employeeSelect.value) {
+                e.preventDefault();
+                alert('Please select an employee first.');
+                return false;
+            }
+            // Also check hidden input as backup
+            if (!isEditMode && employeeInput && !employeeInput.value) {
+                e.preventDefault();
+                alert('Please select an employee first.');
+                return false;
+            }
+        });
+    }
+    
+    function toggleOther(selectEl, otherDiv) {
+        if (selectEl && otherDiv) {
+            otherDiv.style.display = selectEl.value === "other" ? "block" : "none";
+        }
+    }
+
+    // Remove old event listeners for position/department/rank selects (now hidden inputs)
+    // The values are now auto-populated from employee selection
+
+    // Employee selection handler
+    if (employeeSelect) {
+        employeeSelect.addEventListener("change", async function() {
+            const empId = this.value;
+            
+            // Update hidden Django form employee field
+            if (employeeInput) {
+                employeeInput.value = empId;
+            }
+            
+            if (!empId) {
+                // Reset displays
+                employeeInfo.style.display = "none";
+                sidebarNoEmployee.classList.remove("hidden");
+                sidebarEmployeeDetails.classList.add("hidden");
+                vlRemaining = 0;
+                slRemaining = 0;
+                updateLeaveCreditsDisplay();
+                return;
+            }
+            
+            // Get data from selected option's data attributes
+            const selectedOption = this.options[this.selectedIndex];
+            const positionId = selectedOption.dataset.positionId || "";
+            const positionName = selectedOption.dataset.positionName || "--";
+            const departmentId = selectedOption.dataset.departmentId || "";
+            const departmentName = selectedOption.dataset.departmentName || "--";
+            const rankValue = selectedOption.dataset.rank || "";
+            const rankDisplayValue = selectedOption.dataset.rankDisplay || "--";
+            
+            // Update hidden inputs and display elements
+            if (positionInput) {
+                positionInput.value = positionId || positionName;
+            }
+            if (positionDisplay) {
+                positionDisplay.textContent = positionName;
+                positionDisplay.className = "w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 text-sm font-medium";
+            }
+            if (departmentInput) {
+                departmentInput.value = departmentId || departmentName;
+            }
+            if (departmentDisplay) {
+                departmentDisplay.textContent = departmentName;
+                departmentDisplay.className = "w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 text-sm font-medium";
+            }
+            if (rankInput) {
+                rankInput.value = rankValue;
+            }
+            if (rankDisplay) {
+                rankDisplay.textContent = rankDisplayValue;
+                rankDisplay.className = "w-full px-3 py-2.5 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 text-sm font-medium";
+            }
+            
+            // Update displays with data from dropdown
+            // Extract employee number first (format: "Name (EMP-XXX)")
+            const empNumberMatch = selectedOption.text.match(/\(([^)]+)\)/);
+            const empNumber = empNumberMatch ? empNumberMatch[1] : "";
+            // Get name without the employee number in parentheses
+            const empNameWithParens = selectedOption.text.trim();
+            const empNameText = empNameWithParens.replace(/\s*\([^)]+\)/, '').trim();
+            const nameParts = empNameText.split(' ');
+            const firstName = nameParts[0] || "";
+            const lastName = nameParts.slice(1).join(' ') || "";
+            
+            empInitials.textContent = (firstName[0] || "") + (lastName[0] || "");
+            empName.textContent = empNameText;
+            empDetails.textContent = departmentName + " | " + positionName;
+            
+            // Update text colors for dark mode
+            empName.className = "text-sm font-medium text-blue-900 dark:text-blue-100";
+            empDetails.className = "text-xs text-blue-700 dark:text-blue-300";
+            employeeInfo.style.display = "block";
+            
+            // Update sidebar
+            sideEmpInitials.textContent = (firstName[0] || "") + (lastName[0] || "");
+            sideEmpName.innerHTML = empNameText + "<br><span class='text-xs text-gray-500 dark:text-gray-400 font-normal'>" + empNumber + "</span>";
+            // Employee number already shown in sideEmpName with line break
+            sideEmpNumber.textContent = "";
+            sideEmpRank.textContent = rankDisplayValue || rankValue || "-";
+            sideEmpDept.textContent = departmentName || "-";
+            if (sideEmpPosition) sideEmpPosition.textContent = positionName || "-";
+            
+            // Update sidebar text colors for dark mode
+            sideEmpRank.className = "font-medium dark:text-gray-200";
+            sideEmpDept.className = "font-medium dark:text-gray-200";
+            if (sideEmpPosition) sideEmpPosition.className = "font-medium dark:text-gray-200";
+            
+            sidebarNoEmployee.classList.add("hidden");
+            sidebarEmployeeDetails.classList.remove("hidden");
+            
+            try {
+                // Fetch employee info and leave credits from server
+                const response = await fetch(`/hr_dashboard/leave-requests/get-employee-info/?employee_id=${empId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update leave credits from server
+                    vlRemaining = data.vl_remaining || 0;
+                    slRemaining = data.sl_remaining || 0;
+                    updateLeaveCreditsDisplay();
+                    
+                    // Update percentage bars
+                    if (vlPercentageBar) {
+                        vlPercentageBar.style.width = (data.vl_percentage || 0) + '%';
+                    }
+                    if (slPercentageBar) {
+                        slPercentageBar.style.width = (data.sl_percentage || 0) + '%';
+                    }
+                    
+                    // Show warning immediately if no credits - regardless of leave type selection
+                    if (vlRemaining === 0 && slRemaining === 0) {
+                        // No credits at all - show warning
+                        checkLeaveCredits(0);
+                    } else {
+                        hideWarning();
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching employee info:", error);
+                // Use default values from dropdown
+                vlRemaining = 0;
+                slRemaining = 0;
+                updateLeaveCreditsDisplay();
+            }
+        });
+        
+        // Trigger change event on page load if employee is already selected
+        if (employeeSelect.value) {
+            employeeSelect.dispatchEvent(new Event('change'));
+        }
+    }
+    
+    function updateLeaveCreditsDisplay() {
+        vlRemainingDisplay.textContent = vlRemaining.toFixed(1);
+        slRemainingDisplay.textContent = slRemaining.toFixed(1);
+    }
+    
+    function updateTotalDays() {
+        const start = new Date(startField.value);
+        const end = new Date(endField.value);
+        if (start && end && end >= start) {
+            let days = Math.floor((end - start)/(1000*60*60*24)) + 1;
+            if (halfDayCheckbox.checked) days -= 0.5;
+            totalDaysField.value = days;
+            checkLeaveCredits(days);
+        } else {
+            totalDaysField.value = 0;
+            hideWarning();
+        }
+    }
+    
+    function checkLeaveCredits(days) {
+        const leaveType = leaveTypeSelect ? leaveTypeSelect.value : '';
+        const isPaid = isPaidCheckbox ? isPaidCheckbox.checked : false;
+        
+        // Get remaining credits for selected leave type
+        let remaining = 0;
+        let leaveName = "";
+        
+        if (leaveType === 'vl') {
+            remaining = vlRemaining;
+            leaveName = "Vacation Leave";
+        } else if (leaveType === 'sl') {
+            remaining = slRemaining;
+            leaveName = "Sick Leave";
+        }
+        
+        // Check if leave credits record exists for the selected leave type
+        const selectedLeaveRemaining = (leaveType === 'vl') ? vlRemaining : slRemaining;
+        const noCreditsRecord = selectedLeaveRemaining === 0;
+        
+        // Show "No Leave Credits" warning - even without leave type selected or days entered
+        // This is the key fix - check for no credits FIRST, before any other conditions
+        if (noCreditsRecord && (isPaid || leaveType === '')) {
+            showWarningNoCredits();
+            return;
+        }
+        
+        // If leave type is selected but not paid, hide warning
+        if (!isPaid) {
+            hideWarning();
+            return;
+        }
+        
+        // If no days entered, hide other warnings
+        if (days <= 0) {
+            hideWarning();
+            return;
+        }
+        
+        if (remaining <= 0) {
+            showWarning("No " + leaveName + " Credits", 
+                "This employee has no remaining " + leaveName + " days. Consider making this an unpaid leave.",
+                "red");
+        } else if (days > remaining) {
+            showWarning("Insufficient " + leaveName + " Credits", 
+                "Requested: " + days + " days, Available: " + remaining + " days. Only " + remaining + " days will be deducted from credits.",
+                "yellow");
+        } else if (remaining <= 2) {
+            showWarning("Low " + leaveName + " Credits", 
+                "This employee only has " + remaining + " days remaining. After this request, they will have " + (remaining - days) + " days left.",
+                "yellow");
+        } else {
+            hideWarning();
+        }
+    }
+    
+    function showWarningNoCredits() {
+        const hasPrevYear = window.hasPreviousYearCredits || false;
+        warningBox.classList.remove("hidden", "bg-yellow-50", "dark:bg-yellow-900/30", "border-yellow-200", "dark:border-yellow-800", "bg-red-50", "dark:bg-red-900/30", "border-red-200", "dark:border-red-800", "bg-blue-50", "dark:bg-blue-900/30", "border-blue-200", "dark:border-blue-800");
+        
+        if (hasPrevYear) {
+            // Previous year credits exist but outdated - need new credits
+            warningTitle.textContent = "Leave Credits Outdated";
+            warningText.innerHTML = "Previous year leave credits found but no record for " + new Date().getFullYear() + ". <a href='/hr_dashboard/leave-credits/' class='underline font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300'>Click here to create new leave credits</a> for this employee, or mark this leave as unpaid.";
+        } else {
+            warningTitle.textContent = "No Leave Credits Record";
+            warningText.innerHTML = "This employee has no leave credits set up. <a href='/hr_dashboard/leave-credits/' class='underline font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300'>Click here to create leave credits</a> for this employee first, or mark this leave as unpaid.";
+        }
+        
+        warningTitle.classList.remove("text-red-800", "dark:text-red-200", "text-yellow-800", "dark:text-yellow-200");
+        warningTitle.classList.add("text-blue-800", "dark:text-blue-200");
+        warningText.classList.remove("text-red-700", "dark:text-red-300", "text-yellow-700", "dark:text-yellow-300");
+        warningText.classList.add("text-blue-700", "dark:text-blue-300");
+        warningBox.classList.add("bg-blue-50", "dark:bg-blue-900/30", "border-blue-200", "dark:border-blue-800");
+    }
+    
+    function showWarning(title, text, color) {
+        warningBox.classList.remove("hidden", "bg-yellow-50", "dark:bg-yellow-900/30", "border-yellow-200", "dark:border-yellow-800", "bg-red-50", "dark:bg-red-900/30", "border-red-200", "dark:border-red-800");
+        warningTitle.textContent = title;
+        warningText.textContent = text;
+        
+        if (color === "red") {
+            warningBox.classList.add("bg-red-50", "dark:bg-red-900/30", "border-red-200", "dark:border-red-800");
+            warningTitle.classList.add("text-red-800", "dark:text-red-200");
+            warningText.classList.add("text-red-700", "dark:text-red-300");
+        } else {
+            warningBox.classList.add("bg-yellow-50", "dark:bg-yellow-900/30", "border-yellow-200", "dark:border-yellow-800");
+            warningTitle.classList.add("text-yellow-800", "dark:text-yellow-200");
+            warningText.classList.add("text-yellow-700", "dark:text-yellow-300");
+        }
+    }
+    
+    function hideWarning() {
+        warningBox.classList.add("hidden");
+    }
+
+    if (startField && endField && halfDayCheckbox) {
+        startField.addEventListener("change", updateTotalDays);
+        endField.addEventListener("change", updateTotalDays);
+        halfDayCheckbox.addEventListener("change", updateTotalDays);
+        updateTotalDays();
+    }
+    
+    // Check credits when leave type or paid status changes
+    if (leaveTypeSelect) {
+        leaveTypeSelect.addEventListener("change", () => {
+            // Check for no credits even without dates
+            checkLeaveCredits(0);
+        });
+    }
+    if (isPaidCheckbox) {
+        isPaidCheckbox.addEventListener("change", () => {
+            // Check for no credits even without dates
+            checkLeaveCredits(0);
+        });
+    }
+    
+    // =====================================================
+    // Initialize employee info for EDIT mode on page load
+    // =====================================================
+    const editEmployeeId = "{{ form.instance.employee_id|default:'' }}";
+    
+    // Saved position/department from the leave request (in case employee changed)
+    const savedPosition = "{{ saved_position|default:'' }}";
+    const savedDepartment = "{{ saved_department|default:'' }}";
+    
+    // Check if we have selected_employee passed from view (for edit mode)
+    const selectedEmployeeData = {% if selected_employee %}{
+        id: "{{ selected_employee.id }}",
+        first_name: "{{ selected_employee.first_name }}",
+        last_name: "{{ selected_employee.last_name }}",
+        employee_number: "{{ selected_employee.employee_number }}",
+        position_id: "{{ selected_employee.position_id }}",
+        position_name: "{{ selected_employee.position_name }}",
+        department_id: "{{ selected_employee.department_id }}",
+        department_name: "{{ selected_employee.department_name }}",
+        rank: "{{ selected_employee.rank }}",
+        rank_display: "{{ selected_employee.rank_display }}"
+    }{% else %}null{% endif %};
+    
+    if (selectedEmployeeData) {
+        // Populate hidden employee field (Django form field)
+        const empInput = document.getElementById('id_employee');
+        if (empInput) {
+            empInput.value = selectedEmployeeData.id;
+        }
+        
+        // Use saved position/department if available, otherwise use employee's current position/department
+        const positionValue = savedPosition || selectedEmployeeData.position_id || selectedEmployeeData.position_name || '';
+        const departmentValue = savedDepartment || selectedEmployeeData.department_id || selectedEmployeeData.department_name || '';
+        
+        // Populate Position, Department, Rank displays
+        if (positionDisplay) positionDisplay.textContent = selectedEmployeeData.position_name || '--';
+        if (departmentDisplay) departmentDisplay.textContent = selectedEmployeeData.department_name || '--';
+        if (rankDisplay) rankDisplay.textContent = selectedEmployeeData.rank_display || selectedEmployeeData.rank || '--';
+        
+        // Populate hidden inputs with IDs (not names) for form validation
+        if (positionInput) positionInput.value = positionValue;
+        if (departmentInput) departmentInput.value = departmentValue;
+        if (rankInput) rankInput.value = selectedEmployeeData.rank || '';
+        
+        // Populate Employee Info Banner initials and name
+        const empFullName = selectedEmployeeData.first_name + ' ' + selectedEmployeeData.last_name;
+        const nameParts = empFullName.trim().split(' ');
+        const initials = (nameParts[0]?.[0] || '') + (nameParts[1]?.[0] || '');
+        
+        if (empInitials) empInitials.textContent = initials;
+        if (empName) empName.textContent = empFullName;
+        if (empDetails) empDetails.textContent = (selectedEmployeeData.department_name || '--') + ' | ' + (selectedEmployeeData.position_name || '--');
+        
+        // Show the employee info banner
+        if (employeeInfo) employeeInfo.style.display = 'block';
+        
+        // Populate sidebar
+        if (sideEmpInitials) sideEmpInitials.textContent = initials;
+        if (sideEmpName) sideEmpName.textContent = empFullName;
+        if (sideEmpNumber) sideEmpNumber.textContent = selectedEmployeeData.employee_number || '';
+        if (sideEmpRank) sideEmpRank.textContent = selectedEmployeeData.rank_display || selectedEmployeeData.rank || '-';
+        if (sideEmpDept) sideEmpDept.textContent = selectedEmployeeData.department_name || '-';
+        if (sideEmpPosition) sideEmpPosition.textContent = selectedEmployeeData.position_name || '-';
+        
+        // Show sidebar employee details, hide "no employee" message
+        if (sidebarNoEmployee) sidebarNoEmployee.classList.add('hidden');
+        if (sidebarEmployeeDetails) sidebarEmployeeDetails.classList.remove('hidden');
+    }
+});
+</script>
+{% endblock %}

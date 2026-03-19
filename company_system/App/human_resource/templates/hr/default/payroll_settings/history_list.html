@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payroll History{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">Payroll History</h1>
+        <a href="{% url 'human_resource:hr_dashboard' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <table class="w-full border-collapse">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="border p-3 text-left">Employee</th>
+                    <th class="border p-3 text-center">Cutoff Date</th>
+                    <th class="border p-3 text-right">Gross Pay</th>
+                    <th class="border p-3 text-right">Total Deductions</th>
+                    <th class="border p-3 text-right">Net Pay</th>
+                    <th class="border p-3 text-center">Tier Used</th>
+                    <th class="border p-3 text-center">Status</th>
+                    <th class="border p-3 text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for history in histories %}
+                <tr class="hover:bg-gray-50">
+                    <td class="border p-3 font-medium">{{ history.employee }}</td>
+                    <td class="border p-3 text-center">
+                        {{ history.payroll_start_date }} - {{ history.payroll_end_date }}
+                    </td>
+                    <td class="border p-3 text-right font-mono">₱{{ history.total_earnings|floatformat:2 }}</td>
+                    <td class="border p-3 text-right font-mono text-red-600">₱{{ history.total_deductions|floatformat:2 }}</td>
+                    <td class="border p-3 text-right font-mono font-bold">₱{{ history.net_pay|floatformat:2 }}</td>
+                    <td class="border p-3 text-center">
+                        {% if history.tier_name %}
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">{{ history.tier_name }}</span>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td class="border p-3 text-center">
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Posted</span>
+                    </td>
+                    <td class="border p-3 text-center">
+                        <a href="{% url 'human_resource:payroll_history_detail' history.pk %}" class="text-blue-600 hover:text-blue-800 font-medium">
+                            View
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="border p-8 text-center text-gray-500">
+                        No payroll history found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

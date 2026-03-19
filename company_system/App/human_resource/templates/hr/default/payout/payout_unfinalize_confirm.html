@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Unfinalize Payout{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-lg mx-auto bg-white shadow rounded-lg overflow-hidden">
+        <div class="bg-orange-100 p-4 border-b border-orange-200">
+            <h2 class="text-xl font-bold text-orange-800">⚠️ Unfinalize Payout</h2>
+        </div>
+        
+        <div class="p-6">
+            <p class="mb-4">You are about to unfinalize the payout for:</p>
+            
+            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                <p class="font-bold text-lg">{{ payout.employee.get_full_name }}</p>
+                <p class="text-gray-600">Period: {{ payout.month }}/{{ payout.year }} - Cutoff {{ payout.cutoff }}</p>
+                <p class="text-green-600 font-bold text-xl mt-2">₱{{ payout.net|floatformat:2 }}</p>
+            </div>
+            
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <p class="text-yellow-800 font-medium">Warning: This action will allow you to edit or delete this payout.</p>
+                <p class="text-yellow-700 text-sm mt-1">This is intended for testing purposes only.</p>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="flex justify-end gap-4">
+                    <a href="{% url 'human_resource:payout_detail' payout.pk %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                        Cancel
+                    </a>
+                    <button type="submit" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 font-medium">
+                        Unfinalize Payout
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

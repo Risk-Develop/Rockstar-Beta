@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Employee Salary Settings{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Employee Salary Settings</h1>
+            <p class="text-sm text-gray-500 mt-1">Manage employee salary configurations</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'human_resource:hr_dashboard' %}" class="inline-flex items-center gap-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                <span class="material-icons text-sm">arrow_back</span>
+                Back to Dashboard
+            </a>
+            <a href="{% url 'human_resource:salary_setting_add' %}" class="inline-flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors shadow-sm">
+                <span class="material-icons text-sm">add</span>
+                Add Salary Setting
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-blue-100 rounded-lg">
+                    <span class="material-icons text-blue-600">people</span>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Total Settings</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ settings|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-green-100 rounded-lg">
+                    <span class="material-icons text-green-600">check_circle</span>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Active</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ active_count|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-purple-100 rounded-lg">
+                    <span class="material-icons text-purple-600">payments</span>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Total Monthly</p>
+                    <p class="text-2xl font-bold text-gray-800">₱{{ total_monthly|default:"0.00" }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-orange-100 rounded-lg">
+                    <span class="material-icons text-orange-600">schedule</span>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Per Cutoff</p>
+                    <p class="text-2xl font-bold text-gray-800">₱{{ total_per_cutoff|default:"0.00" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="p-4 rounded-lg mb-2 flex items-center gap-2 {% if message.tags == 'error' %}bg-red-100 text-red-700 border border-red-200{% elif message.tags == 'success' %}bg-green-100 text-green-700 border border-green-200{% else %}bg-blue-100 text-blue-700{% endif %}">
+            <span class="material-icons text-sm">{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}check_circle{% else %}info{% endif %}</span>
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Filter Form -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+        <form method="GET" class="flex flex-wrap gap-4 items-end">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Only</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive Only</option>
+                </select>
+            </div>
+            
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search Employee</label>
+                <input type="text" name="search" value="{{ search_query|default:'' }}" placeholder="Name or ID..." 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+            </div>
+            
+            <div class="flex gap-2">
+                <button type="submit" class="inline-flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors">
+                    <span class="material-icons text-sm">filter_list</span>
+                    Filter
+                </button>
+                <a href="{% url 'human_resource:salary_setting_list' %}" class="inline-flex items-center gap-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                    <span class="material-icons text-sm">clear</span>
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200">
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Employee</th>
+                        <th class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Monthly Salary</th>
+                        <th class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Per Cutoff</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tier</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Work Schedule</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Effective From</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Effective To</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for setting in settings %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                    <span class="text-orange-600 font-semibold text-sm">{{ setting.employee.first_name.0|upper }}{{ setting.employee.last_name.0|upper }}</span>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">{{ setting.employee.get_full_name|default:setting.employee }}</p>
+                                    <p class="text-sm text-gray-500">{{ setting.employee.employee_number }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="font-mono font-semibold text-gray-800">₱{{ setting.base_salary_monthly|floatformat:2 }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <span class="font-mono text-gray-600">₱{{ setting.salary_per_cutoff|floatformat:2 }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if setting.tier %}
+                            <span class="inline-flex items-center gap-1 bg-purple-100 text-purple-800 px-2 py-1 rounded text-sm">
+                                <span class="material-icons text-xs">layers</span>
+                                {{ setting.tier.tier_name }}
+                            </span>
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2 text-gray-600">
+                                <span class="material-icons text-sm">schedule</span>
+                                {{ setting.get_work_schedule_display|default:"-" }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2 text-gray-600">
+                                <span class="material-icons text-sm">event</span>
+                                {{ setting.effective_start_date }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if setting.effective_end_date %}
+                            <div class="flex items-center gap-2 text-gray-600">
+                                <span class="material-icons text-sm">event</span>
+                                {{ setting.effective_end_date }}
+                            </div>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded text-sm">
+                                <span class="material-icons text-xs">schedule</span>
+                                Present
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if setting.is_active %}
+                            <span class="inline-flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">check_circle</span>
+                                Active
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">pause_circle</span>
+                                Inactive
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <a href="{% url 'human_resource:salary_setting_edit' setting.pk %}" 
+                               class="inline-flex items-center gap-1 text-orange-600 hover:text-orange-800 font-medium px-3 py-1 rounded-lg hover:bg-orange-50 transition-colors">
+                                <span class="material-icons text-sm">edit</span>
+                                Edit
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="px-6 py-12">
+                            <div class="text-center">
+                                <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                    <span class="material-icons text-gray-400 text-2xl">payments</span>
+                                </div>
+                                <h3 class="text-lg font-medium text-gray-900 mb-1">No salary settings found</h3>
+                                <p class="text-gray-500 mb-4">Get started by adding a salary setting</p>
+                                <a href="{% url 'human_resource:salary_setting_add' %}" class="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700">
+                                    <span class="material-icons text-sm">add</span>
+                                    Add Salary Setting
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

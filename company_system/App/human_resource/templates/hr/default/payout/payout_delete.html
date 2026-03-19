@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delete Payout - {{ payout.employee.first_name }} {{ payout.employee.last_name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-red-600">Delete Payout</h1>
+        <a href="{% url 'human_resource:payout_detail' payout.id %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+            Cancel
+        </a>
+    </div>
+    
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+        <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded mb-6">
+            <strong>⚠️ Warning:</strong> You are about to delete a payout. This action cannot be undone. 
+            The payout will be permanently removed from the system.
+        </div>
+        
+        <h2 class="text-lg font-semibold mb-4 border-b pb-2">Payout Details</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div>
+                <span class="text-sm text-gray-500">Employee</span>
+                <p class="font-medium">{{ payout.employee.first_name }} {{ payout.employee.last_name }}</p>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">Employee ID</span>
+                <p class="font-medium">{{ payout.employee.employee_number }}</p>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">Period</span>
+                <p class="font-medium">{{ payout.month }}/{{ payout.year }} - Cutoff {{ payout.cutoff }}</p>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">Net Pay</span>
+                <p class="font-medium text-red-600">₱{{ payout.net|floatformat:2 }}</p>
+            </div>
+        </div>
+        
+        <!-- Earnings Breakdown -->
+        <h3 class="text-md font-semibold mb-3 text-green-700">Earnings</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div>
+                <span class="text-sm text-gray-500">Basic Salary</span>
+                <p class="font-medium">₱{{ payout.details.basic_salary|floatformat:2|default:"0.00" }}</p>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">Overtime Pay</span>
+                <p class="font-medium">₱{{ payout.details.overtime_pay|floatformat:2|default:"0.00" }}</p>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">Night Differential</span>
+                <p class="font-medium">₱{{ payout.details.night_differential|floatformat:2|default:"0.00" }}</p>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">Gross Pay</span>
+                <p class="font-medium text-green-600">₱{{ payout.gross|floatformat:2 }}</p>
+            </div>
+        </div>
+        
+        <!-- Deductions Breakdown -->
+        <h3 class="text-md font-semibold mb-3 text-red-700">Deductions</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div>
+                <span class="text-sm text-gray-500">SSS</span>
+                <p class="font-medium">₱{{ payout.details.sss_contribution|floatformat:2|default:"0.00" }}</p>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">PhilHealth</span>
+                <p class="font-medium">₱{{ payout.details.philhealth_contribution|floatformat:2|default:"0.00" }}</p>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">Pag-IBIG</span>
+                <p class="font-medium">₱{{ payout.details.pagibig_contribution|floatformat:2|default:"0.00" }}</p>
+            </div>
+            <div>
+                <span class="text-sm text-gray-500">Withholding Tax</span>
+                <p class="font-medium">₱{{ payout.details.withholding_tax|floatformat:2|default:"0.00" }}</p>
+            </div>
+        </div>
+        
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="payout_id" value="{{ payout.id }}">
+            
+            <div class="flex justify-end space-x-4 mt-6">
+                <a href="{% url 'human_resource:payout_detail' payout.id %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                    Delete Payout
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

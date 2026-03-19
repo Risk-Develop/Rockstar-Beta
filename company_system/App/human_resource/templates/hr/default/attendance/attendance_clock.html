@@ -1,0 +1,1444 @@
+{% extends "base.html" %}
+{% load hr_extras %}
+
+{% block title %}Attendance Clock{% endblock %}
+
+{% block content %}
+<style>
+/* Override Flowbite badge styles for attendance clock badge */
+.badge-count {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 1.25rem !important;
+    min-width: 1.25rem !important;
+    padding-left: 0.375rem !important;
+    padding-right: 0.375rem !important;
+    border-radius: 9999px !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    color: white !important;
+    background-color: #ef4444 !important;
+}
+</style>
+<div class="container mx-auto px-4 py-6">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-3">
+        <div>
+            <h1 class="text-2xl font-bold">Attendance Clock</h1>
+            <p class="text-sm text-gray-500 mt-1">Clock in/out for today's work</p>
+        </div>
+        <a href="{% url 'human_resource:attendance_list' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition">
+            &larr; Back to List
+        </a>
+    </div>
+
+    <!-- Real-time Clock Display -->
+    <div class="rounded-lg p-6 mb-6" style="background: linear-gradient(to right, #f97316, #dc2626);">
+        <div class="text-center text-white">
+            <div class="text-sm opacity-80 mb-1">Current Time</div>
+            <div class="text-5xl font-bold" id="currentTime">--:--:-- --</div>
+            <div class="text-lg opacity-80 mt-2" id="currentDate">Loading...</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Employee Info & Shift Details -->
+        <div class="md:col-span-1">
+            <!-- Employee Card -->
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
+                <h2 class="text-lg font-semibold mb-4 flex items-center">
+                    <svg class="h-5 w-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    Employee Information
+                </h2>
+                <div class="flex items-center mb-4">
+                    <div class="flex-shrink-0 h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span class="text-blue-600 font-bold text-xl">{{ employee.first_name|get_initials:employee.last_name }}</span>
+                    </div>
+                    <div class="ml-4">
+                        <div class="text-lg font-semibold">{{ employee.first_name }} {{ employee.last_name }}</div>
+                        <div class="text-sm text-gray-500">
+                            {% if employee.departmentlink %}
+                                {{ employee.departmentlink.department_name }}
+                            {% else %}
+                                No Department
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shift Rule Card -->
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 flex items-center">
+                    <svg class="h-5 w-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Shift Schedule
+                </h2>
+
+                {% if shift_rule %}
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center p-3 bg-yellow-50 dark:bg-yellow-900 rounded-lg border border-yellow-100 dark:border-yellow-700">
+                        <span class="text-sm text-gray-600 dark:text-gray-300">Clock In Start</span>
+                        <span class="font-mono font-semibold text-yellow-700 dark:text-yellow-400">
+                            {{ shift_rule.clock_in_start|default:"--" }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-900 rounded-lg border border-orange-100 dark:border-orange-700">
+                        <span class="text-sm text-gray-600 dark:text-gray-300">Lunch Time</span>
+                        <span class="font-mono font-semibold text-orange-700 dark:text-orange-400">
+                            {{ shift_rule.lunch_start|default:"--" }} - {{ shift_rule.lunch_end|default:"--" }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900 rounded-lg border border-blue-100 dark:border-blue-700">
+                        <span class="text-sm text-gray-600 dark:text-gray-300">Clock Out Time</span>
+                        <span class="font-mono font-semibold text-blue-700 dark:text-blue-400">
+                            {{ shift_rule.clock_out|default:"--" }}
+                        </span>
+                    </div>
+                    {% if shift_rule.note %}
+                    <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
+                        <span class="text-sm text-gray-600 dark:text-gray-300">Note:</span>
+                        <p class="text-sm text-gray-700 dark:text-gray-300 mt-1">{{ shift_rule.note }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="bg-red-50 dark:bg-red-900 border-l-4 border-red-500 rounded-lg p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700 font-medium">Shift rule not set!</p>
+                            <p class="text-xs text-red-600">Please contact HR to configure your shift schedule.</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if shift_rule_incomplete %}
+                <div class="mt-4 bg-red-50 dark:bg-red-900 border-l-4 border-red-500 rounded-lg p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700 font-medium">Incomplete shift times!</p>
+                            <p class="text-xs text-red-600">HR must update your clock in/out times.</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if no_shift_rule %}
+                <div class="mt-4 bg-red-50 dark:bg-red-900 border-l-4 border-red-500 rounded-lg p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700 font-medium">No shift rule configured!</p>
+                            <p class="text-xs text-red-600">Please contact HR to configure your shift schedule.</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Leave Credits Card -->
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mt-6">
+                <h2 class="text-lg font-semibold mb-4 flex items-center">
+                    <svg class="h-5 w-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    Leave Credits <span class="text-sm font-normal text-gray-500">({{ current_year }})</span>
+                </h2>
+
+                {% if no_vl_credits or no_sl_credits %}
+                <div class="mb-4 bg-red-50 dark:bg-red-900 border-l-4 border-red-500 rounded-lg p-3">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-red-700 font-medium">No Leave Credits for {{ current_year }}!</p>
+                            <p class="text-xs text-red-600">Please contact HR Department to request leave credits.</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if outdated_vl.exists or outdated_sl.exists %}
+                <div class="mb-4 bg-yellow-50 dark:bg-yellow-900 border-l-4 border-yellow-500 rounded-lg p-3">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-yellow-700 font-medium">Outdated Leave Credits Found!</p>
+                            <p class="text-xs text-yellow-600 mt-1">
+                                {% if vl_old_unused_total > 0 %}VL: {{ vl_old_unused_total|floatformat:1 }} days unused from previous year(s){% endif %}
+                                {% if vl_old_unused_total > 0 and sl_old_unused_total > 0 %}<br>{% endif %}
+                                {% if sl_old_unused_total > 0 %}SL: {{ sl_old_unused_total|floatformat:1 }} days unused from previous year(s){% endif %}
+                            </p>
+                            <p class="text-xs text-yellow-600 mt-1">Contact HR to consolidate.</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 {% if vl_low or no_vl_credits %}bg-red-50 dark:bg-red-900 rounded-lg border border-red-200 dark:border-red-700{% else %}bg-green-50 dark:bg-green-900 rounded-lg border border-green-100 dark:border-green-700{% endif %}">
+                        <div class="text-xs {% if vl_low or no_vl_credits %}text-red-600 dark:text-red-400{% else %}text-green-600 dark:text-green-400{% endif %} uppercase font-semibold">
+                            Vacation Leave
+                            {% if no_vl_credits %}(None){% endif %}
+                        </div>
+                        <div class="text-2xl font-bold {% if vl_low or no_vl_credits %}text-red-700 dark:text-red-300{% else %}text-green-700 dark:text-green-300{% endif %}">
+                            {% if vl_credit %}{{ vl_credit.remaining|floatformat:1 }}{% else %}0.0{% endif %}
+                        </div>
+                        <div class="text-xs {% if vl_low or no_vl_credits %}text-red-600 dark:text-red-400{% else %}text-green-600 dark:text-green-400{% endif %}">
+                            of {% if vl_credit %}{{ vl_credit.total|floatformat:1 }}{% else %}0{% endif %} days
+                        </div>
+                        {% if vl_low and not no_vl_credits %}
+                        <div class="text-xs text-red-500 mt-1 font-medium">Low balance!</div>
+                        {% endif %}
+                    </div>
+                    <div class="p-4 {% if sl_low or no_sl_credits %}bg-red-50 dark:bg-red-900 rounded-lg border border-red-200 dark:border-red-700{% else %}bg-blue-50 dark:bg-blue-900 rounded-lg border border-blue-100 dark:border-blue-700{% endif %}">
+                        <div class="text-xs {% if sl_low or no_sl_credits %}text-red-600 dark:text-red-400{% else %}text-blue-600 dark:text-blue-400{% endif %} uppercase font-semibold">
+                            Sick Leave
+                            {% if no_sl_credits %}(None){% endif %}
+                        </div>
+                        <div class="text-2xl font-bold {% if sl_low or no_sl_credits %}text-red-700 dark:text-red-300{% else %}text-blue-700 dark:text-blue-300{% endif %}">
+                            {% if sl_credit %}{{ sl_credit.remaining|floatformat:1 }}{% else %}0.0{% endif %}
+                        </div>
+                        <div class="text-xs {% if sl_low or no_sl_credits %}text-red-600 dark:text-red-400{% else %}text-blue-600 dark:text-blue-400{% endif %}">
+                            of {% if sl_credit %}{{ sl_credit.total|floatformat:1 }}{% else %}0{% endif %} days
+                        </div>
+                        {% if sl_low and not no_sl_credits %}
+                        <div class="text-xs text-red-500 mt-1 font-medium">Low balance!</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if no_vl_credits or no_sl_credits %}
+                <div class="mt-4 text-center">
+                    <a href="mailto:hrd@rockstarwebdesignservices.com?subject=Leave Credit Request" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition">
+                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        Contact HR Department
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Clock In/Out Section with Tabs -->
+        <div class="md:col-span-1">
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+                <!-- Tabs with Underline and Badges -->
+                <div class="mb-6">
+                    <div class="flex border-b border-gray-200 dark:border-gray-700">
+                        <!-- Attendance Clock Tab -->
+                        <button 
+                            type="button"
+                            onclick="switchTab('attendance-clock')" 
+                            id="tab-attendance-clock"
+                            class="tab-btn flex items-center px-4 py-3 text-sm font-medium border-b-2 border-orange-500 text-orange-600 dark:text-orange-400 dark:border-orange-400 focus:outline-none transition-colors cursor-pointer">
+                            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/>
+                            </svg>
+                            Attendance Clock
+                        </button>
+                        
+                        <!-- Absent Status Tab with Badge -->
+                        <button 
+                            type="button"
+                            onclick="switchTab('absent-status')" 
+                            id="tab-absent-status"
+                            class="tab-btn flex items-center px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none transition-colors cursor-pointer">
+                            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Absent Status
+                            {% if absent_count > 0 %}
+                            <span class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 min-w-5 px-1.5 flex items-center justify-center badge-count">
+                                {{ absent_count }}
+                            </span>
+                            {% endif %}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Attendance Clock -->
+                <div id="content-attendance-clock" class="tab-content">
+                    <!-- Current Status -->
+                    <div class="text-center mb-8">
+                        {% if is_weekend %}
+                        <div class="inline-flex items-center justify-center h-32 w-32 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
+                            <svg class="h-16 w-16 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">Rest Day</div>
+                        <p class="text-gray-500 dark:text-gray-400">Today is a non-working day. No attendance recording required.</p>
+
+                        {% else %}
+
+                        {% if not attendance.clock_in %}
+                        <div class="inline-flex items-center justify-center h-32 w-32 rounded-full bg-green-100 dark:bg-green-900 mb-4">
+                            <svg class="h-16 w-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                            </svg>
+                        </div>
+                        <div class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">Ready to Clock In</div>
+                        <p class="text-gray-500 dark:text-gray-400 mb-6">Click the button below to start your work day</p>
+
+                        <form method="post" hx-post="{% url 'human_resource:attendance_clock' %}" hx-vals='{"action": "clock_in"}' hx-swap="outerHTML" hx-target="#content-attendance-clock">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="px-8 py-4 bg-orange-600 text-white text-lg font-semibold rounded-lg hover:bg-orange-700 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                                <span class="flex items-center">
+                                    <svg class="h-6 w-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"/>
+                                </svg>
+                                Clock In Now
+                            </span>
+                        </button>
+                        </form>
+
+                    {% elif not attendance.clock_out %}
+                    <div class="inline-flex items-center justify-center h-32 w-32 rounded-full bg-blue-100 dark:bg-blue-900 mb-4">
+                        <svg class="h-16 w-16 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                    </div>
+                    <div class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">Currently Working</div>
+
+                    <!-- Reminder Warning -->
+                    <div class="mb-4 p-3 bg-amber-50 dark:bg-amber-900/50 border border-amber-200 dark:border-amber-700 rounded-lg">
+                        <div class="flex items-center justify-center gap-2 text-amber-700 dark:text-amber-300">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <span class="font-semibold text-sm">Don't forget to clock out when you're done!</span>
+                        </div>
+                    </div>
+
+                    <p class="text-gray-500 dark:text-gray-400 mb-2">
+                        {% if attendance.date != today %}
+                        Clocked in on <span class="font-mono font-semibold">{{ attendance.date }}</span> at <span class="font-mono font-semibold">{{ attendance.clock_in }}</span>
+                        {% else %}
+                        Clocked in at <span class="font-mono font-semibold">{{ attendance.clock_in }}</span>
+                        {% endif %}
+                    </p>
+
+                    <!-- Lunch Status -->
+                    {% if not attendance.lunch_in %}
+                    <p class="text-yellow-600 dark:text-yellow-400 mb-2">Ready for lunch break</p>
+                    {% if shift_rule.lunch_required and shift_rule.lunch_start %}
+                    <div class="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 rounded-lg mb-4">
+                        <p class="text-sm text-yellow-700 dark:text-yellow-300 font-medium">
+                            ⏰ Remember to take your lunch break! Scheduled: {{ shift_rule.lunch_start }} - {{ shift_rule.lunch_end }}
+                        </p>
+                    </div>
+                    {% endif %}
+                    {% elif not attendance.lunch_out %}
+                    <p class="text-orange-600 dark:text-orange-400 mb-2">On lunch break since {{ attendance.lunch_in }}</p>
+                    <div class="mt-2 p-3 bg-red-50 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg mb-4">
+                        <p class="text-sm text-red-700 dark:text-red-300 font-medium">
+                            ⚠️ Don't forget to clock out from lunch! Overlunch time will be counted as deduction.
+                        </p>
+                    </div>
+                    {% else %}
+                    <p class="text-green-600 dark:text-green-400 mb-2">Lunch: {{ attendance.lunch_in }} - {{ attendance.lunch_out }}</p>
+                    {% endif %}
+
+                    <p class="text-gray-500 dark:text-gray-400 mb-6">Click the button below to end your work day</p>
+
+                    <!-- Current Status Indicators -->
+                    {% if shift_rule.lunch_required %}
+                    <div class="mt-2 mb-4">
+                        {% if not attendance.lunch_in %}
+                        <div class="px-4 py-2 bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 rounded-lg inline-block">
+                            ⚠️ Missing Lunch
+                        </div>
+                        {% elif not attendance.lunch_out %}
+                        <div class="px-4 py-2 bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300 rounded-lg inline-block">
+                            ⚠️ Overlunch (not ended)
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Lunch Buttons -->
+                    {% if shift_rule.lunch_required %}
+                    <div class="flex justify-center gap-3 mb-4">
+                        {% if not attendance.lunch_in %}
+                        <form method="post" hx-post="{% url 'human_resource:attendance_clock' %}" hx-vals='{"action": "lunch_in"}' hx-swap="outerHTML" hx-target="#content-attendance-clock">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="px-6 py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition">
+                                <span class="flex items-center">
+                                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    Start Lunch
+                                </span>
+                            </button>
+                        </form>
+                        {% elif not attendance.lunch_out %}
+                        <form method="post" hx-post="{% url 'human_resource:attendance_clock' %}" hx-vals='{"action": "lunch_out"}' hx-swap="outerHTML" hx-target="#content-attendance-clock">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="px-6 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition">
+                                <span class="flex items-center">
+                                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    End Lunch
+                                </span>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="flex justify-center mb-4">
+                        <span class="px-4 py-2 bg-gray-100 text-gray-500 text-sm rounded-lg">
+                            Flexible Lunch - No lunch tracking required
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Prevent clock out while on lunch -->
+                    {% if shift_rule.lunch_required and attendance.lunch_in and not attendance.lunch_out %}
+                    <div class="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900 border border-yellow-300 dark:border-yellow-700 rounded-lg mb-4">
+                        <p class="text-sm text-yellow-700 dark:text-yellow-300 font-medium">
+                            ⚠️ Please end your lunch break before clocking out.
+                        </p>
+                    </div>
+                    {% else %}
+                    <form method="post" hx-post="{% url 'human_resource:attendance_clock' %}" hx-vals='{"action": "clock_out"}' hx-swap="outerHTML" hx-target="#content-attendance-clock">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="px-8 py-4 bg-orange-600 text-white text-lg font-semibold rounded-lg hover:bg-orange-700 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                            <span class="flex items-center">
+                                <svg class="h-6 w-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                </svg>
+                                Clock Out Now
+                            </span>
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    {% else %}
+                    <div class="inline-flex items-center justify-center h-32 w-32 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
+                        <svg class="h-16 w-16 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">Day Complete!</div>
+                    <p class="text-gray-500 dark:text-gray-400">You have completed both Clock In and Clock Out for today.</p>
+
+                    <!-- Status Badge -->
+                    {% if attendance.status %}
+                    <div class="mt-2 px-4 py-2 rounded-lg inline-block {% if attendance.status == 'late' %}bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300{% else %}bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300{% endif %}">
+                        Status: <span class="font-semibold">{{ attendance.status|upper }}</span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Today's Summary -->
+                    <div class="mt-6 grid grid-cols-3 gap-4 max-w-md mx-auto">
+                        <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <div class="text-xs text-gray-500 dark:text-gray-400">Clock In</div>
+                            <div class="font-mono font-semibold dark:text-gray-200">{{ attendance.clock_in }}</div>
+                        </div>
+                        <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <div class="text-xs text-gray-500 dark:text-gray-400">Clock Out</div>
+                            <div class="font-mono font-semibold dark:text-gray-200">{{ attendance.clock_out }}</div>
+                        </div>
+                        <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <div class="text-xs text-gray-500 dark:text-gray-400">Hours</div>
+                            <div class="font-mono font-semibold dark:text-gray-200">{{ attendance.hours_worked|default:"0.0" }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Lunch Summary -->
+                    {% if attendance.lunch_in or attendance.lunch_out %}
+                    <div class="mt-4 grid grid-cols-2 gap-4 max-w-md mx-auto">
+                        <div class="p-3 bg-yellow-50 dark:bg-yellow-900 rounded-lg">
+                            <div class="text-xs text-yellow-600 dark:text-yellow-400">Lunch In</div>
+                            <div class="font-mono font-semibold dark:text-yellow-200">{{ attendance.lunch_in|default:"-" }}</div>
+                        </div>
+                        <div class="p-3 bg-yellow-50 dark:bg-yellow-900 rounded-lg">
+                            <div class="text-xs text-yellow-600 dark:text-yellow-400">Lunch Out</div>
+                            <div class="font-mono font-semibold dark:text-yellow-200">{{ attendance.lunch_out|default:"-" }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Deduction Summary -->
+                    {% if attendance.deduction_minutes > 0 %}
+                    <div class="mt-4 p-3 bg-red-50 dark:bg-red-900 rounded-lg max-w-md mx-auto">
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-red-600 dark:text-red-400">Deduction Minutes</div>
+                            <div class="font-mono font-bold text-red-700 dark:text-red-300">{{ attendance.deduction_minutes }}</div>
+                        </div>
+                        <div class="text-xs text-red-500 dark:text-red-400 mt-1">
+                            Late: {{ attendance.late_minutes }} min
+                            {% if attendance.overlunch_minutes > 0 %}
+                                {% if not attendance.overlunch_validated %}
+                                + Overlunch: {{ attendance.overlunch_minutes }} min (not validated)
+                                {% else %}
+                                + Overlunch: {{ attendance.overlunch_minutes }} min (validated)
+                                {% endif %}
+                            {% endif %}
+                            {% if attendance.statuses and 'missing_lunch' in attendance.statuses %}
+                            + Missing Lunch
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                    {% endif %}
+                </div>
+                </div>
+
+                <!-- Tab Content: Absent Status -->
+                <div id="content-absent-status" class="tab-content hidden">
+                    <div class="text-center mb-6">
+                        <!-- Dynamic Dropdown for Absent Dates -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Absent Date</label>
+                            <select
+                                id="absentRecordsDropdown"
+                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full max-w-xs"
+                                onchange="renderAbsentRecord(this.value)">
+                                <option value="">Loading absent records...</option>
+                            </select>
+                        </div>
+
+                        <!-- Absent Record Details (loaded via cache) -->
+                        <div id="absentRecordContainer">
+                            <div class="inline-flex items-center justify-center h-24 w-24 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
+                                <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Select a Date</div>
+                            <p class="text-gray-500 dark:text-gray-400">Choose a date from the dropdown above to view details.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================
+                     SINGLE, CLEAN switchTab SCRIPT — duplicate removed
+                     ============================================================ -->
+                <script>
+                function switchTab(tabName) {
+                    // Hide all tab contents
+                    document.querySelectorAll('.tab-content').forEach(function(content) {
+                        content.classList.add('hidden');
+                    });
+
+                    // Remove active styling from ALL tab buttons
+                    document.querySelectorAll('.tab-btn').forEach(function(btn) {
+                        btn.classList.remove(
+                            'border-orange-500', 'text-orange-600',
+                            'dark:text-orange-400', 'dark:border-orange-400'
+                        );
+                        btn.classList.add(
+                            'border-transparent', 'text-gray-500',
+                            'hover:text-gray-700', 'dark:text-gray-400',
+                            'dark:hover:text-gray-200'
+                        );
+                    });
+
+                    // Show selected tab content
+                    document.getElementById('content-' + tabName).classList.remove('hidden');
+
+                    // Add active styling to selected tab button
+                    var activeBtn = document.getElementById('tab-' + tabName);
+                    activeBtn.classList.remove(
+                        'border-transparent', 'text-gray-500',
+                        'hover:text-gray-700', 'dark:text-gray-400',
+                        'dark:hover:text-gray-200'
+                    );
+                    activeBtn.classList.add(
+                        'border-orange-500', 'text-orange-600',
+                        'dark:text-orange-400'
+                    );
+                }
+
+                // Cache absent records in memory — no redundant fetches on every select change
+                let _absentRecordsCache = null;
+
+                // Load absent records once on page load
+                document.addEventListener('DOMContentLoaded', function() {
+                    loadAbsentRecordsDropdown();
+                });
+
+                function loadAbsentRecordsDropdown() {
+                    fetch('{% url "human_resource:get_absent_records_ajax" %}')
+                        .then(response => response.json())
+                        .then(data => {
+                            _absentRecordsCache = data.absent_records || [];
+                            const dropdown = document.getElementById('absentRecordsDropdown');
+                            dropdown.innerHTML = '<option value="">Select a date...</option>';
+
+                            if (_absentRecordsCache.length > 0) {
+                                _absentRecordsCache.forEach(function(record) {
+                                    const option = document.createElement('option');
+                                    option.value = record.id;
+                                    option.textContent = record.date_display + (record.is_appealed ? ' (Pending)' : '');
+                                    dropdown.appendChild(option);
+                                });
+
+                                // Update badge count
+                                const badge = document.querySelector('#tab-absent-status span.badge-count');
+                                if (badge) badge.textContent = _absentRecordsCache.length;
+                            } else {
+                                dropdown.innerHTML = '<option value="">No absent records found</option>';
+                                document.getElementById('absentRecordContainer').innerHTML = `
+                                    <div class="inline-flex items-center justify-center h-24 w-24 rounded-full bg-green-100 dark:bg-green-900 mb-4 mx-auto">
+                                        <svg class="h-12 w-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    </div>
+                                    <div class="text-xl font-semibold text-green-700 dark:text-green-300 mb-2">No Absent Records</div>
+                                    <p class="text-gray-500 dark:text-gray-400">You have no absent records.</p>`;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading absent records:', error);
+                            document.getElementById('absentRecordsDropdown').innerHTML =
+                                '<option value="">Error loading records</option>';
+                        });
+                }
+
+                // Uses in-memory cache — no redundant fetch on every select change
+                function renderAbsentRecord(recordId) {
+                    const container = document.getElementById('absentRecordContainer');
+
+                    if (!recordId) {
+                        container.innerHTML = `
+                            <div class="inline-flex items-center justify-center h-24 w-24 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
+                                <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Select a Date</div>
+                            <p class="text-gray-500 dark:text-gray-400">Choose a date from the dropdown above to view details.</p>`;
+                        return;
+                    }
+
+                    const record = (_absentRecordsCache || []).find(r => String(r.id) === String(recordId));
+                    if (!record) return;
+
+                    const noteHtml = record.note
+                        ? `<div class="mt-2 p-3 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg max-w-md mx-auto">
+                               <p class="text-sm text-red-600 dark:text-red-400">Note: ${record.note}</p>
+                           </div>`
+                        : '';
+
+                    const appealUrl = '{% url "human_resource:appeal_absent" 0 %}'.replace('/0/', '/' + record.id + '/');
+
+                    if (record.is_appealed) {
+                        container.innerHTML = `
+                            <div class="inline-flex items-center justify-center h-24 w-24 rounded-full bg-red-100 dark:bg-red-900 mb-4 mx-auto">
+                                <svg class="h-12 w-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div class="text-xl font-semibold text-red-700 dark:text-red-300 mb-2">Marked Absent</div>
+                            <p class="text-gray-500 dark:text-gray-400 mb-2">Date: <span class="font-semibold">${record.date_display}</span></p>
+                            ${noteHtml}
+                            <div class="mt-3 px-4 py-2 bg-blue-100 dark:bg-blue-900 rounded-lg inline-block">
+                                <span class="text-blue-700 dark:text-blue-300 font-semibold">Appeal Pending</span>
+                            </div>`;
+                    } else {
+                        container.innerHTML = `
+                            <div class="inline-flex items-center justify-center h-24 w-24 rounded-full bg-red-100 dark:bg-red-900 mb-4 mx-auto">
+                                <svg class="h-12 w-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div class="text-xl font-semibold text-red-700 dark:text-red-300 mb-2">Marked Absent</div>
+                            <p class="text-gray-500 dark:text-gray-400 mb-2">Date: <span class="font-semibold">${record.date_display}</span></p>
+                            ${noteHtml}
+                            <div class="mt-4 max-w-md mx-auto">
+                                <button type="button" onclick="showTabAppealForm()"
+                                        class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
+                                    Submit Appeal
+                                </button>
+                                <div id="tabAppealForm" class="hidden mt-3 p-4 bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-700 rounded-lg text-left">
+                                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Appeal This Record</h4>
+                                    <form method="post" action="${appealUrl}">
+                                        <input type="hidden" name="csrfmiddlewaretoken" value="${getCsrfToken()}">
+                                        <input type="hidden" name="next" value="hr_dashboard">
+                                        <textarea
+                                            name="appeal_reason"
+                                            rows="3"
+                                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+                                            placeholder="Please explain why you should not be marked absent..."
+                                            required></textarea>
+                                        <div class="flex gap-2 mt-2">
+                                            <button type="submit" name="action_type" value="appeal"
+                                                    class="flex-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition">
+                                                Submit Appeal
+                                            </button>
+                                            <button type="submit" name="action_type" value="request_hr"
+                                                    class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
+                                                Request HR Review
+                                            </button>
+                                            <button type="button" onclick="hideTabAppealForm()"
+                                                    class="px-3 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-300 transition">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>`;
+                    }
+                }
+
+                function showTabAppealForm() {
+                    const f = document.getElementById('tabAppealForm');
+                    if (f) f.classList.remove('hidden');
+                }
+
+                function hideTabAppealForm() {
+                    const f = document.getElementById('tabAppealForm');
+                    if (f) f.classList.add('hidden');
+                }
+                </script>
+
+            {% if failed_to_clock_out_records %}
+            <div class="fixed bottom-6 right-6 z-50">
+                <div class="relative">
+                    <!-- Notification Bell/Badge -->
+                    <button
+                        onclick="toggleFailedClockOutPanel()"
+                        class="w-14 h-14 bg-white dark:bg-purple-900 rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center animate-pulse"
+                        id="failedClockOutBtn">
+                        <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        <span class="absolute -top-2 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                            {{ failed_to_clock_out_records|length }}
+                        </span>
+                    </button>
+
+                    <!-- Dropdown Panel - Positioned Above -->
+                    <div class="absolute bottom-20 right-0 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-purple-500 dark:border-purple-700 overflow-hidden hidden mb-2" id="failedClockOutPanel">
+                        <div class="bg-purple-700 dark:bg-purple-900 px-4 py-3 flex items-center justify-between">
+                            <h3 class="text-white font-semibold flex items-center">
+                                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                                Failed to Clock Out
+                                <span class="ml-2 bg-purple-800 text-white text-xs px-2 py-0.5 rounded-full">
+                                    {{ failed_to_clock_out_records|length }} pending
+                                </span>
+                            </h3>
+                            <button type="button" onclick="toggleFailedClockOutPanel()" class="text-white hover:text-gray-200 transition-colors">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="max-h-64 overflow-y-auto">
+                            <!-- Date Selection Dropdown -->
+                            <div class="p-3 border-b border-purple-100 dark:border-purple-800">
+                                <label class="block text-xs font-medium text-purple-900 dark:text-purple-300 mb-1">Select Date</label>
+                                <select
+                                    id="failedClockOutSelect"
+                                    onchange="loadFailedClockOutDetail(this.value)"
+                                    class="w-full px-3 py-2 border border-purple-500 dark:border-purple-600 bg-white dark:bg-purple-900 text-gray-900 dark:text-purple-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                    <option value="">-- Select a date --</option>
+                                    {% for record in failed_to_clock_out_records %}
+                                    <option value="{{ record.pk }}">{{ record.date }} - Clock in: {{ record.clock_in|default:"N/A" }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Selected Record Details -->
+                            <div id="failedClockOutDetail" class="p-3">
+                                <p class="text-sm text-gray-600 dark:text-gray-400 text-center py-2">
+                                    Select a date to view details
+                                </p>
+                            </div>
+
+                            <!-- Action Form -->
+                            <form method="post" id="failedClockOutForm" class="p-3 border-t border-purple-100 dark:border-purple-800 space-y-3" action="#">
+                                {% csrf_token %}
+                                <input type="hidden" name="record_id" id="selectedRecordId" value="">
+                                <input type="hidden" name="next" value="hr_dashboard">
+
+                                <div>
+                                    <label for="action_type" class="block text-xs font-medium text-purple-900 dark:text-purple-300 mb-1">
+                                        Action
+                                    </label>
+                                    <select
+                                        name="action_type"
+                                        id="action_type"
+                                        onchange="toggleNoteField(this.value)"
+                                        class="w-full px-3 py-2 border border-purple-500 dark:border-purple-600 bg-white dark:bg-purple-900 text-gray-900 dark:text-purple-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                        <option value="acknowledge">Acknowledge & Dismiss</option>
+                                        <option value="request_hr">Request HR to Update</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="note" class="block text-xs font-medium text-purple-900 dark:text-purple-300 mb-1">
+                                        Note (optional)
+                                    </label>
+                                    <textarea
+                                        name="note"
+                                        id="note"
+                                        rows="2"
+                                        class="w-full px-3 py-2 border border-purple-500 dark:border-purple-600 bg-white dark:bg-purple-900 text-gray-900 dark:text-purple-200 rounded-lg text-sm"
+                                        placeholder="e.g., Forgot to clock out due to emergency..."
+                                    ></textarea>
+                                </div>
+
+                                <button type="submit" id="failedClockOutSubmitBtn" disabled
+                                        class="w-full px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 dark:from-purple-600 dark:to-purple-700 font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Submit
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Attendance History -->
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mt-6">
+                <h2 class="text-lg font-semibold mb-2 flex items-center">
+                    <svg class="h-5 w-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Attendance History
+                </h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Click on status for more details</p>
+
+                <!-- Date Range Filter (AJAX) -->
+                <form id="attendance-filter-form" class="mb-4 flex flex-wrap items-end gap-3">
+                    <div>
+                        <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date</label>
+                        <input type="date" name="start_date" id="start_date" value="{{ start_date|default:'' }}"
+                            class="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    </div>
+                    <div>
+                        <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+                        <input type="date" name="end_date" id="end_date" value="{{ end_date|default:'' }}"
+                            class="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    </div>
+                    <div>
+                        <button type="button" id="filter-ajax-btn" class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition text-sm font-medium">
+                            Apply Filter
+                        </button>
+                    </div>
+                    <div>
+                        <button type="button" id="clear-ajax-btn" class="px-4 py-2 bg-gray-400 dark:bg-gray-600 text-white dark:text-gray-200 rounded-md hover:bg-gray-500 dark:hover:bg-gray-500 transition text-sm font-medium">
+                            Clear
+                        </button>
+                    </div>
+                </form>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase w-24">Date</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase w-24">Status</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase w-20">Clock In</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase w-20">Clock Out</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase w-16">Hours</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase w-16">Late</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-600" id="attendance-history-body">
+                            {% for a in history %}
+                            <tr class="{% if a.status == 'late' %}bg-yellow-50 dark:bg-yellow-900{% elif a.status == 'absent' %}bg-red-50 dark:bg-red-900{% elif a.status == 'early_leave' %}bg-orange-50 dark:bg-orange-900{% elif a.status == 'failed_to_clock_out' %}bg-purple-50 dark:bg-purple-900{% elif a.statuses and 'overlunch_pending' in a.statuses %}bg-orange-50 dark:bg-orange-900{% elif a.statuses and 'missing_lunch' in a.statuses %}bg-red-50 dark:bg-red-900{% else %}hover:bg-gray-50 dark:hover:bg-gray-700{% endif %}">
+                                <td class="px-3 py-2 text-sm text-gray-900 dark:text-gray-100">{{ a.date }}</td>
+                                <td class="px-3 py-2">
+                                    <button type="button" class="status-modal-btn px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full cursor-pointer hover:opacity-80
+                                        {% if a.status == 'present' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                        {% elif a.status == 'absent' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
+                                        {% elif a.status == 'late' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                        {% elif a.status == 'early_leave' %}bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200
+                                        {% elif a.status == 'failed_to_clock_out' %}bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200
+                                        {% elif a.statuses and 'overlunch_pending' in a.statuses %}bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200
+                                        {% elif a.statuses and 'missing_lunch' in a.statuses %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
+                                        {% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200{% endif %}"
+                                        onclick="showStatusModal('{{ a.date }}', '{% if a.statuses %}{{ a.statuses }}{% else %}{{ a.status }}{% endif %}', '{% if a.late_minutes %}{{ a.late_minutes }}{% else %}0{% endif %}', '{% if a.deduction_minutes %}{{ a.deduction_minutes }}{% else %}0{% endif %}', '{% if a.overlunch_minutes %}{{ a.overlunch_minutes }}{% else %}0{% endif %}', '{% if a.overlunch_validated %}{{ a.overlunch_validated }}{% else %}False{% endif %}', '{% if a.hours_worked %}{{ a.hours_worked }}{% else %}0{% endif %}')"
+                                        title="Click for more details">
+                                        {% if a.statuses %}
+                                            {% if ',' in a.statuses %}{{ a.statuses|split:','|length }} Statuses{% else %}{{ a.statuses|format_status }}{% endif %}
+                                        {% elif a.status == 'failed_to_clock_out' %}Failed Out
+                                        {% else %}{{ a.status|format_status }}{% endif %}
+                                    </button>
+                                </td>
+                                <td class="px-3 py-2 text-sm font-mono {% if a.late_minutes > 0 %}text-red-600 dark:text-red-400{% else %}text-gray-900 dark:text-gray-100{% endif %}">
+                                    {{ a.clock_in|default:"-" }}
+                                </td>
+                                <td class="px-3 py-2 text-sm font-mono text-gray-900 dark:text-gray-100">{{ a.clock_out|default:"-" }}</td>
+                                <td class="px-3 py-2 text-sm text-gray-900 dark:text-gray-100">{{ a.hours_worked|default:"0.0" }}</td>
+                                <td class="px-3 py-2 text-sm {% if a.late_minutes > 0 %}text-red-600 dark:text-red-400 font-medium{% else %}text-gray-400 dark:text-gray-500{% endif %}">
+                                    {{ a.late_minutes|default:"0" }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
+                                    <div class="flex flex-col items-center">
+                                        <svg class="h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                        </svg>
+                                        <p>No attendance records yet.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Detail Modal -->
+<div id="statusDetailModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-50 transition-opacity" aria-hidden="true" onclick="closeStatusModal()"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm">
+            <div class="p-4">
+                <div class="flex items-center mb-3">
+                    <div class="flex-shrink-0 mr-3">
+                        <svg class="h-5 w-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-sm font-medium text-gray-900 dark:text-white" id="statusModalTitle">
+                        Attendance Details
+                    </h3>
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400 mb-3">Click status for more details</div>
+                <div id="statusModalBody" class="text-sm"></div>
+            </div>
+            <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 rounded-b-lg">
+                <button type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-orange-600 text-base font-medium text-white hover:bg-orange-700 focus:outline-none text-sm" onclick="closeStatusModal()">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function getCsrfToken() {
+    const name = 'csrftoken';
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+            return decodeURIComponent(cookie.slice(name.length + 1));
+        }
+    }
+    return '';
+}
+
+window.showStatusModal = function(date, statuses, lateMinutes, deductionMinutes, overlunchMinutes, overlunchValidated, hoursWorked) {
+    const modal = document.getElementById('statusDetailModal');
+    const modalBody = document.getElementById('statusModalBody');
+    const modalTitle = document.getElementById('statusModalTitle');
+
+    modalTitle.textContent = 'Attendance Details - ' + date;
+
+    let content = '<div class="font-semibold mb-2">Status Details</div><div class="flex flex-wrap gap-2 mb-3">';
+    const statusList = statuses.split(',').map(s => s.trim()).filter(s => s);
+
+    if (statusList.length > 0) {
+        statusList.forEach(s => {
+            let sClass = 'bg-gray-500 text-white';
+            if (s === 'present')                  sClass = 'bg-green-500 text-white';
+            else if (s === 'absent')              sClass = 'bg-red-500 text-white';
+            else if (s === 'late')                sClass = 'bg-yellow-500 text-black';
+            else if (s === 'on_leave')            sClass = 'bg-blue-500 text-white';
+            else if (s === 'early_leave')         sClass = 'bg-orange-500 text-white';
+            else if (s === 'failed_to_clock_out') sClass = 'bg-purple-500 text-white';
+            else if (s === 'overlunch_pending')   sClass = 'bg-orange-500 text-white';
+            else if (s === 'missing_lunch')       sClass = 'bg-red-500 text-white';
+            const sDisplay = s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ');
+            content += '<span class="px-3 py-1 rounded-full text-xs font-medium ' + sClass + '">' + sDisplay + '</span>';
+        });
+    } else {
+        content += '<span class="px-3 py-1 rounded-full text-sm font-medium bg-gray-500 text-white">N/A</span>';
+    }
+    content += '</div>';
+
+    if (overlunchMinutes > 0) {
+        const isValidated = overlunchValidated === 'True' || overlunchValidated === 'true';
+        content += '<div class="mb-1 ' + (isValidated ? 'text-green-600' : 'text-orange-500') + '">☕ Overlunch: ' + overlunchMinutes + ' min ' + (isValidated ? '✓ Validated' : '⚠ Pending') + '</div>';
+    }
+    if (lateMinutes > 0)       content += '<div class="mb-1 text-yellow-600">⏰ Late: ' + lateMinutes + ' min</div>';
+    if (deductionMinutes > 0)  content += '<div class="mb-1 text-red-500">➖ Deduction: ' + deductionMinutes + ' min</div>';
+    if (hoursWorked > 0)       content += '<div class="mb-1 text-blue-600">⏱️ Hours Worked: ' + hoursWorked + ' hrs</div>';
+
+    modalBody.innerHTML = content;
+    modal.classList.remove('hidden');
+};
+
+window.closeStatusModal = function() {
+    const modal = document.getElementById('statusDetailModal');
+    if (modal) modal.classList.add('hidden');
+};
+
+window.toggleFailedClockOutPanel = function() {
+    const panel = document.getElementById('failedClockOutPanel');
+    if (panel) panel.classList.toggle('hidden');
+};
+
+window.toggleNoteField = function(value) {
+    const noteTextarea = document.getElementById('note');
+    if (!noteTextarea) return;
+    noteTextarea.placeholder = value === 'request_hr'
+        ? 'Please explain what happened and what time you actually left work...'
+        : 'e.g., Forgot to clock out due to emergency...';
+};
+
+window.loadFailedClockOutDetail = function(recordId) {
+    const detailDiv = document.getElementById('failedClockOutDetail');
+    const form = document.getElementById('failedClockOutForm');
+    const selectedRecordId = document.getElementById('selectedRecordId');
+    const submitBtn = document.getElementById('failedClockOutSubmitBtn');
+
+    if (!recordId) {
+        detailDiv.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-2">Select a date to view details</p>';
+        selectedRecordId.value = '';
+        if (submitBtn) submitBtn.disabled = true;
+        return;
+    }
+
+    const select = document.getElementById('failedClockOutSelect');
+    const selectedOption = select.options[select.selectedIndex];
+    const parts = selectedOption.text.split(' - ');
+
+    detailDiv.innerHTML = `
+        <div class="bg-purple-50 dark:bg-purple-900 rounded-lg p-3">
+            <p class="text-purple-700 dark:text-purple-300 text-sm">
+                <strong>Date:</strong> ${parts[0] || ''}<br>
+                <strong>Clocked In:</strong> ${parts[1] || 'N/A'}
+            </p>
+        </div>
+    `;
+
+    selectedRecordId.value = recordId;
+    form.action = '/hr_dashboard/attendance/' + recordId + '/acknowledge/';
+    if (submitBtn) submitBtn.disabled = false;
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    // Real-time clock
+    function updateClock() {
+        const now = new Date();
+        const currentTimeEl = document.getElementById('currentTime');
+        const currentDateEl = document.getElementById('currentDate');
+        if (currentTimeEl) currentTimeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        if (currentDateEl) currentDateEl.textContent = now.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // AJAX filter helper
+    function fetchHistory(url, btn, originalText) {
+        btn.textContent = 'Loading...';
+        btn.disabled = true;
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(r => r.json())
+        .then(data => updateAttendanceTable(data.history))
+        .catch(() => alert('Failed to fetch attendance history. Please try again.'))
+        .finally(() => { btn.textContent = originalText; btn.disabled = false; });
+    }
+
+    const filterBtn = document.getElementById('filter-ajax-btn');
+    const clearBtn = document.getElementById('clear-ajax-btn');
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+
+    if (filterBtn) {
+        filterBtn.addEventListener('click', function() {
+            let url = '{% url "human_resource:attendance_history_ajax" %}';
+            const params = [];
+            if (startDateInput.value) params.push('start_date=' + startDateInput.value);
+            if (endDateInput.value) params.push('end_date=' + endDateInput.value);
+            if (params.length) url += '?' + params.join('&');
+            fetchHistory(url, filterBtn, 'Apply Filter');
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            startDateInput.value = '';
+            endDateInput.value = '';
+            fetchHistory('{% url "human_resource:attendance_history_ajax" %}', clearBtn, 'Clear');
+        });
+    }
+
+    function updateAttendanceTable(history) {
+        const tbody = document.getElementById('attendance-history-body');
+        const isDark = document.documentElement.classList.contains('dark');
+
+        if (!history || history.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="px-4 py-8 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}">
+                        <div class="flex flex-col items-center">
+                            <svg class="h-12 w-12 ${isDark ? 'text-gray-500' : 'text-gray-400'} mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                            </svg>
+                            <p>No attendance records found.</p>
+                        </div>
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        let html = '';
+        history.forEach(a => {
+            let rowClass = '';
+            let statusClasses = '';
+
+            if (a.status === 'late')                { rowClass = isDark ? 'bg-yellow-900' : 'bg-yellow-50'; statusClasses = isDark ? 'bg-yellow-900 text-yellow-200' : 'bg-yellow-100 text-yellow-800'; }
+            else if (a.status === 'absent')         { rowClass = isDark ? 'bg-red-900' : 'bg-red-50'; statusClasses = isDark ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'; }
+            else if (a.status === 'early_leave')    { rowClass = isDark ? 'bg-orange-900' : 'bg-orange-50'; statusClasses = isDark ? 'bg-orange-900 text-orange-200' : 'bg-orange-100 text-orange-800'; }
+            else if (a.status === 'failed_to_clock_out') { rowClass = isDark ? 'bg-purple-900' : 'bg-purple-50'; statusClasses = isDark ? 'bg-purple-900 text-purple-200' : 'bg-purple-100 text-purple-800'; }
+            else if (a.status === 'present')        { statusClasses = isDark ? 'bg-green-900 text-green-200' : 'bg-green-100 text-green-800'; }
+            else                                    { statusClasses = isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-800'; }
+
+            const textClass = isDark ? 'text-gray-100' : 'text-gray-900';
+            const lateClass = a.late_minutes > 0 ? (isDark ? 'text-red-400' : 'text-red-600') : textClass;
+
+            let statusDisplay = '';
+            if (a.statuses && a.statuses.length > 0) {
+                statusDisplay = a.statuses.length === 1
+                    ? (s => s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' '))(a.statuses[0].trim())
+                    : a.statuses.length + ' Statuses';
+            } else {
+                statusDisplay = a.status === 'failed_to_clock_out' ? 'Failed Out'
+                    : (a.status ? a.status.charAt(0).toUpperCase() + a.status.slice(1).replace(/_/g, ' ') : 'N/A');
+            }
+
+            let modalContent = '<div class="font-semibold mb-2">Status Details</div><div class="flex flex-wrap gap-2 mb-3">';
+            const statusArr = (a.statuses && a.statuses.length > 0) ? a.statuses : [a.status || ''];
+            statusArr.forEach(s => {
+                const sTrim = s.trim();
+                let sClass = 'bg-gray-500 text-white';
+                if (sTrim === 'present')                  sClass = 'bg-green-500 text-white';
+                else if (sTrim === 'absent')              sClass = 'bg-red-500 text-white';
+                else if (sTrim === 'late')                sClass = 'bg-yellow-500 text-black';
+                else if (sTrim === 'on_leave')            sClass = 'bg-blue-500 text-white';
+                else if (sTrim === 'early_leave')         sClass = 'bg-orange-500 text-white';
+                else if (sTrim === 'failed_to_clock_out') sClass = 'bg-purple-500 text-white';
+                else if (sTrim === 'overlunch_pending')   sClass = 'bg-orange-500 text-white';
+                else if (sTrim === 'missing_lunch')       sClass = 'bg-red-500 text-white';
+                const sDisplay = sTrim.charAt(0).toUpperCase() + sTrim.slice(1).replace(/_/g, ' ');
+                modalContent += `<span class="px-3 py-1 rounded-full text-xs font-medium ${sClass}">${sDisplay}</span>`;
+            });
+            modalContent += '</div>';
+            if (a.overlunch_minutes > 0) modalContent += `<div class="mb-1 ${a.overlunch_validated ? 'text-green-600' : 'text-orange-500'}">☕ Overlunch: ${a.overlunch_minutes} min ${a.overlunch_validated ? '✓ Validated' : '⚠ Pending'}</div>`;
+            if (a.late_minutes > 0)      modalContent += `<div class="mb-1 text-yellow-600">⏰ Late: ${a.late_minutes} min</div>`;
+            if (a.deduction_minutes > 0) modalContent += `<div class="mb-1 text-red-500">➖ Deduction: ${a.deduction_minutes} min</div>`;
+            if (a.hours_worked > 0)      modalContent += `<div class="mb-1 text-blue-600">⏱️ Hours Worked: ${a.hours_worked} hrs</div>`;
+
+            html += `
+                <tr class="${rowClass}">
+                    <td class="px-4 py-3 text-sm ${textClass}">${a.date}</td>
+                    <td class="px-4 py-3">
+                        <button type="button" class="status-modal-btn px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full cursor-pointer ${statusClasses}"
+                            data-date="${a.date}"
+                            data-modal-content="${encodeURIComponent(modalContent)}"
+                            title="Click for more details">
+                            ${statusDisplay}
+                        </button>
+                    </td>
+                    <td class="px-4 py-3 text-sm font-mono ${lateClass}">${a.clock_in || '-'}</td>
+                    <td class="px-4 py-3 text-sm font-mono ${textClass}">${a.clock_out || '-'}</td>
+                    <td class="px-4 py-3 text-sm ${textClass}">${a.hours_worked || '0.0'}</td>
+                    <td class="px-4 py-3 text-sm ${lateClass}">${a.late_minutes || '0'}</td>
+                </tr>`;
+        });
+
+        tbody.innerHTML = html;
+
+        document.querySelectorAll('#attendance-history-body .status-modal-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const modal = document.getElementById('statusDetailModal');
+                const modalBody = document.getElementById('statusModalBody');
+                const modalTitle = document.getElementById('statusModalTitle');
+                modalTitle.textContent = 'Attendance Details - ' + this.dataset.date;
+                modalBody.innerHTML = decodeURIComponent(this.dataset.modalContent);
+                modal.classList.remove('hidden');
+            });
+        });
+    }
+
+    // Close failed clock-out panel when clicking outside
+    document.addEventListener('click', function(event) {
+        const panel = document.getElementById('failedClockOutPanel');
+        const btn = document.getElementById('failedClockOutBtn');
+        if (panel && btn && !panel.contains(event.target) && !btn.contains(event.target)) {
+            panel.classList.add('hidden');
+        }
+    });
+
+    // AJAX submission for attendance clock actions
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    async function submitAttendanceAction(action) {
+        const csrftoken = getCookie('csrftoken');
+        const formData = new FormData();
+        formData.append('action', action);
+        formData.append('csrfmiddlewaretoken', csrftoken);
+        
+        // Show loading state on button
+        const button = document.querySelector(`button[onclick="submitAttendanceAction('${action}')"]`);
+        if (button) {
+            button.disabled = true;
+            button.classList.add('opacity-50', 'cursor-not-allowed');
+            const originalContent = button.innerHTML;
+            button.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...';
+            
+            try {
+                console.log('Submitting action:', action, 'CSRF token:', csrftoken);
+                const response = await fetch('{% url "human_resource:attendance_clock" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrftoken,
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (data.success) {
+                    // Show success message
+                    showToast(data.message || 'Action completed successfully!', 'success');
+                    // Reload page to show updated attendance data
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 500);
+                } else {
+                    // Show error message
+                    const errorMsg = data.message || 'An error occurred. Please try again.';
+                    showToast(errorMsg, 'error');
+                    // Reload page anyway to show current state
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Network error. Please try again.', 'error');
+                // Reload page as fallback
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+            
+            // Restore button state
+            button.disabled = false;
+            button.classList.remove('opacity-50', 'cursor-not-allowed');
+            button.innerHTML = originalContent;
+        }
+    }
+
+    // Toast notification function
+    function showToast(message, type) {
+        // Remove existing toast if any
+        const existingToast = document.getElementById('ajax-toast');
+        if (existingToast) {
+            existingToast.remove();
+        }
+        
+        const toast = document.createElement('div');
+        toast.id = 'ajax-toast';
+        toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-y-0 ${
+            type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`;
+        toast.innerHTML = `
+            <div class="flex items-center">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    ${type === 'success' 
+                        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>'
+                        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'}
+                </svg>
+                <span>${message}</span>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translate-y-2';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+});
+</script>
+
+<script>
+// Global AJAX functions - outside DOMContentLoaded for global access
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+async function submitAttendanceAction(action) {
+    const csrftoken = getCookie('csrftoken');
+    const formData = new FormData();
+    formData.append('action', action);
+    formData.append('csrfmiddlewaretoken', csrftoken);
+    
+    // Show loading state on button
+    const button = document.querySelector(`button[onclick="submitAttendanceAction('${action}')"]`);
+    if (button) {
+        button.disabled = true;
+        button.classList.add('opacity-50', 'cursor-not-allowed');
+        const originalContent = button.innerHTML;
+        button.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...';
+        
+        try {
+            console.log('Submitting action:', action, 'CSRF token:', csrftoken);
+            const response = await fetch('{% url "human_resource:attendance_clock" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrftoken,
+                }
+            });
+            
+            console.log('Response status:', response.status);
+            const data = await response.json();
+            console.log('Response data:', data);
+            
+            if (data.success) {
+                showToast(data.message || 'Action completed successfully!', 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            } else {
+                const errorMsg = data.message || 'An error occurred. Please try again.';
+                showToast(errorMsg, 'error');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('Network error. Please try again.', 'error');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+        
+        // Restore button state
+        button.disabled = false;
+        button.classList.remove('opacity-50', 'cursor-not-allowed');
+        button.innerHTML = originalContent;
+    }
+}
+
+function showToast(message, type) {
+    const existingToast = document.getElementById('ajax-toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    const toast = document.createElement('div');
+    toast.id = 'ajax-toast';
+    toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-y-0 ${
+        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+    }`;
+    toast.innerHTML = `
+        <div class="flex items-center">
+            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                ${type === 'success' 
+                    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>'
+                    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'}
+            </svg>
+            <span>${message}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translate-y-2';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+</script>
+{% endblock %}

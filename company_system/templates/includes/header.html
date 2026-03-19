@@ -1,12 +1,560 @@
 {% load static %}
 
-<link
-  href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css"
-  rel="stylesheet"
-/>
-<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="{% static 'styles.css' %}">
 <link
   href="https://fonts.googleapis.com/icon?family=Material+Icons"
   rel="stylesheet"
 />
-<link rel="stylesheet" href="{% static 'src/css/style.css' %}" />
+<style>
+/* Form Input Border Styles - Leave Credit Form */
+.leave-credit-form #id_notes {
+    min-height: 80px;
+}
+
+/* Leave Request Form */
+.leave-request-form #id_purpose {
+    min-height: 80px;
+}
+
+/* Employee select styling */
+.leave-request-form #employeeSelect {
+    width: 100%;
+    padding: 0.625rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    background-color: #fff;
+    font-size: 0.875rem;
+    box-sizing: border-box;
+}
+
+.leave-request-form #employeeSelect:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Checkbox styling - smaller and compact */
+input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #3b82f6;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+}
+
+/* ========================
+   COMPREHENSIVE DARK MODE SUPPORT
+   ======================== */
+
+/* ========================
+   GLOBAL SCROLLBAR STYLING (LIGHT MODE)
+   ======================== */
+
+/* WebKit Scrollbar (Chrome, Safari, Opera) */
+html::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 5px;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 5px;
+  border: 2px solid #f1f1f1;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+html::-webkit-scrollbar-corner {
+  background: #f1f1f1;
+}
+
+/* Firefox Scrollbar */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+/* Firefox Scrollbar - Hover state */
+html:hover {
+  scrollbar-color: #a8a8a8 #f1f1f1;
+}
+
+/* Optional: Custom scrollbar for specific elements */
+.overflow-auto::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.overflow-auto::-webkit-scrollbar-track,
+.overflow-y-auto::-webkit-scrollbar-track,
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb,
+.overflow-y-auto::-webkit-scrollbar-thumb,
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb:hover,
+.overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Table scrollbar styling */
+.table-container::-webkit-scrollbar,
+.div-table::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track,
+.div-table::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb,
+.div-table::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover,
+.div-table::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Dark mode scrollbar overrides */
+html.dark::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html.dark::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+html.dark::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border: 2px solid #1f2937;
+}
+
+html.dark::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+html.dark::-webkit-scrollbar-corner {
+  background: #1f2937;
+}
+
+html.dark {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #1f2937;
+}
+
+html.dark:hover {
+  scrollbar-color: #6b7280 #1f2937;
+}
+
+html.dark .overflow-auto::-webkit-scrollbar,
+html.dark .overflow-y-auto::-webkit-scrollbar,
+html.dark .overflow-x-auto::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html.dark .overflow-auto::-webkit-scrollbar-track,
+html.dark .overflow-y-auto::-webkit-scrollbar-track,
+html.dark .overflow-x-auto::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+html.dark .overflow-auto::-webkit-scrollbar-thumb,
+html.dark .overflow-y-auto::-webkit-scrollbar-thumb,
+html.dark .overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+html.dark .overflow-auto::-webkit-scrollbar-thumb:hover,
+html.dark .overflow-y-auto::-webkit-scrollbar-thumb:hover,
+html.dark .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Page Background */
+html.dark body,
+html.dark .bg-gray-100 {
+    background-color: #111827 !important;
+}
+
+/* Card Backgrounds - ALL bg-white elements */
+html.dark .bg-white,
+html.dark [class*="bg-white"],
+html.dark .rounded-xl,
+html.dark .rounded-lg,
+html.dark .rounded-md,
+html.dark .rounded-2xl,
+html.dark .shadow,
+html.dark .shadow-sm,
+html.dark .shadow-md,
+html.dark .shadow-lg,
+html.dark .shadow-xl {
+    background-color: #1f2937 !important;
+    /*border-color: #374151 !important; */
+}
+
+/* Card inner backgrounds */
+html.dark .bg-blue-50,
+html.dark .bg-green-50,
+html.dark .bg-red-50,
+html.dark .bg-yellow-50,
+html.dark .bg-orange-50,
+html.dark .bg-purple-50,
+html.dark .bg-gray-50,
+html.dark .bg-indigo-50 {
+    background-color: #374151 !important;
+}
+
+/* Gradient headers in cards */
+html.dark .bg-gradient-to-r,
+html.dark [class*="bg-gradient"] {
+    /*filter: brightness(0.7);*/
+}
+
+/* Text Colors - All gray text shades */
+html.dark .text-gray-100,
+html.dark .text-gray-200,
+html.dark .text-gray-300,
+html.dark .text-gray-400,
+html.dark .text-gray-500,
+html.dark .text-gray-600,
+html.dark .text-gray-700,
+html.dark .text-gray-800,
+html.dark .text-gray-900 {
+    color: #e5e7eb !important;
+}
+
+
+/* Text Colors - All black-gray text button shades */
+html.dark a.text-gray-100 ,
+html.dark a.text-gray-200 ,
+html.dark a.text-gray-300 ,
+html.dark a.text-gray-400 ,
+html.dark a.text-gray-500 ,
+html.dark a.text-gray-600 ,
+html.dark a.text-gray-700 ,
+html.dark a.text-gray-800 ,
+html.dark a.text-gray-900  {
+    color: #3a3a3a ;
+}
+
+html.dark a.nav-item.text-gray-100,
+html.dark a.nav-item.text-gray-200,
+html.dark a.nav-item.text-gray-300,
+html.dark a.nav-item.text-gray-400,
+html.dark a.nav-item.text-gray-500,
+html.dark a.nav-item.text-gray-600,
+html.dark a.nav-item.text-gray-700,
+html.dark a.nav-item.text-gray-800,
+html.dark a.nav-item.text-gray-900 {
+    color: #ffffff !important;
+}
+
+/* Text colors - other shades */
+html.dark .text-black {
+    color: #f9fafb !important;
+}
+
+/* Status text colors */
+html.dark .text-green-500,
+html.dark .text-green-600,
+html.dark .text-green-700,
+html.dark .text-green-800 {
+    color: #6ee7b7 !important;
+}
+
+html.dark .text-red-500,
+html.dark .text-red-600,
+html.dark .text-red-700,
+html.dark .text-red-800 {
+    color: #fca5a5 !important;
+}
+
+html.dark .text-yellow-500,
+html.dark .text-yellow-600,
+html.dark .text-yellow-700,
+html.dark .text-yellow-800 {
+    color: #fde047 !important;
+}
+
+html.dark .text-blue-500,
+html.dark .text-blue-600,
+html.dark .text-blue-700,
+html.dark .text-blue-800 {
+    color: #93c5fd !important;
+}
+
+html.dark .text-orange-500,
+html.dark .text-orange-600,
+html.dark .text-orange-700,
+html.dark .text-orange-800 {
+    color: #fdba74 !important;
+}
+
+html.dark .text-purple-500,
+html.dark .text-purple-600,
+html.dark .text-purple-700,
+html.dark .text-purple-800 {
+    color: #c4b5fd !important;
+}
+
+/* Border Colors */
+html.dark .border,
+html.dark .border-2,
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-gray-300,
+html.dark .border-gray-400 {
+    border-color: #4b5563 !important;
+}
+
+/* Table Styles */
+html.dark table {
+    background-color: #1f2937 !important;
+}
+
+html.dark thead,
+html.dark th {
+    background-color: #374151 !important;
+    color: #f9fafb !important;
+}
+
+html.dark td {
+    color: #e5e7eb !important;
+    border-color: #374151 !important;
+}
+
+html.dark tr:hover {
+    background-color: #374151 !important;
+}
+
+html.dark tbody tr:nth-child(even) {
+    background-color: #1f2937 !important;
+}
+
+/* Form Inputs */
+html.dark input[type="text"],
+html.dark input[type="email"],
+html.dark input[type="password"],
+html.dark input[type="number"],
+html.dark input[type="date"],
+html.dark input[type="search"],
+html.dark select,
+html.dark textarea {
+    background-color: #374151 !important;
+    border-color: #4b5563 !important;
+    color: #f9fafb !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+    color: #9ca3af !important;
+}
+
+/* ==================== BUTTON & NAV FIXES ==================== */
+
+/* Button text in dark mode - make it light - more specific */
+html.dark button,
+html.dark .btn,
+html.dark input[type="button"],
+html.dark input[type="submit"],
+html.dark input[type="reset"],
+html.dark .bg-blue-500,
+html.dark .bg-blue-600,
+html.dark .bg-blue-700,
+html.dark .bg-green-500,
+html.dark .bg-green-600,
+html.dark .bg-green-700,
+html.dark .bg-red-500,
+html.dark .bg-red-600,
+html.dark .bg-red-700,
+html.dark .bg-orange-500,
+html.dark .bg-orange-600,
+html.dark .bg-orange-700,
+html.dark .bg-yellow-500,
+html.dark .bg-yellow-600,
+html.dark .bg-purple-500,
+html.dark .bg-purple-600,
+html.dark .bg-purple-700,
+html.dark .bg-indigo-500,
+html.dark .bg-indigo-600,
+html.dark .bg-indigo-700,
+html.dark .bg-gray-500,
+html.dark .bg-gray-600,
+html.dark .bg-gray-700,
+html.dark .bg-gray-800 {
+    color: #ffffff !important;
+}
+
+/* Sidebar Navigation Fixes */
+html.dark aside {
+    background-color: #111827 !important;
+}
+
+html.dark aside a,
+html.dark aside button,
+html.dark [class*="sidebar"] a,
+html.dark [class*="sidebar"] button {
+    color: #d1d5db !important;
+}
+
+html.dark aside a:hover,
+html.dark aside button:hover,
+html.dark [class*="sidebar"] a:hover,
+html.dark [class*="sidebar"] button:hover {
+    background-color: #374151 !important;
+}
+
+/* Remove any ugly background from nav links in dark mode */
+html.dark nav a,
+html.dark nav button {
+    background-color: transparent !important;
+}
+
+html.dark nav a:hover,
+html.dark nav button:hover {
+    background-color: #374151 !important;
+}
+
+/* Icons in dark mode */
+html.dark .material-icons,
+html.dark [class*="icon"] {
+    color: #d1d5db !important;
+}
+
+/* Links 
+html.dark a {
+    color: #60a5fa !important;
+}
+*/
+
+html.dark a:hover {
+    color: #93c5fd !important;
+}
+
+/* Dividers */
+html.dark hr {
+    border-color: #374151 !important;
+}
+
+/* Scrollbar in dark mode */
+html.dark ::-webkit-scrollbar {
+    background: #1f2937;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+    border-radius: 4px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Shadow adjustments for dark mode */
+html.dark .shadow,
+html.dark .shadow-sm,
+html.dark .shadow-md,
+html.dark .shadow-lg,
+html.dark .shadow-xl,
+html.dark .shadow-2xl {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Hover states */
+html.dark .hover\:bg-gray-50:hover,
+html.dark .hover\:bg-gray-100:hover,
+html.dark .hover\:bg-gray-200:hover {
+    background-color: #374151 !important;
+}
+
+/* Badge/Status backgrounds */
+html.dark .bg-green-100 {
+    background-color: #064e3b !important;
+}
+
+/* Dark mode button backgrounds - fixed colors for dark mode */
+html.dark .bg-gray-200 {
+    background-color: #4b5563 !important;
+}
+
+html.dark .bg-blue-400 {
+    background-color: #1e40af !important;
+}
+    background-color: #064e3b !important;
+}
+
+html.dark .bg-red-100 {
+    background-color: #7f1d1d !important;
+}
+
+html.dark .bg-yellow-100 {
+    background-color: #713f12 !important;
+}
+
+html.dark .bg-blue-100 {
+    background-color: #1e3a8a !important;
+}
+
+html.dark .bg-orange-100 {
+    background-color: #7c2d12 !important;
+}
+
+html.dark .bg-purple-100 {
+    background-color: #581c87 !important;
+}
+
+/* Focus ring */
+html.dark .focus\:ring:focus,
+html.dark .focus\:ring-1:focus,
+html.dark .focus\:ring-2:focus {
+    --tw-ring-color: #4b5563 !important;
+}
+
+/* Modals */
+html.dark .modal,
+html.dark [class*="modal"] {
+    background-color: #1f2937
+}
+
+/* Dropdown */
+html.dark select option {
+    background-color: #1f2937;
+    color: #f9fafb;
+}
+
+/* Nav items specifically */
+html.dark .flex.items-center.px-4.py-2,
+html.dark .flex.items-center.px-4.py-2.rounded-lg {
+    background-color: transparent !important;
+}
+
+html.dark .flex.items-center.px-4.py-2:hover,
+html.dark .flex.items-center.px-4.py-2.rounded-lg:hover {
+    background-color: #374151 !important;
+}
+</style>

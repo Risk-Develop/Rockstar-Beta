@@ -1,0 +1,1389 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ survey.name }} - Analytics{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'hr/dashboard/hr_sidebar.html' %}
+
+<div class="md:ml-64 pt-20 min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+
+    <!-- Header Section -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <!-- Title & Back Button -->
+            <div class="flex items-center gap-3">
+                <a href="{% url 'human_resource:enps_survey_list' %}" 
+                   class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                    <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </a>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">
+                        {{ survey.name }}
+                    </h1>
+                    <div class="flex items-center gap-2 mt-1 flex-wrap text-sm text-gray-500 dark:text-gray-400">
+                        <span>{{ total_responses }} responses</span>
+                        <span>•</span>
+                        <span class="{% if survey.is_active %}text-green-600 dark:text-green-400{% else %}text-gray-500{% endif %}">
+                            {% if survey.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-2">
+                <button type="button" 
+                        data-modal-target="refreshModal" 
+                        data-modal-toggle="refreshModal"
+                        class="inline-flex items-center px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh
+                </button>
+                <a href="{% url 'human_resource:enps_survey_edit' survey.id %}"
+                   class="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    Edit
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Stats Cards - NPS Type -->
+    {% if main_question_type == 'nps' or main_question_type is None %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+        <!-- Overall eNPS Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 text-gray-800 dark:text-white transform hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Overall eNPS</p>
+                    <p class="text-5xl font-bold mt-2 tracking-tight text-gray-800 dark:text-white">{{ enps_score }}</p>
+                    <p class="text-gray-400 text-xs mt-2">{{ total_responses }} responses</p>
+                </div>
+                <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center">
+                    <span class="text-3xl">{% if raw_enps_score > 0 %}😃{% elif raw_enps_score < 0 %}😔{% else %}😐{% endif %}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Promoters Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-3xl font-bold text-green-600 dark:text-green-400">{{ promoters }}</span>
+                </div>
+                <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Promoters</p>
+                <div class="mt-3">
+                    <div class="h-3 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                        <div class="h-full bg-green-500 rounded-full" style="width: {{ promoters_pct }}%"></div>
+                    </div>
+                    <div class="flex justify-between text-xs mt-1">
+                        <span class="text-green-600 dark:text-green-400">{{ promoters_pct }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Passives Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                        </svg>
+                    </div>
+                    <span class="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{{ passives }}</span>
+                </div>
+                <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Passives</p>
+                <div class="mt-3">
+                    <div class="h-3 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                        <div class="h-full bg-yellow-500 rounded-full" style="width: {{ passives_pct }}%"></div>
+                    </div>
+                    <div class="flex justify-between text-xs mt-1">
+                        <span class="text-yellow-600 dark:text-yellow-400">{{ passives_pct }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detractors Card -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-3xl font-bold text-red-600 dark:text-red-400">{{ detractors }}</span>
+                </div>
+                <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Detractors</p>
+                <div class="mt-3">
+                    <div class="h-3 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                        <div class="h-full bg-red-500 rounded-full" style="width: {{ detractors_pct }}%"></div>
+                    </div>
+                    <div class="flex justify-between text-xs mt-1">
+                        <span class="text-red-600 dark:text-red-400">{{ detractors_pct }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% elif main_question_type == 'rating_5' %}
+    <!-- 5-Star Rating Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 transform hover:scale-[1.02] hover:shadow-xl transition-all duration-300">
+            <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Average Rating</p>
+            <div class="flex items-baseline gap-2 mt-2">
+                <p class="text-5xl font-bold tracking-tight text-gray-800 dark:text-white">{{ avg_score|floatformat:1 }}</p>
+                <p class="text-2xl text-gray-400">/5</p>
+            </div>
+            <div class="mt-2 text-yellow-500">
+                {% if avg_score >= 4.5 %}⭐⭐⭐⭐⭐
+                {% elif avg_score >= 3.5 %}⭐⭐⭐⭐
+                {% elif avg_score >= 2.5 %}⭐⭐⭐
+                {% elif avg_score >= 1.5 %}⭐⭐
+                {% else %}⭐{% endif %}
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-100 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">5-Star</p>
+            <p class="text-3xl font-bold text-yellow-500 mt-1">{% if main_rating_dist %}{{ main_rating_dist.0.count }}{% else %}0{% endif %}</p>
+            <p class="text-gray-500 text-xs mt-2">{% if main_rating_dist %}{{ main_rating_dist.0.pct }}{% else %}0{% endif %}%</p>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-100 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">4-Star</p>
+            <p class="text-3xl font-bold text-yellow-500 mt-1">{% if main_rating_dist %}{{ main_rating_dist.1.count }}{% else %}0{% endif %}</p>
+            <p class="text-gray-500 text-xs mt-2">{% if main_rating_dist %}{{ main_rating_dist.1.pct }}{% else %}0{% endif %}%</p>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-100 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">3-Star & Below</p>
+            <p class="text-3xl font-bold text-red-500 mt-1">{% if main_rating_dist %}{{ main_rating_dist.2.count|add:main_rating_dist.3.count|add:main_rating_dist.4.count }}{% else %}0{% endif %}</p>
+            <p class="text-gray-500 text-xs mt-2">Lower ratings</p>
+        </div>
+    </div>
+
+    {% elif main_question_type == 'rating_3' %}
+    <!-- 3-Star Rating Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+            <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Average Rating</p>
+            <div class="flex items-baseline gap-2 mt-2">
+                <p class="text-5xl font-bold text-gray-800 dark:text-white">{{ avg_score|floatformat:1 }}</p>
+                <p class="text-2xl text-gray-400">/3</p>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-100 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">3-Star</p>
+            <p class="text-3xl font-bold text-yellow-500 mt-1">{% if main_rating_dist %}{{ main_rating_dist.0.count }}{% else %}0{% endif %}</p>
+            <p class="text-gray-500 text-xs mt-2">{% if main_rating_dist %}{{ main_rating_dist.0.pct }}{% else %}0{% endif %}%</p>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-100 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">2-Star</p>
+            <p class="text-3xl font-bold text-yellow-500 mt-1">{% if main_rating_dist %}{{ main_rating_dist.1.count }}{% else %}0{% endif %}</p>
+            <p class="text-gray-500 text-xs mt-2">{% if main_rating_dist %}{{ main_rating_dist.1.pct }}{% else %}0{% endif %}%</p>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-100 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">1-Star</p>
+            <p class="text-3xl font-bold text-red-500 mt-1">{% if main_rating_dist %}{{ main_rating_dist.2.count }}{% else %}0{% endif %}</p>
+            <p class="text-gray-500 text-xs mt-2">{% if main_rating_dist %}{{ main_rating_dist.2.pct }}{% else %}0{% endif %}%</p>
+        </div>
+    </div>
+
+    {% elif main_question_type == 'yes_no' %}
+    <!-- Yes/No Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+            <p class="text-gray-500 dark:text-gray-400 text-sm font-medium">Yes Percentage</p>
+            <p class="text-5xl font-bold mt-2 text-gray-800 dark:text-white">{{ main_yes_pct }}%</p>
+            <div class="text-3xl mt-2">
+                {% if main_yes_pct >= 70 %}✅
+                {% elif main_yes_pct >= 50 %}👍
+                {% else %}👎{% endif %}
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-100 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">Yes</p>
+            <p class="text-3xl font-bold text-green-600 mt-1">{{ main_yes_count|default:0 }}</p>
+            <p class="text-gray-500 text-xs mt-2">{{ main_yes_pct }}%</p>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-100 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">No</p>
+            <p class="text-3xl font-bold text-red-500 mt-1">{{ main_no_count|default:0 }}</p>
+            <p class="text-gray-500 text-xs mt-2">{{ main_no_pct }}%</p>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-100 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">Total Responses</p>
+            <p class="text-3xl font-bold text-blue-600 mt-1">{{ total_responses }}</p>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Fallback Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">Total Responses</p>
+            <p class="text-4xl font-bold mt-2 text-gray-800 dark:text-white">{{ total_responses }}</p>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-100 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">Text Responses</p>
+            <p class="text-3xl font-bold text-purple-600 mt-1">{{ total_responses }}</p>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-100 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">Status</p>
+            <p class="text-3xl font-bold text-green-600 mt-1">{% if survey.is_active %}Active{% else %}Inactive{% endif %}</p>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 border border-gray-100 dark:border-gray-700">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">Questions</p>
+            <p class="text-3xl font-bold text-blue-600 mt-1">{{ questions|length }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Charts Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
+        <!-- Department Summary Chart (Multi-Metric) -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                    {% if main_question_type == 'nps' or main_question_type is None %}Department eNPS
+                    {% elif main_question_type == 'rating_5' %}Department Rating
+                    {% elif main_question_type == 'rating_3' %}Department Rating
+                    {% elif main_question_type == 'yes_no' %}Department Yes/No
+                    {% else %}Department Analysis{% endif %}
+                </h3>
+                <!-- Chart Type Toggle -->
+                <div class="inline-flex bg-gray-100 dark:bg-gray-700 rounded-xl p-1 gap-1">
+                    <button onclick="switchChartType('bar')" 
+                            id="btnBar" 
+                            class="px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 bg-white dark:bg-gray-600 shadow-sm text-gray-800 dark:text-white">
+                        Bar
+                    </button>
+                    <button onclick="switchChartType('doughnut')" 
+                            id="btnDoughnut"
+                            class="px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                        Doughnut
+                    </button>
+                </div>
+            </div>
+            <div class="p-5">
+                <div class="h-64 relative">
+                    <canvas id="departmentChart"></canvas>
+                    <div id="deptNoData" class="hidden absolute inset-0 flex items-center justify-center">
+                        <div class="text-center">
+                            <div class="w-16 h-16 mx-auto mb-3 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-gray-500 dark:text-gray-400 text-sm">No department data available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Score Distribution Chart -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                    {% if main_question_type == 'nps' or main_question_type is None %}Score Distribution
+                    {% elif main_question_type == 'rating_5' or main_question_type == 'rating_3' %}Star Rating Distribution
+                    {% elif main_question_type == 'yes_no' %}Yes/No Distribution
+                    {% else %}Response Distribution{% endif %}
+                </h3>
+            </div>
+            <div class="p-5">
+                {% if total_responses > 0 %}
+                <div class="h-64">
+                    <canvas id="scoreDistChart"></canvas>
+                </div>
+                {% else %}
+                <div class="h-64 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-3 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm">No responses yet</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Department Summary Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
+        <!-- Department Summary - Respondents vs Expected -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Department Summary</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Respondents vs Expected</p>
+            </div>
+            <div class="p-5">
+                {% if department_stats %}
+                <div class="h-64">
+                    <canvas id="deptSummaryChart"></canvas>
+                </div>
+                {% else %}
+                <div class="h-64 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-3 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm">No department data available</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Department Response Rate & Satisfaction -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Response Rate & Satisfaction</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">By department</p>
+            </div>
+            <div class="p-5">
+                {% if department_stats %}
+                <div class="h-64">
+                    <canvas id="deptResponseChart"></canvas>
+                </div>
+                {% else %}
+                <div class="h-64 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="w-16 h-16 mx-auto mb-3 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500 dark:text-gray-400 text-sm">No department data available</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Combined Average Gauge Chart -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden mb-6">
+        <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Combined Average</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Overall satisfaction score</p>
+        </div>
+        <div class="p-5">
+            {% if combined_avg is not None %}
+            <div class="h-64 relative flex items-center justify-center">
+                <canvas id="combinedAvgChart"></canvas>
+                <!-- Center text overlay -->
+                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span class="text-4xl font-bold text-gray-800 dark:text-white">{{ combined_avg }}</span>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">out of 10</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="h-64 flex items-center justify-center">
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-3 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm">No data available</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Question Analysis Section -->
+    {% if question_analytics %}
+    <div class="mb-6">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-1 h-6 bg-gradient-to-b from-purple-500 to-blue-500 rounded-full"></div>
+            <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Question Analysis</h2>
+        </div>
+
+        <div class="grid gap-6">
+            {% for qa in question_analytics %}
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <!-- Question Header -->
+                <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700">
+                    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                                    {% if qa.question_type == 'nps' %}bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300
+                                    {% elif qa.question_type == 'rating_5' %}bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300
+                                    {% elif qa.question_type == 'rating_3' %}bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300
+                                    {% elif qa.question_type == 'text' %}bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300
+                                    {% elif qa.question_type == 'yes_no' %}bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300{% endif %}">
+                                    {% if qa.question_type == 'nps' %}NPS Score
+                                    {% elif qa.question_type == 'rating_5' %}5-Star Rating
+                                    {% elif qa.question_type == 'rating_3' %}3-Star Rating
+                                    {% elif qa.question_type == 'text' %}Text Answer
+                                    {% elif qa.question_type == 'yes_no' %}Yes/No{% endif %}
+                                </span>
+                                <span class="text-sm text-gray-500 dark:text-gray-400">
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                    {{ qa.total_responses }} responses
+                                </span>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mt-3">{{ qa.question_text }}</h3>
+                        </div>
+                        {% if qa.avg_score is not None %}
+                        <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/30 px-4 py-2 rounded-lg">
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Avg</span>
+                            <span class="text-lg font-semibold text-gray-700 dark:text-gray-200">
+                                {% if qa.question_type == 'nps' %}
+                                    {{ qa.avg_score|floatformat:1 }}/10
+                                {% elif qa.question_type == 'rating_5' %}
+                                    {{ qa.avg_score|floatformat:1 }}/5
+                                {% elif qa.question_type == 'rating_3' %}
+                                    {{ qa.avg_score|floatformat:1 }}/3
+                                {% endif %}
+                            </span>
+                            {% if qa.enps_score is not None %}
+                            <span class="text-sm font-medium px-2 py-0.5 rounded-lg
+                                {% if qa.enps_score > 0 %}bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400
+                                {% elif qa.enps_score < 0 %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400
+                                {% else %}bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300{% endif %}">
+                                {% if qa.enps_score > 0 %}+{% endif %}{{ qa.enps_score|floatformat:0 }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Distribution Charts -->
+                <div class="p-6">
+                    <!-- NPS Distribution -->
+                    {% if qa.question_type == 'nps' and qa.distribution %}
+                    <div class="space-y-3">
+                        <div class="flex flex-row items-end gap-1 bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4" style="height: 140px;">
+                            {% for count in qa.distribution %}
+                            <div class="flex-1 flex flex-col items-center justify-end h-full">
+                                <span class="text-xs font-semibold mb-1
+                                    {% if forloop.counter0 >= 9 %}text-green-600 dark:text-green-400
+                                    {% elif forloop.counter0 >= 7 %}text-yellow-600 dark:text-yellow-400
+                                    {% else %}text-red-600 dark:text-red-400{% endif %}">
+                                    {{ count }}
+                                </span>
+                                <div class="w-full rounded-t-md transition-all duration-300
+                                    {% if forloop.counter0 >= 9 %}bg-green-500
+                                    {% elif forloop.counter0 >= 7 %}bg-yellow-500
+                                    {% else %}bg-red-500{% endif %}"
+                                    style="height: {% widthratio count qa.total_responses 100 %}px; min-height: 4px;">
+                                </div>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ forloop.counter0 }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="flex justify-between text-xs font-medium">
+                            <span class="text-red-500">Detractor (0-6)</span>
+                            <span class="text-yellow-500">Passive (7-8)</span>
+                            <span class="text-green-500">Promoter (9-10)</span>
+                        </div>
+                    </div>
+
+                    <!-- 5-Star Rating Distribution -->
+                    {% elif qa.question_type == 'rating_5' and qa.distribution %}
+                    <div class="space-y-3">
+                        {% for item in qa.distribution %}
+                        {% if item.count is not None %}
+                            {% with count=item.count pct=item.pct|default:0 %}
+                            <div class="flex items-center gap-4">
+                                <span class="text-yellow-500 text-sm w-12 flex-shrink-0">
+                                    {% if forloop.counter == 1 %}★★★★★
+                                    {% elif forloop.counter == 2 %}★★★★☆
+                                    {% elif forloop.counter == 3 %}★★★☆☆
+                                    {% elif forloop.counter == 4 %}★★☆☆☆
+                                    {% else %}★☆☆☆☆{% endif %}
+                                </span>
+                                <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-yellow-500 h-full rounded-full" style="width: {{ pct }}%"></div>
+                                </div>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 w-12 text-right">{{ count }} ({{ pct }}%)</span>
+                            </div>
+                            {% endwith %}
+                        {% else %}
+                            {% with count=item %}
+                            <div class="flex items-center gap-4">
+                                <span class="text-yellow-500 text-sm w-12 flex-shrink-0">
+                                    {% if forloop.counter == 1 %}★★★★★
+                                    {% elif forloop.counter == 2 %}★★★★☆
+                                    {% elif forloop.counter == 3 %}★★★☆☆
+                                    {% elif forloop.counter == 4 %}★★☆☆☆
+                                    {% else %}★☆☆☆☆{% endif %}
+                                </span>
+                                <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-4 overflow-hidden">
+                                    {% if qa.total_responses %}
+                                    <div class="bg-yellow-500 h-full rounded-full" style="width: {% widthratio count qa.total_responses 100 %}%"></div>
+                                    {% endif %}
+                                </div>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 w-12 text-right">{{ count }}</span>
+                            </div>
+                            {% endwith %}
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <!-- 3-Star Rating Distribution -->
+                    {% elif qa.question_type == 'rating_3' and qa.distribution %}
+                    <div class="space-y-3">
+                        {% for item in qa.distribution %}
+                        {% if item.count is not None %}
+                            {% with count=item.count pct=item.pct|default:0 %}
+                            <div class="flex items-center gap-4">
+                                <span class="text-yellow-500 text-sm w-10 flex-shrink-0">
+                                    {% if forloop.counter == 1 %}★★★
+                                    {% elif forloop.counter == 2 %}★★☆
+                                    {% else %}★☆☆{% endif %}
+                                </span>
+                                <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-4 overflow-hidden">
+                                    <div class="bg-yellow-500 h-full rounded-full" style="width: {{ pct }}%"></div>
+                                </div>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 w-12 text-right">{{ count }} ({{ pct }}%)</span>
+                            </div>
+                            {% endwith %}
+                        {% else %}
+                            {% with count=item %}
+                            <div class="flex items-center gap-4">
+                                <span class="text-yellow-500 text-sm w-10 flex-shrink-0">
+                                    {% if forloop.counter == 1 %}★★★
+                                    {% elif forloop.counter == 2 %}★★☆
+                                    {% else %}★☆☆{% endif %}
+                                </span>
+                                <div class="flex-1 bg-gray-200 dark:bg-gray-600 rounded-full h-4 overflow-hidden">
+                                    {% if qa.total_responses %}
+                                    <div class="bg-yellow-500 h-full rounded-full" style="width: {% widthratio count qa.total_responses 100 %}%"></div>
+                                    {% endif %}
+                                </div>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 w-12 text-right">{{ count }}</span>
+                            </div>
+                            {% endwith %}
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <!-- Yes/No Distribution -->
+                    {% elif qa.question_type == 'yes_no' %}
+                    <div class="flex gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-semibold text-green-600 dark:text-green-400">Yes</span>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">{{ qa.yes_count }} ({{ qa.yes_pct }}%)</span>
+                            </div>
+                            <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-green-400 to-green-500 rounded-full transition-all duration-700" style="width: {{ qa.yes_pct }}%"></div>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-semibold text-red-600 dark:text-red-400">No</span>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">{{ qa.no_count }} ({{ qa.no_pct }}%)</span>
+                            </div>
+                            <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-red-400 to-red-500 rounded-full transition-all duration-700" style="width: {{ qa.no_pct }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Text Responses -->
+                    {% elif qa.question_type == 'text' and qa.text_responses %}
+                    <div>
+                        <p class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Sample Responses ({{ qa.text_responses|length }})</p>
+                        <div class="space-y-2 max-h-48 overflow-y-auto pr-2">
+                            {% for response in qa.text_responses %}
+                            <div class="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 text-sm text-gray-700 dark:text-gray-300 border border-gray-100 dark:border-gray-600">
+                                <svg class="w-4 h-4 inline mr-1 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+                                </svg>
+                                {{ response }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Department Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden mb-6">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-1 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Department Breakdown</h3>
+                <span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                    {{ department_stats|length }} departments
+                </span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Search Input -->
+                <input type="text" id="deptSearch" placeholder="Search..." 
+                       class="px-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:text-white placeholder-gray-400 w-32">
+                <!-- Export Button -->
+                <button onclick="exportTable()" 
+                        class="inline-flex items-center px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Export
+                </button>
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left" id="deptTable">
+                <thead class="text-xs text-gray-700 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-700/50">
+                    <tr>
+                        <th class="px-6 py-4 font-semibold">Department</th>
+                        <th class="px-6 py-4 font-semibold">Responses</th>
+                        {% if main_question_type == 'nps' or main_question_type is None %}
+                        <th class="px-6 py-4 font-semibold">Avg Score</th>
+                        <th class="px-6 py-4 font-semibold">eNPS</th>
+                        {% elif main_question_type == 'rating_5' or main_question_type == 'rating_3' %}
+                        <th class="px-6 py-4 font-semibold">Avg Rating</th>
+                        {% elif main_question_type == 'yes_no' %}
+                        <th class="px-6 py-4 font-semibold">Yes %</th>
+                        {% else %}
+                        <th class="px-6 py-4 font-semibold">Avg Score</th>
+                        <th class="px-6 py-4 font-semibold">eNPS</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dept in department_stats %}
+                    <tr class="dept-row bg-white dark:bg-gray-800 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                        <td class="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">{{ dept.department }}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                {{ dept.count }}
+                            </span>
+                        </td>
+                        {% if main_question_type == 'nps' or main_question_type is None %}
+                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300">{{ dept.avg_score|floatformat:1 }}</td>
+                        <td class="px-6 py-4">
+                            {% if dept.enps_score > 0 %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                +{{ dept.enps_score }}
+                            </span>
+                            {% elif dept.enps_score < 0 %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                                {{ dept.enps_score }}
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-600 dark:text-gray-300">
+                                0
+                            </span>
+                            {% endif %}
+                        </td>
+                        {% elif main_question_type == 'rating_5' %}
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-1">
+                                <span class="text-yellow-500">
+                                    {% if dept.avg_score >= 4.5 %}⭐⭐⭐⭐⭐
+                                    {% elif dept.avg_score >= 3.5 %}⭐⭐⭐⭐
+                                    {% elif dept.avg_score >= 2.5 %}⭐⭐⭐
+                                    {% elif dept.avg_score >= 1.5 %}⭐⭐
+                                    {% else %}⭐{% endif %}
+                                </span>
+                                <span class="text-gray-700 dark:text-gray-300">{{ dept.avg_score|floatformat:1 }}/5</span>
+                            </div>
+                        </td>
+                        {% elif main_question_type == 'rating_3' %}
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-1">
+                                <span class="text-yellow-500">
+                                    {% if dept.avg_score >= 2.5 %}⭐⭐⭐
+                                    {% elif dept.avg_score >= 1.5 %}⭐⭐
+                                    {% else %}⭐{% endif %}
+                                </span>
+                                <span class="text-gray-700 dark:text-gray-300">{{ dept.avg_score|floatformat:1 }}/3</span>
+                            </div>
+                        </td>
+                        {% elif main_question_type == 'yes_no' %}
+                        <td class="px-6 py-4">
+                            {% if dept.yes_pct is not None %}
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-full max-w-[60px]">
+                                    <div class="h-full {% if dept.yes_pct >= 70 %}bg-green-500{% elif dept.yes_pct >= 50 %}bg-yellow-500{% else %}bg-red-500{% endif %} rounded-full" style="width: {{ dept.yes_pct }}%"></div>
+                                </div>
+                                <span class="text-sm font-medium {% if dept.yes_pct >= 70 %}text-green-600{% elif dept.yes_pct >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                    {{ dept.yes_pct }}%
+                                </span>
+                            </div>
+                            {% else %}
+                            <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        {% else %}
+                        <td class="px-6 py-4 text-gray-700 dark:text-gray-300">{{ dept.avg_score|floatformat:1 }}</td>
+                        <td class="px-6 py-4">
+                            {% if dept.enps_score > 0 %}
+                            <span class="text-green-600 font-bold">+{{ dept.enps_score }}</span>
+                            {% elif dept.enps_score < 0 %}
+                            <span class="text-red-600 font-bold">{{ dept.enps_score }}</span>
+                            {% else %}
+                            <span class="text-gray-400">0</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 mb-4 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                    </svg>
+                                </div>
+                                <p class="text-gray-500 dark:text-gray-400">No department data available yet.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Flowbite Refresh Confirmation Modal -->
+<div id="refreshModal" tabindex="-1" aria-hidden="true" 
+     class="fixed top-0 left-0 right-0 z-50 hidden w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full">
+    <div class="relative w-full max-w-md max-h-full">
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl">
+            <div class="flex items-center justify-between p-5 border-b border-gray-100 dark:border-gray-700">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/40 dark:to-purple-800/30 rounded-xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100">Refresh Analytics</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Recalculate all metrics</p>
+                    </div>
+                </div>
+                <button type="button" 
+                        class="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" 
+                        data-modal-hide="refreshModal">
+                    <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <p class="text-gray-600 dark:text-gray-400 mb-6">
+                    This will recalculate all cached department metrics. The process may take a few moments. Continue?
+                </p>
+                <div class="flex gap-3 justify-end">
+                    <button data-modal-hide="refreshModal" 
+                            type="button" 
+                            class="px-5 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium">
+                        Cancel
+                    </button>
+                    <button onclick="refreshAnalytics()" 
+                            type="button" 
+                            class="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            id="refreshBtn">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Serialize context data as safe JSON #}
+{{ department_stats|json_script:"dept-data" }}
+{{ score_distribution|json_script:"score-dist-data" }}
+{{ main_yes_count|default:0|json_script:"yes-count-data" }}
+{{ main_no_count|default:0|json_script:"no-count-data" }}
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+<!-- Chart and Modal JavaScript -->
+<script>
+// Global chart references
+let deptChart = null;
+let currentChartType = 'bar';
+
+// Initialize charts on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initCharts();
+    initSearch();
+});
+
+function initCharts() {
+    renderDepartmentChart();
+    renderScoreDistributionChart();
+    renderDeptSummaryChart();
+    renderDeptResponseChart();
+    renderCombinedAvgChart();
+}
+
+// Search functionality
+function initSearch() {
+    const searchInput = document.getElementById('deptSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('.dept-row');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
+}
+
+// Switch chart type
+function switchChartType(type) {
+    currentChartType = type;
+    
+    // Update button styles
+    const btnBar = document.getElementById('btnBar');
+    const btnDoughnut = document.getElementById('btnDoughnut');
+    
+    const activeClass = 'px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 bg-white dark:bg-gray-600 shadow-sm text-gray-800 dark:text-white';
+    const inactiveClass = 'px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200';
+    
+    btnBar.className = type === 'bar' ? activeClass : inactiveClass;
+    btnDoughnut.className = type === 'doughnut' ? activeClass : inactiveClass;
+    
+    // Re-render chart
+    if (deptChart) {
+        deptChart.destroy();
+    }
+    renderDepartmentChart();
+}
+
+// Render Department Chart
+function renderDepartmentChart() {
+    const ctx = document.getElementById('departmentChart');
+    if (!ctx) return;
+    
+    let deptData = [];
+    try { deptData = JSON.parse(document.getElementById('dept-data').textContent) || []; } 
+    catch(e) { console.error('dept-data parse error:', e); }
+    
+    if (deptData.length === 0) {
+        document.getElementById('deptNoData').classList.remove('hidden');
+        return;
+    }
+    
+    document.getElementById('deptNoData').classList.add('hidden');
+    
+    const mainQType = '{{ main_question_type|default:"nps" }}';
+    let dataKey, yLabel;
+    
+    if (mainQType === 'rating_5' || mainQType === 'rating_3') {
+        dataKey = 'avg_score';
+        yLabel = 'Average Rating';
+    } else if (mainQType === 'yes_no') {
+        dataKey = 'yes_pct';
+        yLabel = 'Yes %';
+    } else {
+        dataKey = 'enps_score';
+        yLabel = 'eNPS Score';
+    }
+    
+    const labels = deptData.map(d => d.department);
+    const values = deptData.map(d => parseFloat(d[dataKey]) || 0);
+    
+    // Color function based on question type
+    const getColor = (val) => {
+        if (mainQType === 'yes_no') {
+            return val >= 70 ? '#22c55e' : val >= 50 ? '#eab308' : '#ef4444';
+        } else if (mainQType === 'rating_5') {
+            return val >= 4 ? '#22c55e' : val >= 3 ? '#eab308' : '#ef4444';
+        } else if (mainQType === 'rating_3') {
+            return val >= 2.5 ? '#22c55e' : val >= 1.5 ? '#eab308' : '#ef4444';
+        } else {
+            return val > 0 ? '#22c55e' : val < 0 ? '#ef4444' : '#eab308';
+        }
+    };
+    
+    const colors = values.map(getColor);
+    
+    const isDoughnut = currentChartType === 'doughnut';
+    
+    deptChart = new Chart(ctx, {
+        type: currentChartType,
+        data: {
+            labels: labels,
+            datasets: [{
+                label: yLabel,
+                data: values,
+                backgroundColor: isDoughnut ? colors : colors.map(c => c + '80'),
+                borderColor: colors,
+                borderWidth: 2,
+                borderRadius: isDoughnut ? 0 : 8,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { 
+                    display: isDoughnut,
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 }
+                }
+            },
+            scales: isDoughnut ? {} : {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: { font: { size: 11 } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 11 } }
+                }
+            }
+        }
+    });
+}
+
+// Render Score Distribution Chart
+function renderScoreDistributionChart() {
+    const ctx = document.getElementById('scoreDistChart');
+    if (!ctx) return;
+    
+    let scoreDist = [];
+    try { scoreDist = JSON.parse(document.getElementById('score-dist-data').textContent) || []; } 
+    catch(e) { console.error('score-dist-data parse error:', e); }
+    
+    const mainQType = '{{ main_question_type|default:"nps" }}';
+    let labels, colors, data;
+    
+    if (mainQType === 'rating_5') {
+        labels = ['5-Star', '4-Star', '3-Star', '2-Star', '1-Star'];
+        colors = ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444'];
+        data = scoreDist.map(d => d.count || 0);
+    } else if (mainQType === 'rating_3') {
+        labels = ['3-Star', '2-Star', '1-Star'];
+        colors = ['#22c55e', '#eab308', '#ef4444'];
+        data = scoreDist.map(d => d.count || 0);
+    } else if (mainQType === 'yes_no') {
+        labels = ['Yes', 'No'];
+        colors = ['#22c55e', '#ef4444'];
+        const yesCount = {{ main_yes_count|default:0 }};
+        const noCount = {{ main_no_count|default:0 }};
+        data = [yesCount, noCount];
+    } else {
+        labels = Array.from({length: 11}, (_, i) => i.toString());
+        colors = labels.map(i => i >= 9 ? '#22c55e' : i >= 7 ? '#eab308' : '#ef4444');
+        data = scoreDist;
+    }
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Responses',
+                data: data,
+                backgroundColor: colors.map(c => c + 'CC'),
+                borderColor: colors,
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: { font: { size: 11 } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 11 } }
+                }
+            }
+        }
+    });
+}
+
+// Render Department Summary Chart (Respondents vs Expected)
+function renderDeptSummaryChart() {
+    const ctx = document.getElementById('deptSummaryChart');
+    if (!ctx) return;
+    
+    let deptData = [];
+    try { deptData = JSON.parse(document.getElementById('dept-data').textContent) || []; }
+    catch(e) { console.error('dept-data parse error:', e); }
+    
+    if (deptData.length === 0) return;
+    
+    const labels = deptData.map(d => d.department);
+    const respondents = deptData.map(d => d.respondents || 0);
+    const expected = deptData.map(d => d.expected || 0);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Respondents',
+                    data: respondents,
+                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                    borderColor: '#3B82F6',
+                    borderWidth: 1,
+                    borderRadius: 6
+                },
+                {
+                    label: 'Expected',
+                    data: expected,
+                    backgroundColor: 'rgba(156, 163, 175, 0.5)',
+                    borderColor: '#9CA3AF',
+                    borderWidth: 1,
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'x', // Vertical bar chart
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: { size: 11 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: { font: { size: 11 } }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { font: { size: 10 } }
+                }
+            }
+        }
+    });
+}
+
+// Render Department Response Rate & Satisfaction Chart
+function renderDeptResponseChart() {
+    const ctx = document.getElementById('deptResponseChart');
+    if (!ctx) return;
+    
+    let deptData = [];
+    try { deptData = JSON.parse(document.getElementById('dept-data').textContent) || []; }
+    catch(e) { console.error('dept-data parse error:', e); }
+    
+    if (deptData.length === 0) return;
+    
+    const labels = deptData.map(d => d.department);
+    const responseRate = deptData.map(d => d.response_rate || 0);
+    const satisfaction = deptData.map(d => d.satisfaction || 0);
+    
+    // Color for response rate (green if >= 75%, yellow if >= 50%, red otherwise)
+    const responseRateColors = responseRate.map(r => 
+        r >= 75 ? 'rgba(34, 197, 94, 0.8)' : r >= 50 ? 'rgba(234, 179, 8, 0.8)' : 'rgba(239, 68, 68, 0.8)'
+    );
+    
+    // Color for satisfaction (green if >= 7, yellow if >= 5, red otherwise)
+    const satisfactionColors = satisfaction.map(s => 
+        s >= 7 ? 'rgba(34, 197, 94, 0.8)' : s >= 5 ? 'rgba(234, 179, 8, 0.8)' : 'rgba(239, 68, 68, 0.8)'
+    );
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Response Rate (%)',
+                    data: responseRate,
+                    backgroundColor: responseRateColors,
+                    borderColor: responseRate.map(r => 
+                        r >= 75 ? '#22c55e' : r >= 50 ? '#eab308' : '#ef4444'
+                    ),
+                    borderWidth: 1,
+                    borderRadius: 6
+                },
+                {
+                    label: 'Satisfaction',
+                    data: satisfaction,
+                    backgroundColor: satisfactionColors,
+                    borderColor: satisfaction.map(s => 
+                        s >= 7 ? '#22c55e' : s >= 5 ? '#eab308' : '#ef4444'
+                    ),
+                    borderWidth: 1,
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'x', // Vertical bar chart
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: { size: 11 }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: { font: { size: 11 } }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { font: { size: 10 } }
+                }
+            }
+        }
+    });
+}
+
+// Render Combined Average Gauge Chart
+function renderCombinedAvgChart() {
+    const ctx = document.getElementById('combinedAvgChart');
+    if (!ctx) return;
+    
+    // Use combined_avg from context (added from view)
+    const combinedAvg = {{ combined_avg|default:0 }};
+    if (!combinedAvg && combinedAvg !== 0) return;
+    
+    // Determine color based on score
+    let scoreColor;
+    if (combinedAvg >= 7) {
+        scoreColor = '#22c55e'; // green
+    } else if (combinedAvg >= 5) {
+        scoreColor = '#eab308'; // yellow
+    } else {
+        scoreColor = '#ef4444'; // red
+    }
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Score', 'Remaining'],
+            datasets: [{
+                data: [combinedAvg, 10 - combinedAvg],
+                backgroundColor: [
+                    scoreColor,
+                    'rgba(229, 231, 235, 0.3)'
+                ],
+                borderWidth: 0,
+                circumference: 360,
+                rotation: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            }
+        }
+    });
+}
+
+// Refresh analytics
+async function refreshAnalytics() {
+    const btn = document.getElementById('refreshBtn');
+    if (!btn) return;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Refreshing...';
+    
+    try {
+        const response = await fetch('{% url "human_resource:enps_refresh_analytics" survey.id %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert('Failed to refresh analytics');
+            btn.disabled = false;
+            btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><span>Refresh</span>';
+        }
+    } catch(e) {
+        console.error('Refresh error:', e);
+        alert('Error refreshing analytics');
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><span>Refresh</span>';
+    }
+}
+
+// Export table to CSV
+function exportTable() {
+    const table = document.getElementById('deptTable');
+    if (!table) return;
+    
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    for (let row of rows) {
+        let cols = row.querySelectorAll('td, th');
+        let rowData = [];
+        for (let col of cols) {
+            rowData.push('"' + col.innerText.replace(/"/g, '""') + '"');
+        }
+        csv.push(rowData.join(','));
+    }
+    
+    const csvFile = new Blob([csv.join('\n')], {type: 'text/csv'});
+    const downloadLink = document.createElement('a');
+    downloadLink.download = 'department_analytics.csv';
+    downloadLink.href = window.URL.createObjectURL(csvFile);
+    downloadLink.style.display = 'none';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+}
+</script>
+
+<!-- Additional CSS -->
+<style>
+/* Smooth transitions */
+.transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.bg-white.dark\:bg-gray-800.rounded-2xl {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+.grid.grid-cols-1.gap-6 > div:nth-child(1) { animation-delay: 0.05s; }
+.grid.grid-cols-1.gap-6 > div:nth-child(2) { animation-delay: 0.1s; }
+.grid.grid-cols-1.gap-6 > div:nth-child(3) { animation-delay: 0.15s; }
+</style>
+{% endblock %}

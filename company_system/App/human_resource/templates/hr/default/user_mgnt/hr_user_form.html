@@ -1,0 +1,645 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ action }} Employee{% endblock %}
+
+{% block extra_css %}
+<style>
+    [x-cloak] { display: none !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'hr/dashboard/hr_sidebar.html' %}
+
+<main id="mainContent" class="md:ml-64 pt-20 min-h-screen p-4 sm:p-6 bg-gray-50">
+
+  <div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-800">{{ action }} Employee</h2>
+        <p class="text-sm text-gray-500 mt-1">Fill in the employee information below</p>
+      </div>
+      <a href="{% url 'human_resource:hr_user_mgnt' %}" 
+         class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        Cancel
+      </a>
+    </div>
+
+    <form method="post" novalidate class="space-y-6" id="employeeForm">
+      {% csrf_token %}
+
+      <!-- PERSONAL INFORMATION -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800">Personal Information</h3>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.first_name.label }}</label>
+              {{ form.first_name }}
+              {% if form.first_name.errors %}
+                <p class="text-red-500 text-xs">{{ form.first_name.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.middle_name.label }}</label>
+              {{ form.middle_name }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.last_name.label }}</label>
+              {{ form.last_name }}
+              {% if form.last_name.errors %}
+                <p class="text-red-500 text-xs">{{ form.last_name.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.birthdate.label }}</label>
+              {{ form.birthdate }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.age.label }}</label>
+              {{ form.age }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.sex.label }}</label>
+              {{ form.sex }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EMPLOYMENT DETAILS -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 bg-green-50 border-b border-green-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800">Employment Details</h3>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 required">{{ form.start_date.label }}</label>
+              {{ form.start_date }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 required">{{ form.tenure_active.label }}</label>
+              {{ form.tenure_active }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.employee_number.label }}</label>
+              {% if action == 'Edit' %}
+                <input type="text" id="id_employee_number" value="{{ staff.employee_number|default:'' }}" readonly class="bg-gray-100 cursor-not-allowed" style="background-color: #f3f4f6; cursor: not-allowed;">
+                <input type="hidden" name="employee_number" value="{{ staff.employee_number|default:'' }}">
+              {% else %}
+                <div class="flex gap-2">
+                  <div class="flex-1">
+                    <input type="text" id="id_employee_number" name="employee_number" class="input border rounded px-2 py-1 w-full" placeholder="Enter employee number">
+                  </div>
+                  <button type="button" id="generateEmpBtn" class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors">
+                    Generate
+                  </button>
+                </div>
+              {% endif %}
+              <p id="emp-duplicate-warning" class="text-sm hidden"></p>
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.status.label }}</label>
+              {{ form.status }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.positionlink.label }}</label>
+              {{ form.positionlink }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.type.label }}</label>
+              {{ form.type }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.departmentlink.label }}</label>
+              {{ form.departmentlink }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.rank.label }}</label>
+              {{ form.rank }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.shift.label }}</label>
+              {{ form.shift }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTACT INFORMATION -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 bg-purple-50 border-b border-purple-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800">Contact Information</h3>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 required">{{ form.email_address.label }}</label>
+              {{ form.email_address }}
+              {% if form.email_address.errors %}
+                <p class="text-red-500 text-xs">{{ form.email_address.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 required">{{ form.phone_number.label }}</label>
+              {{ form.phone_number }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 required">{{ form.emergency_contact_name.label }}</label>
+              {{ form.emergency_contact_name }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 required">{{ form.emergency_contact_number.label }}</label>
+              {{ form.emergency_contact_number }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADDRESS INFORMATION -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 bg-teal-50 border-b border-teal-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-teal-500 rounded-xl flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-800">Address Information</h3>
+          </div>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="space-y-2 md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.street_address.label }}</label>
+              {{ form.street_address }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.city.label }}</label>
+              {{ form.city }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.province.label }}</label>
+              {{ form.province }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.postal_code.label }}</label>
+              {{ form.postal_code }}
+            </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">{{ form.country.label }}</label>
+              {{ form.country }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="flex flex-wrap gap-4 justify-end">
+        <a href="{% url 'human_resource:hr_user_mgnt' %}" 
+           class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">
+          Cancel
+        </a>
+        <button id="saveBtn" type="submit" 
+                class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5">
+          <span class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            {{ action }} Employee
+          </span>
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+
+</main>
+
+<!-- Floating Save Button - Outside main to ensure it's fixed to viewport -->
+<div style="position: fixed; bottom: 24px; right: 24px; z-index: 9999;">
+    <button type="submit" form="employeeForm" 
+            style="background-color: #2563eb; color: white; border-radius: 9999px; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border: none; cursor: pointer; transition: all 0.2s;"
+            onmouseover="this.style.backgroundColor='#1d4ed8'; this.style.transform='scale(1.1)'"
+            onmouseout="this.style.backgroundColor='#2563eb'; this.style.transform='scale(1)'"
+            title="Save Employee">
+        <svg xmlns="http://www.w3.org/2000/svg" style="width: 24px; height: 24px;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+    </button>
+</div>
+
+<style>
+  /* Form field styling */
+  input[type="text"],
+  input[type="email"],
+  input[type="date"],
+  input[type="number"],
+  input[type="tel"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    background-color: #f9fafb;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+  }
+  
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background-color: white;
+  }
+  
+  input:hover,
+  select:hover {
+    border-color: #d1d5db;
+  }
+  
+  input.error,
+  select.error {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+  }
+  
+  input::placeholder,
+  textarea::placeholder {
+    color: #9ca3af;
+  }
+  
+  /* Label styling */
+  label {
+    font-weight: 500;
+  }
+  
+  /* Required indicator */
+  .required::after {
+    content: " *";
+    color: #ef4444;
+  }
+  
+  /* Toast notification styles */
+  .message-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 300px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .message-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  
+  .message-toast.success { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 1px solid #22c55e; color: #14532d; }
+  .message-toast.error { background: linear-gradient(135deg, #fef2f2, #fee2e2); border: 1px solid #ef4444; color: #7f1d1d; }
+  .message-toast.warning { background: linear-gradient(135deg, #fefce8, #fef9c3); border: 1px solid #eab308; color: #713f12; }
+  .message-toast.info { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #3b82f6; color: #1e3a8a; }
+</style>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Session refresh - ping server to keep session alive while filling form
+(function() {
+    // Refresh session every 5 minutes (less than 30 min timeout)
+    const SESSION_REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    
+    function refreshSession() {
+        // Get CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+        fetch('/session_refresh/', {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        }).then(function(response) {
+            console.log('Session refreshed', response.status);
+        }).catch(function() {
+            // Ignore errors - session might expire
+        });
+    }
+    
+    // Refresh session on page load
+    refreshSession();
+    
+    // Set up periodic refresh
+    setInterval(refreshSession, SESSION_REFRESH_INTERVAL);
+    
+    // Also refresh on any form input (mouse move, keypress, click)
+    const form = document.querySelector('form');
+    if (form) {
+        let inputTimeout;
+        function refreshOnActivity() {
+            clearTimeout(inputTimeout);
+            inputTimeout = setTimeout(refreshSession, 60000); // Refresh after 1 min of activity
+        }
+        form.addEventListener('input', refreshOnActivity);
+        form.addEventListener('mousemove', refreshOnActivity);
+        form.addEventListener('click', refreshOnActivity);
+    }
+})();
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const startDateInput = document.getElementById("id_start_date");
+    const tenureInput = document.getElementById("id_tenure_active");
+    const birthInput = document.getElementById("id_birthdate");
+    const ageInput = document.getElementById("id_age");
+    const empInput = document.getElementById("id_employee_number");
+    const saveBtn = document.getElementById("saveBtn");
+    const form = document.querySelector('form');
+
+    // Make these fields REQUIRED
+    const requiredFields = ['id_start_date', 'id_tenure_active', 'id_email_address', 'id_phone_number', 'id_emergency_contact_name', 'id_emergency_contact_number'];
+    requiredFields.forEach(function(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.setAttribute('required', 'required');
+        }
+    });
+
+    // Form validation styling
+    form.addEventListener('submit', (e) => {
+        const requiredFields = form.querySelectorAll('[required]');
+        let valid = true;
+        let firstError = null;
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                valid = false;
+                field.classList.add('error');
+                if (!firstError) firstError = field;
+            } else {
+                field.classList.remove('error');
+            }
+        });
+        if (!valid) {
+            e.preventDefault();
+            // Show toast warning
+            showToast('Please fill in all required fields!', 'warning');
+            // Scroll to first error
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        } else {
+            // Show loading toast
+            showToast('Saving employee...', 'info');
+        }
+    });
+
+    // Toast notification function
+    function showToast(message, type = 'info') {
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `message-toast ${type} show`;
+        toast.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px; padding: 15px;">
+                <span style="font-size: 24px;">
+                    ${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}
+                </span>
+                <span style="font-size: 14px; font-weight: 500;">${message}</span>
+            </div>
+        `;
+        
+        // Add to body
+        document.body.appendChild(toast);
+        
+        // Remove after 4 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
+    }
+
+    // Add error class on blur
+    form.querySelectorAll('input, select, textarea').forEach(field => {
+        field.addEventListener('blur', function() {
+            if (this.hasAttribute('required') && !this.value.trim()) {
+                this.classList.add('error');
+            } else {
+                this.classList.remove('error');
+            }
+        });
+        
+        field.addEventListener('input', function() {
+            this.classList.remove('error');
+        });
+    });
+
+    // --------------------------------------------------
+    // TENURE CALCULATION
+    // --------------------------------------------------
+    function calculateFullTenure() {
+        if (!startDateInput || !startDateInput.value) return;
+        
+        const start = new Date(startDateInput.value);
+        const today = new Date();
+        
+        // Validate the date
+        if (isNaN(start.getTime())) return;
+        
+        let years = today.getFullYear() - start.getFullYear();
+        let months = today.getMonth() - start.getMonth();
+        let days = today.getDate() - start.getDate();
+        
+        // Adjust for negative days
+        if (days < 0) {
+            months--;
+            // Get days in previous month
+            const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+            days += prevMonth.getDate();
+        }
+        
+        // Adjust for negative months
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+        
+        // Prevent negative values
+        if (years < 0) years = 0;
+        if (months < 0) months = 0;
+        if (days < 0) days = 0;
+        
+        tenureInput.value = years + " years, " + months + " months, " + days + " days";
+    }
+
+    if (startDateInput) {
+        startDateInput.addEventListener("change", () => {
+            calculateFullTenure();
+            // Removed: generateEmployeeNumber() - Only Master dashboard can generate employee numbers
+        });
+    }
+
+    // --------------------------------------------------
+    // AGE CALCULATION
+    // --------------------------------------------------
+    function calculateAge() {
+        if (!birthInput.value) return;
+        const birth = new Date(birthInput.value);
+        const today = new Date();
+        let age = today.getFullYear() - birth.getFullYear();
+        const m = today.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+        ageInput.value = age >= 0 ? age : 0;
+    }
+
+    if (birthInput) {
+        birthInput.addEventListener("change", calculateAge);
+    }
+
+    // --------------------------------------------------
+    // EMPLOYEE NUMBER GENERATION + DUPLICATE CHECK
+    // --------------------------------------------------
+    // Only generate employee number when CREATING a new employee (not editing)
+    const staffId = "{{ staff.id|default:'' }}";
+    const isEditing = staffId && staffId.length > 0;
+    const originalEmpNo = "{{ staff.employee_number|default:'' }}";
+    
+    // Generate button click handler
+    const generateBtn = document.getElementById('generateEmpBtn');
+    if (generateBtn) {
+        generateBtn.addEventListener('click', function() {
+            generateNewEmployeeNumber();
+        });
+    }
+    
+    // Function to generate employee number
+    function generateNewEmployeeNumber() {
+        const year = new Date().getFullYear().toString();
+        const month = ("0" + (new Date().getMonth() + 1)).slice(-2);
+        const randomId = Math.floor(1000 + Math.random() * 9000);
+        const empNo = `EMP-${year}${month}-${randomId}`;
+
+        if (empInput) {
+            empInput.value = empNo;
+        }
+
+        const warning = document.getElementById("emp-duplicate-warning");
+        if (warning) {
+            warning.textContent = "Employee number generated ✓";
+            warning.classList.remove("hidden", "text-red-600");
+            warning.classList.add("text-green-600", "block");
+        }
+    }
+    
+    // IMMEDIATELY restore and lock employee number when editing (runs before anything else)
+    if (isEditing && empInput && originalEmpNo) {
+        empInput.value = originalEmpNo;
+        empInput.setAttribute('readonly', 'readonly');
+        empInput.style.backgroundColor = '#f3f4f6';
+        empInput.style.cursor = 'not-allowed';
+    }
+    
+    async function generateEmployeeNumber() {
+        // Don't auto-generate when editing existing employee
+        if (isEditing || !startDateInput || !startDateInput.value) return;
+
+        // For new employees: always generate new employee number with random digits
+        const start = new Date(startDateInput.value);
+        const year = start.getFullYear().toString();
+        const month = ("0" + (start.getMonth() + 1)).slice(-2);
+        const randomId = Math.floor(1000 + Math.random() * 9000);
+        const empNo = `EMP-${year}${month}-${randomId}`;
+
+        empInput.value = empNo;
+
+        const warning = document.getElementById("emp-duplicate-warning");
+        if (warning) {
+            warning.textContent = "Employee number auto-generated ✓";
+            warning.classList.remove("hidden", "text-red-600");
+            warning.classList.add("text-green-600", "block");
+        }
+    }
+
+    // Only run employee number check on blur when editing (not auto-generate)
+    if (empInput) {
+        empInput.addEventListener("blur", async () => {
+            const empNo = empInput.value.trim();
+            if (!empNo) return;
+            
+            saveBtn.disabled = true;
+            saveBtn.classList.add('opacity-50');
+
+            try {
+                const response = await fetch(`/hr_dashboard/check-emp-number/?emp_no=${empNo}&staff_id=${staffId}`);
+                const data = await response.json();
+                const warning = document.getElementById("emp-duplicate-warning");
+
+                if (warning) {
+                    if (data.exists) {
+                        warning.textContent = "This employee number already exists!";
+                        warning.classList.remove("hidden", "text-green-600");
+                        warning.classList.add("text-red-600", "block");
+                        saveBtn.disabled = true;
+                    } else {
+                        warning.textContent = "Employee number is available ✓";
+                        warning.classList.remove("hidden", "text-red-600");
+                        warning.classList.add("text-green-600", "block");
+                        saveBtn.disabled = false;
+                    }
+                }
+            } catch (e) {
+                // Allow save if API fails
+                saveBtn.disabled = false;
+            }
+            
+            saveBtn.classList.remove('opacity-50');
+        });
+    }
+    
+});
+</script>
+{% endblock %}

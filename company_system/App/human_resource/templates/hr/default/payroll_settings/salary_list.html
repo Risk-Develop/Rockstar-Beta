@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Employee Salary Settings{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">Employee Salary Settings</h1>
+        <a href="{% url 'human_resource:hr_dashboard' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <div class="flex justify-end p-4 border-b">
+            <a href="{% url 'human_resource:employee_salary_add' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                + Add Salary Setting
+            </a>
+        </div>
+
+        <table class="w-full border-collapse">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="border p-3 text-left">Employee</th>
+                    <th class="border p-3 text-right">Monthly Salary</th>
+                    <th class="border p-3 text-right">Per Cutoff</th>
+                    <th class="border p-3 text-left">Tier</th>
+                    <th class="border p-3 text-left">Work Schedule</th>
+                    <th class="border p-3 text-left">Effective From</th>
+                    <th class="border p-3 text-left">Effective To</th>
+                    <th class="border p-3 text-center">Status</th>
+                    <th class="border p-3 text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for salary in salaries %}
+                <tr class="hover:bg-gray-50">
+                    <td class="border p-3">
+                        <div class="font-medium">{{ salary.employee.first_name }} {{ salary.employee.last_name }}</div>
+                        <div class="text-xs text-gray-400">ID: {{ salary.employee.employee_number }}</div>
+                    </td>
+                    <td class="border p-3 text-right font-medium">₱{{ salary.base_salary_monthly|floatformat:2 }}</td>
+                    <td class="border p-3 text-right">₱{{ salary.salary_per_cutoff|floatformat:2 }}</td>
+                    <td class="border p-3">{{ salary.tier.tier_name|default:"-" }}</td>
+                    <td class="border p-3">{{ salary.get_work_schedule_display|default:"-" }}</td>
+
+                    <td class="border p-3">{{ salary.effective_start_date }}</td>
+                    <td class="border p-3">{{ salary.effective_end_date|default:"Present" }}</td>
+                    <td class="border p-3 text-center">
+                        {% if salary.is_active %}
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Active</span>
+                        {% else %}
+                        <span class="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td class="border p-3 text-center">
+                        <a href="{% url 'human_resource:employee_salary_edit' salary.pk %}" class="text-blue-600 hover:text-blue-800 font-medium">
+                            Edit
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="border p-8 text-center text-gray-500">
+                        No salary settings found. Add salary settings to get started.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

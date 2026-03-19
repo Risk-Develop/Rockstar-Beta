@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Add{% endif %} Employee Salary Setting{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">{% if form.instance.pk %}Edit{% else %}Add{% endif %} Employee Salary Setting</h1>
+        <a href="{% url 'human_resource:salary_setting_list' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+            &larr; Back to List
+        </a>
+    </div>
+
+    <!-- Success/Error Messages -->
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="p-4 rounded mb-2 {% if message.tags == 'error' %}bg-red-100 text-red-700 border border-red-400{% elif message.tags == 'success' %}bg-green-100 text-green-700 border border-green-400{% else %}bg-blue-100 text-blue-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Form Errors Alert -->
+    {% if form.errors or form.non_field_errors %}
+    <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+        <div class="font-bold mb-2">⚠️ Please correct the following errors:</div>
+        {% for error in form.non_field_errors %}
+        <p class="mb-1">• {{ error }}</p>
+        {% endfor %}
+        {% for field in form %}
+            {% for error in field.errors %}
+            <p class="mb-1">• {{ field.label }}: {{ error }}</p>
+            {% endfor %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <form method="post" class="p-6">
+            {% csrf_token %}
+            
+            <!-- Current Status Indicator -->
+            {% if form.instance.pk %}
+            <div class="mb-4 p-3 rounded-lg {% if form.instance.is_active %}bg-green-50 border border-green-200{% else %}bg-gray-50 border border-gray-200{% endif %}">
+                <span class="font-medium {% if form.instance.is_active %}text-green-700{% else %}text-gray-700{% endif %}">
+                    Current Status: 
+                    {% if form.instance.is_active %}
+                    ✅ Active
+                    {% else %}
+                    ❌ Inactive
+                    {% endif %}
+                </span>
+                <span class="text-gray-500 ml-2">(Click checkbox to change status)</span>
+            </div>
+            {% endif %}
+            
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Employee {% if not form.instance.pk %}*{% endif %}</label>
+                    
+                    {% if is_edit and form.instance.pk %}
+                    <!-- Read-only display for edit mode -->
+                    <div class="w-full p-2 border rounded bg-gray-100 text-gray-700">
+                        {{ form.instance.employee.get_full_name|default:form.instance.employee }}
+                        {% if form.instance.employee.position %}
+                        ({{ form.instance.employee.position }})
+                        {% endif %}
+                    </div>
+                    <!-- Hidden field to submit employee value -->
+                    <input type="hidden" name="employee" value="{{ form.instance.employee.pk }}">
+                    {% else %}
+                    <!-- Normal dropdown for add mode -->
+                    {{ form.employee }}
+                    {% endif %}
+                    
+                    {% if form.employee.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.employee.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Monthly Salary *</label>
+                    {{ form.base_salary_monthly }}
+                    {% if form.base_salary_monthly.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.base_salary_monthly.errors }}</p>
+                    {% endif %}
+                    <p class="text-xs text-gray-500 mt-1">Salary per cutoff will be computed automatically (monthly / 2)</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Work Schedule *</label>
+                    {{ form.work_schedule }}
+                    {% if form.work_schedule.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.work_schedule.errors }}</p>
+                    {% endif %}
+                    <p class="text-xs text-gray-500 mt-1">
+                        Determines hourly rate basis. 
+                        <strong>Flextime</strong>: salary-based only, OT/NSD/Holiday computed as ₱0.
+                    </p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tier</label>
+                    {{ form.tier }}
+                    {% if form.tier.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.tier.errors }}</p>
+                    {% endif %}
+                    <p class="text-xs text-gray-500 mt-1">Performance tier for future KPI integration</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Effective Start Date *</label>
+                    {{ form.effective_start_date }}
+                    {% if form.effective_start_date.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.effective_start_date.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Effective End Date</label>
+                    {{ form.effective_end_date }}
+                    {% if form.effective_end_date.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.effective_end_date.errors }}</p>
+                    {% endif %}
+                    <p class="text-xs text-gray-500 mt-1">Leave blank for no end date (current salary)</p>
+                </div>
+                
+                <div class="col-span-2">
+                    <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                        {{ form.is_active }}
+                        <label class="ml-2 text-sm font-medium text-gray-700">Active</label>
+                        <span class="text-gray-500 text-xs ml-2">(Unchecking will deactivate this salary setting)</span>
+                    </div>
+                    {% if form.is_active.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.is_active.errors }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.notes.errors }}</p>
+                    {% endif %}
+                    <p class="text-xs text-gray-500 mt-1">Required: Provide a reason for this salary setting (e.g., "Initial setup", "Salary increase effective Jan 2026", "Promotion to Senior level")</p>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 class="font-bold text-blue-700 mb-2">Important Notes:</h3>
+                <ul class="list-disc list-inside text-sm text-blue-600 space-y-1">
+                    <li>Salary changes MUST create a new record (do not overwrite old records)</li>
+                    <li>Only ONE active salary record per employee per date is allowed</li>
+                    <li>Payroll preview will pull salary based on payroll date</li>
+                    <li>Old salary records are preserved for audit history</li>
+                </ul>
+            </div>
+
+            <div class="mt-6 flex justify-end gap-4">
+                <a href="{% url 'human_resource:salary_setting_list' %}" class="bg-gray-500 text-white px-6 py-2 rounded hover:bg-gray-600 font-medium">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-medium">
+                    {% if form.instance.pk %}Update{% else %}Create{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const scheduleField = document.querySelector('[name="work_schedule"]');
+    const note = document.createElement('p');
+    note.className = 'text-xs text-amber-600 mt-1 hidden';
+    note.id = 'flextime-note';
+    note.textContent = '⚠️ Flextime: OT, NSD, and Holiday pay will be computed as ₱0.00 (salary-only basis).';
+    scheduleField.parentNode.appendChild(note);
+
+    function toggleFlextimeNote() {
+        document.getElementById('flextime-note').classList.toggle('hidden', scheduleField.value !== 'FLEX');
+    }
+
+    scheduleField.addEventListener('change', toggleFlextimeNote);
+    toggleFlextimeNote(); // run on load in case editing existing record
+});
+</script>
+
+{% endblock %}

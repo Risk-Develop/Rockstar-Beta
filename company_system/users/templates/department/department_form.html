@@ -1,7 +1,0 @@
-<form method="POST">
-  {% csrf_token %} {{ form.as_p }}
-  <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">
-    {{ action }}
-  </button>
-  <a href="{% url 'department_list' %}" class="px-4 py-2 border rounded">Cancel</a>
-</form>

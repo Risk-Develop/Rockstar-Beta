@@ -1,0 +1,110 @@
+<div class="overflow-x-auto">
+  <table class="min-w-full border rounded-lg shadow-sm dark:border-gray-700">
+      <thead class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 uppercase text-sm">
+          <tr>
+              <th class="p-3 text-left">Name</th>
+              <th class="p-3 text-left">Email</th>
+              <th class="p-3 text-left">Role</th>
+              <th class="p-3 text-left">Actions</th>
+          </tr>
+      </thead>
+
+      <tbody class="bg-white dark:bg-gray-800">
+          {% for staff in staff_list %}
+          <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+              <td class="p-3 text-gray-800 dark:text-gray-100">{{ staff.last_name }}, {{ staff.first_name }}</td>
+              <td class="p-3 text-gray-600 dark:text-gray-300">{{ staff.email_address }}</td>
+              <td class="p-3">
+                  <form method="post" action="{% url 'human_resource:update_staff_role' %}">
+                      {% csrf_token %}
+                      <input type="hidden" name="staff_id" value="{{ staff.id }}">
+                      <select name="role" class="border dark:border-gray-600 rounded px-2 py-1 w-full focus:outline-none focus:ring-1 focus:ring-orange-400 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100">
+                          <option value="">-- None --</option>
+                          {% for role in roles %}
+                          <option value="{{ role.id }}" {% if staff.role_id == role.id %}selected{% endif %}>
+                              {{ role.role_name }}
+                          </option>
+                          {% endfor %}
+                      </select>
+                      <button type="submit" class="mt-1 bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">Save</button>
+                  </form>
+              </td>
+              <td class="p-3 space-x-2">
+                  <a href="{% url 'human_resource:dashboard_user_detail' staff.id %}" class="text-orange-600 hover:underline dark:text-orange-400">View</a>
+                  <a href="{% url 'human_resource:dashboard_user_edit' staff.id %}" class="text-green-600 hover:underline dark:text-green-400">Edit</a>
+                  <form action="{% url 'human_resource:user_delete_dash' staff.id %}" method="post" class="inline">
+                      {% csrf_token %}
+                      <button type="submit" class="text-red-600 hover:underline dark:text-red-400" onclick="return confirm('Delete this staff?')">Delete</button>
+                  </form>
+              </td>
+          </tr>
+          {% empty %}
+          <tr>
+              <td colspan="4" class="p-3 text-center text-gray-500 dark:text-gray-400">No staff found.</td>
+          </tr>
+          {% endfor %}
+      </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if staff_list.paginator.num_pages > 1 %}
+<div class="mt-4 flex justify-center items-center space-x-2">
+    {% if staff_list.has_previous %}
+    <button class="ajax-page bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 px-3 py-1 rounded text-gray-800 dark:text-gray-200" data-page="{{ staff_list.previous_page_number }}">Previous</button>
+    {% endif %}
+
+    <span class="px-3 py-1 text-sm text-gray-600 dark:text-gray-400">Page {{ staff_list.number }} of {{ staff_list.paginator.num_pages }}</span>
+
+    {% if staff_list.has_next %}
+    <button class="ajax-page bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 px-3 py-1 rounded text-gray-800 dark:text-gray-200" data-page="{{ staff_list.next_page_number }}">Next</button>
+    {% endif %}
+</div>
+{% endif %}
+
+<script>
+// Fix select dropdown dark mode
+(function() {
+    function updateSelectDarkMode() {
+        const isDark = document.documentElement.classList.contains('dark') || 
+                       localStorage.getItem('theme') === 'dark' ||
+                       (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        
+        document.querySelectorAll('select[name="role"]').forEach(function(select) {
+            if (isDark) {
+                select.style.backgroundColor = '#374151';
+                select.style.color = '#f3f4f6';
+                select.style.borderColor = '#4b5563';
+            } else {
+                select.style.backgroundColor = '#ffffff';
+                select.style.color = '#1f2937';
+                select.style.borderColor = '#d1d5db';
+            }
+            
+            // Also update options
+            Array.from(select.options).forEach(function(option) {
+                if (isDark) {
+                    option.style.backgroundColor = '#374151';
+                    option.style.color = '#f3f4f6';
+                } else {
+                    option.style.backgroundColor = '#ffffff';
+                    option.style.color = '#1f2937';
+                }
+            });
+        });
+    }
+    
+    // Run on load
+    updateSelectDarkMode();
+    
+    // Run on theme change (listen for storage changes)
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'theme') {
+            updateSelectDarkMode();
+        }
+    });
+    
+    // Also check periodically in case class changes
+    setInterval(updateSelectDarkMode, 500);
+})();
+</script>

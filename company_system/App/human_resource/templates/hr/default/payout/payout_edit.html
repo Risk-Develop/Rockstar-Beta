@@ -1,0 +1,431 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Payout - {{ payout.employee.first_name }} {{ payout.employee.last_name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">Edit Payout</h1>
+        <a href="{% url 'human_resource:payout_detail' payout.id %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+            Cancel
+        </a>
+    </div>
+    
+    <form method="POST" id="payoutForm">
+        {% csrf_token %}
+        <input type="hidden" name="payout_id" value="{{ payout.id }}">
+        
+        <!-- Employee Information -->
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2">Employee Information</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <span class="text-sm text-gray-500">Name</span>
+                    <p class="font-medium">{{ payout.employee.first_name }} {{ payout.employee.last_name }}</p>
+                </div>
+                <div>
+                    <span class="text-sm text-gray-500">Employee ID</span>
+                    <p class="font-medium">{{ payout.employee.employee_number }}</p>
+                </div>
+                <div>
+                    <span class="text-sm text-gray-500">Period</span>
+                    <p class="font-medium">{{ payout.month }}/{{ payout.year }} - Cutoff {{ payout.cutoff }}</p>
+                </div>
+                <div>
+                    <span class="text-sm text-gray-500">Status</span>
+                    <p class="font-medium text-yellow-600">Unfinalized</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Earnings -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-green-700">EARNINGS</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Basic Salary</label>
+                        <input type="number" name="basic_salary" id="basic_salary" 
+                               value="{{ payout.details.basic_salary|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Housing Allowance</label>
+                        <input type="number" name="housing_allowance" id="housing_allowance" 
+                               value="{{ payout.details.housing_allowance|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Transportation Allowance</label>
+                        <input type="number" name="transportation_allowance" id="transportation_allowance" 
+                               value="{{ payout.details.transportation_allowance|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Meal Allowance</label>
+                        <input type="number" name="meal_allowance" id="meal_allowance" 
+                               value="{{ payout.details.meal_allowance|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Medical Allowance</label>
+                        <input type="number" name="medical_allowance" id="medical_allowance" 
+                               value="{{ payout.details.medical_allowance|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Other Allowances</label>
+                        <input type="number" name="other_allowances" id="other_allowances" 
+                               value="{{ payout.details.other_allowances|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Holiday Pay (Special)</label>
+                        <input type="number" name="holiday_pay" id="holiday_pay" 
+                               value="{{ payout.details.holiday_pay|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Holiday Hours (Special)</label>
+                        <input type="number" name="holiday_hours" id="holiday_hours" 
+                               value="{{ payout.details.holiday_hours|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Regular Holiday Pay</label>
+                        <input type="number" name="regular_holiday_pay" id="regular_holiday_pay" 
+                               value="{{ payout.details.regular_holiday_pay|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Regular Holiday Hours</label>
+                        <input type="number" name="regular_holiday_hours" id="regular_holiday_hours" 
+                               value="{{ payout.details.regular_holiday_hours|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Incentives</label>
+                        <input type="number" name="incentives" id="incentives" 
+                               value="{{ payout.details.incentives|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tips/Others</label>
+                        <input type="number" name="tips_others" id="tips_others" 
+                               value="{{ payout.details.tips_others|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Lodging Allowance</label>
+                        <input type="number" name="lodging_allowance" id="lodging_allowance" 
+                               value="{{ payout.details.lodging_allowance|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-blue-700">OVERTIME & DIFFERENTIALS</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Overtime Hours</label>
+                        <input type="number" name="overtime_hours" id="overtime_hours" 
+                               value="{{ payout.details.overtime_hours|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Overtime Pay</label>
+                        <input type="number" name="overtime_pay" id="overtime_pay" 
+                               value="{{ payout.details.overtime_pay|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">NSD Hours</label>
+                        <input type="number" name="nsd_hours" id="nsd_hours" 
+                               value="{{ payout.details.nsd_hours|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Night Differential</label>
+                        <input type="number" name="night_differential" id="night_differential" 
+                               value="{{ payout.details.night_differential|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Deductions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-red-700">DEDUCTIONS</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Absence Deduction</label>
+                        <input type="number" name="absence_deduction" id="absence_deduction" 
+                               value="{{ payout.details.absence_deduction|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Late Deduction</label>
+                        <input type="number" name="late_deduction" id="late_deduction" 
+                               value="{{ payout.details.late_deduction|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Loan Deduction</label>
+                        <input type="number" name="loan_deduction" id="loan_deduction" 
+                               value="{{ payout.details.loan_deduction|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Other Deductions</label>
+                        <input type="number" name="other_deductions" id="other_deductions" 
+                               value="{{ payout.details.other_deductions|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-red-700">GOVERNMENT CONTRIBUTIONS</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">SSS Contribution</label>
+                        <input type="number" name="sss_contribution" id="sss_contribution" 
+                               value="{{ payout.details.sss_contribution|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">PhilHealth</label>
+                        <input type="number" name="philhealth_contribution" id="philhealth_contribution" 
+                               value="{{ payout.details.philhealth_contribution|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Pag-IBIG</label>
+                        <input type="number" name="pagibig_contribution" id="pagibig_contribution" 
+                               value="{{ payout.details.pagibig_contribution|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Withholding Tax</label>
+                        <input type="number" name="withholding_tax" id="withholding_tax" 
+                               value="{{ payout.details.withholding_tax|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Attendance & Leave Days -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-blue-700">ATTENDANCE</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Working Days</label>
+                        <input type="number" name="working_days" id="working_days" 
+                               value="{{ payout.details.working_days|default:'0' }}" 
+                               step="1" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Days Present</label>
+                        <input type="number" name="days_present" id="days_present" 
+                               value="{{ payout.details.days_present|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Days Absent</label>
+                        <input type="number" name="days_absent" id="days_absent" 
+                               value="{{ payout.details.days_absent|default:'0'|floatformat:2 }}" 
+                               step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Late Minutes</label>
+                        <input type="number" name="late_minutes" id="late_minutes" 
+                               value="{{ payout.details.late_minutes|default:'0' }}" 
+                               step="1" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4 border-b pb-2 text-purple-700">LEAVE DAYS</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Leave Days (Paid)</label>
+                        <input type="number" name="leave_days_paid" id="leave_days_paid" 
+                               value="{{ payout.details.leave_days_paid|default:'0'|floatformat:2 }}" 
+                               step="0.5" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Leave Days (Unpaid)</label>
+                        <input type="number" name="leave_days_unpaid" id="leave_days_unpaid" 
+                               value="{{ payout.details.leave_days_unpaid|default:'0'|floatformat:2 }}" 
+                               step="0.5" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                               onchange="recalculateTotals()">
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Note -->
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2">NOTE</h2>
+            <textarea name="note" id="note" rows="3" class="w-full border border-gray-300 rounded-md px-3 py-2">{{ payout.details.note|default:'' }}</textarea>
+        </div>
+        
+        <!-- Summary -->
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4 border-b pb-2">SUMMARY</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Gross Pay</label>
+                    <input type="number" name="gross" id="gross" 
+                           value="{{ payout.gross|floatformat:2 }}" 
+                           step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2 font-bold"
+                           onchange="recalculateTotals()">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Additions</label>
+                    <input type="number" name="total_additions" id="total_additions" 
+                           value="{{ payout.total_additions|floatformat:2 }}" 
+                           step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                           onchange="recalculateTotals()">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Deductions</label>
+                    <input type="number" name="total_deductions" id="total_deductions" 
+                           value="{{ payout.total_deductions|floatformat:2 }}" 
+                           step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2"
+                           onchange="recalculateTotals()">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">NET PAY</label>
+                    <input type="number" name="net" id="net" 
+                           value="{{ payout.net|floatformat:2 }}" 
+                           step="0.01" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2 font-bold text-green-600"
+                           onchange="recalculateTotals()">
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex justify-end space-x-4">
+            <a href="{% url 'human_resource:payout_detail' payout.id %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                Cancel
+            </a>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+function getValue(id) {
+    return parseFloat(document.getElementById(id).value) || 0;
+}
+
+function setValue(id, value) {
+    document.getElementById(id).value = value.toFixed(2);
+}
+
+function recalculateTotals() {
+    // Earnings - Base Allowances
+    const basicSalary = getValue('basic_salary');
+    const housingAllowance = getValue('housing_allowance');
+    const transportationAllowance = getValue('transportation_allowance');
+    const mealAllowance = getValue('meal_allowance');
+    const medicalAllowance = getValue('medical_allowance');
+    const otherAllowances = getValue('other_allowances');
+    
+    // Additional Earnings
+    const holidayPay = getValue('holiday_pay');
+    const regularHolidayPay = getValue('regular_holiday_pay');
+    const incentives = getValue('incentives');
+    const tipsOthers = getValue('tips_others');
+    const lodgingAllowance = getValue('lodging_allowance');
+    const leaveDaysPaid = getValue('leave_days_paid');
+    
+    // Overtime & Differentials
+    const overtimePay = getValue('overtime_pay');
+    const nightDifferential = getValue('night_differential');
+    
+    // Deductions
+    const absenceDeduction = getValue('absence_deduction');
+    const lateDeduction = getValue('late_deduction');
+    const loanDeduction = getValue('loan_deduction');
+    const otherDeductions = getValue('other_deductions');
+    const sssContribution = getValue('sss_contribution');
+    const philhealthContribution = getValue('philhealth_contribution');
+    const pagibigContribution = getValue('pagibig_contribution');
+    const withholdingTax = getValue('withholding_tax');
+    
+    // Calculate totals - Base Allowances
+    const totalBaseAllowances = basicSalary + housingAllowance + transportationAllowance + 
+                               mealAllowance + medicalAllowance + otherAllowances;
+    
+    // Additional Earnings
+    const totalAdditionalEarnings = holidayPay + regularHolidayPay + incentives + tipsOthers + lodgingAllowance + leaveDaysPaid;
+    
+    // Overtime & Differentials
+    const totalOvertime = overtimePay + nightDifferential;
+    
+    // Total Gross
+    const gross = totalBaseAllowances + totalAdditionalEarnings + totalOvertime;
+    
+    // Deductions
+    const totalGovContributions = sssContribution + philhealthContribution + pagibigContribution;
+    const totalOtherDeductions = absenceDeduction + lateDeduction + loanDeduction + otherDeductions;
+    const totalDeductions = totalGovContributions + totalOtherDeductions + withholdingTax;
+    
+    // Total Additions (overtime + additional earnings)
+    const totalAdditions = totalOvertime + totalAdditionalEarnings;
+    
+    const net = gross - totalDeductions;
+    
+    // Update fields
+    setValue('gross', gross);
+    setValue('total_additions', totalAdditions);
+    setValue('total_deductions', totalDeductions);
+    setValue('net', net);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    recalculateTotals();
+});
+</script>
+{% endblock %}

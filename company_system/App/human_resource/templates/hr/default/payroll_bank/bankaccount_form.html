@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Bank Account Form{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <h1 class="text-2xl font-bold mb-6">{% if account.pk %}Edit{% else %}Add{% endif %} Bank Account</h1>
+    
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="p-4 rounded {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="bg-white shadow rounded-lg p-6">
+        <form method="POST" id="bankAccountForm">
+            {% csrf_token %}
+            
+            <!-- Employee Selection -->
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold mb-4 text-gray-700">Employee Selection</h2>
+                <div class="relative">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Search Employee</label>
+                    <select name="employee" id="employeeSelect" required
+                            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">-- Select Employee --</option>
+                        {% for emp in employees %}
+                        <option value="{{ emp.pk }}" 
+                                data-name="{{ emp.first_name }} {{ emp.last_name }}"
+                                data-id="{{ emp.employee_number }}"
+                                data-dept="{{ emp.department|default:'' }}"
+                                data-title="{{ emp.job_title|default:'' }}"
+                                {% if account and account.employee.pk == emp.pk %}selected{% endif %}>
+                            {{ emp.last_name }}, {{ emp.first_name }} ({{ emp.employee_number }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Selected Employee Info Panel -->
+            <div id="employeeInfoPanel" class="mb-6 {% if not account %}hidden{% endif %}">
+                <h2 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Selected Employee</h2>
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Name</span>
+                            <p class="font-medium text-gray-800 dark:text-gray-200" id="empName">{% if account %}{{ account.employee.first_name }} {{ account.employee.last_name }}{% else %}-{% endif %}</p>
+                        </div>
+                        <div>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Employee ID</span>
+                            <p class="font-medium text-gray-800 dark:text-gray-200" id="empId">{% if account %}{{ account.employee.employee_number }}{% else %}-{% endif %}</p>
+                        </div>
+                        <div>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Department</span>
+                            <p class="font-medium text-gray-800 dark:text-gray-200" id="empDept">{% if account %}{{ account.employee.department|default:'-' }}{% else %}-{% endif %}</p>
+                        </div>
+                        <div>
+                            <span class="text-sm text-gray-500 dark:text-gray-400">Job Title</span>
+                            <p class="font-medium text-gray-800 dark:text-gray-200" id="empTitle">{% if account %}{{ account.employee.job_title|default:'-' }}{% else %}-{% endif %}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bank Account Details -->
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold mb-4 text-gray-700">Bank Account Details</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Bank</label>
+                        <select name="bank" id="bankSelect" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            <option value="">-- Select Bank --</option>
+                            {% for b in banks %}
+                            <option value="{{ b.pk }}" {% if account and account.bank_id == b.pk %}selected{% endif %}>{{ b.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+                        <input type="text" name="account_number" value="{{ account.account_number|default:'' }}" 
+                               class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Primary Account -->
+            <div class="mb-6">
+                <label class="flex items-center">
+                    <input type="checkbox" name="is_primary" {% if account and account.is_primary %}checked{% endif %} 
+                           class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <span class="ml-2 text-sm text-gray-700">Primary Account</span>
+                </label>
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="flex justify-end space-x-4">
+                <a href="{% url 'human_resource:bankaccount_list' %}" 
+                   class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                    Cancel
+                </a>
+                <button type="submit" 
+                        class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    Save Bank Account
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const employeeSelect = document.getElementById('employeeSelect');
+    const infoPanel = document.getElementById('employeeInfoPanel');
+    
+    function updateEmployeeInfo() {
+        const selected = employeeSelect.options[employeeSelect.selectedIndex];
+        
+        if (employeeSelect.value) {
+            // Show panel
+            infoPanel.classList.remove('hidden');
+            
+            // Update info from data attributes
+            document.getElementById('empName').textContent = selected.dataset.name || '-';
+            document.getElementById('empId').textContent = selected.dataset.id || '-';
+            document.getElementById('empDept').textContent = selected.dataset.dept || '-';
+            document.getElementById('empTitle').textContent = selected.dataset.title || '-';
+        } else {
+            infoPanel.classList.add('hidden');
+        }
+    }
+    
+    // Initial update if employee is pre-selected
+    if (employeeSelect.value) {
+        updateEmployeeInfo();
+    }
+    
+    employeeSelect.addEventListener('change', updateEmployeeInfo);
+});
+</script>
+{% endblock %}

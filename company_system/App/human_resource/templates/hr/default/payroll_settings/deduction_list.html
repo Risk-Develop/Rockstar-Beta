@@ -1,0 +1,432 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Deduction Types{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Deduction Types</h1>
+            <p class="text-sm text-gray-500 mt-1">Manage employee deduction configurations</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'human_resource:hr_dashboard' %}" class="inline-flex items-center gap-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                <span class="material-icons text-sm">arrow_back</span>
+                Back to Dashboard
+            </a>
+            <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors shadow-sm">
+                <span class="material-icons text-sm">add</span>
+                Add Deduction Type
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-blue-100 rounded-lg">
+                    <span class="material-icons text-blue-600">remove_circle</span>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Total Types</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ types|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-green-100 rounded-lg">
+                    <span class="material-icons text-green-600">check_circle</span>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Active</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ active_count|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-red-100 rounded-lg">
+                    <span class="material-icons text-red-600">account_balance</span>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Government</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ government_count|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-purple-100 rounded-lg">
+                    <span class="material-icons text-purple-600">category</span>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Categories</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ category_count|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+        <form method="GET" class="flex flex-wrap gap-4 items-end">
+            <div class="flex-1 min-w-[150px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Only</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive Only</option>
+                </select>
+            </div>
+            
+            <div class="flex-1 min-w-[180px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select name="category" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white">
+                    <option value="" {% if not category_filter %}selected{% endif %}>All Categories</option>
+                    <option value="ATTENDANCE" {% if category_filter == 'ATTENDANCE' %}selected{% endif %}>Attendance</option>
+                    <option value="GOVERNMENT" {% if category_filter == 'GOVERNMENT' %}selected{% endif %}>Government</option>
+                    <option value="LOAN" {% if category_filter == 'LOAN' %}selected{% endif %}>Loan/Cash Advance</option>
+                    <option value="INSURANCE" {% if category_filter == 'INSURANCE' %}selected{% endif %}>Insurance</option>
+                    <option value="OTHER" {% if category_filter == 'OTHER' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+            
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <input type="text" name="search" value="{{ search_query|default:'' }}" placeholder="Name or code..." 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+            </div>
+            
+            <div class="flex gap-2">
+                <button type="submit" class="inline-flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors">
+                    <span class="material-icons text-sm">search</span>
+                    Filter
+                </button>
+                <a href="{% url 'human_resource:deduction_type_list' %}" class="inline-flex items-center gap-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                    <span class="material-icons text-sm">clear</span>
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {% if types %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200">
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Code</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Category</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Government</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Order</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for type in types %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+                                    <span class="material-icons text-red-600">remove_circle</span>
+                                </div>
+                                <span class="font-medium text-gray-900">{{ type.name }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded text-sm">{{ type.code }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if type.category == 'ATTENDANCE' %}
+                            <span class="inline-flex items-center gap-1 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">schedule</span>
+                                {{ type.get_category_display }}
+                            </span>
+                            {% elif type.category == 'GOVERNMENT' %}
+                            <span class="inline-flex items-center gap-1 bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">account_balance</span>
+                                {{ type.get_category_display }}
+                            </span>
+                            {% elif type.category == 'LOAN' %}
+                            <span class="inline-flex items-center gap-1 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">payments</span>
+                                {{ type.get_category_display }}
+                            </span>
+                            {% elif type.category == 'INSURANCE' %}
+                            <span class="inline-flex items-center gap-1 bg-green-100 text-teal-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">health_and_safety</span>
+                                {{ type.get_category_display }}
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">more_horiz</span>
+                                {{ type.get_category_display }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if type.is_government %}
+                            <span class="inline-flex items-center gap-1 bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">check</span>
+                                Yes
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 text-gray-400">
+                                <span class="material-icons text-sm">close</span>
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="text-gray-600 font-medium">{{ type.display_order }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if type.is_active %}
+                            <span class="inline-flex items-center gap-1 bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">check_circle</span>
+                                Active
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-medium">
+                                <span class="material-icons text-xs">pause_circle</span>
+                                Inactive
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button type="button" onclick="openEditModal('{{ type.pk }}', '{{ type.name }}', '{{ type.code }}', '{{ type.category }}', '{{ type.is_government|yesno:'true,false' }}', '{{ type.display_order }}', {{ type.is_active|yesno:'true,false' }}, '{{ type.effective_start_date|default:'' }}', '{{ type.effective_end_date|default:'' }}')" 
+                                        class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                                    <span class="material-icons text-sm">edit</span>
+                                </button>
+                                <button type="button" onclick="openDeleteModal('{{ type.pk }}', '{{ type.name }}')" 
+                                        class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                                    <span class="material-icons text-sm">delete</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-12 text-center">
+            <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <span class="material-icons text-gray-400 text-2xl">remove_circle</span>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-1">No deduction types found</h3>
+            <p class="text-gray-500 mb-4">Get started by adding a deduction type</p>
+            <button type="button" onclick="openAddModal()" class="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700">
+                <span class="material-icons text-sm">add</span>
+                Add Deduction Type
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div id="deductionModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50 backdrop-blur-sm">
+    <div class="relative top-20 mx-auto p-0 border-0 w-full max-w-lg shadow-2xl rounded-xl bg-white">
+        <div class="flex items-center justify-between p-4 border-b border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800" id="modalTitle">Add Deduction Type</h3>
+            <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        
+        <form method="POST" action="{% url 'human_resource:deduction_type_add' %}" class="p-4">
+            {% csrf_token %}
+            <input type="hidden" name="pk" id="deductionPk">
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                    <div class="relative">
+                        <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">label</span>
+                        <input type="text" name="name" id="deductionName" required
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Code *</label>
+                    <div class="relative">
+                        <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">code</span>
+                        <input type="text" name="code" id="deductionCode" required placeholder="e.g., LATE, ABSENT"
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                <div class="relative">
+                    <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">category</span>
+                    <select name="category" id="deductionCategory" required
+                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white">
+                        <option value="ATTENDANCE">Attendance</option>
+                        <option value="GOVERNMENT">Government</option>
+                        <option value="LOAN">Loan/Cash Advance</option>
+                        <option value="INSURANCE">Insurance</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Display Order</label>
+                <input type="number" name="display_order" id="deductionOrder" value="0"
+                       class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Effective Start Date</label>
+                    <div class="relative">
+                        <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">event</span>
+                        <input type="date" name="effective_start_date" id="deductionStartDate"
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">e.g., 2024-01-01</p>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Effective End Date</label>
+                    <div class="relative">
+                        <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">event</span>
+                        <input type="date" name="effective_end_date" id="deductionEndDate"
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Leave empty for indefinite</p>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" name="is_government" id="deductionIsGovernment" value="true"
+                           class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
+                    <span class="ml-3 text-sm text-gray-700">Government Deduction</span>
+                </label>
+            </div>
+            
+            <div class="mb-6">
+                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                    <input type="checkbox" name="is_active" id="deductionIsActive" value="true" checked
+                           class="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded">
+                    <span class="ml-3 text-sm text-gray-700">Active</span>
+                </label>
+            </div>
+            
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
+                    Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50 backdrop-blur-sm">
+    <div class="relative top-20 mx-auto p-0 border-0 w-full max-w-md shadow-2xl rounded-xl bg-white">
+        <div class="p-6 text-center">
+            <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 mb-4">
+                <span class="material-icons text-red-600 text-2xl">warning</span>
+            </div>
+            <h3 class="text-lg leading-6 font-bold text-gray-900 mb-2" id="deleteModalTitle">Delete Deduction Type</h3>
+            <p class="text-sm text-gray-500 mb-6" id="deleteModalMessage">
+                Are you sure you want to delete this deduction type?
+            </p>
+            <form method="POST" id="deleteForm" class="flex justify-center gap-3">
+                {% csrf_token %}
+                <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    Delete
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openAddModal() {
+    document.getElementById('modalTitle').textContent = 'Add Deduction Type';
+    document.getElementById('deductionPk').value = '';
+    document.getElementById('deductionName').value = '';
+    document.getElementById('deductionCode').value = '';
+    document.getElementById('deductionCategory').value = 'ATTENDANCE';
+    document.getElementById('deductionOrder').value = '0';
+    document.getElementById('deductionIsGovernment').checked = false;
+    document.getElementById('deductionIsActive').checked = true;
+    document.getElementById('deductionStartDate').value = '';
+    document.getElementById('deductionEndDate').value = '';
+    document.getElementById('deductionModal').classList.remove('hidden');
+}
+
+function openEditModal(pk, name, code, category, isGovernment, displayOrder, isActive, startDate, endDate) {
+    document.getElementById('modalTitle').textContent = 'Edit Deduction Type';
+    document.getElementById('deductionPk').value = pk;
+    document.getElementById('deductionName').value = name;
+    document.getElementById('deductionCode').value = code || '';
+    document.getElementById('deductionCategory').value = category;
+    document.getElementById('deductionOrder').value = displayOrder || '0';
+    document.getElementById('deductionIsGovernment').checked = (isGovernment === 'true' || isGovernment === true);
+    document.getElementById('deductionIsActive').checked = (isActive === 'true' || isActive === true);
+    document.getElementById('deductionStartDate').value = startDate || '';
+    document.getElementById('deductionEndDate').value = endDate || '';
+    document.getElementById('deductionModal').classList.remove('hidden');
+}
+
+function closeModal() {
+    document.getElementById('deductionModal').classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('deductionModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+
+// Delete Modal Functions
+function openDeleteModal(pk, name) {
+    document.getElementById('deleteModalTitle').textContent = 'Delete Deduction Type';
+    document.getElementById('deleteModalMessage').textContent = 'Are you sure you want to delete "' + name + '"? This action cannot be undone.';
+    document.getElementById('deleteForm').action = '{% url "human_resource:deduction_type_delete" 0 %}'.replace('0', pk);
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+// Close delete modal when clicking outside
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDeleteModal();
+    }
+});
+
+// Close modals on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+        closeDeleteModal();
+    }
+});
+</script>
+{% endblock %}

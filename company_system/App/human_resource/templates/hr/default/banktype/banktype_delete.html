@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Bank Type{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-md mx-auto">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+            <!-- Header -->
+            <div class="bg-red-600 p-6 text-center">
+                <h2 class="text-xl font-bold text-white">Delete Bank Type</h2>
+            </div>
+            
+            <!-- Content -->
+            <div class="p-6">
+                <div class="text-center mb-4">
+                    <p class="text-gray-600 mb-3">Are you sure you want to delete <strong>{{ bank.name }}</strong>?</p>
+                    
+                    <p class="text-sm text-red-600 font-medium">This action cannot be undone!</p>
+                </div>
+                
+                <!-- Form -->
+                <form method="POST" class="flex flex-col gap-3">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            class="w-full px-4 py-2 bg-red-600 text-white font-medium rounded-md hover:bg-red-700 transition-colors">
+                        Yes, Delete
+                    </button>
+                    <a href="{% url 'human_resource:banktype_list' %}" 
+                       class="w-full px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-md hover:bg-gray-300 text-center transition-colors">
+                        Cancel
+                    </a>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Back to Dashboard -->
+        <div class="mt-4 text-center">
+            <a href="{% url 'human_resource:hr_dashboard' %}" 
+               class="text-blue-600 hover:text-blue-800 text-sm">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Human Resource Dashboard {% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'hr/dashboard/hr_sidebar.html' %}
+<!-- Main Content -->
+<main
+  id="mainContent"
+  class="md:ml-64 pt-20 min-h-screen p-6 transform bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+>
+{% include 'hr/default/main_dashboard.html' %}
+
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    console.log("This page has custom JS");
+</script>
+{% endblock %}

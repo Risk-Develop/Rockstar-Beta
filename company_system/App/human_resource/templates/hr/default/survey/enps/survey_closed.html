@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Survey Closed - ENPS{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'hr/dashboard/hr_sidebar.html' %}
+
+<main id="mainContent" class="md:ml-64 pt-20 min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+        <div class="max-w-md mx-auto text-center text-white">
+            <div class="text-6xl mb-6">🔒</div>
+            <h1 class="text-3xl font-bold mb-4">{{ survey.name }}</h1>
+            <p class="text-white/80 text-lg">This survey is currently closed.</p>
+            <p class="text-white/60 text-sm mt-4">Please check back later for new survey opportunities.</p>
+            
+</main>
+
+{% endblock %}

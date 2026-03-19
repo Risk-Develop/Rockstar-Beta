@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payroll History{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">Payroll History</h1>
+        <a href="{% url 'human_resource:hr_dashboard' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Filter Form -->
+    <form method="GET" class="bg-white shadow rounded-lg p-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                <select name="year" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    <option value="">All Years</option>
+                    {% for year in years %}
+                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                <select name="month" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                    <option value="">All Months</option>
+                    {% for m in months %}
+                    <option value="{{ m.0 }}" {% if m.0 == selected_month %}selected{% endif %}>{{ m.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">
+                    Filter
+                </button>
+            </div>
+            <div class="flex items-end">
+                <a href="{% url 'human_resource:payroll_history_list' %}" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 w-full text-center block">
+                    Clear
+                </a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Summary Section -->
+    {% if history %}
+    <div class="bg-white shadow rounded-lg p-4 mb-6">
+        <h3 class="text-lg font-semibold mb-3">Summary</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="text-sm text-gray-500">Total Payroll Months</div>
+                <div class="text-xl font-bold text-gray-900">{{ history|length }}</div>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="text-sm text-gray-500">Total Gross</div>
+                <div class="text-xl font-bold text-gray-900">₱{{ total_gross|floatformat:2 }}</div>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <div class="text-sm text-gray-500">Total Net</div>
+                <div class="text-xl font-bold text-green-600">₱{{ total_net|floatformat:2 }}</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- History Table with Cutoff Grouping -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        {% if history %}
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="width: 40px;"></th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payroll Period</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cutoff</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employees</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Gross</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Deductions</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Net</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for record in history %}
+                <!-- Parent Row: Combined Monthly Total -->
+                <tr class="bg-blue-50 hover:bg-blue-100 cursor-pointer" onclick="toggleCutoffs('month-{{ record.year }}-{{ record.month }}')">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <svg id="icon-month-{{ record.year }}-{{ record.month }}" class="w-5 h-5 text-blue-600 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-bold text-blue-800">
+                            {% if record.month == 1 %}January{% elif record.month == 2 %}February{% elif record.month == 3 %}March{% elif record.month == 4 %}April{% elif record.month == 5 %}May{% elif record.month == 6 %}June{% elif record.month == 7 %}July{% elif record.month == 8 %}August{% elif record.month == 9 %}September{% elif record.month == 10 %}October{% elif record.month == 11 %}November{% elif record.month == 12 %}December{% endif %} {{ record.year }}
+                        </div>
+                        <div class="text-xs text-blue-600">Combined (2 Cutoffs)</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm text-gray-500">-</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-bold text-gray-900">{{ record.total_employees }} employees</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <div class="text-sm font-bold text-blue-800">₱{{ record.total_gross|floatformat:2 }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <div class="text-sm font-medium text-red-600">-₱{{ record.total_deductions|floatformat:2 }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <div class="text-sm font-bold text-green-700">₱{{ record.total_net|floatformat:2 }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Finalized
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        -
+                    </td>
+                </tr>
+                
+                <!-- Child Rows: Individual Cutoffs (hidden by default) -->
+                {% for cutoff in record.cutoffs %}
+                <tr id="cutoff-month-{{ record.year }}-{{ record.month }}" class="hidden bg-white hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="pl-4 text-sm text-gray-500">
+                            {% if cutoff.cutoff == '1' %}1st Cutoff (1-15){% else %}2nd Cutoff (16-End){% endif %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if cutoff.cutoff == '1' %}bg-orange-100 text-orange-800{% else %}bg-purple-100 text-purple-800{% endif %}">
+                            {% if cutoff.cutoff == '1' %}1st{% else %}2nd{% endif %}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900">{{ cutoff.payout_count }} employees</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <div class="text-sm font-medium text-blue-600">₱{{ cutoff.total_gross|floatformat:2 }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <div class="text-sm font-medium text-red-500">-₱{{ cutoff.total_deductions|floatformat:2 }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <div class="text-sm font-medium text-green-600">₱{{ cutoff.total_net|floatformat:2 }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Finalized
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <a href="{% url 'human_resource:payroll_history_detail' cutoff.id %}" class="text-blue-600 hover:text-blue-900">
+                            View Details
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <script>
+        function toggleCutoffs(id) {
+            // Toggle the icon rotation
+            const icon = document.getElementById('icon-' + id);
+            icon.classList.toggle('rotate-90');
+            
+            // Toggle all child rows for this month
+            const rows = document.querySelectorAll('[id^="cutoff-' + id + '"]');
+            rows.forEach(row => {
+                row.classList.toggle('hidden');
+            });
+        }
+        </script>
+        
+        <style>
+        .rotate-90 {
+            transform: rotate(90deg);
+        }
+        </style>
+        {% else %}
+        <div class="p-6 text-center text-gray-500">
+            No payroll history found for the selected criteria.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

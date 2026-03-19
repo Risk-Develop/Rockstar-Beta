@@ -1,0 +1,9 @@
+{% extends "company_system/base.html" %}
+
+{% block content %}
+{% include 'includes/sidebar.html' %}
+
+<main class="main-content" style=" min-height: 100vh; padding-top: 60px;">
+    {% block employee_content %}{% endblock %}
+</main>
+{% endblock %}

@@ -19,15 +19,14 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('employees.urls')),
-    path('user_management/', include('users.urls')),
-    path('sales_dashboard/', include('sales.urls')),
-    path('hr_dashboard/', include('human_resource.urls')),
-    path("auth/", include("authentication.urls")),
-    path("master_dashboard/", include("master_dashboard.urls")),
-      # or the path you prefer
-    
+    # path('', include('App.employees.urls')),
+    path('', include('App.authentication.urls')),
+    path('user_management/', include('App.users.urls')),
+    path('sales_dashboard/', include('App.sales.urls')),
+    path('hr_dashboard/', include('App.human_resource.urls')),
+    path('human_resource/', include('App.human_resource.urls')),  # Direct human_resource access
+    path("auth/", include("App.authentication.urls")),
+    path("master_dashboard/", include("App.master_dashboard.urls")),
+    # django-allauth URLs
+    path('accounts/', include('allauth.urls')),
 ]
-
-
-

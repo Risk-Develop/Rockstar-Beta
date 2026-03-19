@@ -1,0 +1,115 @@
+{% if employees_data %}
+<!-- Filter Buttons -->
+<div class="flex flex-wrap gap-2 mb-4">
+    <button type="button" onclick="filterEmployees('all')" class="filter-btn px-3 py-1 text-xs rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600" data-filter="all">All</button>
+    <button type="button" onclick="filterEmployees('no_record')" class="filter-btn px-3 py-1 text-xs rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800" data-filter="no_record">No Record</button>
+    <button type="button" onclick="filterEmployees('present')" class="filter-btn px-3 py-1 text-xs rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800" data-filter="present">Present</button>
+    <button type="button" onclick="filterEmployees('late')" class="filter-btn px-3 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 hover:bg-yellow-200 dark:hover:bg-yellow-800" data-filter="late">Late</button>
+    <button type="button" onclick="filterEmployees('on_leave')" class="filter-btn px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800" data-filter="on_leave">On Leave</button>
+</div>
+
+<!-- Summary -->
+<div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
+    Showing {{ employees_data|length }} employees
+</div>
+
+<!-- Employee List -->
+<div class="space-y-2 max-h-96 overflow-y-auto" id="employeeList">
+    {% for item in employees_data %}
+    <div class="employee-row flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg {% if item.status == 'none' %}bg-red-50 dark:bg-red-900/30{% else %}bg-green-50 dark:bg-green-900/30{% endif %}" data-status="{{ item.status }}" data-name="{{ item.employee.first_name }} {{ item.employee.last_name }}" data-id="{{ item.employee.employee_number|default:'' }}">
+        {% if item.status == 'none' %}
+        <!-- No attendance - can be marked absent -->
+        <input type="checkbox" name="employees" value="{{ item.employee.id }}"
+               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+               onchange="updateSelectedCount()">
+        <div class="ml-3 flex-1">
+            <p class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ item.employee.first_name }} {{ item.employee.last_name }}
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ item.employee.employee_number|default:"No ID" }}
+            </p>
+        </div>
+        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+            No Record
+        </span>
+        {% else %}
+        <!-- Has attendance - show status -->
+        <div class="ml-0 flex-1">
+            <p class="text-sm font-medium text-gray-900 dark:text-white">
+                {{ item.employee.first_name }} {{ item.employee.last_name }}
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ item.employee.employee_number|default:"No ID" }}
+                {% if item.clock_in %}
+                 • Clock in: {{ item.clock_in }}
+                {% endif %}
+            </p>
+        </div>
+        {% if item.status == 'present' %}
+        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+            Present
+        </span>
+        {% elif item.status == 'late' %}
+        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+            Late
+        </span>
+        {% elif item.status == 'on_leave' or 'leave' in item.status %}
+        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+            On Leave
+        </span>
+        {% elif item.status == 'absent' %}
+        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+            Already Absent
+        </span>
+        {% elif item.status == 'early_leave' %}
+        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+            Early Leave
+        </span>
+        {% else %}
+        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+            {{ item.status_display }}
+        </span>
+        {% endif %}
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function filterEmployees(status) {
+    const rows = document.querySelectorAll('.employee-row');
+    const buttons = document.querySelectorAll('.filter-btn');
+    
+    buttons.forEach(btn => {
+        if (btn.dataset.filter === status) {
+            btn.classList.add('ring', 'ring-blue-500');
+        } else {
+            btn.classList.remove('ring', 'ring-blue-500');
+        }
+    });
+    
+    rows.forEach(row => {
+        if (status === 'all') {
+            row.style.display = 'flex';
+        } else if (status === 'no_record') {
+            row.style.display = row.dataset.status === 'none' ? 'flex' : 'none';
+        } else if (status === 'present') {
+            const isPresent = row.dataset.status === 'present' || (row.dataset.status !== 'none' && row.dataset.status !== 'late' && !row.dataset.status.includes('leave'));
+            row.style.display = isPresent ? 'flex' : 'none';
+        } else {
+            row.style.display = row.dataset.status === status || (row.dataset.status && row.dataset.status.includes(status)) ? 'flex' : 'none';
+        }
+    });
+    
+    updateSelectedCount();
+}
+</script>
+{% else %}
+<div class="text-center py-8 text-gray-500 dark:text-gray-400">
+    <svg class="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    </svg>
+    <p class="text-sm">No employees found</p>
+</div>
+{% endif %}

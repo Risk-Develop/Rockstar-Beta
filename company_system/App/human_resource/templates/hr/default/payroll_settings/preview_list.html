@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Individual Payroll{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Individual Payroll Processing</h1>
+            <p class="text-sm text-gray-500 mt-1">Process and manage employee payroll</p>
+        </div>
+        <a href="{% url 'human_resource:hr_dashboard' %}" class="inline-flex items-center gap-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+            <span class="material-icons text-sm">arrow_back</span>
+            Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Quick Links - Settings Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <a href="{% url 'human_resource:tier_list' %}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md hover:border-orange-200 transition-all group">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
+                    <span class="material-icons text-purple-600">layers</span>
+                </div>
+                <div>
+                    <p class="font-bold text-gray-800">Tiers</p>
+                    <p class="text-sm text-gray-500">Threshold Settings</p>
+                </div>
+            </div>
+        </a>
+        <a href="{% url 'human_resource:salary_setting_list' %}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md hover:border-orange-200 transition-all group">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                    <span class="material-icons text-blue-600">payments</span>
+                </div>
+                <div>
+                    <p class="font-bold text-gray-800">Salary Settings</p>
+                    <p class="text-sm text-gray-500">Employee Salaries</p>
+                </div>
+            </div>
+        </a>
+        <a href="{% url 'human_resource:demiminimis_list' %}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md hover:border-orange-200 transition-all group">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-yellow-100 rounded-lg group-hover:bg-yellow-200 transition-colors">
+                    <span class="material-icons text-yellow-600">card_giftcard</span>
+                </div>
+                <div>
+                    <p class="font-bold text-gray-800">De Minimis</p>
+                    <p class="text-sm text-gray-500">Allowance Types</p>
+                </div>
+            </div>
+        </a>
+        <a href="{% url 'human_resource:deduction_type_list' %}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:shadow-md hover:border-orange-200 transition-all group">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-red-100 rounded-lg group-hover:bg-red-200 transition-colors">
+                    <span class="material-icons text-red-600">remove_circle</span>
+                </div>
+                <div>
+                    <p class="font-bold text-gray-800">Deductions</p>
+                    <p class="text-sm text-gray-500">Deduction Types</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Employee Selection Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-4">
+            <div class="flex items-center gap-3">
+                <span class="material-icons text-white">person_search</span>
+                <h2 class="font-bold text-lg text-white">Select Employee for Payroll</h2>
+            </div>
+        </div>
+        <div class="p-6">
+            <form method="post">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="material-icons text-gray-400 text-sm">person</span>
+                                Employee
+                            </div>
+                        </label>
+                        <div class="relative">
+                            <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">person</span>
+                            <select name="employee_id" required class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none bg-white">
+                                <option value="">-- Select Employee --</option>
+                                {% for emp in employees %}
+                                <option value="{{ emp.id }}">{{ emp.get_full_name }} ({{ emp.department|default:"No Department" }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="material-icons text-gray-400 text-sm">calendar_today</span>
+                                Cutoff Date
+                            </div>
+                        </label>
+                        <div class="relative">
+                            <span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">event</span>
+                            <input type="date" name="cutoff_date" required 
+                                   class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-medium transition-colors shadow-sm">
+                        <span class="material-icons">play_arrow</span>
+                        Process Payroll
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="bg-gray-50 p-4 border-b border-gray-100">
+            <div class="flex items-center gap-2">
+                <span class="material-icons text-gray-600">bolt</span>
+                <h2 class="font-bold text-lg text-gray-700">Quick Actions</h2>
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="{% url 'human_resource:payroll_history_list' %}" class="bg-white border border-gray-200 hover:border-orange-300 hover:shadow-md rounded-xl p-4 transition-all group">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-gray-100 rounded-lg group-hover:bg-orange-100 transition-colors">
+                            <span class="material-icons text-gray-600 group-hover:text-orange-600">history</span>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-800 group-hover:text-orange-700">Payroll History</p>
+                            <p class="text-sm text-gray-500">View posted payrolls</p>
+                        </div>
+                    </div>
+                </a>
+                <a href="{% url 'human_resource:payroll_preview' %}" class="bg-white border border-gray-200 hover:border-orange-300 hover:shadow-md rounded-xl p-4 transition-all group">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-green-100 rounded-lg group-hover:bg-orange-100 transition-colors">
+                            <span class="material-icons text-green-600 group-hover:text-orange-600">group</span>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-800 group-hover:text-orange-700">Batch Payroll</p>
+                            <p class="text-sm text-gray-500">Process multiple employees</p>
+                        </div>
+                    </div>
+                </a>
+                <a href="{% url 'human_resource:payout_list' %}" class="bg-white border border-gray-200 hover:border-orange-300 hover:shadow-md rounded-xl p-4 transition-all group">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-indigo-100 rounded-lg group-hover:bg-orange-100 transition-colors">
+                            <span class="material-icons text-indigo-600 group-hover:text-orange-600">payments</span>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-800 group-hover:text-orange-700">Payout List</p>
+                            <p class="text-sm text-gray-500">View all payouts</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-4 text-white">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-white/20 rounded-lg">
+                    <span class="material-icons text-white">people</span>
+                </div>
+                <div>
+                    <p class="text-blue-100 text-sm">Total Employees</p>
+                    <p class="text-2xl font-bold">{{ employees|length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-4 text-white">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-white/20 rounded-lg">
+                    <span class="material-icons text-white">check_circle</span>
+                </div>
+                <div>
+                    <p class="text-green-100 text-sm">Processed This Month</p>
+                    <p class="text-2xl font-bold">{{ processed_count|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-4 text-white">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-white/20 rounded-lg">
+                    <span class="material-icons text-white">pending</span>
+                </div>
+                <div>
+                    <p class="text-purple-100 text-sm">Pending Payouts</p>
+                    <p class="text-2xl font-bold">{{ pending_count|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
