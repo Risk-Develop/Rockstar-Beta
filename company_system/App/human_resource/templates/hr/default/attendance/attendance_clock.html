@@ -1440,5 +1440,45 @@ function showToast(message, type) {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
+// HTMX event handlers for attendance clock actions
+document.addEventListener('htmx:afterRequest', function(event) {
+    const xhr = event.detail.xhr;
+    
+    // Check if response is JSON
+    const contentType = xhr.getResponseHeader('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        try {
+            const data = JSON.parse(xhr.responseText);
+            
+            if (data.success) {
+                showToast(data.message || 'Action completed successfully!', 'success');
+                
+                // If redirect is provided, navigate after a short delay
+                if (data.redirect) {
+                    setTimeout(() => {
+                        window.location.href = data.redirect;
+                    }, 500);
+                } else {
+                    // Just reload the page to show updated state
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 500);
+                }
+            } else {
+                showToast(data.message || 'An error occurred. Please try again.', 'error');
+            }
+        } catch (e) {
+            console.error('Error parsing JSON response:', e);
+        }
+    }
+});
+
+// Handle HTMX response errors
+document.addEventListener('htmx:responseError', function(event) {
+    const xhr = event.detail.xhr;
+    console.log('HTMX Error:', xhr.status, xhr.statusText);
+    showToast('An error occurred. Please try again.', 'error');
+});
 </script>
 {% endblock %}

@@ -700,39 +700,125 @@
                         </span>
                         Survey Guide
                     </h3>
-                    <div class="space-y-4">
-                        <div class="p-4 bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
-                            <p class="font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
-                                <span class="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs">1</span>
-                                Survey Name
-                            </p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300">Use a clear, descriptive name like "Q1 2024 Employee Feedback"</p>
+                    <div class="space-y-3">
+                        <!-- Guide 1: Survey Name -->
+                        <div class="bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden" x-data="{ expanded: true }">
+                            <button @click="expanded = !expanded" class="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-colors">
+                                <p class="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                    <span class="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs">1</span>
+                                    Survey Name
+                                </p>
+                                <svg class="w-4 h-4 text-gray-500 transition-transform duration-200" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div x-show="expanded" 
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-2"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 translate-y-0"
+                                 x-transition:leave-end="opacity-0 -translate-y-2"
+                                 class="px-4 pb-6 pt-4">
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Use a clear, descriptive name like "Q1 2024 Employee Feedback"</p>
+                            </div>
                         </div>
-                        <div class="p-4 bg-white dark:bg-orange-700/50 rounded-xl border border-gray-200 dark:border-orange-600">
-                            <p class="font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
-                                <span class="w-6 h-6 text-white rounded-full flex items-center justify-center text-xs" style="background-color: rgb(147 51 234);">2</span>
-                                Schedule
-                            </p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300">Set dates. Leave end date empty for ongoing surveys.</p>
+
+                        <!-- Guide 2: Schedule -->
+                        <div class="bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden" x-data="{ expanded: false }">
+                            <button @click="expanded = !expanded" class="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-colors">
+                                <p class="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                    <span class="w-6 h-6 text-white rounded-full flex items-center justify-center text-xs" style="background-color: rgb(147 51 234);">2</span>
+                                    Schedule
+                                </p>
+                                <svg class="w-4 h-4 text-gray-500 transition-transform duration-200" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div x-show="expanded"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-2"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 translate-y-0"
+                                 x-transition:leave-end="opacity-0 -translate-y-2"
+                                 class="px-4 pb-6 pt-4">
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Set dates. Leave end date empty for ongoing surveys.</p>
+                            </div>
                         </div>
-                        <div class="p-4 bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
-                            <p class="font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
-                                <span class="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">3</span>
-                                Anonymous
-                            </p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300">Unchecked = employee tracked. Checked = completely anonymous.</p>
+
+                        <!-- Guide 3: Anonymous -->
+                        <div class="bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden" x-data="{ expanded: false }">
+                            <button @click="expanded = !expanded" class="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-colors">
+                                <p class="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                    <span class="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">3</span>
+                                    Anonymous
+                                </p>
+                                <svg class="w-4 h-4 text-gray-500 transition-transform duration-200" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div x-show="expanded"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-2"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 translate-y-0"
+                                 x-transition:leave-end="opacity-0 -translate-y-2"
+                                 class="px-4 pb-6 pt-4">
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Unchecked = employee tracked. Checked = completely anonymous.</p>
+                            </div>
                         </div>
-                        <div class="p-4 bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
-                            <p class="font-semibold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
-                                <span class="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs">4</span>
-                                Question Types
-                            </p>
-                            <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                                <li>• <strong>NPS</strong> — 0-10 score (Recommended)</li>
-                                <li>• <strong>Rating</strong> — Stars or 1-3</li>
-                                <li>• <strong>Yes/No</strong> — Binary</li>
-                                <li>• <strong>Text</strong> — Open response</li>
-                            </ul>
+
+                        <!-- Guide 4: Question Types -->
+                        <div class="bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden" x-data="{ expanded: false }">
+                            <button @click="expanded = !expanded" class="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-colors">
+                                <p class="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                    <span class="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs">4</span>
+                                    Question Types
+                                </p>
+                                <svg class="w-4 h-4 text-gray-500 transition-transform duration-200" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div x-show="expanded"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-2"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 translate-y-0"
+                                 x-transition:leave-end="opacity-0 -translate-y-2"
+                                 class="px-4 pb-6 pt-4">
+                                <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                                    <li>• <strong>NPS</strong> — 0-10 score (Recommended)</li>
+                                    <li>• <strong>Rating</strong> — Stars or 1-3</li>
+                                    <li>• <strong>Yes/No</strong> — Binary</li>
+                                    <li>• <strong>Text</strong> — Open response</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Guide 5: Pagination -->
+                        <div class="bg-white dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden" x-data="{ expanded: false }">
+                            <button @click="expanded = !expanded" class="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-colors">
+                                <p class="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                                    <span class="w-6 h-6 text-white rounded-full flex items-center justify-center text-xs" style="background-color: rgb(59 130 246);">5</span>
+                                    Pagination
+                                </p>
+                                <svg class="w-4 h-4 text-gray-500 transition-transform duration-200" :class="expanded ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div x-show="expanded"
+                                 x-transition:enter="transition ease-out duration-200"
+                                 x-transition:enter-start="opacity-0 -translate-y-2"
+                                 x-transition:enter-end="opacity-100 translate-y-0"
+                                 x-transition:leave="transition ease-in duration-150"
+                                 x-transition:leave-start="opacity-100 translate-y-0"
+                                 x-transition:leave-end="opacity-0 -translate-y-2"
+                                 class="px-4 pb-6 pt-4">
+                                <p class="text-sm text-gray-600 dark:text-gray-300">Employees will see <strong>5 questions per page</strong>. Use Next/Previous to navigate between pages.</p>
+                            </div>
                         </div>
                     </div>
 

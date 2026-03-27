@@ -251,7 +251,6 @@
                 <!-- Tabs -->
                 <div class="mb-6">
                     <div class="flex border-b border-gray-200 dark:border-gray-700">
-                        <!-- FIX: Added type="button" to prevent accidental form submission -->
                         <button
                             type="button"
                             onclick="switchTab('attendance-clock')"
@@ -263,7 +262,6 @@
                             Attendance Clock
                         </button>
 
-                        <!-- FIX: Added type="button" to prevent accidental form submission -->
                         <button
                             type="button"
                             onclick="switchTab('absent-status')"
@@ -304,7 +302,9 @@
                         </div>
                         <div class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">Ready to Clock In</div>
                         <p class="text-gray-500 dark:text-gray-400 mb-6">Click the button below to start your work day</p>
-                        <form method="post" hx-post="{% url 'master_dashboard:attendance_clock_master' %}" hx-vals='{"action": "clock_in"}' hx-swap="outerHTML" hx-target="#content-attendance-clock">
+
+                        <form method="post" action="/master_dashboard/attendance/clock/" id="clockInForm" class="attendance-ajax-form">
+                            <input type="hidden" name="action" value="clock_in">
                             {% csrf_token %}
                             <button type="submit"
                                     class="px-8 py-4 bg-orange-600 text-white text-lg font-semibold rounded-lg hover:bg-orange-700 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
@@ -364,7 +364,6 @@
 
                         <p class="text-gray-500 dark:text-gray-400 mb-6">Click the button below to end your work day</p>
 
-                        <!-- Current Status Indicators -->
                         {% if shift_rule.lunch_required %}
                         <div class="mt-2 mb-4">
                             {% if not attendance.lunch_in %}
@@ -382,7 +381,8 @@
                         {% if shift_rule.lunch_required %}
                         <div class="flex justify-center gap-3 mb-4">
                             {% if not attendance.lunch_in %}
-                            <form method="post" hx-post="{% url 'master_dashboard:attendance_clock_master' %}" hx-vals='{"action": "lunch_in"}' hx-swap="outerHTML" hx-target="#content-attendance-clock">
+                            <form method="post" action="/master_dashboard/attendance/clock/" class="attendance-ajax-form">
+                                <input type="hidden" name="action" value="lunch_in">
                                 {% csrf_token %}
                                 <button type="submit"
                                         class="px-6 py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition">
@@ -395,7 +395,8 @@
                                 </button>
                             </form>
                             {% elif not attendance.lunch_out %}
-                            <form method="post" hx-post="{% url 'master_dashboard:attendance_clock_master' %}" hx-vals='{"action": "lunch_out"}' hx-swap="outerHTML" hx-target="#content-attendance-clock">
+                            <form method="post" action="/master_dashboard/attendance/clock/" class="attendance-ajax-form">
+                                <input type="hidden" name="action" value="lunch_out">
                                 {% csrf_token %}
                                 <button type="submit"
                                         class="px-6 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition">
@@ -424,7 +425,8 @@
                             </p>
                         </div>
                         {% else %}
-                        <form method="post" hx-post="{% url 'master_dashboard:attendance_clock_master' %}" hx-vals='{"action": "clock_out"}' hx-swap="outerHTML" hx-target="#content-attendance-clock">
+                        <form method="post" action="/master_dashboard/attendance/clock/" class="attendance-ajax-form">
+                            <input type="hidden" name="action" value="clock_out">
                             {% csrf_token %}
                             <button type="submit"
                                     class="px-8 py-4 bg-orange-600 text-white text-lg font-semibold rounded-lg hover:bg-orange-700 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
@@ -532,186 +534,7 @@
                     </div>
                 </div>
 
-                <!-- ============================================================
-                     SINGLE, CLEAN switchTab — FIX: hover classes properly toggled,
-                     type="button" added to tab buttons above.
-                     ============================================================ -->
-                <script>
-                // FIX: Store absent records in memory to avoid redundant fetches
-                let _absentRecordsCache = null;
-
-                // Load absent records once on page load
-                document.addEventListener('DOMContentLoaded', function() {
-                    loadAbsentRecordsDropdown();
-                });
-
-                function loadAbsentRecordsDropdown() {
-                    fetch('{% url "master_dashboard:get_absent_records_ajax_master" %}')
-                        .then(response => response.json())
-                        .then(data => {
-                            _absentRecordsCache = data.absent_records || [];
-                            const dropdown = document.getElementById('absentRecordsDropdown');
-                            dropdown.innerHTML = '<option value="">Select a date...</option>';
-
-                            if (_absentRecordsCache.length > 0) {
-                                _absentRecordsCache.forEach(function(record) {
-                                    const option = document.createElement('option');
-                                    option.value = record.id;
-                                    option.textContent = record.date_display + (record.is_appealed ? ' (Pending)' : '');
-                                    dropdown.appendChild(option);
-                                });
-
-                                // Auto-select first record
-                               // dropdown.value = _absentRecordsCache[0].id;
-                               // renderAbsentRecord(_absentRecordsCache[0].id);
-                            } else {
-                                dropdown.innerHTML = '<option value="">No absent records found</option>';
-                                document.getElementById('absentRecordContainer').innerHTML = `
-                                    <div class="inline-flex items-center justify-center h-24 w-24 rounded-full bg-green-100 dark:bg-green-900 mb-4 mx-auto">
-                                        <svg class="h-12 w-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                    </div>
-                                    <div class="text-xl font-semibold text-green-700 dark:text-green-300 mb-2">No Absent Records</div>
-                                    <p class="text-gray-500 dark:text-gray-400">You have no absent records.</p>`;
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error loading absent records:', error);
-                            document.getElementById('absentRecordsDropdown').innerHTML =
-                                '<option value="">Error loading records</option>';
-                        });
-                }
-
-                // FIX: Uses in-memory cache — no redundant fetch on every select change
-                function renderAbsentRecord(recordId) {
-                    const container = document.getElementById('absentRecordContainer');
-
-                    if (!recordId) {
-                        container.innerHTML = `
-                            <div class="inline-flex items-center justify-center h-24 w-24 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
-                                <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                            </div>
-                            <div class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Select a Date</div>
-                            <p class="text-gray-500 dark:text-gray-400">Choose a date from the dropdown above to view details.</p>`;
-                        return;
-                    }
-
-                    const record = (_absentRecordsCache || []).find(r => String(r.id) === String(recordId));
-                    if (!record) return;
-
-                    const noteHtml = record.note
-                        ? `<div class="mt-2 p-3 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg max-w-md mx-auto">
-                               <p class="text-sm text-red-600 dark:text-red-400">Note: ${record.note}</p>
-                           </div>`
-                        : '';
-
-                    // FIX: Build appeal URL server-side, substituting record ID safely in JS
-                    const appealBaseUrl = '{% url "master_dashboard:appeal_absent_master" 0 %}'.replace('/0/', '/' + record.id + '/');
-
-                    if (record.is_appealed) {
-                        container.innerHTML = `
-                            <div class="inline-flex items-center justify-center h-24 w-24 rounded-full bg-red-100 dark:bg-red-900 mb-4 mx-auto">
-                                <svg class="h-12 w-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                            </div>
-                            <div class="text-xl font-semibold text-red-700 dark:text-red-300 mb-2">Marked Absent</div>
-                            <p class="text-gray-500 dark:text-gray-400 mb-2">Date: <span class="font-semibold">${record.date_display}</span></p>
-                            ${noteHtml}
-                            <div class="mt-3 px-4 py-2 bg-blue-100 dark:bg-blue-900 rounded-lg inline-block">
-                                <span class="text-blue-700 dark:text-blue-300 font-semibold">Appeal Pending</span>
-                            </div>`;
-                    } else {
-                        container.innerHTML = `
-                            <div class="inline-flex items-center justify-center h-24 w-24 rounded-full bg-red-100 dark:bg-red-900 mb-4 mx-auto">
-                                <svg class="h-12 w-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                            </div>
-                            <div class="text-xl font-semibold text-red-700 dark:text-red-300 mb-2">Marked Absent</div>
-                            <p class="text-gray-500 dark:text-gray-400 mb-2">Date: <span class="font-semibold">${record.date_display}</span></p>
-                            ${noteHtml}
-                            <div class="mt-4 max-w-md mx-auto">
-                                <button type="button" onclick="showTabAppealForm()"
-                                        class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
-                                    Submit Appeal
-                                </button>
-                                <div id="tabAppealForm" class="hidden mt-3 p-4 bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-700 rounded-lg text-left">
-                                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Appeal This Record</h4>
-                                    <form method="post" action="${appealBaseUrl}">
-                                        <input type="hidden" name="csrfmiddlewaretoken" value="${getCsrfToken()}">
-                                        <input type="hidden" name="next" value="master_dashboard">
-                                        <textarea
-                                            name="appeal_reason"
-                                            rows="3"
-                                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
-                                            placeholder="Please explain why you should not be marked absent..."
-                                            required></textarea>
-                                        <div class="flex gap-2 mt-2">
-                                            <button type="submit" name="action_type" value="appeal"
-                                                    class="flex-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition">
-                                                Submit Appeal
-                                            </button>
-                                            <button type="submit" name="action_type" value="request_hr"
-                                                    class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
-                                                Request HR Review
-                                            </button>
-                                            <button type="button" onclick="hideTabAppealForm()"
-                                                    class="px-3 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-300 transition">
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>`;
-                    }
-                }
-
-                function showTabAppealForm() {
-                    const f = document.getElementById('tabAppealForm');
-                    if (f) f.classList.remove('hidden');
-                }
-
-                function hideTabAppealForm() {
-                    const f = document.getElementById('tabAppealForm');
-                    if (f) f.classList.add('hidden');
-                }
-
-                // FIX: Single switchTab — properly removes ALL hover/active classes
-                function switchTab(tabName) {
-                    document.querySelectorAll('.tab-content').forEach(function(content) {
-                        content.classList.add('hidden');
-                    });
-
-                    document.querySelectorAll('.tab-btn').forEach(function(btn) {
-                        btn.classList.remove(
-                            'border-orange-500', 'text-orange-600',
-                            'dark:text-orange-400', 'dark:border-orange-400'
-                        );
-                        btn.classList.add(
-                            'border-transparent', 'text-gray-500',
-                            'hover:text-gray-700', 'dark:text-gray-400',
-                            'dark:hover:text-gray-200'
-                        );
-                    });
-
-                    document.getElementById('content-' + tabName).classList.remove('hidden');
-
-                    var activeBtn = document.getElementById('tab-' + tabName);
-                    activeBtn.classList.remove(
-                        'border-transparent', 'text-gray-500',
-                        'hover:text-gray-700', 'dark:text-gray-400',
-                        'dark:hover:text-gray-200'
-                    );
-                    activeBtn.classList.add(
-                        'border-orange-500', 'text-orange-600',
-                        'dark:text-orange-400'
-                    );
-                }
-                </script>
+            </div>{# end card #}
 
             {% if failed_to_clock_out_records %}
             <div class="fixed bottom-6 right-6 z-50">
@@ -767,7 +590,9 @@
                                 </p>
                             </div>
 
-                            <form method="post" id="failedClockOutForm" class="p-3 border-t border-purple-100 dark:border-purple-800 space-y-3" action="#">
+                            {# FIX: Use human_resource:acknowledge_attendance since master_dashboard doesn't have this endpoint #}
+                            <form method="post" id="failedClockOutForm" class="p-3 border-t border-purple-100 dark:border-purple-800 space-y-3 attendance-ajax-form"
+                                  action="{% url 'human_resource:acknowledge_attendance' 0 %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="record_id" id="selectedRecordId" value="">
                                 <input type="hidden" name="next" value="master_dashboard">
@@ -795,7 +620,7 @@
                                 </div>
 
                                 <button type="submit" id="failedClockOutSubmitBtn" disabled
-                                        class="w-full px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+                                        class="w-full px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 font-semibold rounded-lg transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed text-white">
                                     <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                     </svg>
@@ -953,168 +778,433 @@
 
 {% block extra_scripts %}
 <script>
-function getCsrfToken() {
-    const name = 'csrftoken';
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-        cookie = cookie.trim();
-        if (cookie.startsWith(name + '=')) {
-            return decodeURIComponent(cookie.slice(name.length + 1));
+// ============================================================
+// FIX: Single consolidated DOMContentLoaded — all init logic
+// lives here. No more duplicate event listeners.
+// ============================================================
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ----------------------------------------------------------
+    // 1. Utility: single CSRF helper used everywhere
+    // ----------------------------------------------------------
+    function getCsrfToken() {
+        const name = 'csrftoken';
+        for (let cookie of document.cookie.split(';')) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                return decodeURIComponent(cookie.slice(name.length + 1));
+            }
         }
+        return '';
     }
-    return '';
-}
+    // Expose globally so inline onclick handlers (appeal form) can call it
+    window.getCsrfToken = getCsrfToken;
 
-window.showStatusModal = function(date, statuses, lateMinutes, deductionMinutes, overlunchMinutes, overlunchValidated, hoursWorked) {
-    const modal = document.getElementById('statusDetailModal');
-    const modalBody = document.getElementById('statusModalBody');
-    const modalTitle = document.getElementById('statusModalTitle');
+    // ----------------------------------------------------------
+    // 2. Toast notification
+    // ----------------------------------------------------------
+    window.showToast = function (message, type) {
+        const existing = document.getElementById('ajax-toast');
+        if (existing) existing.remove();
 
-    modalTitle.textContent = 'Attendance Details - ' + date;
+        const toast = document.createElement('div');
+        toast.id = 'ajax-toast';
+        toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg ${
+            type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`;
+        toast.innerHTML = `
+            <div class="flex items-center">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    ${type === 'success'
+                        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>'
+                        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'}
+                </svg>
+                <span>${message}</span>
+            </div>`;
+        document.body.appendChild(toast);
 
-    let content = '<div class="font-semibold mb-2">Status Details</div><div class="flex flex-wrap gap-2 mb-3">';
-    const statusList = statuses.split(',').map(s => s.trim()).filter(s => s);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(0.5rem)'; // FIX: valid CSS value, was 'translate-y-2'
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    };
 
-    if (statusList.length > 0) {
-        statusList.forEach(s => {
-            let sClass = 'bg-gray-500 text-white';
-            if (s === 'present')                  sClass = 'bg-green-500 text-white';
-            else if (s === 'absent')              sClass = 'bg-red-500 text-white';
-            else if (s === 'late')                sClass = 'bg-yellow-500 text-black';
-            else if (s === 'on_leave')            sClass = 'bg-blue-500 text-white';
-            else if (s === 'early_leave')         sClass = 'bg-orange-500 text-white';
-            else if (s === 'failed_to_clock_out') sClass = 'bg-purple-500 text-white';
-            else if (s === 'overlunch_pending')   sClass = 'bg-orange-500 text-white';
-            else if (s === 'missing_lunch')       sClass = 'bg-red-500 text-white';
-            const sDisplay = s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ');
-            content += '<span class="px-3 py-1 rounded-full text-xs font-medium ' + sClass + '">' + sDisplay + '</span>';
-        });
-    } else {
-        content += '<span class="px-3 py-1 rounded-full text-sm font-medium bg-gray-500 text-white">N/A</span>';
-    }
-    content += '</div>';
-
-    if (overlunchMinutes > 0) {
-        const isValidated = overlunchValidated === 'True' || overlunchValidated === 'true';
-        content += '<div class="mb-1 ' + (isValidated ? 'text-green-600' : 'text-orange-500') + '">☕ Overlunch: ' + overlunchMinutes + ' min ' + (isValidated ? '✓ Validated' : '⚠ Pending') + '</div>';
-    }
-    if (lateMinutes > 0)       content += '<div class="mb-1 text-yellow-600">⏰ Late: ' + lateMinutes + ' min</div>';
-    if (deductionMinutes > 0)  content += '<div class="mb-1 text-red-500">➖ Deduction: ' + deductionMinutes + ' min</div>';
-    if (hoursWorked > 0)       content += '<div class="mb-1 text-blue-600">⏱️ Hours Worked: ' + hoursWorked + ' hrs</div>';
-
-    modalBody.innerHTML = content;
-    modal.classList.remove('hidden');
-};
-
-window.closeStatusModal = function() {
-    const modal = document.getElementById('statusDetailModal');
-    if (modal) modal.classList.add('hidden');
-};
-
-window.toggleFailedClockOutPanel = function() {
-    const panel = document.getElementById('failedClockOutPanel');
-    if (panel) panel.classList.toggle('hidden');
-};
-
-window.toggleNoteField = function(value) {
-    const noteTextarea = document.getElementById('note');
-    if (!noteTextarea) return;
-    noteTextarea.placeholder = value === 'request_hr'
-        ? 'Please explain what happened and what time you actually left work...'
-        : 'e.g., Forgot to clock out due to emergency...';
-};
-
-window.loadFailedClockOutDetail = function(recordId) {
-    const detailDiv = document.getElementById('failedClockOutDetail');
-    const form = document.getElementById('failedClockOutForm');
-    const selectedRecordId = document.getElementById('selectedRecordId');
-    const submitBtn = document.getElementById('failedClockOutSubmitBtn');
-
-    if (!recordId) {
-        detailDiv.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-2">Select a date to view details</p>';
-        selectedRecordId.value = '';
-        if (submitBtn) submitBtn.disabled = true;
-        return;
-    }
-
-    const select = document.getElementById('failedClockOutSelect');
-    const selectedOption = select.options[select.selectedIndex];
-    const parts = selectedOption.text.split(' - ');
-
-    detailDiv.innerHTML = `
-        <div class="bg-purple-50 dark:bg-purple-900 rounded-lg p-3">
-            <p class="text-purple-700 dark:text-purple-300 text-sm">
-                <strong>Date:</strong> ${parts[0] || ''}<br>
-                <strong>Clocked In:</strong> ${parts[1] || 'N/A'}
-            </p>
-        </div>`;
-
-    selectedRecordId.value = recordId;
-    form.action = '/master_dashboard/human_resource/attendance/' + recordId + '/acknowledge/';
-    if (submitBtn) submitBtn.disabled = false;
-};
-
-document.addEventListener('DOMContentLoaded', function() {
-
+    // ----------------------------------------------------------
+    // 3. Real-time clock
+    // ----------------------------------------------------------
     function updateClock() {
         const now = new Date();
-        const currentTimeEl = document.getElementById('currentTime');
-        const currentDateEl = document.getElementById('currentDate');
-        if (currentTimeEl) currentTimeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-        if (currentDateEl) currentDateEl.textContent = now.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const timeEl = document.getElementById('currentTime');
+        const dateEl = document.getElementById('currentDate');
+        if (timeEl) timeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        if (dateEl) dateEl.textContent = now.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     }
     updateClock();
     setInterval(updateClock, 1000);
 
-   
-    const HISTORY_URL = '{% url "master_dashboard:get_absent_records_ajax_master" %}';
+    // ----------------------------------------------------------
+    // 4. Generic AJAX form submission handler
+    //    Targets all forms with class "attendance-ajax-form".
+    //    FIX: HTMX attributes removed from clock-in form so only
+    //    this handler fires — no more double-submission conflict.
+    // ----------------------------------------------------------
+    function bindAjaxForms() {
+        document.querySelectorAll('form.attendance-ajax-form').forEach(function (form) {
+            // Avoid binding twice if called again after dynamic content loads
+            if (form.dataset.ajaxBound) return;
+            form.dataset.ajaxBound = '1';
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+                const formData = new FormData(form);
+                const submitBtn = form.querySelector('button[type="submit"]');
+                let originalContent = '';
+
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    originalContent = submitBtn.innerHTML;
+                    submitBtn.innerHTML = 'Processing...';
+                }
+
+                try {
+                    const formAction = form.getAttribute('action');
+                    
+                    const response = await fetch(formAction, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    const contentType = response.headers.get('content-type') || '';
+                    
+                    if (contentType.includes('application/json')) {
+                        const data = await response.json();
+                        showToast(data.message || (data.success ? 'Action completed successfully!' : 'An error occurred'), data.success ? 'success' : 'error');
+                    } else {
+                        showToast('Action completed. Reloading...', 'success');
+                    }
+
+                    setTimeout(() => window.location.reload(), 1000);
+
+                } catch (err) {
+                    console.error('AJAX submit error:', err);
+                    showToast('Network error. Please try again.', 'error');
+                } finally {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        submitBtn.innerHTML = originalContent;
+                    }
+                }
+            });
+        });
+    }
+    bindAjaxForms();
+
+    // ----------------------------------------------------------
+    // 5. Absent records — loaded once, rendered from cache
+    //    FIX: was loaded both here AND in the inline <script>.
+    //    Now lives only here in extra_scripts.
+    // ----------------------------------------------------------
+    let _absentRecordsCache = null;
+
+    function loadAbsentRecordsDropdown() {
+        fetch('{% url "master_dashboard:get_absent_records_ajax_master" %}')
+            .then(r => r.json())
+            .then(data => {
+                _absentRecordsCache = data.absent_records || [];
+                const dropdown = document.getElementById('absentRecordsDropdown');
+                if (!dropdown) return;
+                dropdown.innerHTML = '<option value="">Select a date...</option>';
+
+                if (_absentRecordsCache.length > 0) {
+                    _absentRecordsCache.forEach(function (record) {
+                        const option = document.createElement('option');
+                        option.value = record.id;
+                        option.textContent = record.date_display + (record.is_appealed ? ' (Pending)' : '');
+                        dropdown.appendChild(option);
+                    });
+                } else {
+                    dropdown.innerHTML = '<option value="">No absent records found</option>';
+                    const container = document.getElementById('absentRecordContainer');
+                    if (container) {
+                        container.innerHTML = `
+                            <div class="inline-flex items-center justify-center h-24 w-24 rounded-full bg-green-100 dark:bg-green-900 mb-4 mx-auto">
+                                <svg class="h-12 w-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div class="text-xl font-semibold text-green-700 dark:text-green-300 mb-2">No Absent Records</div>
+                            <p class="text-gray-500 dark:text-gray-400">You have no absent records.</p>`;
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('Error loading absent records:', err);
+                const dropdown = document.getElementById('absentRecordsDropdown');
+                if (dropdown) dropdown.innerHTML = '<option value="">Error loading records</option>';
+            });
+    }
+
+    loadAbsentRecordsDropdown();
+
+    // FIX: renderAbsentRecord uses event delegation for show/hide appeal form
+    // so the functions work even after innerHTML replaces the container.
+    window.renderAbsentRecord = function (recordId) {
+        const container = document.getElementById('absentRecordContainer');
+        if (!container) return;
+
+        if (!recordId) {
+            container.innerHTML = `
+                <div class="inline-flex items-center justify-center h-24 w-24 rounded-full bg-gray-100 dark:bg-gray-700 mb-4">
+                    <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Select a Date</div>
+                <p class="text-gray-500 dark:text-gray-400">Choose a date from the dropdown above to view details.</p>`;
+            return;
+        }
+
+        const record = (_absentRecordsCache || []).find(r => String(r.id) === String(recordId));
+        if (!record) return;
+
+        // FIX: Escape note content before inserting into HTML to prevent XSS.
+        const escapeHtml = str => {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        };
+        const noteHtml = record.note
+            ? `<div class="mt-2 p-3 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg max-w-md mx-auto">
+                   <p class="text-sm text-red-600 dark:text-red-400">Note: ${escapeHtml(record.note)}</p>
+               </div>`
+            : '';
+
+        // FIX: Replace /0/ with record ID (simple string replace)
+        const appealUrl = '{% url "master_dashboard:appeal_absent_master" 0 %}'.replace('/0/', '/' + record.id + '/');
+
+        if (record.is_appealed) {
+            container.innerHTML = `
+                <div class="inline-flex items-center justify-center h-24 w-24 rounded-full bg-red-100 dark:bg-red-900 mb-4 mx-auto">
+                    <svg class="h-12 w-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="text-xl font-semibold text-red-700 dark:text-red-300 mb-2">Marked Absent</div>
+                <p class="text-gray-500 dark:text-gray-400 mb-2">Date: <span class="font-semibold">${escapeHtml(record.date_display)}</span></p>
+                ${noteHtml}
+                <div class="mt-3 px-4 py-2 bg-blue-100 dark:bg-blue-900 rounded-lg inline-block">
+                    <span class="text-blue-700 dark:text-blue-300 font-semibold">Appeal Pending</span>
+                </div>`;
+        } else {
+            container.innerHTML = `
+                <div class="inline-flex items-center justify-center h-24 w-24 rounded-full bg-red-100 dark:bg-red-900 mb-4 mx-auto">
+                    <svg class="h-12 w-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div class="text-xl font-semibold text-red-700 dark:text-red-300 mb-2">Marked Absent</div>
+                <p class="text-gray-500 dark:text-gray-400 mb-2">Date: <span class="font-semibold">${escapeHtml(record.date_display)}</span></p>
+                ${noteHtml}
+                <div class="mt-4 max-w-md mx-auto">
+                    <button type="button" data-action="show-appeal"
+                            class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
+                        Submit Appeal
+                    </button>
+                    <div id="tabAppealForm" class="hidden mt-3 p-4 bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-700 rounded-lg text-left">
+                        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Appeal This Record</h4>
+                        <form method="post" action="${appealUrl}" class="attendance-ajax-form">
+                            <input type="hidden" name="csrfmiddlewaretoken" value="${getCsrfToken()}">
+                            <input type="hidden" name="next" value="master_dashboard">
+                            <textarea
+                                name="appeal_reason"
+                                rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+                                placeholder="Please explain why you should not be marked absent..."
+                                required></textarea>
+                            <div class="flex gap-2 mt-2">
+                                <button type="submit" name="action_type" value="appeal"
+                                        class="flex-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition">
+                                    Submit Appeal
+                                </button>
+                                <button type="submit" name="action_type" value="request_hr"
+                                        class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
+                                    Request HR Review
+                                </button>
+                                <button type="button" data-action="hide-appeal"
+                                        class="px-3 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-300 transition">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>`;
+
+            // Re-bind AJAX on the newly injected appeal form
+            bindAjaxForms();
+        }
+    };
+
+    // FIX: Event delegation for show/hide appeal form.
+    // Works regardless of when innerHTML replaces the container.
+    document.addEventListener('click', function (e) {
+        const container = document.getElementById('absentRecordContainer');
+        if (!container) return;
+
+        if (e.target.closest('[data-action="show-appeal"]')) {
+            const form = container.querySelector('#tabAppealForm');
+            if (form) form.classList.remove('hidden');
+        }
+        if (e.target.closest('[data-action="hide-appeal"]')) {
+            const form = container.querySelector('#tabAppealForm');
+            if (form) form.classList.add('hidden');
+        }
+    });
+
+    // ----------------------------------------------------------
+    // 6. Tab switching
+    // ----------------------------------------------------------
+    window.switchTab = function (tabName) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('border-orange-500', 'text-orange-600', 'dark:text-orange-400', 'dark:border-orange-400');
+            btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'dark:text-gray-400', 'dark:hover:text-gray-200');
+        });
+
+        const content = document.getElementById('content-' + tabName);
+        if (content) content.classList.remove('hidden');
+
+        const activeBtn = document.getElementById('tab-' + tabName);
+        if (activeBtn) {
+            activeBtn.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'dark:text-gray-400', 'dark:hover:text-gray-200');
+            activeBtn.classList.add('border-orange-500', 'text-orange-600', 'dark:text-orange-400');
+        }
+    };
+
+    // ----------------------------------------------------------
+    // 7. Status modal
+    // ----------------------------------------------------------
+    window.showStatusModal = function (date, statuses, lateMinutes, deductionMinutes, overlunchMinutes, overlunchValidated, hoursWorked) {
+        const modal = document.getElementById('statusDetailModal');
+        const modalBody = document.getElementById('statusModalBody');
+        const modalTitle = document.getElementById('statusModalTitle');
+
+        modalTitle.textContent = 'Attendance Details - ' + date;
+
+        let content = '<div class="font-semibold mb-2">Status Details</div><div class="flex flex-wrap gap-2 mb-3">';
+        const statusList = statuses.split(',').map(s => s.trim()).filter(Boolean);
+
+        if (statusList.length > 0) {
+            statusList.forEach(s => {
+                let sClass = 'bg-gray-500 text-white';
+                if (s === 'present')                  sClass = 'bg-green-500 text-white';
+                else if (s === 'absent')              sClass = 'bg-red-500 text-white';
+                else if (s === 'late')                sClass = 'bg-yellow-500 text-black';
+                else if (s === 'on_leave')            sClass = 'bg-blue-500 text-white';
+                else if (s === 'early_leave')         sClass = 'bg-orange-500 text-white';
+                else if (s === 'failed_to_clock_out') sClass = 'bg-purple-500 text-white';
+                else if (s === 'overlunch_pending')   sClass = 'bg-orange-500 text-white';
+                else if (s === 'missing_lunch')       sClass = 'bg-red-500 text-white';
+                const sDisplay = s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ');
+                content += `<span class="px-3 py-1 rounded-full text-xs font-medium ${sClass}">${sDisplay}</span>`;
+            });
+        } else {
+            content += '<span class="px-3 py-1 rounded-full text-sm font-medium bg-gray-500 text-white">N/A</span>';
+        }
+        content += '</div>';
+
+        if (overlunchMinutes > 0) {
+            const isValidated = overlunchValidated === 'True' || overlunchValidated === 'true';
+            content += `<div class="mb-1 ${isValidated ? 'text-green-600' : 'text-orange-500'}">☕ Overlunch: ${overlunchMinutes} min ${isValidated ? '✓ Validated' : '⚠ Pending'}</div>`;
+        }
+        if (lateMinutes > 0)       content += `<div class="mb-1 text-yellow-600">⏰ Late: ${lateMinutes} min</div>`;
+        if (deductionMinutes > 0)  content += `<div class="mb-1 text-red-500">➖ Deduction: ${deductionMinutes} min</div>`;
+        if (hoursWorked > 0)       content += `<div class="mb-1 text-blue-600">⏱️ Hours Worked: ${hoursWorked} hrs</div>`;
+
+        modalBody.innerHTML = content;
+        modal.classList.remove('hidden');
+    };
+
+    window.closeStatusModal = function () {
+        const modal = document.getElementById('statusDetailModal');
+        if (modal) modal.classList.add('hidden');
+    };
+
+    // ----------------------------------------------------------
+    // 8. Attendance history filter
+    //    NOTE: The attendance history is loaded server-side on page load.
+    //    This filter is disabled since there's no dedicated history endpoint
+    //    in master_dashboard. The initial page render provides all history data.
+    // ----------------------------------------------------------
+    // DISABLED: No dedicated attendance_history_ajax_master endpoint exists
+    // const HISTORY_URL = '{% url "master_dashboard:get_absent_records_ajax_master" %}';
+    const HISTORY_URL = null;
 
     function fetchHistory(url, btn, originalText) {
-        btn.textContent = 'Loading...';
-        btn.disabled = true;
-        fetch(url, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCsrfToken() }
-        })
-        .then(r => r.json())
-        .then(data => updateAttendanceTable(data.history))
-        .catch(() => alert('Failed to fetch attendance history. Please try again.'))
-        .finally(() => { btn.textContent = originalText; btn.disabled = false; });
+        // Don't try to fetch if URL is null (filter disabled)
+        if (!url) {
+            showToast('Attendance history is loaded on page refresh. Use the date filters above and refresh the page.', 'error');
+            return;
+        }
+        if (btn) { btn.textContent = 'Loading...'; btn.disabled = true; }
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCsrfToken() } })
+            .then(r => r.json())
+            .then(data => updateAttendanceTable(data.history || []))
+            .catch(() => showToast('Failed to fetch attendance history. Please try again.', 'error'))
+            .finally(() => { if (btn) { btn.textContent = originalText; btn.disabled = false; } });
     }
 
     const filterBtn = document.getElementById('filter-ajax-btn');
-    const clearBtn = document.getElementById('clear-ajax-btn');
+    const clearBtn  = document.getElementById('clear-ajax-btn');
     const startDateInput = document.getElementById('start_date');
-    const endDateInput = document.getElementById('end_date');
+    const endDateInput   = document.getElementById('end_date');
 
+    // Filter buttons are now enabled - history can be filtered via GET parameters
     if (filterBtn) {
+        filterBtn.disabled = false;
+        filterBtn.title = 'Apply date filter to attendance history';
+        filterBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        
+        // Add click handler to submit form via GET
         filterBtn.addEventListener('click', function() {
-            let url = HISTORY_URL;
-            const params = [];
-            if (startDateInput.value) params.push('start_date=' + startDateInput.value);
-            if (endDateInput.value) params.push('end_date=' + endDateInput.value);
-            if (params.length) url += '?' + params.join('&');
-            fetchHistory(url, filterBtn, 'Apply Filter');
+            const form = document.getElementById('attendance-filter-form');
+            if (form) {
+                form.method = 'GET';
+                form.action = window.location.pathname;
+                form.submit();
+            }
         });
     }
 
     if (clearBtn) {
+        clearBtn.disabled = false;
+        clearBtn.title = 'Clear date filters';
+        clearBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        
+        // Add click handler to clear filters and reload
         clearBtn.addEventListener('click', function() {
-            startDateInput.value = '';
-            endDateInput.value = '';
-            fetchHistory(HISTORY_URL, clearBtn, 'Clear');
+            window.location.href = window.location.pathname;
         });
     }
 
     function updateAttendanceTable(history) {
         const tbody = document.getElementById('attendance-history-body');
+        if (!tbody) return;
+
+        // FIX: Use CSS variable check for dark mode so it reacts to theme changes,
+        // instead of reading classList once at call time.
         const isDark = document.documentElement.classList.contains('dark');
 
         if (!history || history.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="px-4 py-8 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}">
+                    <td colspan="6" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                         <div class="flex flex-col items-center">
-                            <svg class="h-12 w-12 ${isDark ? 'text-gray-500' : 'text-gray-400'} mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                             </svg>
                             <p>No attendance records found.</p>
@@ -1129,12 +1219,12 @@ document.addEventListener('DOMContentLoaded', function() {
             let rowClass = '';
             let statusClasses = '';
 
-            if (a.status === 'late')                { rowClass = isDark ? 'bg-yellow-900' : 'bg-yellow-50'; statusClasses = isDark ? 'bg-yellow-900 text-yellow-200' : 'bg-yellow-100 text-yellow-800'; }
-            else if (a.status === 'absent')         { rowClass = isDark ? 'bg-red-900' : 'bg-red-50'; statusClasses = isDark ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'; }
-            else if (a.status === 'early_leave')    { rowClass = isDark ? 'bg-orange-900' : 'bg-orange-50'; statusClasses = isDark ? 'bg-orange-900 text-orange-200' : 'bg-orange-100 text-orange-800'; }
+            if (a.status === 'late')                     { rowClass = isDark ? 'bg-yellow-900' : 'bg-yellow-50'; statusClasses = isDark ? 'bg-yellow-900 text-yellow-200' : 'bg-yellow-100 text-yellow-800'; }
+            else if (a.status === 'absent')              { rowClass = isDark ? 'bg-red-900' : 'bg-red-50'; statusClasses = isDark ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'; }
+            else if (a.status === 'early_leave')         { rowClass = isDark ? 'bg-orange-900' : 'bg-orange-50'; statusClasses = isDark ? 'bg-orange-900 text-orange-200' : 'bg-orange-100 text-orange-800'; }
             else if (a.status === 'failed_to_clock_out') { rowClass = isDark ? 'bg-purple-900' : 'bg-purple-50'; statusClasses = isDark ? 'bg-purple-900 text-purple-200' : 'bg-purple-100 text-purple-800'; }
-            else if (a.status === 'present')        { statusClasses = isDark ? 'bg-green-900 text-green-200' : 'bg-green-100 text-green-800'; }
-            else                                    { statusClasses = isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-800'; }
+            else if (a.status === 'present')             { statusClasses = isDark ? 'bg-green-900 text-green-200' : 'bg-green-100 text-green-800'; }
+            else                                         { statusClasses = isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-800'; }
 
             const textClass = isDark ? 'text-gray-100' : 'text-gray-900';
             const lateClass = a.late_minutes > 0 ? (isDark ? 'text-red-400' : 'text-red-600') : textClass;
@@ -1191,8 +1281,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         tbody.innerHTML = html;
 
-        document.querySelectorAll('#attendance-history-body .status-modal-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
+        // Re-bind modal buttons on dynamically inserted rows
+        tbody.querySelectorAll('.status-modal-btn').forEach(btn => {
+            btn.addEventListener('click', function (e) {
                 e.stopPropagation();
                 const modal = document.getElementById('statusDetailModal');
                 const modalBody = document.getElementById('statusModalBody');
@@ -1204,123 +1295,67 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    document.addEventListener('click', function(event) {
+    // ----------------------------------------------------------
+    // 9. Failed-to-clock-out panel
+    // ----------------------------------------------------------
+    window.toggleFailedClockOutPanel = function () {
         const panel = document.getElementById('failedClockOutPanel');
-        const btn = document.getElementById('failedClockOutBtn');
+        if (panel) panel.classList.toggle('hidden');
+    };
+
+    window.toggleNoteField = function (value) {
+        const noteTextarea = document.getElementById('note');
+        if (!noteTextarea) return;
+        noteTextarea.placeholder = value === 'request_hr'
+            ? 'Please explain what happened and what time you actually left work...'
+            : 'e.g., Forgot to clock out due to emergency...';
+    };
+
+    // FIX: Uses human_resource:acknowledge_attendance URL pattern since master_dashboard doesn't have this endpoint
+    const ACKNOWLEDGE_URL_TEMPLATE = '{% url "human_resource:acknowledge_attendance" 0 %}';
+
+    window.loadFailedClockOutDetail = function (recordId) {
+        const detailDiv  = document.getElementById('failedClockOutDetail');
+        const form       = document.getElementById('failedClockOutForm');
+        const recordInput = document.getElementById('selectedRecordId');
+        const submitBtn  = document.getElementById('failedClockOutSubmitBtn');
+
+        if (!recordId) {
+            if (detailDiv) detailDiv.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-2">Select a date to view details</p>';
+            if (recordInput) recordInput.value = '';
+            if (submitBtn) submitBtn.disabled = true;
+            return;
+        }
+
+        const select = document.getElementById('failedClockOutSelect');
+        const selectedOption = select ? select.options[select.selectedIndex] : null;
+        const parts = selectedOption ? selectedOption.text.split(' - ') : ['', ''];
+
+        if (detailDiv) {
+            detailDiv.innerHTML = `
+                <div class="bg-purple-50 dark:bg-purple-900 rounded-lg p-3">
+                    <p class="text-purple-700 dark:text-purple-300 text-sm">
+                        <strong>Date:</strong> ${parts[0] || ''}<br>
+                        <strong>Clocked In:</strong> ${parts[1] || 'N/A'}
+                    </p>
+                </div>`;
+        }
+
+        if (recordInput) recordInput.value = recordId;
+        // FIX: Replace /0/ with record ID (simple string replace)
+        if (form) form.action = ACKNOWLEDGE_URL_TEMPLATE.replace('/0/', '/' + recordId + '/');
+        if (submitBtn) submitBtn.disabled = false;
+    };
+
+    // Close failed clock-out panel on outside click
+    document.addEventListener('click', function (event) {
+        const panel = document.getElementById('failedClockOutPanel');
+        const btn   = document.getElementById('failedClockOutBtn');
         if (panel && btn && !panel.contains(event.target) && !btn.contains(event.target)) {
             panel.classList.add('hidden');
         }
     });
-});
-</script>
 
-<script>
-// Global AJAX functions for master dashboard attendance clock
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-async function submitAttendanceAction(action) {
-    const csrftoken = getCookie('csrftoken');
-    const formData = new FormData();
-    formData.append('action', action);
-    formData.append('csrfmiddlewaretoken', csrftoken);
-    
-    const button = document.querySelector(`button[onclick="submitAttendanceAction('${action}')"]`);
-    if (button) {
-        button.disabled = true;
-        button.classList.add('opacity-50', 'cursor-not-allowed');
-        const originalContent = button.innerHTML;
-        button.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...';
-        
-        try {
-            const response = await fetch('{% url "master_dashboard:attendance_clock_master" %}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': csrftoken,
-                }
-            });
-            
-            // Check if response is JSON
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                const data = await response.json();
-                
-                if (data.success) {
-                    showToast(data.message || 'Action completed successfully!', 'success');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 500);
-                } else {
-                    const errorMsg = data.message || 'An error occurred. Please try again.';
-                    showToast(errorMsg, 'error');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                }
-            } else {
-                // Not JSON - probably CSRF error or redirect
-                console.log('Non-JSON response:', response.status, response.statusText);
-                showToast('Action completed! Reloading...', 'success');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 500);
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            showToast('Network error. Please try again.', 'error');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        }
-        
-        button.disabled = false;
-        button.classList.remove('opacity-50', 'cursor-not-allowed');
-        button.innerHTML = originalContent;
-    }
-}
-
-function showToast(message, type) {
-    const existingToast = document.getElementById('ajax-toast');
-    if (existingToast) {
-        existingToast.remove();
-    }
-    
-    const toast = document.createElement('div');
-    toast.id = 'ajax-toast';
-    toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-y-0 ${
-        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-    }`;
-    toast.innerHTML = `
-        <div class="flex items-center">
-            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                ${type === 'success' 
-                    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>'
-                    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'}
-            </svg>
-            <span>${message}</span>
-        </div>
-    `;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translate-y-2';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
+}); // end DOMContentLoaded
 </script>
 {% endblock %}

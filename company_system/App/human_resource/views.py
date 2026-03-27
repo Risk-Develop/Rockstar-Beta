@@ -789,8 +789,9 @@ def attendance_clock(request):
         }
 
     def _render_response(context, is_post=False, action=None, success_msg=None, error_msg=None):
-        """Return JSON for AJAX requests, HTML for regular/HTMX requests"""
-        if _is_ajax():
+        """Return JSON for AJAX/HTMX requests, HTML for regular requests"""
+        # Return JSON for both AJAX and HTMX requests so JavaScript can handle toast messages
+        if _is_ajax() or _is_htmx():
             messages_list = []
             storage = messages.get_messages(request)
             for msg in storage:
@@ -802,17 +803,14 @@ def attendance_clock(request):
                 'messages': messages_list,
                 'attendance': _get_attendance_json(context.get('attendance')),
                 'clock_in_allowed': context.get('clock_in_allowed'),
+                'redirect': '/human_resource/attendance/clock/' if is_post else None,
             }
             # For initial page load on POST, include action that was performed
             if is_post and action:
                 response_data['action'] = action
             return JsonResponse(response_data)
         else:
-            response = render(request, 'hr/default/attendance/attendance_clock.html', context)
-            # For HTMX requests, add redirect header to trigger full page reload after form submission
-            if _is_htmx() and is_post:
-                response['HX-Redirect'] = '/human_resource/attendance/clock/'
-            return response
+            return render(request, 'hr/default/attendance/attendance_clock.html', context)
 
     # ── POST ──────────────────────────────────────────────────────────────────
     if request.method == 'POST':
@@ -933,8 +931,29 @@ def attendance_clock(request):
                     if 'overlunch_pending' not in (attendance.status or ''):
                         attendance.status += '/overlunch_pending'
 
-                if attendance.clock_out and shift_rule.clock_out:
-                    if attendance.clock_out < shift_rule.clock_out:
+                # Check for early_leave by comparing hours worked vs scheduled shift hours
+                # Handle night shifts where clock_out is on the next day
+                if attendance.clock_out and shift_rule and shift_rule.clock_out and shift_rule.clock_in_start:
+                    from datetime import datetime as dt
+                    
+                    # Check if this is a night shift (clock_out < clock_in_start means crosses midnight)
+                    is_night_shift = shift_rule.clock_out < shift_rule.clock_in_start
+                    
+                    # Calculate scheduled shift hours
+                    if is_night_shift:
+                        shift_hours = (dt.combine(attendance.date, shift_rule.clock_out) - dt.combine(attendance.date, shift_rule.clock_in_start)).total_seconds() / 3600
+                        if shift_hours < 0:
+                            shift_hours += 24 * 3600  # Add 24 hours in seconds
+                    else:
+                        shift_hours = (dt.combine(attendance.date, shift_rule.clock_out) - dt.combine(attendance.date, shift_rule.clock_in_start)).total_seconds() / 3600
+                    
+                    # Calculate actual hours worked (already computed above as work_hours)
+                    # Use the already computed work_hours from line ~880
+                    time_worked_hours = work_hours if 'work_hours' in locals() else 0
+                    
+                    # Early leave if worked less than scheduled hours (allow 1 minute grace)
+                    grace_minutes = 1
+                    if time_worked_hours > 0 and time_worked_hours < (shift_hours - (grace_minutes / 60)):
                         attendance.add_status('early_leave')
                         if 'early_leave' not in (attendance.status or ''):
                             attendance.status += '/early_leave'
@@ -1349,6 +1368,8 @@ def get_employees_without_attendance_htmx(request):
 
 @login_required
 def acknowledge_attendance(request, pk):
+    from django.http import JsonResponse
+    
     attendance = get_object_or_404(Attendance, pk=pk)
 
     if request.method == 'POST':
@@ -1367,14 +1388,23 @@ def acknowledge_attendance(request, pk):
                 attendance.status = 'present'
             attendance.save()
             messages.success(request, 'Failed to clock out record acknowledged.')
+            success_msg = 'Failed to clock out record acknowledged.'
+            
+            # Return JSON for AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': success_msg})
         else:
             messages.error(request, 'Please provide a note for acknowledgement.')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'message': 'Please provide a note for acknowledgement.'})
 
     return redirect('human_resource:attendance_clock')
 
 
 @login_required
 def appeal_absent(request, pk):
+    from django.http import JsonResponse
+    
     attendance = get_object_or_404(Attendance, pk=pk)
 
     if request.method == 'POST':
@@ -1393,8 +1423,15 @@ def appeal_absent(request, pk):
             )
             attendance.save()
             messages.success(request, 'Your request has been submitted successfully.')
+            success_msg = 'Your request has been submitted successfully.'
+            
+            # Return JSON for AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': success_msg})
         else:
             messages.error(request, 'Please provide a reason for your appeal/request.')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'message': 'Please provide a reason for your appeal/request.'})
 
     return redirect('human_resource:attendance_clock')
 

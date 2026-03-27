@@ -673,216 +673,124 @@ def attendance_clock_master(request):
                         attendance.status = 'failed_to_clock_out'
                     attendance.save()
 
-    # ── POST ──────────────────────────────────────────────────────────────────
-    if request.method == 'POST':
-        # Handle both JSON (from HTMX hx-vals) and form-encoded data
-        action = None
-        if _is_htmx():
-            # Try to parse JSON from request body (hx-vals sends JSON)
-            try:
-                import json
-                data = json.loads(request.body)
-                action = data.get('action')
-            except (json.JSONDecodeError, TypeError):
-                action = request.POST.get('action')
-        else:
-            action = request.POST.get('action')
-
-        if is_weekend:
-            messages.error(request, "Cannot clock in/out on weekends or rest days.")
-            return redirect('master_dashboard:attendance_clock_master')
-
-        if action == 'clock_in':
-            # Allow clock-in at any time (removed restriction for early clock-in)
-            # Employees can clock in anytime before or after shift start
-            
-            existing = Attendance.objects.filter(
-                employee=employee, date=shift_date, clock_in__isnull=False
-            ).first()
-            if existing:
-                messages.info(request, "You have already clocked in today.")
-                return redirect('master_dashboard:attendance_clock_master')
-
-            status        = 'present'
-            late_minutes  = 0
-            statuses_list = ['present']
-
-            if shift_rule and shift_rule.clock_in_start and now_time > shift_rule.clock_in_start:
-                status        = 'late'
-                statuses_list = ['late']
-                clock_in_start_dt = datetime.combine(shift_date, shift_rule.clock_in_start)
-                clock_in_dt       = datetime.combine(shift_date, now_time)
-                late_minutes      = int((clock_in_dt - clock_in_start_dt).total_seconds() / 60)
-
-            attendance = Attendance.objects.create(
-                employee=employee,
-                date=shift_date,
-                clock_in=now_time,
-                status=status,
-                late_minutes=late_minutes,
-                deduction_minutes=late_minutes,
-                statuses=','.join(statuses_list),
-            )
-            success_msg = 'You have clocked in successfully!'
-            
-            # Return JSON for AJAX requests, redirect for regular/HTMX requests
-            if _is_ajax():
-                return JsonResponse({'success': True, 'message': success_msg})
-            messages.success(request, success_msg)
-            response = redirect('master_dashboard:attendance_clock_master')
-            # For HTMX, add redirect header to trigger full page reload
-            if _is_htmx():
-                response['HX-Redirect'] = '/master_dashboard/attendance/clock/'
-            return response
-
-        elif action == 'clock_out':
-            if attendance:
-                attendance.clock_out = now_time
-
-                if attendance.clock_in:
-                    attendance_date    = attendance.date
-                    clock_in_datetime  = datetime.combine(attendance_date, attendance.clock_in)
-                    clock_out_datetime = datetime.combine(attendance_date, now_time)
-
-                    # Cross-midnight: if clock_out time < clock_in time, shift crossed midnight
-                    if now_time < attendance.clock_in:
-                        clock_out_datetime += timedelta(days=1)
-
-                    lunch_duration_minutes = 0
-                    if attendance.lunch_in and attendance.lunch_out:
-                        lunch_in_dt  = datetime.combine(attendance_date, attendance.lunch_in)
-                        lunch_out_dt = datetime.combine(attendance_date, attendance.lunch_out)
-                        if attendance.lunch_out < attendance.lunch_in:
-                            lunch_out_dt += timedelta(days=1)
-                        lunch_duration_minutes = int(
-                            (lunch_out_dt - lunch_in_dt).total_seconds() / 60
-                        )
-
-                    total_minutes           = int(
-                        (clock_out_datetime - clock_in_datetime).total_seconds() / 60
-                    )
-                    work_minutes            = max(0, total_minutes - lunch_duration_minutes)
-                    attendance.hours_worked = round(work_minutes / 60, 2)
-
-                attendance.save()
-                success_msg = 'You have clocked out successfully!'
-                if _is_ajax():
-                    return JsonResponse({'success': True, 'message': success_msg})
-                messages.success(request, success_msg)
-            response = redirect('master_dashboard:attendance_clock_master')
-            if _is_htmx():
-                response['HX-Redirect'] = '/master_dashboard/attendance/clock/'
-            return response
-
-        elif action == 'lunch_in':
-            if attendance and attendance.clock_in and not attendance.lunch_in:
-                attendance.lunch_in = now_time
-                attendance.save()
-                success_msg = 'Lunch break started!'
-                if _is_ajax():
-                    return JsonResponse({'success': True, 'message': success_msg})
-                messages.success(request, success_msg)
-            response = redirect('master_dashboard:attendance_clock_master')
-            if _is_htmx():
-                response['HX-Redirect'] = '/master_dashboard/attendance/clock/'
-            return response
-
-        elif action == 'lunch_out':
-            if attendance and attendance.lunch_in and not attendance.lunch_out:
-                attendance.lunch_out = now_time
-                attendance.save()
-                success_msg = 'Lunch break ended!'
-                if _is_ajax():
-                    return JsonResponse({'success': True, 'message': success_msg})
-                messages.success(request, success_msg)
-            response = redirect('master_dashboard:attendance_clock_master')
-            if _is_htmx():
-                response['HX-Redirect'] = '/master_dashboard/attendance/clock/'
-            return response
-
-        # ── Recalculate status after clock_out ────────────────────────────────
-        if attendance and shift_rule:
-            statuses_list = []
-
-            if attendance.clock_in:
-                if shift_rule.clock_in_start and attendance.clock_in > shift_rule.clock_in_start:
-                    attendance.status       = 'late'
-                    statuses_list.append('late')
-                    clock_in_start_dt       = datetime.combine(attendance.date, shift_rule.clock_in_start)
-                    clock_in_dt             = datetime.combine(attendance.date, attendance.clock_in)
-                    attendance.late_minutes = int(
-                        (clock_in_dt - clock_in_start_dt).total_seconds() / 60
-                    )
-                else:
-                    attendance.status       = 'present'
-                    statuses_list.append('present')
-                    attendance.late_minutes = 0
-            else:
-                attendance.status       = 'absent'
-                statuses_list.append('absent')
-                attendance.late_minutes = 0
-
-            if attendance.overlunch_minutes > 0 and not attendance.overlunch_validated:
-                attendance.deduction_minutes = attendance.late_minutes + attendance.overlunch_minutes
-            else:
-                attendance.deduction_minutes = attendance.late_minutes
-
-            if getattr(shift_rule, 'lunch_required', False):
-                # Missing Lunch: lunch required but user never started lunch
-                if not attendance.lunch_in:
-                    if 'missing_lunch' not in statuses_list:
-                        statuses_list.append('missing_lunch')
-                # Overlunch: has lunch_in but no lunch_out (still on lunch break when clocking out)
-                elif attendance.lunch_in and not attendance.lunch_out:
-                    if 'overlunch_pending' not in statuses_list:
-                        statuses_list.append('overlunch_pending')
-
-            if attendance.clock_out and shift_rule.clock_out:
-                if attendance.clock_out < shift_rule.clock_out:
-                    if 'early_leave' not in statuses_list:
-                        statuses_list.append('early_leave')
-                    if 'early_leave' not in (attendance.status or ''):
-                        attendance.status = (
-                            attendance.status + ' / early_leave'
-                            if attendance.status else 'early_leave'
-                        )
-
-            attendance.statuses = ','.join(statuses_list)
-            attendance.save()
-
-        elif attendance:
-            attendance.status            = 'present' if attendance.clock_in else 'absent'
-            attendance.late_minutes      = 0
-            attendance.deduction_minutes = 0
-            attendance.statuses          = 'present' if attendance.clock_in else 'absent'
-            attendance.save()
-
-    # ── AJAX/HTMX Support ───────────────────────────────────────────────────────
+    # ── HTMX/AJAX Support Helpers ──────────────────────────────────────────────────
     def _is_ajax():
         return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     
     def _is_htmx():
         return request.headers.get('HX-Request') == 'true'
 
-    def _get_attendance_json(att):
-        """Convert attendance object to JSON-serializable dict"""
-        if not att:
-            return None
-        return {
-            'clock_in': att.clock_in.strftime('%H:%M:%S') if att.clock_in else None,
-            'clock_out': att.clock_out.strftime('%H:%M:%S') if att.clock_out else None,
-            'lunch_in': att.lunch_in.strftime('%H:%M:%S') if att.lunch_in else None,
-            'lunch_out': att.lunch_out.strftime('%H:%M:%S') if att.lunch_out else None,
-            'status': att.status,
-            'statuses': att.statuses,
-            'date': att.date.strftime('%Y-%m-%d') if att.date else None,
-            'hours_worked': float(att.hours_worked) if att.hours_worked else 0,
-            'late_minutes': att.late_minutes or 0,
-            'deduction_minutes': att.deduction_minutes or 0,
-        }
+    def _recalculate_attendance_status(attendance, shift_rule):
+        """Recalculate attendance status including late, early_leave, missing_lunch, overlunch"""
+        from datetime import datetime, timedelta, date
+        from django.utils import timezone
+        
+        statuses_list = []
+        now_local = timezone.localtime()
+        now_time = now_local.time()
+        
+        if attendance.clock_in:
+            if shift_rule.clock_in_start and attendance.clock_in > shift_rule.clock_in_start:
+                attendance.status = 'late'
+                statuses_list.append('late')
+                clock_in_start_dt = datetime.combine(attendance.date, shift_rule.clock_in_start)
+                clock_in_dt = datetime.combine(attendance.date, attendance.clock_in)
+                attendance.late_minutes = int(
+                    (clock_in_dt - clock_in_start_dt).total_seconds() / 60
+                )
+            else:
+                attendance.status = 'present'
+                statuses_list.append('present')
+                attendance.late_minutes = 0
+        else:
+            attendance.status = 'absent'
+            statuses_list.append('absent')
+            attendance.late_minutes = 0
+        
+        if attendance.overlunch_minutes > 0 and not attendance.overlunch_validated:
+            attendance.deduction_minutes = attendance.late_minutes + attendance.overlunch_minutes
+        else:
+            attendance.deduction_minutes = attendance.late_minutes
+        
+        if getattr(shift_rule, 'lunch_required', False):
+            # Missing Lunch: lunch required but user never started lunch
+            if not attendance.lunch_in:
+                if 'missing_lunch' not in statuses_list:
+                    statuses_list.append('missing_lunch')
+            # Overlunch: has lunch_in but no lunch_out (still on lunch break when clocking out)
+            elif attendance.lunch_in and not attendance.lunch_out:
+                if 'overlunch_pending' not in statuses_list:
+                    statuses_list.append('overlunch_pending')
+        
+        # Check for early_leave - clock_out BEFORE scheduled clock_out time
+        # Handle night shifts where clock_out is on the next day
+        if attendance.clock_out and shift_rule and shift_rule.clock_out and shift_rule.clock_in_start:
+            # Check if this is a night shift (clock_out < clock_in_start means crosses midnight)
+            is_night_shift = shift_rule.clock_out < shift_rule.clock_in_start
+            
+            # Calculate actual shift duration in hours
+            if is_night_shift:
+                # Night shift: e.g., 21:00 to 05:00 = 8 hours
+                shift_hours = (datetime.combine(date.today(), shift_rule.clock_out) - datetime.combine(date.today(), shift_rule.clock_in_start)).total_seconds() / 3600
+                if shift_hours < 0:
+                    # Crosses midnight, add 24 hours
+                    shift_hours += 24
+            else:
+                # Regular day shift
+                shift_hours = (datetime.combine(date.today(), shift_rule.clock_out) - datetime.combine(date.today(), shift_rule.clock_in_start)).total_seconds() / 3600
+            
+            # Calculate actual time worked in hours
+            if attendance.clock_in:
+                if attendance.clock_out < attendance.clock_in:
+                    # Crosses midnight
+                    time_worked_hours = (datetime.combine(date.today(), attendance.clock_out) + timedelta(days=1) - datetime.combine(date.today(), attendance.clock_in)).total_seconds() / 3600
+                else:
+                    time_worked_hours = (datetime.combine(date.today(), attendance.clock_out) - datetime.combine(date.today(), attendance.clock_in)).total_seconds() / 3600
+            else:
+                time_worked_hours = 0
+            
+            # Early leave if worked less than scheduled shift duration
+            # Allow some grace (e.g., 1 minute = 0.0167 hours)
+            grace_minutes = 1
+            is_early = time_worked_hours < (shift_hours - (grace_minutes / 60))
+            
+            if is_early:
+                if 'early_leave' not in statuses_list:
+                    statuses_list.append('early_leave')
+                if 'early_leave' not in (attendance.status or ''):
+                    attendance.status = (
+                        attendance.status + ' / early_leave'
+                        if attendance.status else 'early_leave'
+                    )
+        
+        attendance.statuses = ','.join(statuses_list)
+        attendance.save()
+        print(f"[_recalculate_attendance_status] DONE")
 
     def _build_context():
-        history = Attendance.objects.filter(employee=employee).order_by('-date', '-clock_in')[:7]
+        # Get date filter parameters from GET request
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        
+        # Build history query with optional date filtering
+        history_query = Attendance.objects.filter(employee=employee)
+        if start_date:
+            try:
+                start = datetime.strptime(start_date, '%Y-%m-%d').date()
+                history_query = history_query.filter(date__gte=start)
+            except ValueError:
+                pass
+        if end_date:
+            try:
+                end = datetime.strptime(end_date, '%Y-%m-%d').date()
+                history_query = history_query.filter(date__lte=end)
+            except ValueError:
+                pass
+        # Show all matching records when filtering, otherwise show last 7
+        if start_date or end_date:
+            history = list(history_query.order_by('-date', '-clock_in'))
+        else:
+            history = history_query.order_by('-date', '-clock_in')[:7]
         current_year = today.year
         vl_credit = LeaveCredit.objects.filter(
             employee=employee, leave_type='vl', year=current_year
@@ -946,6 +854,235 @@ def attendance_clock_master(request):
             'failed_to_clock_out_records': failed_to_clock_out_records,
             'absent_count': Attendance.objects.filter(employee=employee, status='absent').count(),
             'selected_absent_record': selected_absent_record,
+            # Date filter parameters
+            'start_date': start_date,
+            'end_date': end_date,
+        }
+
+    # ── POST ──────────────────────────────────────────────────────────────────
+    if request.method == 'POST':
+        # Handle form-encoded data (from regular form and AJAX)
+        action = request.POST.get('action')
+
+        if is_weekend:
+            # Return JSON for AJAX requests
+            if _is_ajax():
+                return JsonResponse({'success': False, 'message': 'Cannot clock in on weekend.'})
+            # Return rendered template for HTMX requests
+            return render(request, 'master/attendance/attendance_clock.html', _build_context())
+
+        if action == 'clock_in':
+            # Allow clock-in at any time (removed restriction for early clock-in)
+            # Employees can clock in anytime before or after shift start
+            
+            # Check for ANY existing attendance record (not just with clock_in)
+            existing = Attendance.objects.filter(
+                employee=employee, date=shift_date
+            ).first()
+            
+            if existing:
+                if existing.clock_in:
+                    # Already clocked in
+                    msg = "You have already clocked in today."
+                    if _is_ajax():
+                        return JsonResponse({'success': False, 'message': msg})
+                    messages.info(request, msg)
+                    return render(request, 'master/attendance/attendance_clock.html', _build_context())
+                else:
+                    # Record exists but no clock_in (e.g., auto-absent, failed_to_clock_out) - update it
+                    status        = 'present'
+                    late_minutes  = 0
+                    statuses_list = ['present']
+
+                    if shift_rule and shift_rule.clock_in_start and now_time > shift_rule.clock_in_start:
+                        status        = 'late'
+                        statuses_list = ['late']
+                        clock_in_start_dt = datetime.combine(shift_date, shift_rule.clock_in_start)
+                        clock_in_dt       = datetime.combine(shift_date, now_time)
+                        late_minutes      = int((clock_in_dt - clock_in_start_dt).total_seconds() / 60)
+
+                    existing.clock_in = now_time
+                    existing.status = status
+                    existing.late_minutes = late_minutes
+                    existing.deduction_minutes = late_minutes
+                    existing.statuses = ','.join(statuses_list)
+                    existing.save()
+                    attendance = existing
+            else:
+                # No existing record - create new one
+                status        = 'present'
+                late_minutes  = 0
+                statuses_list = ['present']
+
+                if shift_rule and shift_rule.clock_in_start and now_time > shift_rule.clock_in_start:
+                    status        = 'late'
+                    statuses_list = ['late']
+                    clock_in_start_dt = datetime.combine(shift_date, shift_rule.clock_in_start)
+                    clock_in_dt       = datetime.combine(shift_date, now_time)
+                    late_minutes      = int((clock_in_dt - clock_in_start_dt).total_seconds() / 60)
+
+                try:
+                    attendance = Attendance.objects.create(
+                        employee=employee,
+                        date=shift_date,
+                        clock_in=now_time,
+                        status=status,
+                        late_minutes=late_minutes,
+                        deduction_minutes=late_minutes,
+                        statuses=','.join(statuses_list),
+                    )
+                except Exception as e:
+                    if _is_ajax():
+                        return JsonResponse({'success': False, 'message': f'Error: {str(e)}'})
+                    messages.error(request, f'Error saving attendance: {str(e)}')
+                    return render(request, 'master/attendance/attendance_clock.html', _build_context())
+            
+            success_msg = 'You have clocked in successfully!'
+            messages.success(request, success_msg)
+            
+            # Return JSON for AJAX requests so frontend can show proper message
+            if _is_ajax():
+                return JsonResponse({'success': True, 'message': success_msg})
+            
+            # Return rendered template for HTMX requests (HTMX expects HTML to swap into DOM)
+            return render(request, 'master/attendance/attendance_clock.html', _build_context())
+
+        elif action == 'clock_out':
+            if not attendance:
+                msg = "You have not clocked in yet. Please clock in first."
+                if _is_ajax():
+                    return JsonResponse({'success': False, 'message': msg})
+                messages.error(request, msg)
+                return render(request, 'master/attendance/attendance_clock.html', _build_context())
+            else:
+                attendance.clock_out = now_time
+
+                if attendance.clock_in:
+                    attendance_date    = attendance.date
+                    clock_in_datetime  = datetime.combine(attendance_date, attendance.clock_in)
+                    clock_out_datetime = datetime.combine(attendance_date, now_time)
+
+                    # Cross-midnight: if clock_out time < clock_in time, shift crossed midnight
+                    if now_time < attendance.clock_in:
+                        clock_out_datetime += timedelta(days=1)
+
+                    lunch_duration_minutes = 0
+                    if attendance.lunch_in and attendance.lunch_out:
+                        lunch_in_dt  = datetime.combine(attendance_date, attendance.lunch_in)
+                        lunch_out_dt = datetime.combine(attendance_date, attendance.lunch_out)
+                        if attendance.lunch_out < attendance.lunch_in:
+                            lunch_out_dt += timedelta(days=1)
+                        lunch_duration_minutes = int(
+                            (lunch_out_dt - lunch_in_dt).total_seconds() / 60
+                        )
+
+                    total_minutes           = int(
+                        (clock_out_datetime - clock_in_datetime).total_seconds() / 60
+                    )
+                    work_minutes            = max(0, total_minutes - lunch_duration_minutes)
+                    attendance.hours_worked = round(work_minutes / 60, 2)
+
+                attendance.save()
+                
+                # Recalculate status after clock_out (including early_leave detection)
+                if shift_rule:
+                    _recalculate_attendance_status(attendance, shift_rule)
+                
+                success_msg = 'You have clocked out successfully!'
+                messages.success(request, success_msg)
+                if _is_ajax():
+                    return JsonResponse({'success': True, 'message': success_msg})
+                return render(request, 'master/attendance/attendance_clock.html', _build_context())
+
+        elif action == 'lunch_out':
+            if not attendance:
+                messages.error(request, "You have not clocked in yet. Please clock in first.")
+                return render(request, 'master/attendance/attendance_clock.html', _build_context())
+            elif not attendance.lunch_in:
+                messages.error(request, "You have not started your lunch break yet.")
+                return render(request, 'master/attendance/attendance_clock.html', _build_context())
+            elif attendance.lunch_out:
+                messages.error(request, "You have already ended your lunch break.")
+                return render(request, 'master/attendance/attendance_clock.html', _build_context())
+            else:
+                attendance.lunch_out = now_time
+                attendance.save()
+                success_msg = 'Lunch break ended!'
+                messages.success(request, success_msg)
+                return render(request, 'master/attendance/attendance_clock.html', _build_context())
+
+        # ── Recalculate status after clock_out ────────────────────────────────
+        if attendance and shift_rule:
+            statuses_list = []
+
+            if attendance.clock_in:
+                if shift_rule.clock_in_start and attendance.clock_in > shift_rule.clock_in_start:
+                    attendance.status       = 'late'
+                    statuses_list.append('late')
+                    clock_in_start_dt       = datetime.combine(attendance.date, shift_rule.clock_in_start)
+                    clock_in_dt             = datetime.combine(attendance.date, attendance.clock_in)
+                    attendance.late_minutes = int(
+                        (clock_in_dt - clock_in_start_dt).total_seconds() / 60
+                    )
+                else:
+                    attendance.status       = 'present'
+                    statuses_list.append('present')
+                    attendance.late_minutes = 0
+            else:
+                attendance.status       = 'absent'
+                statuses_list.append('absent')
+                attendance.late_minutes = 0
+
+            if attendance.overlunch_minutes > 0 and not attendance.overlunch_validated:
+                attendance.deduction_minutes = attendance.late_minutes + attendance.overlunch_minutes
+            else:
+                attendance.deduction_minutes = attendance.late_minutes
+
+            if getattr(shift_rule, 'lunch_required', False):
+                # Missing Lunch: lunch required but user never started lunch
+                if not attendance.lunch_in:
+                    if 'missing_lunch' not in statuses_list:
+                        statuses_list.append('missing_lunch')
+                # Overlunch: has lunch_in but no lunch_out (still on lunch break when clocking out)
+                elif attendance.lunch_in and not attendance.lunch_out:
+                    if 'overlunch_pending' not in statuses_list:
+                        statuses_list.append('overlunch_pending')
+
+            if attendance.clock_out and shift_rule.clock_out:
+                if attendance.clock_out < shift_rule.clock_out:
+                    if 'early_leave' not in statuses_list:
+                        statuses_list.append('early_leave')
+                    if 'early_leave' not in (attendance.status or ''):
+                        attendance.status = (
+                            attendance.status + ' / early_leave'
+                            if attendance.status else 'early_leave'
+                        )
+
+            attendance.statuses = ','.join(statuses_list)
+            attendance.save()
+
+        elif attendance:
+            attendance.status            = 'present' if attendance.clock_in else 'absent'
+            attendance.late_minutes      = 0
+            attendance.deduction_minutes = 0
+            attendance.statuses          = 'present' if attendance.clock_in else 'absent'
+            attendance.save()
+
+    def _get_attendance_json(att):
+        """Convert attendance object to JSON-serializable dict"""
+        if not att:
+            return None
+        return {
+            'clock_in': att.clock_in.strftime('%H:%M:%S') if att.clock_in else None,
+            'clock_out': att.clock_out.strftime('%H:%M:%S') if att.clock_out else None,
+            'lunch_in': att.lunch_in.strftime('%H:%M:%S') if att.lunch_in else None,
+            'lunch_out': att.lunch_out.strftime('%H:%M:%S') if att.lunch_out else None,
+            'status': att.status,
+            'statuses': att.statuses,
+            'date': att.date.strftime('%Y-%m-%d') if att.date else None,
+            'hours_worked': float(att.hours_worked) if att.hours_worked else 0,
+            'late_minutes': att.late_minutes or 0,
+            'deduction_minutes': att.deduction_minutes or 0,
         }
 
     # If POST and AJAX, return JSON
@@ -974,6 +1111,46 @@ def attendance_clock_master(request):
             'attendance': _get_attendance_json(attendance),
             'clock_in_allowed': clock_in_allowed,
         })
+    
+    # If POST and HTMX, return HTML with HTMX headers for toast notifications
+    if request.method == 'POST' and _is_htmx():
+        messages_list = []
+        storage = messages.get_messages(request)
+        for msg in storage:
+            messages_list.append({'level': msg.level, 'message': str(msg)})
+        
+        # Determine success message
+        if action == 'clock_in':
+            success_msg = 'Clocked in successfully!'
+        elif action == 'clock_out':
+            success_msg = 'Clocked out successfully!'
+        elif action == 'lunch_in':
+            success_msg = 'Lunch break started!'
+        elif action == 'lunch_out':
+            success_msg = 'Lunch break ended!'
+        else:
+            success_msg = 'Action completed!'
+        
+        # Build response with rendered template
+        response = render(request, 'master/attendance/attendance_clock.html', _build_context())
+        
+        # Add HTMX headers for toast notifications
+        if messages_list:
+            # Trigger events for each message level
+            for msg in messages_list:
+                if msg['level'] == messages.SUCCESS:
+                    response['HX-Trigger'] = f'htmx:successToast:{{"message": "{msg["message"]}", "type": "success"}}'
+                elif msg['level'] == messages.ERROR:
+                    response['HX-Trigger'] = f'htmx:errorToast:{{"message": "{msg["message"]}", "type": "error"}}'
+                elif msg['level'] == messages.WARNING:
+                    response['HX-Trigger'] = f'htmx:warningToast:{{"message": "{msg["message"]}", "type": "warning"}}'
+                elif msg['level'] == messages.INFO:
+                    response['HX-Trigger'] = f'htmx:infoToast:{{"message": "{msg["message"]}", "type": "info"}}'
+        else:
+            # No messages, add success trigger
+            response['HX-Trigger'] = f'htmx:successToast:{{"message": "{success_msg}", "type": "success"}}'
+        
+        return response
 
     # ── Context ───────────────────────────────────────────────────────────────
     return render(request, 'master/attendance/attendance_clock.html', _build_context())
@@ -1553,24 +1730,33 @@ def get_absent_records_ajax_master(request):
 @login_required
 def appeal_absent_master(request, pk):
     from App.human_resource.models import Attendance
+    from django.http import JsonResponse
 
     emp_num = request.session.get('employee_number')
     if not emp_num:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'message': 'Please log in again.'})
         return redirect('login')
 
     employee = Staff.objects.filter(employee_number=emp_num).first()
     if not employee:
         messages.error(request, "Your account could not be found. Please log in again.")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'message': 'Your account could not be found. Please log in again.'})
         return redirect('login')
 
     attendance = get_object_or_404(Attendance, pk=pk, employee=employee)
 
     if attendance.status != 'absent':
         messages.error(request, "Only absent records can be appealed.")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'message': 'Only absent records can be appealed.'})
         return redirect('master_dashboard:attendance_clock_master')
 
     if attendance.note and '[Appealed]' in attendance.note:
         messages.error(request, "This absent record has already been appealed.")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'message': 'This absent record has already been appealed.'})
         return redirect('master_dashboard:attendance_clock_master')
 
     appeal_reason = request.POST.get('appeal_reason', '').strip()
@@ -1578,14 +1764,23 @@ def appeal_absent_master(request, pk):
 
     if not appeal_reason:
         messages.error(request, "Please provide a reason for your appeal.")
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'message': 'Please provide a reason for your appeal.'})
         return redirect('master_dashboard:attendance_clock_master')
 
     if action_type == 'request_hr':
         attendance.note = f"[HR Review Requested - Absent Appeal] {appeal_reason}"
         messages.success(request, "Your appeal has been submitted to HR for review.")
+        success_msg = "Your appeal has been submitted to HR for review."
     else:
         attendance.note = f"[Appealed] {appeal_reason}"
         messages.success(request, "Your appeal has been recorded. Please contact HR for further assistance.")
+        success_msg = "Your appeal has been recorded. Please contact HR for further assistance."
 
     attendance.save()
+    
+    # Return JSON for AJAX requests
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'message': success_msg})
+    
     return redirect('master_dashboard:attendance_clock_master')

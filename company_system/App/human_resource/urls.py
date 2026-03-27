@@ -196,6 +196,8 @@ urlpatterns = [
     path('enps/<int:survey_id>/department-data/', views_enps.enps_department_data_ajax, name='enps_department_data_ajax'),
     path('enps/<int:survey_id>/trend-data/', views_enps.enps_trend_data_ajax, name='enps_trend_data_ajax'),
     path('enps/<int:survey_id>/heatmap-data/', views_enps.enps_heatmap_data_ajax, name='enps_heatmap_data_ajax'),
+    path('enps/<int:survey_id>/analytics-data/', views_enps.enps_analytics_data_ajax, name='enps_analytics_data_ajax'),
+    path('enps/<int:survey_id>/question-analytics/', views_enps.enps_question_analytics_ajax, name='enps_question_analytics_ajax'),
     
     # Employee lookup API
     path('enps/lookup-employee/', views_enps.lookup_employee, name='lookup_employee'),

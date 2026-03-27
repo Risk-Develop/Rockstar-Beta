@@ -674,6 +674,27 @@ def enps_survey_delete(request, survey_id):
 
 def enps_analytics(request, survey_id):
     """Main analytics dashboard"""
+    # Get year and month from query parameters or use current year
+    selected_year = request.GET.get('year')
+    selected_month = request.GET.get('month')  # NEW: Add month parameter
+    
+    if selected_year:
+        try:
+            current_year = int(selected_year)
+        except ValueError:
+            current_year = datetime.now().year
+    else:
+        current_year = datetime.now().year
+    
+    # Handle month filtering - default to ALL months (None), not current month
+    if selected_month is not None and selected_month != '':
+        try:
+            current_month = int(selected_month)
+        except ValueError:
+            current_month = None  # Default to All Months on error
+    else:
+        current_month = None  # Default to All Months when no parameter
+    
     survey = get_object_or_404(ENPSSurvey, id=survey_id)
     responses = survey.responses.all()
     
@@ -711,6 +732,9 @@ def enps_analytics(request, survey_id):
             'main_yes_pct': 0,
             'main_no_pct': 0,
             'no_questions': True,
+            'current_year': current_year,
+            'current_month': current_month,
+            'monthly_trend': [],
         }
         return render(request, 'hr/default/survey/enps/analytics.html', context)
     
@@ -742,6 +766,14 @@ def enps_analytics(request, survey_id):
     
     # Get total responses from ENPSResponse (base response count)
     total_responses = responses.count()
+    
+    # Add month filter if month is selected
+    if current_month:
+        responses = responses.filter(created_at__month=current_month, created_at__year=current_year)
+        total_responses = responses.count()
+    elif current_year:
+        responses = responses.filter(created_at__year=current_year)
+        total_responses = responses.count()
     
     if first_nps_q:
         main_question_type = 'nps'
@@ -1029,7 +1061,13 @@ def enps_analytics(request, survey_id):
                     if qr.score_value is not None:
                         rating_counts[qr.score_value] = rating_counts.get(qr.score_value, 0) + 1
                 
-                q_data['distribution'] = [rating_counts.get(i, 0) for i in range(1, max_rating + 1)]
+                # Create distribution as list of dicts with count and pct (for template)
+                distribution = []
+                for i in range(1, max_rating + 1):
+                    count = rating_counts.get(i, 0)
+                    pct = round((count / total_q_responses) * 100, 1) if total_q_responses > 0 else 0
+                    distribution.append({'count': count, 'pct': pct})
+                q_data['distribution'] = distribution
                 q_data['distribution_pct'] = [round((rating_counts.get(i, 0) / total_q_responses) * 100, 1) for i in range(1, max_rating + 1)]
                 q_data['avg_score'] = round(question_responses.aggregate(Avg('score_value'))['score_value__avg'] or 0, 1)
                 
@@ -1070,19 +1108,45 @@ def enps_analytics(request, survey_id):
     final_avg_score = main_avg_score if main_avg_score is not None else avg_score
     
     # For display: if question type is rating or yes_no, use avg_score for enps_score display
-    # For NPS, show avg_score when eNPS is 0 (more informative)
+    # For NPS: always show eNPS score (even if 0)
     if main_question_type in ['rating_5', 'rating_3'] and final_avg_score is not None:
         display_score = final_avg_score
     elif main_question_type == 'yes_no' and main_yes_pct is not None:
         display_score = main_yes_pct
-    elif main_question_type == 'nps' and final_enps_score == 0 and final_avg_score is not None and final_avg_score > 0:
-        # When eNPS is 0, show average score instead (more meaningful)
-        display_score = final_avg_score
     else:
         display_score = final_enps_score
     
     # Calculate combined average for the gauge chart (similar to survey_detail)
-    combined_avg = final_avg_score if final_avg_score is not None else 0
+    # Need to calculate from all questions like in survey_detail view
+    all_questions = survey.questions.all()
+    total_score_sum = 0
+    total_score_count = 0
+    
+    for q in all_questions:
+        q_responses = ENPSQuestionResponse.objects.filter(question=q, response__survey=survey)
+        resp_count = q_responses.count()
+        
+        if resp_count > 0:
+            if q.question_type == 'nps':
+                avg_score = q_responses.aggregate(Avg('score_value'))['score_value__avg']
+                if avg_score is not None:
+                    total_score_sum += avg_score
+                    total_score_count += 1
+            elif q.question_type == 'rating_5':
+                avg_score = q_responses.aggregate(Avg('score_value'))['score_value__avg']
+                if avg_score is not None:
+                    total_score_sum += avg_score * 2  # Convert to 0-10 scale
+                    total_score_count += 1
+            elif q.question_type == 'rating_3':
+                avg_score = q_responses.aggregate(Avg('score_value'))['score_value__avg']
+                if avg_score is not None:
+                    total_score_sum += avg_score * (10/3)  # Convert to 0-10 scale
+                    total_score_count += 1
+    
+    if total_score_count > 0:
+        combined_avg = round(total_score_sum / total_score_count, 2)
+    else:
+        combined_avg = final_avg_score if final_avg_score is not None else 0
     
     # Enhance department_stats with additional fields for the charts
     # Get active employees by department for expected counts
@@ -1142,7 +1206,150 @@ def enps_analytics(request, survey_id):
         'main_no_count': main_no_count,
         'main_yes_pct': main_yes_pct,
         'main_no_pct': main_no_pct,
+        # Monthly trend data
+        'current_year': current_year,
+        'current_month': current_month,  # NEW: Add month to context
     }
+    
+    # Add available years based on survey response data
+    try:
+        response_years = survey.responses.all().dates('created_at', 'year')
+        available_years = [d.year for d in response_years]
+        if not available_years:
+            available_years = [datetime.now().year]
+        # Ensure current_year is in the list
+        if current_year not in available_years:
+            available_years.append(current_year)
+        available_years = sorted(set(available_years), reverse=True)
+        context['available_years'] = available_years
+    except Exception:
+        context['available_years'] = [current_year]
+    
+    # Get monthly trend data for the current year (all 12 months)
+    # Calculate per-month combined average across all question types
+    # If month is selected, only show that specific month's data
+    try:
+        import calendar
+        
+        # Get all questions for combined calculation
+        all_questions = questions.all()
+        
+        # Pre-calculate combined averages for each month
+        monthly_combined_avgs = {}
+        
+        # Determine which months to show
+        if current_month:
+            months_to_show = [current_month]
+        else:
+            months_to_show = list(range(1, 13))
+        
+        for month_num in months_to_show:
+            month_total_score_sum = 0
+            month_total_score_count = 0
+            
+            for q in all_questions:
+                # Use ENPSResponse for date filtering
+                base_filter = {'survey': survey, 'created_at__year': current_year, 'created_at__month': month_num}
+                month_response_objs = ENPSResponse.objects.filter(**base_filter)
+                response_ids = set(month_response_objs.values_list('id', flat=True))
+                
+                month_q_responses = ENPSQuestionResponse.objects.filter(
+                    question=q,
+                    response_id__in=response_ids
+                )
+                resp_count = month_q_responses.count()
+                
+                if resp_count > 0:
+                    if q.question_type == 'nps':
+                        avg_score = month_q_responses.aggregate(Avg('score_value'))['score_value__avg']
+                        if avg_score is not None:
+                            month_total_score_sum += avg_score
+                            month_total_score_count += 1
+                    elif q.question_type == 'rating_5':
+                        avg_score = month_q_responses.aggregate(Avg('score_value'))['score_value__avg']
+                        if avg_score is not None:
+                            month_total_score_sum += avg_score * 2  # Convert to 0-10
+                            month_total_score_count += 1
+                    elif q.question_type == 'rating_3':
+                        avg_score = month_q_responses.aggregate(Avg('score_value'))['score_value__avg']
+                        if avg_score is not None:
+                            month_total_score_sum += avg_score * (10/3)  # Convert to 0-10
+                            month_total_score_count += 1
+            
+            if month_total_score_count > 0:
+                monthly_combined_avgs[month_num] = round(month_total_score_sum / month_total_score_count, 2)
+            else:
+                monthly_combined_avgs[month_num] = None
+        
+        # Now calculate eNPS per month using NPS question
+        first_nps_q = questions.filter(question_type='nps').first()
+        
+        monthly_trend = []
+        
+        if first_nps_q:
+            # Calculate for months_to_show
+            for month_num in months_to_show:
+                month_name = calendar.month_abbr[month_num]
+                
+                # Get response IDs for this month from ENPSResponse (for date filtering)
+                base_filter = {'survey': survey, 'created_at__year': current_year, 'created_at__month': month_num}
+                month_response_ids = list(ENPSResponse.objects.filter(**base_filter).values_list('id', flat=True))
+                
+                total = len(month_response_ids)
+                if total > 0:
+                    # Calculate from ENPSQuestionResponse (more accurate for all question types)
+                    month_q_responses = ENPSQuestionResponse.objects.filter(
+                        question=first_nps_q,
+                        response_id__in=month_response_ids
+                    )
+                    avg_score = month_q_responses.aggregate(Avg('score_value'))['score_value__avg'] or 0
+                    promoters = month_q_responses.filter(score_value__gte=9).count()
+                    passives = month_q_responses.filter(score_value__gte=7, score_value__lte=8).count()
+                    detractors = month_q_responses.filter(score_value__lte=6).count()
+                    
+                    # Calculate eNPS - use the actual count of question responses for the denominator
+                    q_response_count = month_q_responses.count()
+                    if q_response_count > 0:
+                        enps = round(((promoters - detractors) / q_response_count) * 100, 1)
+                    else:
+                        enps = 0
+                    
+                    # Use per-month combined average
+                    satisfaction = monthly_combined_avgs.get(month_num) if monthly_combined_avgs.get(month_num) is not None else round(avg_score, 1)
+                else:
+                    avg_score = 0
+                    enps = 0
+                    # Use per-month combined average (or None if no data)
+                    satisfaction = monthly_combined_avgs.get(month_num)
+                
+                monthly_trend.append({
+                    'month': month_name,
+                    'month_num': month_num,
+                    'count': total,
+                    'avg_score': round(avg_score, 1),
+                    'enps': enps,
+                    'satisfaction': satisfaction if satisfaction is not None else 0
+                })
+        else:
+            # No NPS question, show zeros for selected months
+            for month_num in months_to_show:
+                month_name = calendar.month_abbr[month_num]
+                monthly_trend.append({
+                    'month': month_name,
+                    'month_num': month_num,
+                    'count': 0,
+                    'avg_score': 0,
+                    'enps': 0,
+                    'satisfaction': 0
+                })
+        
+        context['monthly_trend'] = monthly_trend
+    except Exception as e:
+        print(f"Error calculating monthly trend: {e}")
+        import traceback
+        traceback.print_exc()
+        context['monthly_trend'] = []
+    
     return render(request, 'hr/default/survey/enps/analytics.html', context)
 
 
@@ -1152,7 +1359,6 @@ def enps_analytics(request, survey_id):
 
 def enps_take_survey(request, survey_id):
     """Employee-facing survey form"""
-    from django.utils import timezone
     from datetime import timedelta
     
     survey = get_object_or_404(ENPSSurvey, id=survey_id)
@@ -1232,7 +1438,6 @@ def enps_take_survey(request, survey_id):
 @require_http_methods(["POST"])
 def enps_submit_response(request, survey_id):
     """Handle survey submission"""
-    from django.utils import timezone
     from datetime import timedelta
     
     survey = get_object_or_404(ENPSSurvey, id=survey_id)
@@ -1567,43 +1772,568 @@ def enps_responses_ajax(request, survey_id):
 
 
 def enps_department_data_ajax(request, survey_id):
-    """AJAX endpoint for department chart data"""
+    """AJAX endpoint for department chart data - supports year and month filtering"""
     survey = get_object_or_404(ENPSSurvey, id=survey_id)
+    
+    # Get year and month from query parameters
+    selected_year = request.GET.get('year')
+    selected_month = request.GET.get('month')
+    
+    try:
+        current_year = int(selected_year) if selected_year else datetime.now().year
+    except ValueError:
+        current_year = datetime.now().year
+    
+    try:
+        current_month = int(selected_month) if selected_month else None
+    except ValueError:
+        current_month = None
+    
+    # Get base response queryset
     responses = survey.responses.all()
     
-    department_stats = responses.exclude(department='').values('department').annotate(
-        count=Count('id'),
-        avg_score=Avg('score')
-    ).order_by('-count')[:10]
+    # Filter responses by year/month if selected
+    if current_month:
+        responses = responses.filter(created_at__year=current_year, created_at__month=current_month)
+    elif current_year:
+        responses = responses.filter(created_at__year=current_year)
     
-    # Calculate eNPS for each department
+    # Get the filtered response IDs
+    response_ids = set(responses.values_list('id', flat=True))
+    
+    # Get questions to determine main question type
+    questions = survey.questions.all().order_by('order')
+    first_nps_q = questions.filter(question_type='nps').first()
+    first_rating5_q = questions.filter(question_type='rating_5').first()
+    first_rating3_q = questions.filter(question_type='rating_3').first()
+    first_yesno_q = questions.filter(question_type='yes_no').first()
+    
+    # Determine main question type
+    main_q = first_nps_q or first_rating5_q or first_rating3_q or first_yesno_q
+    main_question_type = main_q.question_type if main_q else 'nps'
+    
+    # Get unique departments from responses
+    departments = set()
+    for r in responses.exclude(department='').values_list('department', flat=True).distinct():
+        if r:
+            departments.add(r)
+    
+    # Calculate stats for each department using question responses
     data = []
-    for dept in department_stats:
-        dept_responses = responses.filter(department=dept['department'])
-        dept_total = dept_responses.count()
-        if dept_total > 0:
-            dept_promoters = dept_responses.filter(score__gte=9).count()
-            dept_detractors = dept_responses.filter(score__lte=6).count()
-            dept_enps = round(((dept_promoters - dept_detractors) / dept_total) * 100, 1)
+    for dept_name in sorted(departments):
+        # Get responses for this department
+        dept_response_ids = set(responses.filter(department=dept_name).values_list('id', flat=True))
+        dept_total = len(dept_response_ids)
+        
+        if dept_total == 0:
+            continue
+        
+        if main_question_type == 'nps' and first_nps_q:
+            # Use question responses for NPS calculation
+            dept_q_responses = ENPSQuestionResponse.objects.filter(
+                question=first_nps_q,
+                response_id__in=dept_response_ids
+            )
+            dept_q_total = dept_q_responses.count()
+            
+            if dept_q_total > 0:
+                avg_score = round(dept_q_responses.aggregate(Avg('score_value'))['score_value__avg'] or 0, 1)
+                dept_promoters = dept_q_responses.filter(score_value__gte=9).count()
+                dept_detractors = dept_q_responses.filter(score_value__lte=6).count()
+                dept_enps = round(((dept_promoters - dept_detractors) / dept_q_total) * 100, 1)
+            else:
+                avg_score = 0
+                dept_enps = 0
+        elif main_question_type == 'rating_5' and first_rating5_q:
+            dept_q_responses = ENPSQuestionResponse.objects.filter(
+                question=first_rating5_q,
+                response_id__in=dept_response_ids
+            )
+            dept_q_total = dept_q_responses.count()
+            
+            if dept_q_total > 0:
+                avg_score = round(dept_q_responses.aggregate(Avg('score_value'))['score_value__avg'] or 0, 1)
+                dept_enps = round(avg_score * 2, 1)  # Convert to 0-10 scale
+            else:
+                avg_score = 0
+                dept_enps = 0
+        elif main_question_type == 'rating_3' and first_rating3_q:
+            dept_q_responses = ENPSQuestionResponse.objects.filter(
+                question=first_rating3_q,
+                response_id__in=dept_response_ids
+            )
+            dept_q_total = dept_q_responses.count()
+            
+            if dept_q_total > 0:
+                avg_score = round(dept_q_responses.aggregate(Avg('score_value'))['score_value__avg'] or 0, 1)
+                dept_enps = round(avg_score * (10/3), 1)  # Convert to 0-10 scale
+            else:
+                avg_score = 0
+                dept_enps = 0
+        elif main_question_type == 'yes_no' and first_yesno_q:
+            dept_q_responses = ENPSQuestionResponse.objects.filter(
+                question=first_yesno_q,
+                response_id__in=dept_response_ids
+            )
+            dept_q_total = dept_q_responses.count()
+            
+            if dept_q_total > 0:
+                yes_count = dept_q_responses.filter(boolean_value=True).count()
+                avg_score = round((yes_count / dept_q_total) * 100, 1)  # Yes percentage
+                dept_enps = avg_score
+            else:
+                avg_score = 0
+                dept_enps = 0
         else:
-            dept_enps = 0
+            # Fallback: use base response score
+            dept_responses = responses.filter(department=dept_name)
+            avg_score = round(dept_responses.aggregate(Avg('score'))['score__avg'] or 0, 1)
+            if dept_total > 0:
+                dept_promoters = dept_responses.filter(score__gte=9).count()
+                dept_detractors = dept_responses.filter(score__lte=6).count()
+                dept_enps = round(((dept_promoters - dept_detractors) / dept_total) * 100, 1)
+            else:
+                dept_enps = 0
+        
+        # Get expected employees count for this department (for response rate calculation)
+        try:
+            from App.users.models import Staff
+            expected_count = Staff.objects.filter(departmentlink__department_name=dept_name, status='active').count()
+        except Exception:
+            expected_count = 0
+        
+        # Calculate response rate
+        respondent_count = dept_q_total if 'dept_q_total' in dir() and dept_q_total > 0 else dept_total
+        response_rate = round((respondent_count / expected_count * 100), 1) if expected_count > 0 else 0
         
         data.append({
-            'department': dept['department'],
-            'count': dept_total,
-            'avg_score': round(dept['avg_score'] or 0, 1),
-            'enps': dept_enps
+            'department': dept_name,
+            'count': respondent_count,
+            'avg_score': avg_score,
+            'enps_score': dept_enps,
+            'respondents': respondent_count,
+            'expected': expected_count,
+            'response_rate': response_rate,
+            'satisfaction': avg_score,
         })
+    
+    # Sort by count descending
+    data.sort(key=lambda x: x['count'], reverse=True)
+    data = data[:10]  # Limit to top 10
     
     return JsonResponse({'data': data})
 
 
+def enps_analytics_data_ajax(request, survey_id):
+    """AJAX endpoint for analytics data - returns JSON for dynamic updates without page reload"""
+    survey = get_object_or_404(ENPSSurvey, id=survey_id)
+    
+    # Get year and month from query parameters
+    selected_year = request.GET.get('year')
+    selected_month = request.GET.get('month')
+    
+    try:
+        current_year = int(selected_year) if selected_year else datetime.now().year
+    except ValueError:
+        current_year = datetime.now().year
+    
+    try:
+        current_month = int(selected_month) if selected_month and selected_month != '' else None
+    except ValueError:
+        current_month = None
+    
+    print(f"AJAX: year={current_year}, month={current_month}")
+    
+    # Get base response queryset
+    responses = survey.responses.all()
+    questions = survey.questions.all().order_by('order')
+    
+    # Filter responses by year/month FIRST
+    if current_month:
+        responses = responses.filter(created_at__year=current_year, created_at__month=current_month)
+        print(f"AJAX: Filtering by year={current_year}, month={current_month}")
+    elif current_year:
+        responses = responses.filter(created_at__year=current_year)
+        print(f"AJAX: Filtering by year={current_year} only")
+    
+    # Get the filtered response IDs
+    response_ids = set(responses.values_list('id', flat=True))
+    print(f"AJAX: filtered responses count: {len(response_ids)}")
+    
+    total_responses = len(response_ids)
+    
+    # Calculate main stats based on question type
+    first_nps_q = questions.filter(question_type='nps').first()
+    first_rating5_q = questions.filter(question_type='rating_5').first()
+    first_rating3_q = questions.filter(question_type='rating_3').first()
+    first_yesno_q = questions.filter(question_type='yes_no').first()
+    
+    main_question_type = None
+    enps_score = 0
+    promoters = 0
+    passives = 0
+    detractors = 0
+    avg_score = 0
+    
+    if first_nps_q:
+        main_question_type = 'nps'
+        # Filter by response_ids to get only responses for selected month
+        nps_responses = ENPSQuestionResponse.objects.filter(
+            question=first_nps_q,
+            response_id__in=response_ids
+        )
+        nps_total = nps_responses.count()
+        print(f"AJAX: nps responses count: {nps_total}")
+        if nps_total > 0:
+            total_responses = nps_total
+            avg_score = round(nps_responses.aggregate(Avg('score_value'))['score_value__avg'] or 0, 1)
+            promoters = nps_responses.filter(score_value__gte=9).count()
+            passives = nps_responses.filter(score_value__gte=7, score_value__lte=8).count()
+            detractors = nps_responses.filter(score_value__lte=6).count()
+            enps_score = round(((promoters - detractors) / nps_total) * 100, 1)
+    elif first_rating5_q:
+        main_question_type = 'rating_5'
+        rating_responses = ENPSQuestionResponse.objects.filter(
+            question=first_rating5_q,
+            response_id__in=response_ids
+        )
+        rating_total = rating_responses.count()
+        if rating_total > 0:
+            total_responses = rating_total
+            avg_score = round(rating_responses.aggregate(Avg('score_value'))['score_value__avg'] or 0, 1)
+    elif first_rating3_q:
+        main_question_type = 'rating_3'
+        rating_responses = ENPSQuestionResponse.objects.filter(
+            question=first_rating3_q,
+            response_id__in=response_ids
+        )
+        rating_total = rating_responses.count()
+        if rating_total > 0:
+            total_responses = rating_total
+            avg_score = round(rating_responses.aggregate(Avg('score_value'))['score_value__avg'] or 0, 1)
+    elif first_yesno_q:
+        main_question_type = 'yes_no'
+        yesno_responses = ENPSQuestionResponse.objects.filter(
+            question=first_yesno_q,
+            response_id__in=response_ids
+        )
+        yesno_total = yesno_responses.count()
+        if yesno_total > 0:
+            total_responses = yesno_total
+    
+    # Calculate score distribution for the main question type
+    score_distribution = []
+    
+    if first_nps_q:
+        # NPS: calculate distribution of scores 0-10
+        nps_responses = ENPSQuestionResponse.objects.filter(
+            question=first_nps_q,
+            response_id__in=response_ids
+        )
+        for i in range(11):
+            count = nps_responses.filter(score_value=i).count()
+            score_distribution.append({'score': i, 'count': count})
+    elif first_rating5_q:
+        # 5-Star: calculate distribution of scores 1-5
+        rating_responses = ENPSQuestionResponse.objects.filter(
+            question=first_rating5_q,
+            response_id__in=response_ids
+        )
+        for i in range(1, 6):
+            count = rating_responses.filter(score_value=i).count()
+            score_distribution.append({'score': i, 'count': count})
+    elif first_rating3_q:
+        # 3-Star: calculate distribution of scores 1-3
+        rating_responses = ENPSQuestionResponse.objects.filter(
+            question=first_rating3_q,
+            response_id__in=response_ids
+        )
+        for i in range(1, 4):
+            count = rating_responses.filter(score_value=i).count()
+            score_distribution.append({'score': i, 'count': count})
+    elif first_yesno_q:
+        # Yes/No: calculate yes/no distribution
+        yesno_responses = ENPSQuestionResponse.objects.filter(
+            question=first_yesno_q,
+            response_id__in=response_ids
+        )
+        yes_count = yesno_responses.filter(score_value__gte=1).count()
+        no_count = yesno_responses.filter(score_value=0).count()
+        score_distribution = [
+            {'score': 'yes', 'count': yes_count},
+            {'score': 'no', 'count': no_count}
+        ]
+    else:
+        # Fallback: use base response scores
+        for i in range(11):
+            count = responses.filter(score=i).count()
+            score_distribution.append({'score': i, 'count': count})
+
+    # Calculate yes/no counts for yes_no question type
+    yes_count = 0
+    no_count = 0
+    if main_question_type == 'yes_no' and first_yesno_q:
+        yesno_responses = ENPSQuestionResponse.objects.filter(
+            question=first_yesno_q,
+            response_id__in=response_ids
+        )
+        yes_count = yesno_responses.filter(score_value__gte=1).count()
+        no_count = yesno_responses.filter(score_value=0).count()
+    
+    # Calculate percentages
+    if total_responses > 0:
+        promoters_pct = round((promoters / total_responses) * 100, 1)
+        passives_pct = round((passives / total_responses) * 100, 1)
+        detractors_pct = round((detractors / total_responses) * 100, 1)
+    else:
+        promoters_pct = passives_pct = detractors_pct = 0
+    
+    # Calculate combined average for the gauge chart
+    all_questions = survey.questions.all()
+    total_score_sum = 0
+    total_score_count = 0
+    
+    for q in all_questions:
+        q_responses = ENPSQuestionResponse.objects.filter(question=q, response_id__in=response_ids)
+        resp_count = q_responses.count()
+        
+        if resp_count > 0:
+            if q.question_type == 'nps':
+                q_avg = q_responses.aggregate(Avg('score_value'))['score_value__avg']
+                if q_avg is not None:
+                    total_score_sum += q_avg
+                    total_score_count += 1
+            elif q.question_type == 'rating_5':
+                q_avg = q_responses.aggregate(Avg('score_value'))['score_value__avg']
+                if q_avg is not None:
+                    total_score_sum += q_avg * 2  # Convert to 0-10 scale
+                    total_score_count += 1
+            elif q.question_type == 'rating_3':
+                q_avg = q_responses.aggregate(Avg('score_value'))['score_value__avg']
+                if q_avg is not None:
+                    total_score_sum += q_avg * (10/3)  # Convert to 0-10 scale
+                    total_score_count += 1
+    
+    if total_score_count > 0:
+        combined_avg = round(total_score_sum / total_score_count, 2)
+    else:
+        combined_avg = avg_score if avg_score is not None else 0
+    
+    print(f"AJAX: returning enps_score={enps_score}, avg_score={avg_score}, total_responses={total_responses}, main_question_type={main_question_type}")
+    
+    return JsonResponse({
+        'total_responses': total_responses,
+        'enps_score': enps_score,
+        'raw_enps_score': enps_score,  # For emoji display
+        'promoters': promoters,
+        'promoters_pct': promoters_pct,
+        'passives': passives,
+        'passives_pct': passives_pct,
+        'detractors': detractors,
+        'detractors_pct': detractors_pct,
+        'avg_score': avg_score,
+        'main_question_type': main_question_type,
+        'current_year': current_year,
+        'current_month': current_month,
+        'score_distribution': score_distribution,
+        'yes_count': yes_count,
+        'no_count': no_count,
+        'combined_avg': combined_avg,
+    })
+
+
+def enps_question_analytics_ajax(request, survey_id):
+    """AJAX endpoint for Question Analysis section - returns per-question analytics filtered by year/month"""
+    survey = get_object_or_404(ENPSSurvey, id=survey_id)
+    
+    # Get filter parameters
+    selected_year = request.GET.get('year')
+    selected_month = request.GET.get('month')
+    
+    try:
+        current_year = int(selected_year) if selected_year else datetime.now().year
+    except ValueError:
+        current_year = datetime.now().year
+    
+    try:
+        current_month = int(selected_month) if selected_month else None
+    except ValueError:
+        current_month = None
+    
+    print(f"AJAX: year={current_year}, month={current_month}")
+    
+    # Start with all responses for this survey
+    responses = ENPSResponse.objects.filter(survey=survey)
+    
+    # Filter by year
+    responses = responses.filter(created_at__year=current_year)
+    
+    # Filter by month if specified
+    if current_month:
+        responses = responses.filter(created_at__month=current_month)
+        
+        print(f"AJAX: filtered responses count: {responses.count()}")
+    
+    # Get response IDs for filtering question responses
+    response_ids = list(responses.values_list('id', flat=True))
+    
+    questions = survey.questions.all()
+    question_analytics = []
+    
+    for question in questions:
+        qa = {
+            'question_id': question.id,
+            'question_text': question.question_text,
+            'question_type': question.question_type,
+            'total_responses': 0,
+            'avg_score': None,
+            'enps_score': None,
+            'distribution': None,
+            'yes_count': 0,
+            'no_count': 0,
+            'yes_pct': 0,
+            'no_pct': 0,
+        }
+        
+        # Get question responses for this question
+        question_responses = ENPSQuestionResponse.objects.filter(
+            question=question,
+            response_id__in=response_ids
+        )
+        
+        qa['total_responses'] = question_responses.count()
+        
+        if qa['total_responses'] == 0:
+            question_analytics.append(qa)
+            continue
+        
+        # Process based on question type
+        if question.question_type == 'nps':
+            scores = list(question_responses.values_list('score_value', flat=True))
+            valid_scores = [s for s in scores if s is not None]
+            
+            if valid_scores:
+                qa['avg_score'] = round(sum(valid_scores) / len(valid_scores), 1)
+                
+                # Calculate eNPS
+                promoters = len([s for s in valid_scores if s >= 9])
+                detractors = len([s for s in valid_scores if s <= 6])
+                qa['enps_score'] = round(((promoters - detractors) / len(valid_scores)) * 100)
+                
+                # Distribution (0-10 scores)
+                distribution = [0] * 11
+                for s in valid_scores:
+                    if 0 <= s <= 10:
+                        distribution[s] += 1
+                qa['distribution'] = distribution
+        
+        elif question.question_type == 'rating_5':
+            scores = list(question_responses.values_list('score_value', flat=True))
+            valid_scores = [s for s in scores if s is not None]
+            
+            if valid_scores:
+                qa['avg_score'] = round(sum(valid_scores) / len(valid_scores), 1)
+                
+                # Distribution (1-5 stars)
+                distribution = [0] * 5
+                for s in valid_scores:
+                    if 1 <= s <= 5:
+                        distribution[s - 1] += 1
+                qa['distribution'] = distribution
+        
+        elif question.question_type == 'rating_3':
+            scores = list(question_responses.values_list('score_value', flat=True))
+            valid_scores = [s for s in scores if s is not None]
+            
+            if valid_scores:
+                qa['avg_score'] = round(sum(valid_scores) / len(valid_scores), 1)
+                
+                # Distribution (1-3 stars)
+                distribution = [0] * 3
+                for s in valid_scores:
+                    if 1 <= s <= 3:
+                        distribution[s - 1] += 1
+                qa['distribution'] = distribution
+        
+        elif question.question_type == 'yes_no':
+            yes_count = question_responses.filter(answer_yes_no=True).count()
+            no_count = question_responses.filter(answer_yes_no=False).count()
+            
+            qa['yes_count'] = yes_count
+            qa['no_count'] = no_count
+            
+            total = yes_count + no_count
+            if total > 0:
+                qa['yes_pct'] = round((yes_count / total) * 100)
+                qa['no_pct'] = round((no_count / total) * 100)
+                qa['avg_score'] = round((yes_count / total) * 100, 1)  # Show as percentage
+        
+        question_analytics.append(qa)
+    
+    return JsonResponse({
+        'question_analytics': question_analytics,
+        'current_year': current_year,
+        'current_month': current_month,
+        'total_responses': len(response_ids),
+    })
+
+
 def enps_trend_data_ajax(request, survey_id):
-    """AJAX endpoint for trend chart data"""
+    """AJAX endpoint for trend chart data - always returns all 12 months for selected year"""
     survey = get_object_or_404(ENPSSurvey, id=survey_id)
     responses = survey.responses.all()
+    questions = survey.questions.all()
     
-    # Get monthly trends
+    # Get year from query parameters (month is ignored for trend chart - it always shows all 12 months)
+    selected_year = request.GET.get('year')
+    
+    try:
+        current_year = int(selected_year) if selected_year else datetime.now().year
+    except ValueError:
+        current_year = datetime.now().year
+    
+    # Always filter by year only - trend chart should always show all 12 months
+    responses = responses.filter(created_at__year=current_year)
+    
+    # Get questions for combined average calculation
+    all_questions = list(questions)
+    
+    # Pre-calculate combined averages for each month (same logic as main view)
+    monthly_combined_avgs = {}
+    for month_num in range(1, 13):
+        month_total_score_sum = 0
+        month_total_score_count = 0
+        
+        for q in all_questions:
+            base_filter = {'survey': survey, 'created_at__year': current_year, 'created_at__month': month_num}
+            month_response_objs = ENPSResponse.objects.filter(**base_filter)
+            response_ids = set(month_response_objs.values_list('id', flat=True))
+            
+            month_q_responses = ENPSQuestionResponse.objects.filter(
+                question=q,
+                response_id__in=response_ids
+            )
+            resp_count = month_q_responses.count()
+            
+            if resp_count > 0:
+                avg_score = month_q_responses.aggregate(Avg('score_value'))['score_value__avg']
+                if avg_score is not None:
+                    if q.question_type == 'nps':
+                        month_total_score_sum += avg_score
+                        month_total_score_count += 1
+                    elif q.question_type == 'rating_5':
+                        month_total_score_sum += avg_score * 2  # Convert to 0-10
+                        month_total_score_count += 1
+                    elif q.question_type == 'rating_3':
+                        month_total_score_sum += avg_score * (10/3)  # Convert to 0-10
+                        month_total_score_count += 1
+        
+        if month_total_score_count > 0:
+            monthly_combined_avgs[month_num] = round(month_total_score_sum / month_total_score_count, 2)
+        else:
+            monthly_combined_avgs[month_num] = None
+    
+    # Get monthly trends using TruncMonth to group by month
     from django.db.models.functions import TruncMonth
     monthly_data = responses.annotate(
         month=TruncMonth('created_at')
@@ -1614,7 +2344,8 @@ def enps_trend_data_ajax(request, survey_id):
         detractors=Count('id', filter=Q(score__lte=6))
     ).order_by('month')
     
-    data = []
+    # Create a dictionary for quick lookup of existing month data
+    month_data_dict = {}
     for item in monthly_data:
         total = item['count']
         if total > 0:
@@ -1622,11 +2353,38 @@ def enps_trend_data_ajax(request, survey_id):
         else:
             enps = 0
         
-        data.append({
-            'month': item['month'].strftime('%Y-%m') if item['month'] else '',
+        month_key = item['month'].strftime('%Y-%m') if item['month'] else ''
+        month_data_dict[month_key] = {
             'count': total,
             'avg_score': round(item['avg_score'] or 0, 1),
             'enps': enps
+        }
+    
+    # Build data for all 12 months, filling in missing months with zeros
+    import calendar
+    data = []
+    for month_num in range(1, 13):
+        month_name = calendar.month_abbr[month_num]
+        month_key = f"{current_year}-{month_num:02d}"
+        
+        if month_key in month_data_dict:
+            month_data = month_data_dict[month_key]
+        else:
+            month_data = {'count': 0, 'avg_score': 0, 'enps': 0}
+        
+        # Use combined average as satisfaction (normalized to 0-10 scale)
+        # This is the same logic used in the main view
+        satisfaction = monthly_combined_avgs.get(month_num)
+        if satisfaction is None:
+            satisfaction = month_data['avg_score']  # Fallback to avg_score
+        
+        data.append({
+            'month': f"{current_year}-{month_num:02d}",
+            'month_name': month_name,
+            'count': month_data['count'],
+            'avg_score': month_data['avg_score'],
+            'satisfaction': satisfaction if satisfaction is not None else 0,
+            'enps': month_data['enps']
         })
     
     return JsonResponse({'data': data})
