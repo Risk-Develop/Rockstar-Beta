@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ action }} Violation Type{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+        <a href="{% url 'human_resource:violation_type_list' %}">Types</a>
+        <span>/</span>
+        <span>{{ action }}</span>
+    </nav>
+    <h1 class="text-2xl font-bold mb-6">{{ action }} Violation Type</h1>
+    <div class="bg-white rounded-lg shadow p-6 max-w-xl">
+        <form method="post">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Name *</label>
+                    <input type="text" name="name" value="{{ vtype.name|default:'' }}" required class="w-full border rounded-lg px-4 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Description</label>
+                    <textarea name="description" rows="2" class="w-full border rounded-lg px-4 py-2">{{ vtype.description|default:'' }}</textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Display Order</label>
+                    <input type="number" name="display_order" value="{{ vtype.display_order|default:0 }}" class="w-full border rounded-lg px-4 py-2">
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="is_active" id="is_active" {% if vtype.is_active|default:true %}checked{% endif %}>
+                    <label for="is_active">Active</label>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+                <a href="{% url 'human_resource:violation_type_list' %}" class="px-4 py-2 bg-gray-200 rounded-lg">Cancel</a>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg">{{ action }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

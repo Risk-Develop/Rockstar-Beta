@@ -18,6 +18,15 @@ from .payroll_settings_models import (
     DeductionEntry,
     PayrollAdjustment,
 )
+from .handbook_models import (
+    OffenseGroup,
+    OffenseSection,
+    OffenseClassification,
+    RemedialAction,
+    ViolationCategory,
+    ViolationType,
+    EmployeeViolation,
+)
 
 
 # =============================================================================
@@ -226,4 +235,69 @@ class GovernmentContributionRateAdmin(admin.ModelAdmin):
                    'employee_share', 'employer_share', 'effective_date', 'is_active']
     list_filter = ['contribution_type', 'is_active']
     ordering = ['contribution_type', 'salary_bracket_min']
+
+
+# =============================================================================
+# Handbook Offense Classification & Compliance Models
+# =============================================================================
+
+@admin.register(OffenseGroup)
+class OffenseGroupAdmin(admin.ModelAdmin):
+    list_display = ['group_number', 'group_name', 'is_active', 'created_at']
+    list_filter = ['is_active']
+    search_fields = ['group_number', 'group_name']
+    ordering = ['group_number']
+
+
+@admin.register(OffenseSection)
+class OffenseSectionAdmin(admin.ModelAdmin):
+    list_display = ['section_number', 'section_title', 'offense_group', 'is_active']
+    list_filter = ['is_active', 'offense_group']
+    search_fields = ['section_number', 'section_title']
+    ordering = ['offense_group', 'section_number']
+    raw_id_fields = ['offense_group']
+
+
+@admin.register(OffenseClassification)
+class OffenseClassificationAdmin(admin.ModelAdmin):
+    list_display = ['offense_section', 'offense_description', 'default_range', 'is_active']
+    list_filter = ['is_active', 'default_range', 'offense_section__offense_group']
+    search_fields = ['offense_description']
+    ordering = ['offense_section', 'id']
+    raw_id_fields = ['offense_section']
+
+
+@admin.register(RemedialAction)
+class RemedialActionAdmin(admin.ModelAdmin):
+    list_display = ['range_code', 'offense_count', 'action', 'is_active']
+    list_filter = ['is_active', 'range_code']
+    ordering = ['range_code', 'offense_count']
+
+
+@admin.register(ViolationCategory)
+class ViolationCategoryAdmin(admin.ModelAdmin):
+    list_display = ['name', 'description', 'display_order', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['name', 'description']
+    ordering = ['display_order', 'name']
+
+
+@admin.register(ViolationType)
+class ViolationTypeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'description', 'display_order', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['name', 'description']
+    ordering = ['display_order', 'name']
+
+
+@admin.register(EmployeeViolation)
+class EmployeeViolationAdmin(admin.ModelAdmin):
+    list_display = ['employee', 'incident_number', 'category', 'violation_type', 
+                   'status', 'remedial_action_range', 'da_status', 'date_submitted']
+    list_filter = ['status', 'da_status', 'remedial_action_range', 'category', 'violation_type']
+    search_fields = ['employee__first_name', 'employee__last_name', 'type_of_incident']
+    ordering = ['-created_at']
+    raw_id_fields = ['employee', 'submitted_by', 'offense_classification']
+    readonly_fields = ['incident_number', 'offense_count', 'remedial_action_range', 
+                       'created_at', 'updated_at', 'last_updated']
 

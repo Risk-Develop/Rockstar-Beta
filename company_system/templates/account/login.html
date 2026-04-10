@@ -3,6 +3,7 @@
 {% load allauth %}
 {% block title %} Login {% endblock %}
 
+{% block extra_css %}
 <style>
 /* FIX 1: Corrected class names from blob-delay-* to animation-delay-* */
 @keyframes blob {
@@ -70,6 +71,7 @@ html.dark .animate-blob {
     }
 }
 </style>
+{% endblock %}
 
 {% block content %}
 

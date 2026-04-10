@@ -1,0 +1,130 @@
+
+
+
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Violation Details - Incident #{{ violation.incident_label }}{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'hr/dashboard/hr_sidebar.html' %}
+
+<main id="mainContent" class="md:ml-64 pt-20 min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+    <div class="max-w-5xl mx-auto">
+        <div class="space-y-6">
+            <!-- Header Section -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="{% url 'human_resource:violation_list' %}" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                        <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    </a>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Violation Details</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Incident #{{ violation.incident_label }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        {% if violation.status == 'done' %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                        {% elif violation.status == 'stuck' %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
+                        {% else %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200{% endif %}">
+                        {{ violation.get_status_display }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Main Info Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Employee</span>
+                        <p class="font-medium text-gray-800 dark:text-gray-100 mt-1">{{ violation.employee.first_name }} {{ violation.employee.last_name }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Category</span>
+                        <p class="font-medium text-gray-800 dark:text-gray-100 mt-1">{{ violation.category.name|default:'-' }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Type</span>
+                        <p class="font-medium text-gray-800 dark:text-gray-100 mt-1">{{ violation.violation_type.name|default:'-' }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Date Submitted</span>
+                        <p class="font-medium text-gray-800 dark:text-gray-100 mt-1">{{ violation.date_submitted|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Range & Action Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Range</span>
+                        <p class="font-medium text-gray-800 dark:text-gray-100 mt-1">Range {{ violation.remedial_action_range }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Action</span>
+                        <p class="font-medium text-gray-800 dark:text-gray-100 mt-1">{{ violation.remedial_action.action|default:'-' }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Offense Count</span>
+                        <p class="font-medium text-gray-800 dark:text-gray-100 mt-1">{{ violation.offense_count }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Classification</span>
+                        <p class="font-medium text-gray-800 dark:text-gray-100 mt-1 truncate">{{ violation.offense_classification.offense_description|truncatechars:30|default:'-' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Incident Details Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <div class="mb-4">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Type of Incident</span>
+                    <p class="mt-2 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-800 dark:text-gray-100">{{ violation.type_of_incident }}</p>
+                </div>
+                
+                {% if violation.hr_note %}
+                <div>
+                    <span class="text-sm text-gray-500 dark:text-gray-400">HR Note</span>
+                    <p class="mt-2 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-800 dark:text-gray-100">{{ violation.hr_note }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Additional Info Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">DA Status</span>
+                        <p class="font-medium text-gray-800 dark:text-gray-100 mt-1">{{ violation.get_da_status_display }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Decision</span>
+                        <p class="font-medium text-gray-800 dark:text-gray-100 mt-1">{{ violation.get_decision_display|default:'-' }}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Fully Signed</span>
+                        <p class="font-medium text-gray-800 dark:text-gray-100 mt-1">{% if violation.fully_signed %}Yes{% else %}No{% endif %}</p>
+                    </div>
+                    <div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Submitted By</span>
+                        <p class="font-medium text-gray-800 dark:text-gray-100 mt-1">{% if violation.submitted_by %}{{ violation.submitted_by.first_name|default:'-' }} {{ violation.submitted_by.last_name|default:'' }}{% else %}-{% endif %}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center gap-3">
+                <a href="{% url 'human_resource:violation_edit' violation.pk %}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                    Edit
+                </a>
+                <a href="{% url 'human_resource:violation_list' %}" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                    Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+</main>
+
+{% endblock %}

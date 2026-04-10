@@ -176,9 +176,14 @@ function submitLogout() {
 }
 
 // Close modal on outside click
-document.getElementById('logout-modal').addEventListener('click', function (e) {
-    if (e.target === this) {
-        closeLogoutModal();
+document.addEventListener('DOMContentLoaded', function () {
+    const logoutModal = document.getElementById('logout-modal');
+    if (logoutModal) {
+        logoutModal.addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeLogoutModal();
+            }
+        });
     }
 });
 

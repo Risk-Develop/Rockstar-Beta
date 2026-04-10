@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Offense Classifications - Handbook{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-3">
+        <div>
+            <h1 class="text-2xl font-bold">Offense Classifications</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage handbook offense classifications</p>
+        </div>
+        <a href="{% url 'human_resource:classification_add' %}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Add Classification
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="mb-4 flex flex-wrap gap-2">
+        <form method="get" class="flex gap-2 flex-wrap">
+            <input type="text" name="search" value="{{ search }}" placeholder="Search..." class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800">
+            <select name="section" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800">
+                <option value="">All Sections</option>
+                {% for s in sections %}
+                <option value="{{ s.pk }}" {% if section_filter == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.offense_group.group_number }} - {{ s.section_number }}: {{ s.section_title }}</option>
+                {% endfor %}
+            </select>
+            <select name="range" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800">
+                <option value="">All Ranges</option>
+                <option value="A" {% if range_filter == 'A' %}selected{% endif %}>Range A</option>
+                <option value="B" {% if range_filter == 'B' %}selected{% endif %}>Range B</option>
+                <option value="C" {% if range_filter == 'C' %}selected{% endif %}>Range C</option>
+                <option value="D" {% if range_filter == 'D' %}selected{% endif %}>Range D</option>
+            </select>
+            <button type="submit" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg">Filter</button>
+            {% if search or section_filter or range_filter %}
+            <a href="{% url 'human_resource:classification_list' %}" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Section</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Description</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Default Range</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for c in page_obj %}
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                        {{ c.offense_section.offense_group.group_number }} - {{ c.offense_section.section_number }}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-md truncate">{{ c.offense_description }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if c.default_range == 'A' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
+                            {% elif c.default_range == 'B' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                            {% elif c.default_range == 'C' %}bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200
+                            {% else %}bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200{% endif %}">
+                            Range {{ c.default_range }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="{% url 'human_resource:classification_edit' c.pk %}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 mr-3">Edit</a>
+                        <a href="{% url 'human_resource:classification_delete' c.pk %}" class="text-red-600 hover:text-red-900 dark:text-red-400">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-6 py-4 text-center text-gray-500">No classifications found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <div class="mt-4 flex justify-center">
+        <nav class="flex items-center gap-1">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 rounded hover:bg-gray-200">Prev</a>
+            {% endif %}
+            <span class="px-3 py-1 text-gray-600">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 rounded hover:bg-gray-200">Next</a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

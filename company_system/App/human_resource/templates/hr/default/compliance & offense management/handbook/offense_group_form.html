@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ action }} Offense Group{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
+        <a href="{% url 'human_resource:hr_dashboard' %}" class="hover:text-blue-600">Dashboard</a>
+        <span>/</span>
+        <a href="{% url 'human_resource:offense_group_list' %}" class="hover:text-blue-600">Offense Groups</a>
+        <span>/</span>
+        <span class="text-gray-900 dark:text-gray-100">{{ action }}</span>
+    </nav>
+
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold">{{ action }} Offense Group</h1>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 max-w-2xl">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Group Number</label>
+                    <input type="text" name="group_number" value="{{ group.group_number|default:'' }}" required
+                           class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                           placeholder="e.g., Rule 1">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Group Name</label>
+                    <input type="text" name="group_name" value="{{ group.group_name|default:'' }}" required
+                           class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                           placeholder="e.g., Violation against conduct and decorum">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                    <textarea name="description" rows="3"
+                              class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                              placeholder="Optional description">{{ group.description|default:'' }}</textarea>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="is_active" id="is_active" {% if group.is_active|default:true %}checked{% endif %}
+                           class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500">
+                    <label for="is_active" class="text-sm text-gray-700 dark:text-gray-300">Active</label>
+                </div>
+            </div>
+
+            <div class="mt-6 flex justify-end gap-3">
+                <a href="{% url 'human_resource:offense_group_list' %}" 
+                   class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">
+                    Cancel
+                </a>
+                <button type="submit" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    {{ action }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -199,6 +199,24 @@
           <li><a href="{% url 'human_resource:enps_survey_create' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="enps_survey_create">Create Survey</a></li>
         </ul>
       </li>
+
+      <!-- Compliance & Offense Management Section -->
+      <li>
+        <button data-collapse="compliance_mgnt" class="nav-collapse flex items-center w-full text-left p-2 rounded-lg hover:bg-gray-700 transition-colors duration-200" aria-expanded="false">
+          <svg class="w-5 h-5 sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span class="flex-1 sidebar-text ml-3">Compliance & Offense</span>
+          <svg class="w-4 h-4 transition-transform duration-300 arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+        <ul id="compliance_mgnt" class="submenu-content pl-4 space-y-1">
+          <li><a href="{% url 'human_resource:offense_group_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="offense_group_list">Offense Groups</a></li>
+          <li><a href="{% url 'human_resource:offense_section_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="offense_section_list">Offense Sections</a></li>
+          <li><a href="{% url 'human_resource:classification_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="classification_list">Classifications</a></li>
+          <li><a href="{% url 'human_resource:remedial_action_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="remedial_action_list">Remedial Actions</a></li>
+          <li><a href="{% url 'human_resource:violation_category_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="violation_category_list">Violation Categories</a></li>
+          <li><a href="{% url 'human_resource:violation_type_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="violation_type_list">Violation Types</a></li>
+          <li><a href="{% url 'human_resource:violation_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="violation_list">Employee Violations</a></li>
+        </ul>
+      </li>
     </ul>
   </nav>
 </aside>
@@ -393,6 +411,14 @@
       role_list:             'Role Management',
       position_list:         'Position Management',
       department_list:       'Department Management',
+      enps_survey_list:      'Survey',
+      offense_group_list:   'Offense Groups',
+      offense_section_list:  'Offense Sections',
+      classification_list:   'Classifications',
+      remedial_action_list:  'Remedial Actions',
+      violation_category_list: 'Violation Categories',
+      violation_type_list:   'Violation Types',
+      violation_list:        'Employee Violations',
     };
 
     const currentUrlName = "{{ request.resolver_match.url_name|default:'' }}";

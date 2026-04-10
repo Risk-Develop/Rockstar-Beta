@@ -346,9 +346,14 @@ function closeModal() {
 }
 
 // Close modal when clicking outside
-document.getElementById('deminiModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeModal();
+document.addEventListener('DOMContentLoaded', function() {
+    const deminiModal = document.getElementById('deminiModal');
+    if (deminiModal) {
+        deminiModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
     }
 });
 
@@ -365,9 +370,14 @@ function closeDeleteModal() {
 }
 
 // Close delete modal when clicking outside
-document.getElementById('deleteModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeDeleteModal();
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteModal = document.getElementById('deleteModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
     }
 });
 

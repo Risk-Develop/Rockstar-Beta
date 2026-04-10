@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Remedial Actions{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-3">
+        <div>
+            <h1 class="text-2xl font-bold">Remedial Action Matrix</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Configure progressive disciplinary actions</p>
+        </div>
+        <a href="{% url 'human_resource:remedial_action_add' %}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Add Action
+        </a>
+    </div>
+
+    <!-- Matrix Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Range</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Offense #</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Action</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Details</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for a in actions %}
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if a.range_code == 'A' %}bg-blue-100 text-blue-800
+                            {% elif a.range_code == 'B' %}bg-yellow-100 text-yellow-800
+                            {% elif a.range_code == 'C' %}bg-orange-100 text-orange-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            Range {{ a.range_code }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                        {% if a.offense_count == 1 %}1st offense
+                        {% elif a.offense_count == 2 %}2nd offense
+                        {% elif a.offense_count == 3 %}3rd offense
+                        {% else %}{{ a.offense_count }}th offense{% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ a.action }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">{{ a.action_details }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="{% url 'human_resource:remedial_action_edit' a.pk %}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
+                        <a href="{% url 'human_resource:remedial_action_delete' a.pk %}" class="text-red-600 hover:text-red-900">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">No remedial actions configured.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Reference Matrix -->
+    <div class="mt-6 bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+        <h3 class="text-lg font-semibold mb-3">Reference Matrix</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+            <div>
+                <p class="font-medium text-blue-700">Range A (Minor)</p>
+                <ul class="mt-1 space-y-1 text-gray-600">
+                    <li>1st: Verbal Warning</li>
+                    <li>2nd: Written Warning</li>
+                    <li>3rd: Suspension 1-3 days</li>
+                    <li>4th: Suspension 4-6 days</li>
+                    <li>5th: Dismissal</li>
+                </ul>
+            </div>
+            <div>
+                <p class="font-medium text-yellow-700">Range B (Moderate)</p>
+                <ul class="mt-1 space-y-1 text-gray-600">
+                    <li>1st: Written Warning</li>
+                    <li>2nd: Suspension 1-3 days</li>
+                    <li>3rd: Suspension 4-6 days</li>
+                    <li>4th: Dismissal</li>
+                </ul>
+            </div>
+            <div>
+                <p class="font-medium text-orange-700">Range C (Serious)</p>
+                <ul class="mt-1 space-y-1 text-gray-600">
+                    <li>1st: Suspension 1-3 days</li>
+                    <li>2nd: Suspension 4-6 days</li>
+                    <li>3rd: Dismissal</li>
+                </ul>
+            </div>
+            <div>
+                <p class="font-medium text-red-700">Range D (Major)</p>
+                <ul class="mt-1 space-y-1 text-gray-600">
+                    <li>1st: Dismissal</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

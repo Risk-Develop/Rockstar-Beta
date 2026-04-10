@@ -1,0 +1,324 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ action }} Violation{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'hr/dashboard/hr_sidebar.html' %}
+
+<main id="mainContent" class="md:ml-64 pt-16 md:pt-20 min-h-screen p-3 md:p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+  <div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-4 md:mb-6">
+      <div class="flex items-center gap-3 md:gap-4 mb-2">
+        <a href="{% url 'human_resource:violation_list' %}" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors touch-manipulation">
+          <svg class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        </a>
+        <div class="flex-1">
+          <div class="flex items-center gap-3 flex-wrap">
+            <h1 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100">{{ action }} Violation</h1>
+            <!-- Mode Badge -->
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if action == 'Add' %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400{% else %}bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400{% endif %}">
+              {% if action == 'Add' %}New Entry{% else %}Editing{% endif %}
+            </span>
+          </div>
+          <p class="text-sm text-gray-500 dark:text-gray-400 ml-0 mt-1">
+            {% if action == 'Add' %}Create a new violation record{% else %}Update violation details for {{ violation.employee.first_name }} {{ violation.employee.last_name }}{% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Violation Summary (for Edit mode) -->
+    {% if violation %}
+    <div class="mb-4 md:mb-6 bg-blue-50 dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded-xl p-4">
+      <div class="flex items-center gap-2 mb-3">
+        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <h3 class="font-semibold text-blue-800 dark:text-blue-200">Violation Summary</h3>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+        <div class="bg-white/60 dark:bg-slate-700/60 rounded-lg p-2">
+          <span class="text-xs text-gray-500 dark:text-gray-400 block">Incident #</span>
+          <span class="font-semibold text-gray-800 dark:text-gray-100">{{ violation.incident_label }}</span>
+        </div>
+        <div class="bg-white/60 dark:bg-slate-700/60 rounded-lg p-2">
+          <span class="text-xs text-gray-500 dark:text-gray-400 block">Offense Count</span>
+          <span class="font-semibold text-gray-800 dark:text-gray-100">{{ violation.offense_count }}</span>
+        </div>
+        <div class="bg-white/60 dark:bg-slate-700/60 rounded-lg p-2">
+          <span class="text-xs text-gray-500 dark:text-gray-400 block">Range</span>
+          <span class="font-semibold text-gray-800 dark:text-gray-100">Range {{ violation.remedial_action_range }}</span>
+        </div>
+        <div class="bg-white/60 dark:bg-slate-700/60 rounded-lg p-2">
+          <span class="text-xs text-gray-500 dark:text-gray-400 block">Action</span>
+          <span class="font-semibold text-gray-800 dark:text-gray-100">{{ violation.remedial_action.action|default:'N/A' }}</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Form Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-6">
+      <form method="post" class="space-y-5 md:space-y-6">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+          <!-- Employee -->
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Employee <span class="text-red-500">*</span>
+            </label>
+            {% if action == 'Add' %}
+            <select name="employee" required 
+                    class="w-full px-3 md:px-4 py-2.5 md:py-2.5 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+              <option value="">Select Employee</option>
+              {% for e in employees %}
+              <option value="{{ e.pk }}">{{ e.first_name }} {{ e.last_name }}</option>
+              {% endfor %}
+            </select>
+            {% else %}
+            <div class="w-full px-3 md:px-4 py-2.5 md:py-2.5 text-base border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 flex items-center">
+              <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+              {{ violation.employee.first_name }} {{ violation.employee.last_name }}
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Date Submitted -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Date Submitted <span class="text-red-500">*</span>
+            </label>
+            <input type="date" name="date_submitted" value="{{ violation.date_submitted|default:''|date:'Y-m-d' }}" required 
+                   class="w-full px-3 md:px-4 py-2.5 md:py-2.5 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+          </div>
+
+          <!-- Category -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Category
+            </label>
+            <select name="category" 
+                    class="w-full px-3 md:px-4 py-2.5 md:py-2.5 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+              <option value="">Select Category</option>
+              {% for c in categories %}
+              <option value="{{ c.pk }}" {% if violation.category_id == c.pk %}selected{% endif %}>{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Type -->
+          <div class="sm:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Type
+            </label>
+            <select name="violation_type" 
+                    class="w-full px-3 md:px-4 py-2.5 md:py-2.5 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+              <option value="">Select Type</option>
+              {% for t in types %}
+              <option value="{{ t.pk }}" {% if violation.violation_type_id == t.pk %}selected{% endif %}>{{ t.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Classification from Handbook -->
+        <div id="classification-section">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Classification (from Handbook)
+          </label>
+          <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <input type="hidden" name="offense_classification" id="offense_classification" value="{% if violation %}{{ violation.offense_classification_id|default:'' }}{% else %}{% endif %}">
+            <div class="flex-1 px-3 md:px-4 py-2.5 md:py-2.5 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 min-h-[44px] flex items-center" id="classification-display">
+              {% if violation and violation.offense_classification %}{{ violation.offense_classification.offense_description|truncatechars:50 }}{% else %}<span class="text-gray-400">Not selected</span>{% endif %}
+            </div>
+            <span class="px-3 md:px-4 py-2.5 md:py-2.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-lg font-semibold text-sm flex items-center justify-center" id="range-display">
+              {% if violation %}Range {{ violation.remedial_action_range }}{% else %}-{% endif %}
+            </span>
+            <button type="button" onclick="loadClassifications()" 
+                    class="px-4 py-2.5 md:py-2.5 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors text-sm font-medium touch-manipulation flex items-center gap-2 justify-center">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              <span class="hidden sm:inline">Browse</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Type of Incident -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Type of Incident <span class="text-red-500">*</span>
+          </label>
+          <textarea name="type_of_incident" rows="3" required 
+                  class="w-full px-3 md:px-4 py-2.5 md:py-2.5 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
+                  placeholder="Describe the incident in detail...">{{ violation.type_of_incident|default:'' }}</textarea>
+        </div>
+
+        <!-- HR Note -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            HR Note
+          </label>
+          <textarea name="hr_note" rows="2" 
+                  class="w-full px-3 md:px-4 py-2.5 md:py-2.5 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
+                  placeholder="Add HR notes (optional)">{{ violation.hr_note|default:'' }}</textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+          <!-- Status -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Status
+            </label>
+            <select name="status" 
+                    class="w-full px-3 md:px-4 py-2.5 md:py-2.5 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+              <option value="working" {% if violation.status == 'working' %}selected{% endif %}>Working on it</option>
+              <option value="done" {% if violation.status == 'done' %}selected{% endif %}>Done</option>
+              <option value="stuck" {% if violation.status == 'stuck' %}selected{% endif %}>Stuck</option>
+            </select>
+          </div>
+
+          <!-- DA Status -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              DA Status
+            </label>
+            <select name="da_status" 
+                    class="w-full px-3 md:px-4 py-2.5 md:py-2.5 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+              <option value="working" {% if violation.da_status == 'working' %}selected{% endif %}>Working</option>
+              <option value="done" {% if violation.da_status == 'done' %}selected{% endif %}>Done</option>
+              <option value="stuck" {% if violation.da_status == 'stuck' %}selected{% endif %}>Stuck</option>
+            </select>
+          </div>
+
+          <!-- Decision -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Decision
+            </label>
+            <select name="decision" 
+                    class="w-full px-3 md:px-4 py-2.5 md:py-2.5 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+              <option value="">Select Decision</option>
+              <option value="disciplinary_action" {% if violation.decision == 'disciplinary_action' %}selected{% endif %}>Disciplinary Action</option>
+              <option value="mitigated_offense" {% if violation.decision == 'mitigated_offense' %}selected{% endif %}>Mitigated Offense</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Fully Signed -->
+        <div class="flex items-center gap-3 py-2">
+          <input type="checkbox" name="fully_signed" id="fully_signed" {% if violation.fully_signed %}checked{% endif %} 
+                 class="w-5 h-5 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer">
+          <label for="fully_signed" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+            Fully Signed
+          </label>
+        </div>
+
+        <!-- Attachment (Coming Soon) -->
+        <div class="p-4 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+          <div class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.586a6 6 0 108.828 8.828l6.586-6.586a2 2 0 00-2.828-2.828l-6.586 6.586a2 2 0 01-2.828 0"></path></svg>
+            <span class="text-yellow-800 dark:text-yellow-200 text-sm font-medium">Attachment feature coming soon</span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <button type="submit" class="bg-blue-600 text-white px-5 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium touch-manipulation flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            {% if action == 'Add' %}Create Violation{% else %}Update Violation{% endif %}
+          </button>
+          <a href="{% url 'human_resource:violation_list' %}" class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-5 py-3 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-medium text-center touch-manipulation flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<!-- Classification Modal -->
+<div id="classificationModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 w-full max-w-2xl max-h-[85vh] md:max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+      <h2 class="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100">Select Classification</h2>
+      <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 p-1 -mr-1 touch-manipulation">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+    <div id="classification-list" class="space-y-2 max-h-[50vh] md:max-h-96 overflow-y-auto -mx-2 px-2">
+      <!-- Classifications will be loaded here -->
+    </div>
+  </div>
+</div>
+
+<script>
+const classificationsUrl = "{% url 'human_resource:ajax_classifications' %}";
+
+// Touch-friendly modal close on backdrop click
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('classificationModal');
+  if (modal) {
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+  }
+  
+  // Close modal on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeModal();
+    }
+  });
+});
+
+async function loadClassifications() {
+  try {
+    const response = await fetch(classificationsUrl);
+    if (!response.ok) {
+      throw new Error('Network response was not ok: ' + response.status);
+    }
+    const data = await response.json();
+    const list = document.getElementById('classification-list');
+    list.innerHTML = '';
+    
+    if (data.classifications.length === 0) {
+      list.innerHTML = '<div class="text-center py-8 text-gray-500 dark:text-gray-400">No classifications available</div>';
+      document.getElementById('classificationModal').classList.remove('hidden');
+      return;
+    }
+    
+    data.classifications.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'w-full text-left p-3 md:p-4 hover:bg-gray-100 dark:hover:bg-gray-700 border-b dark:border-gray-700 transition-colors touch-manipulation rounded-lg mb-1';
+      btn.onclick = () => selectClassification(c);
+      btn.innerHTML = `
+        <div class="font-medium text-gray-800 dark:text-gray-100 text-sm md:text-base">${c.description.substring(0, 60)}${c.description.length > 60 ? '...' : ''}</div>
+        <div class="text-xs md:text-sm text-gray-500 mt-1">
+          ${c.group} | ${c.section} | <span class="font-semibold text-blue-600 dark:text-blue-400">Range ${c.default_range}</span>
+        </div>
+      `;
+      list.appendChild(btn);
+    });
+    
+    document.getElementById('classificationModal').classList.remove('hidden');
+  } catch (error) {
+    console.error('Error loading classifications:', error);
+    alert('Failed to load classifications. Please try again.');
+  }
+}
+
+function selectClassification(c) {
+  document.getElementById('offense_classification').value = c.id;
+  document.getElementById('classification-display').innerHTML = `<span class="truncate">${c.description.substring(0, 50)}${c.description.length > 50 ? '...' : ''}</span>`;
+  document.getElementById('range-display').textContent = 'Range ' + c.default_range;
+  closeModal();
+}
+
+function closeModal() {
+  document.getElementById('classificationModal').classList.add('hidden');
+}
+</script>
+{% endblock %}

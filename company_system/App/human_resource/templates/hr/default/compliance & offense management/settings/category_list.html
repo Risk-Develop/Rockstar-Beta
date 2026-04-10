@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Violation Categories{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold">Violation Categories</h1>
+            <p class="text-sm text-gray-500 mt-1">Categories: CAR, Violation, Client Case, Pending, NTE</p>
+        </div>
+        <a href="{% url 'human_resource:violation_category_add' %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Add Category</a>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for cat in categories %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap font-medium">{{ cat.name }}</td>
+                    <td class="px-6 py-4 text-gray-500">{{ cat.description|default:'-' }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">{{ cat.display_order }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if cat.is_active %}<span class="px-2 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                        {% else %}<span class="px-2 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Inactive</span>{% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <a href="{% url 'human_resource:violation_category_edit' cat.pk %}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
+                        <a href="{% url 'human_resource:violation_category_delete' cat.pk %}" class="text-red-600 hover:text-red-900">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No categories found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

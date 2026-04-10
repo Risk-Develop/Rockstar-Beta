@@ -5,6 +5,15 @@ from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, date, time, timedelta
 from .payroll_models import *
 from .payroll_settings_models import *
+from .handbook_models import (
+    OffenseGroup,
+    OffenseSection,
+    OffenseClassification,
+    RemedialAction,
+    ViolationCategory,
+    ViolationType,
+    EmployeeViolation,
+)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

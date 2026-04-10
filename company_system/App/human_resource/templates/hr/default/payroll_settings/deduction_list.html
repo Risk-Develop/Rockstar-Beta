@@ -396,9 +396,14 @@ function closeModal() {
 }
 
 // Close modal when clicking outside
-document.getElementById('deductionModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeModal();
+document.addEventListener('DOMContentLoaded', function() {
+    const deductionModal = document.getElementById('deductionModal');
+    if (deductionModal) {
+        deductionModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
     }
 });
 
@@ -415,9 +420,14 @@ function closeDeleteModal() {
 }
 
 // Close delete modal when clicking outside
-document.getElementById('deleteModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeDeleteModal();
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteModal = document.getElementById('deleteModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
     }
 });
 

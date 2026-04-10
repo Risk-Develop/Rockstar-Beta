@@ -1,0 +1,188 @@
+{# Remedial Action Flowchart Partial - Loaded via HTMX #}
+{% load hr_extras %}
+<style>
+    .flowchart-wrapper {
+        padding: 20px;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-radius: 12px;
+        min-height: 400px;
+    }
+    
+    .flow-matrix {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-top: 20px;
+    }
+    
+    .range-column {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .range-header {
+        text-align: center;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 16px;
+    }
+    
+    .range-a { background: #dbeafe; color: #1e40af; border: 2px solid #3b82f6; }
+    .range-b { background: #fef3c7; color: #92400e; border: 2px solid #f59e0b; }
+    .range-c { background: #ffedd5; color: #9a3412; border: 2px solid #f97316; }
+    .range-d { background: #fee2e2; color: #991b1b; border: 2px solid #ef4444; }
+    
+    .offense-item {
+        padding: 10px;
+        margin: 8px 0;
+        border-radius: 8px;
+        font-size: 12px;
+        text-align: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .offense-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .offense-1 { background: #f0fdf4; color: #166534; border: 1px solid #22c55e; }
+    .offense-2 { background: #f0fdf4; color: #166534; border: 1px solid #22c55e; }
+    .offense-3 { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
+    .offense-4 { background: #ffedd5; color: #9a3412; border: 1px solid #f97316; }
+    .offense-5 { background: #fef2f2; color: #991b1b; border: 1px solid #ef4444; }
+    
+    .dismissal {
+        background: #fee2e2 !important;
+        color: #991b1b !important;
+        border: 1px solid #ef4444 !important;
+        font-weight: 600;
+    }
+    
+    .flow-legend {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 24px;
+        flex-wrap: wrap;
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #64748b;
+    }
+    
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+    }
+    
+    .flow-title {
+        text-align: center;
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 8px;
+    }
+    
+    .flow-subtitle {
+        text-align: center;
+        font-size: 13px;
+        color: #64748b;
+        margin-bottom: 16px;
+    }
+    
+    @media (max-width: 768px) {
+        .flow-matrix {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+
+<div class="flowchart-wrapper">
+    <div class="flow-title">🔄 Remedial Action Flowchart</div>
+    <div class="flow-subtitle">Progressive disciplinary action matrix based on offense count</div>
+    
+    <div class="flow-matrix">
+        {# Range A Column #}
+        <div class="range-column">
+            <div class="range-header range-a">📊 Range A<br><small>Minor</small></div>
+            {% for count in "12345" %}
+                {% with count|add:0 as cnt %}
+                {% with matrix.A|get_item:cnt as action %}
+                    <div class="offense-item offense-{% if forloop.counter >= 4 %}4{% else %}{{ forloop.counter }}{% endif %}
+                        {% if action and 'Dismissal' in action.action %}dismissal{% endif %}">
+                        <strong>#{{ count }}</strong><br>
+                        {% if action %}{{ action.action }}{% else %}No action{% endif %}
+                    </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+        
+        {# Range B Column #}
+        <div class="range-column">
+            <div class="range-header range-b">📊 Range B<br><small>Moderate</small></div>
+            {% for count in "1234" %}
+                {% with matrix.B|get_item:count as action %}
+                    <div class="offense-item offense-{% if forloop.counter >= 3 %}3{% else %}{{ forloop.counter }}{% endif %}
+                        {% if action and 'Dismissal' in action.action %}dismissal{% endif %}">
+                        <strong>#{{ count }}</strong><br>
+                        {% if action %}{{ action.action }}{% else %}No action{% endif %}
+                    </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+        
+        {# Range C Column #}
+        <div class="range-column">
+            <div class="range-header range-c">📊 Range C<br><small>Serious</small></div>
+            {% for count in "123" %}
+                {% with matrix.C|get_item:count as action %}
+                    <div class="offense-item offense-3
+                        {% if action and 'Dismissal' in action.action %}dismissal{% endif %}">
+                        <strong>#{{ count }}</strong><br>
+                        {% if action %}{{ action.action }}{% else %}No action{% endif %}
+                    </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+        
+        {# Range D Column #}
+        <div class="range-column">
+            <div class="range-header range-d">📊 Range D<br><small>Severe</small></div>
+            {% with matrix.D|get_item:1 as action %}
+                <div class="offense-item offense-5 dismissal">
+                    <strong>#1</strong><br>
+                    {% if action %}{{ action.action }}{% else %}Dismissal{% endif %}
+                </div>
+            {% endwith %}
+        </div>
+    </div>
+    
+    <div class="flow-legend">
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #3b82f6;"></div>
+            <span>Range A (Minor)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #f59e0b;"></div>
+            <span>Range B (Moderate)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #f97316;"></div>
+            <span>Range C (Serious)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background: #ef4444;"></div>
+            <span>Range D (Severe)</span>
+        </div>
+    </div>
+</div>

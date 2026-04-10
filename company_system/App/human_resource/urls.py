@@ -3,6 +3,7 @@ from . import views_payroll
 from . import views
 from . import views_payroll_settings
 from . import views_enps
+from . import views_handbook
 
 
 app_name = "human_resource"  # Important for namespacing
@@ -201,6 +202,61 @@ urlpatterns = [
     
     # Employee lookup API
     path('enps/lookup-employee/', views_enps.lookup_employee, name='lookup_employee'),
+
+    # =============================================================================
+    # Handbook Offense Classification & Compliance
+    # =============================================================================
+    
+    # Offense Groups
+    path('offense-groups/', views_handbook.offense_group_list, name='offense_group_list'),
+    path('offense-groups/add/', views_handbook.offense_group_add, name='offense_group_add'),
+    path('offense-groups/<int:pk>/edit/', views_handbook.offense_group_edit, name='offense_group_edit'),
+    path('offense-groups/<int:pk>/delete/', views_handbook.offense_group_delete, name='offense_group_delete'),
+    
+    # Offense Sections
+    path('offense-sections/', views_handbook.offense_section_list, name='offense_section_list'),
+    path('offense-sections/add/', views_handbook.offense_section_add, name='offense_section_add'),
+    path('offense-sections/<int:pk>/edit/', views_handbook.offense_section_edit, name='offense_section_edit'),
+    path('offense-sections/<int:pk>/delete/', views_handbook.offense_section_delete, name='offense_section_delete'),
+    
+    # Offense Classifications
+    path('classifications/', views_handbook.classification_list, name='classification_list'),
+    path('classifications/add/', views_handbook.classification_add, name='classification_add'),
+    path('classifications/<int:pk>/edit/', views_handbook.classification_edit, name='classification_edit'),
+    path('classifications/<int:pk>/delete/', views_handbook.classification_delete, name='classification_delete'),
+    
+    # Remedial Actions
+    path('remedial-actions/', views_handbook.remedial_action_list, name='remedial_action_list'),
+    path('remedial-actions/add/', views_handbook.remedial_action_add, name='remedial_action_add'),
+    path('remedial-actions/<int:pk>/edit/', views_handbook.remedial_action_edit, name='remedial_action_edit'),
+    path('remedial-actions/<int:pk>/delete/', views_handbook.remedial_action_delete, name='remedial_action_delete'),
+    path('remedial-flowchart/', views_handbook.remedial_flowchart_partial, name='remedial_flowchart_partial'),
+    
+    # Violation Categories
+    path('violation-categories/', views_handbook.violation_category_list, name='violation_category_list'),
+    path('violation-categories/add/', views_handbook.violation_category_add, name='violation_category_add'),
+    path('violation-categories/<int:pk>/edit/', views_handbook.violation_category_edit, name='violation_category_edit'),
+    path('violation-categories/<int:pk>/delete/', views_handbook.violation_category_delete, name='violation_category_delete'),
+    
+    # Violation Types
+    path('violation-types/', views_handbook.violation_type_list, name='violation_type_list'),
+    path('violation-types/add/', views_handbook.violation_type_add, name='violation_type_add'),
+    path('violation-types/<int:pk>/edit/', views_handbook.violation_type_edit, name='violation_type_edit'),
+    path('violation-types/<int:pk>/delete/', views_handbook.violation_type_delete, name='violation_type_delete'),
+    
+    # Employee Violations
+    path('violations/', views_handbook.violation_list, name='violation_list'),
+    path('violations/<int:pk>/', views_handbook.violation_detail, name='violation_detail'),
+    path('violations/add/', views_handbook.violation_add, name='violation_add'),
+    path('violations/<int:pk>/edit/', views_handbook.violation_edit, name='violation_edit'),
+    path('violations/<int:pk>/delete/', views_handbook.violation_delete, name='violation_delete'),
+    
+    # AJAX Endpoints
+    path('ajax/classifications/', views_handbook.ajax_classifications, name='ajax_classifications'),
+    path('ajax/employee-violations/', views_handbook.ajax_get_employee_violations, name='ajax_get_employee_violations'),
+    path('ajax/violation/<int:pk>/', views_handbook.ajax_violation_detail, name='ajax_violation_detail'),
+    path('ajax/violation/<int:pk>/status/', views_handbook.ajax_update_violation_status, name='ajax_update_violation_status'),
+    path('ajax/violation/<int:pk>/da_status/', views_handbook.ajax_update_violation_da_status, name='ajax_update_violation_da_status'),
 
 
 ]

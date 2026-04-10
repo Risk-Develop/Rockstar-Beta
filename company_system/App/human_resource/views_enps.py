@@ -1359,7 +1359,7 @@ def enps_analytics(request, survey_id):
 
 def enps_take_survey(request, survey_id):
     """Employee-facing survey form"""
-    from datetime import timedelta
+    from datetime import date
     
     survey = get_object_or_404(ENPSSurvey, id=survey_id)
     
@@ -1367,7 +1367,27 @@ def enps_take_survey(request, survey_id):
     if not survey.is_active:
         return render(request, 'hr/default/survey/enps/survey_closed.html', {
             'survey': survey,
-            'page_title': 'Survey Closed'
+            'page_title': 'Survey Closed',
+            'message': 'This survey is currently not accepting responses.'
+        })
+    
+    # Check if survey is within its duration period
+    today = date.today()
+    
+    # Check if before start_date (not yet available)
+    if today < survey.start_date:
+        return render(request, 'hr/default/survey/enps/survey_closed.html', {
+            'survey': survey,
+            'page_title': 'Survey Not Yet Available',
+            'message': f'This survey will be available starting {survey.start_date.strftime("%B %d, %Y")}.'
+        })
+    
+    # Check if after end_date (already closed)
+    if survey.end_date and today > survey.end_date:
+        return render(request, 'hr/default/survey/enps/survey_closed.html', {
+            'survey': survey,
+            'page_title': 'Survey Closed',
+            'message': f'This survey ended on {survey.end_date.strftime("%B %d, %Y")}.'
         })
     
     # Get current period (month-year)
