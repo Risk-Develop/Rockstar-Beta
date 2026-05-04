@@ -1,5 +1,6 @@
 import logging
 import json
+from django.db import models
 
 logger = logging.getLogger(__name__)
 
@@ -747,6 +748,26 @@ def personal_task_checklist_delete(request, item_id):
 
 
 @require_POST
+@require_POST
+@custom_login_required
+def personal_task_checklist_rename(request, item_id):
+    """Rename checklist item"""
+    item = get_object_or_404(PersonalTaskChecklistItem, id=item_id)
+    new_text = request.POST.get('text', '').strip()
+    
+    if not new_text:
+        return JsonResponse({'success': False, 'error': 'Text cannot be empty'}, status=400)
+    
+    item.text = new_text
+    item.save()
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'text': item.text, 'id': item.id})
+    
+    return redirect('task_management:personal_board_detail', board_id=item.task.board.id)
+
+
+@require_POST
 @custom_login_required
 def personal_task_update_position(request):
     """Update personal task position via drag-drop"""
@@ -760,6 +781,89 @@ def personal_task_update_position(request):
         task.column_id = column_id
         task.order = new_order
         task.save()
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+# ========== PERSONAL COLUMN VIEWS ==========
+
+@custom_login_required
+def personal_column_create(request, board_id):
+    """Create a personal column"""
+    current_staff = get_current_staff(request)
+    board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        color = request.POST.get('color', '#6b7280')
+        max_order = board.columns.aggregate(models.Max('order'))['order__max'] or 0
+        
+        PersonalColumn.objects.create(
+            board=board,
+            name=name,
+            color=color,
+            order=max_order + 1
+        )
+        messages.success(request, f'Column "{name}" created.')
+    
+    return redirect('task_management:personal_board_detail', board_id=board_id)
+
+
+@custom_login_required
+def personal_column_delete(request, column_id):
+    """Delete a personal column (only if no tasks)"""
+    current_staff = get_current_staff(request)
+    column = get_object_or_404(PersonalColumn, id=column_id, board__user=current_staff)
+    
+    if column.tasks.exists():
+        messages.error(request, 'Cannot delete column with tasks. Move or delete tasks first.')
+    else:
+        column_name = column.name
+        column.delete()
+        messages.success(request, f'Column "{column_name}" deleted.')
+    
+    return redirect('task_management:personal_board_detail', board_id=column.board.id)
+
+
+@custom_login_required
+def personal_column_edit(request, column_id):
+    """Edit a personal column name and color"""
+    current_staff = get_current_staff(request)
+    column = get_object_or_404(PersonalColumn, id=column_id, board__user=current_staff)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', column.name)
+        color = request.POST.get('color', column.color)
+        # Ensure color has proper format (with #)
+        if color and not color.startswith('#'):
+            color = '#' + color
+        column.name = name
+        column.color = color
+        column.save()
+        
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        if is_ajax:
+            return JsonResponse({'success': True, 'name': column.name, 'color': column.color})
+        messages.success(request, f'Column updated.')
+    
+    return redirect('task_management:personal_board_detail', board_id=column.board.id)
+
+
+@require_POST
+@custom_login_required
+def personal_column_update_position(request):
+    """Reorder columns via drag-drop"""
+    try:
+        data = json.loads(request.body)
+        column_positions = data.get('positions', [])
+        
+        for item in column_positions:
+            col_id = item.get('id')
+            new_order = item.get('order')
+            if col_id is not None:
+                PersonalColumn.objects.filter(id=col_id).update(order=new_order)
         
         return JsonResponse({'success': True})
     except Exception as e:

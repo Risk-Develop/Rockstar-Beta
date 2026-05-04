@@ -45,7 +45,14 @@ urlpatterns = [
     path('personal/tasks/<int:task_id>/checklist/add/', views.personal_task_checklist_add, name='personal_task_checklist_add'),
     path('personal/checklist/<int:item_id>/toggle/', views.personal_task_checklist_toggle, name='personal_task_checklist_toggle'),
     path('personal/checklist/<int:item_id>/delete/', views.personal_task_checklist_delete, name='personal_task_checklist_delete'),
+    path('personal/checklist/<int:item_id>/rename/', views.personal_task_checklist_rename, name='personal_task_checklist_rename'),
     path('personal/api/update-position/', views.personal_task_update_position, name='personal_task_update_position'),
+    
+    # Personal Column URLs
+    path('personal/<int:board_id>/column/create/', views.personal_column_create, name='personal_column_create'),
+    path('personal/columns/<int:column_id>/edit/', views.personal_column_edit, name='personal_column_edit'),
+    path('personal/columns/<int:column_id>/delete/', views.personal_column_delete, name='personal_column_delete'),
+    path('personal/api/update-column-position/', views.personal_column_update_position, name='personal_column_update_position'),
     
     # Task Checklist & Comments URLs
     path('tasks/<int:task_id>/checklist/add/', views.task_checklist_add, name='task_checklist_add'),
