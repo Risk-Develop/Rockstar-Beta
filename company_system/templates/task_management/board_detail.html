@@ -1,0 +1,588 @@
+{% extends 'task_management/base.html' %}
+{% load static %}
+{% load task_management_tags %}
+
+{% block title %}{{ board.name }} - Kanban Board{% endblock %}
+{% block page_title %}{{ board.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+.kanban-column { 
+    min-height: 400px; 
+    background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+}
+.kanban-column::-webkit-scrollbar { width: 4px; }
+.kanban-column::-webkit-scrollbar-track { background: #1f2937; }
+.kanban-column::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+
+.task-card { 
+    cursor: grab; 
+    transition: all 0.2s ease;
+    background: linear-gradient(145deg, #374151, #1f2937);
+    border: 1px solid #4b5563;
+}
+.task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    border-color: #6b7280;
+}
+.task-card:hover .task-actions {
+    opacity: 1;
+}
+.task-card:active { cursor: grabbing; }
+.task-card.sortable-ghost { opacity: 0.4; background: #4b5563; }
+
+.task-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.priority-low { border-left: 3px solid #10b981; }
+.priority-medium { border-left: 3px solid #3b82f6; }
+.priority-high { border-left: 3px solid #f59e0b; }
+.priority-urgent { border-left: 3px solid #ef4444; }
+
+html.dark .modal-content {
+    background: linear-gradient(145deg, #1f2937, #111827);
+    border: 1px solid #4b5563;
+}
+
+.search-highlight {
+    background: #fbbf24;
+    color: #000;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+.filter-dropdown {
+    animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="p-4">
+    <!-- Header with Search & Filter -->
+    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-6">
+        <div class="flex items-center gap-4">
+            <a href="{% url 'task_management:board_list' %}" class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition">
+                <i class="fas fa-arrow-left text-xl"></i>
+            </a>
+            <div>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-2xl font-bold text-gray-800 dark:text-white">{{ board.name }}</h1>
+                    <span class="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        {{ columns|length }} columns
+                    </span>
+                </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ board.description|default:"No description" }}</p>
+            </div>
+        </div>
+        
+        <!-- Search & Filter -->
+        <div class="flex items-center gap-3 flex-wrap">
+            <div class="relative">
+                <input type="text" id="searchInput" placeholder="Search tasks..." 
+                    class="pl-10 pr-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-200 placeholder-gray-500 focus:border-blue-500 focus:outline-none w-48"
+                    onkeyup="searchTasks(this.value)">
+                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+            </div>
+            
+            <div class="relative">
+                <button onclick="toggleFilter('priority')" 
+                    class="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700">
+                    <i class="fas fa-flag mr-2"></i>Priority
+                </button>
+                <div id="priorityFilter" class="hidden filter-dropdown absolute top-full mt-2 right-0 w-40 bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-50">
+                    <button onclick="filterByPriority('')" class="block w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-700">All</button>
+                    <button onclick="filterByPriority('urgent')" class="block w-full text-left px-4 py-2 text-red-400 hover:bg-gray-700">Urgent</button>
+                    <button onclick="filterByPriority('high')" class="block w-full text-left px-4 py-2 text-orange-400 hover:bg-gray-700">High</button>
+                    <button onclick="filterByPriority('medium')" class="block w-full text-left px-4 py-2 text-blue-400 hover:bg-gray-700">Medium</button>
+                    <button onclick="filterByPriority('low')" class="block w-full text-left px-4 py-2 text-green-400 hover:bg-gray-700">Low</button>
+                </div>
+            </div>
+            
+            <div class="relative">
+                <button onclick="toggleFilter('assignee')" 
+                    class="px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-700">
+                    <i class="fas fa-user mr-2"></i>Assignee
+                </button>
+                <div id="assigneeFilter" class="hidden filter-dropdown absolute top-full mt-2 right-0 w-48 bg-gray-800 border border-gray-600 rounded-lg shadow-xl z-50 overflow-y-auto max-h-60">
+                    <button onclick="filterByAssignee('')" class="block w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-700">All</button>
+                    <button onclick="filterByAssignee('unassigned')" class="block w-full text-left px-4 py-2 text-gray-400 hover:bg-gray-700">Unassigned</button>
+                    {% for staff in all_staff %}
+                    <button onclick="filterByAssignee('{{ staff.id }}')" class="block w-full text-left px-4 py-2 text-gray-300 hover:bg-gray-700">
+                        {{ staff.first_name }} {{ staff.last_name }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <button onclick="clearFilters()" class="px-3 py-2 text-gray-400 hover:text-white">
+                <i class="fas fa-times mr-1"></i>Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="flex items-center gap-6 mb-6">
+        <div class="flex items-center gap-6 ml-12 md:ml-0">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-green-400" id="stat-done">
+                    {% for col in columns %}{% if col.name == 'Done' %}{{ col.tasks_list.count }}{% endif %}{% endfor %}
+                </div>
+                <div class="text-xs text-gray-500">Done</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-yellow-400" id="stat-inprogress">
+                    {% for col in columns %}{% if col.name == 'In Progress' %}{{ col.tasks_list.count }}{% endif %}{% endfor %}
+                </div>
+                <div class="text-xs text-gray-500">In Progress</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-orange-400" id="stat-todo">
+                    {% for col in columns %}{% if col.name == 'To Do' %}{{ col.tasks_list.count }}{% endif %}{% endfor %}
+                </div>
+                <div class="text-xs text-gray-500">To Do</div>
+            </div>
+            
+            <div class="flex gap-2 ml-4">
+                <a href="{% url 'task_management:roadmap_list' %}" class="px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 text-gray-300 transition">
+                    <i class="fas fa-map mr-2"></i>Roadmaps
+                </a>
+                <button onclick="document.getElementById('addTaskModal').classList.remove('hidden')" 
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition">
+                    <i class="fas fa-plus mr-2"></i>Add Task
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kanban Columns -->
+    <div class="flex gap-4 overflow-x-auto pb-4" id="kanbanBoard">
+        {% for column in columns %}
+        <div class="flex-shrink-0 w-72">
+            <!-- Column Header -->
+            <div class="rounded-t-lg px-3 py-3 flex justify-between items-center"
+                 style="background: linear-gradient(90deg, {{ column.color }}20, transparent); border-top: 3px solid {{ column.color }}">
+                <div class="flex items-center gap-2">
+                    <span class="w-3 h-3 rounded-full" style="background: {{ column.color }}"></span>
+                    <span class="font-semibold text-gray-200">{{ column.name }}</span>
+                    <span class="text-xs bg-gray-700 px-2 py-0.5 rounded-full text-gray-300">{{ column.tasks_list.count }}</span>
+                </div>
+                <button onclick="openTaskModal('{{ column.id }}')" 
+                    class="p-1.5 rounded-lg hover:bg-gray-600 text-gray-400 hover:text-white"
+                    title="Add task">
+                    <i class="fas fa-plus text-sm"></i>
+                </button>
+            </div>
+            
+            <!-- Column Body -->
+            <div class="kanban-column rounded-b-lg p-2"
+                 data-column-id="{{ column.id }}"
+                 id="column-{{ column.id }}">
+                
+                {% for task in column.tasks_list %}
+                <div class="task-card rounded-lg p-3 mb-2 {% if task.priority == 'urgent' %}priority-urgent{% elif task.priority == 'high' %}priority-high{% elif task.priority == 'medium' %}priority-medium{% else %}priority-low{% endif %}"
+                     data-task-id="{{ task.id }}"
+                     data-priority="{{ task.priority }}"
+                     data-assignee="{% if task.assigned_to %}{{ task.assigned_to.id }}{% else %}unassigned{% endif %}"
+                     data-title="{{ task.title|lower }}"
+                     draggable="true"
+                     onclick="openTaskDetail('{{ task.id }}')">
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-medium text-gray-100 text-sm line-clamp-2 task-title">{{ task.title }}</h4>
+                        <div class="task-actions flex gap-1">
+                            <button onclick="event.stopPropagation(); quickDeleteTask('{{ task.id }}')" 
+                                class="text-gray-500 hover:text-red-400 p-1">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% if task.description %}
+                    <p class="text-xs text-gray-400 mt-1 line-clamp-2 mb-2 task-description">{{ task.description }}</p>
+                    {% endif %}
+                    <div class="flex justify-between items-center pt-2 border-t border-gray-600">
+                        <div class="flex items-center gap-2">
+                            {% if task.assigned_to %}
+                            <img src="https://ui-avatars.com/api/?name={{ task.assigned_to.first_name }}+{{ task.assigned_to.last_name }}&size=24&bg=random" 
+                                 class="w-6 h-6 rounded-full ring-2 ring-gray-800">
+                            {% else %}
+                            <div class="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center">
+                                <i class="fas fa-user text-xs text-gray-400"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs px-1.5 py-0.5 rounded {% if task.priority == 'urgent' %}bg-red-500/20 text-red-400{% elif task.priority == 'high' %}bg-orange-500/20 text-orange-400{% elif task.priority == 'medium' %}bg-blue-500/20 text-blue-400{% else %}bg-gray-500/20 text-gray-400{% endif %}">
+                                {{ task.priority|title }}
+                            </span>
+                            {% if task.deadline %}
+                            <span class="text-xs text-gray-400 {% if task.deadline|is_past %}text-red-400{% endif %}">
+                                <i class="fas fa-calendar-alt mr-1"></i>{{ task.deadline|date:"M d" }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state text-center py-12 text-gray-500">
+                    <i class="fas fa-tasks text-3xl mb-3 opacity-50"></i>
+                    <p class="text-sm">No tasks yet</p>
+                    <button onclick="openTaskModal('{{ column.id }}')" 
+                        class="mt-2 text-blue-400 hover:text-blue-300 text-sm">
+                        <i class="fas fa-plus mr-1"></i>Add first task
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Floating Help Button -->
+<div class="fixed bottom-6 right-6 z-40">
+    <button onclick="toggleHelp()" 
+        class="w-12 h-12 rounded-full bg-gray-700 hover:bg-gray-600 text-white shadow-xl flex items-center justify-center transition hover:scale-110"
+        title="Keyboard Shortcuts">
+        <i class="fas fa-keyboard text-xl"></i>
+    </button>
+</div>
+
+<!-- Help Modal -->
+<div id="helpModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-600">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold text-white">Keyboard Shortcuts</h2>
+            <button onclick="toggleHelp()" class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="space-y-3">
+            <div class="flex justify-between items-center py-2 border-b border-gray-700">
+                <span class="text-gray-300">New Task</span>
+                <kbd class="px-2 py-1 bg-gray-700 rounded text-gray-300 text-sm">N</kbd>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-700">
+                <span class="text-gray-300">Search</span>
+                <kbd class="px-2 py-1 bg-gray-700 rounded text-gray-300 text-sm">/</kbd>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-700">
+                <span class="text-gray-300">Refresh</span>
+                <kbd class="px-2 py-1 bg-gray-700 rounded text-gray-300 text-sm">R</kbd>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-gray-700">
+                <span class="text-gray-300">Close Modal</span>
+                <kbd class="px-2 py-1 bg-gray-700 rounded text-gray-300 text-sm">Esc</kbd>
+            </div>
+        </div>
+        <div class="mt-6 p-4 bg-gray-700/50 rounded-lg">
+            <p class="text-sm text-gray-400 text-center">
+                <i class="fas fa-mouse-pointer mr-2"></i>Drag tasks to move between columns
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Add Task Modal -->
+    <div id="addTaskModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-600">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold text-white">Create New Task</h2>
+                <button onclick="closeModal('addTaskModal')" class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form method="post" action="{% url 'task_management:task_create' board.id %}">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    {% for field in task_form %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">{{ field.label }}</label>
+                        {{ field }}
+                    </div>
+                    {% endfor %}
+                    {% if roadmaps %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Roadmap (Optional)</label>
+                        <select name="roadmap_id" class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-200">
+                            <option value="">No roadmap</option>
+                            {% for r in roadmaps %}
+                            <option value="{{ r.id }}">{{ r.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeModal('addTaskModal')" class="px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 text-gray-300">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg">
+                        <i class="fas fa-plus mr-2"></i>Create Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+var currentFilter = { priority: '', assignee: '' };
+
+function openTaskModal(columnId) {
+    var modal = document.getElementById('addTaskModal');
+    var columnSelect = modal.querySelector('select[name="column"]');
+    if (columnSelect) columnSelect.value = columnId;
+    modal.classList.remove('hidden');
+}
+
+function openTaskDetail(taskId) {
+    window.location.href = '/task/tasks/' + taskId + '/';
+}
+
+function quickDeleteTask(taskId) {
+    if (confirm('Delete this task?')) {
+        window.location.href = '/task/tasks/' + taskId + '/delete/';
+    }
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+
+function toggleHelp() {
+    var modal = document.getElementById('helpModal');
+    modal.classList.toggle('hidden');
+}
+
+function updateStats() {
+    // Count tasks in each column by class names
+    var columns = document.querySelectorAll('.kanban-column');
+    var doneCount = 0, inProgressCount = 0, todoCount = 0;
+    
+    columns.forEach(function(col) {
+        var colId = col.getAttribute('data-column-id');
+        var tasks = col.querySelectorAll('.task-card');
+        
+        // We need to identify column by the column header color or name
+        var colDiv = col.parentElement;
+        var header = colDiv.querySelector('.font-semibold.text-gray-200');
+        if (header) {
+            var colName = header.textContent.trim();
+            if (colName === 'Done') {
+                doneCount = tasks.length;
+            } else if (colName === 'In Progress') {
+                inProgressCount = tasks.length;
+            } else if (colName === 'To Do') {
+                todoCount = tasks.length;
+            }
+        }
+    });
+    
+    // Update display
+    var doneEl = document.getElementById('stat-done');
+    var inProgressEl = document.getElementById('stat-inprogress');
+    var todoEl = document.getElementById('stat-todo');
+    
+    if (doneEl) doneEl.textContent = doneCount;
+    if (inProgressEl) inProgressEl.textContent = inProgressCount;
+    if (todoEl) todoEl.textContent = todoCount;
+}
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function searchTasks(query) {
+    query = query.toLowerCase();
+    var cards = document.querySelectorAll('.task-card');
+    cards.forEach(function(card) {
+        var title = card.querySelector('.task-title');
+        var desc = card.querySelector('.task-description');
+        var text = (title ? title.textContent : '') + ' ' + (desc ? desc.textContent : '');
+        
+        if (query === '' || text.toLowerCase().includes(query)) {
+            card.style.display = '';
+            if (query !== '') {
+                title.innerHTML = title.textContent.replace(new RegExp(query, 'gi'), function(match) {
+                    return '<span class="search-highlight">' + match + '</span>';
+                });
+            }
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function toggleFilter(type) {
+    var priorityFilter = document.getElementById('priorityFilter');
+    var assigneeFilter = document.getElementById('assigneeFilter');
+    
+    if (type === 'priority') {
+        assigneeFilter.classList.add('hidden');
+        priorityFilter.classList.toggle('hidden');
+    } else if (type === 'assignee') {
+        priorityFilter.classList.add('hidden');
+        assigneeFilter.classList.toggle('hidden');
+    }
+}
+
+function filterByPriority(priority) {
+    currentFilter.priority = priority;
+    applyFilters();
+    document.getElementById('priorityFilter').classList.add('hidden');
+}
+
+function filterByAssignee(assignee) {
+    currentFilter.assignee = assignee;
+    applyFilters();
+    document.getElementById('assigneeFilter').classList.add('hidden');
+}
+
+function applyFilters() {
+    var cards = document.querySelectorAll('.task-card');
+    cards.forEach(function(card) {
+        var matchesPriority = !currentFilter.priority || card.dataset.priority === currentFilter.priority;
+        var matchesAssignee = !currentFilter.assignee || card.dataset.assignee === currentFilter.assignee;
+        card.style.display = (matchesPriority && matchesAssignee) ? '' : 'none';
+    });
+}
+
+function clearFilters() {
+    currentFilter = { priority: '', assignee: '' };
+    document.getElementById('searchInput').value = '';
+    applyFilters();
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.getElementById('addTaskModal').classList.add('hidden');
+        document.getElementById('helpModal').classList.add('hidden');
+    }
+    if (e.key === 'n' && !e.target.matches('input, textarea')) {
+        document.getElementById('addTaskModal').classList.remove('hidden');
+    }
+    if (e.key === 'r' && !e.target.matches('input, textarea')) {
+        location.reload();
+    }
+    if (e.key === '/' && !e.target.matches('input, textarea')) {
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+    }
+    if (e.key === 'h' && !e.target.matches('input, textarea')) {
+        toggleHelp();
+    }
+});
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#filterPriorityBtn') && !e.target.closest('#priorityFilter')) {
+        document.getElementById('priorityFilter').classList.add('hidden');
+    }
+    if (!e.target.closest('#filterAssigneeBtn') && !e.target.closest('#assigneeFilter')) {
+        document.getElementById('assigneeFilter').classList.add('hidden');
+    }
+});
+
+document.getElementById('addTaskModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.add('hidden');
+    }
+});
+
+document.getElementById('helpModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.add('hidden');
+    }
+});
+</script>
+
+{% endblock main_content %}
+
+{% block extra_scripts %}
+<script src="{% static 'js/Sortable.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var columns = document.querySelectorAll('.kanban-column');
+
+    columns.forEach(function(column) {
+        new Sortable(column, {
+            group: 'kanban',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+
+            onStart: function(evt) {
+                evt.item.classList.add('ring-2', 'ring-blue-500');
+                document.body.style.cursor = 'grabbing';
+            },
+
+            onEnd: function(evt) {
+                var taskEl = evt.item;
+                taskEl.classList.remove('ring-2', 'ring-blue-500');
+                document.body.style.cursor = 'default';
+
+                var taskId = taskEl.getAttribute('data-task-id');
+                var newColumnId = evt.to.getAttribute('data-column-id');
+
+                var targetEmpty = evt.to.querySelector('.empty-state');
+                if (targetEmpty) targetEmpty.style.display = 'none';
+
+                if (evt.from !== evt.to) {
+                    var remaining = evt.from.querySelectorAll('.task-card');
+                    if (remaining.length === 0) {
+                        var sourceEmpty = evt.from.querySelector('.empty-state');
+                        if (!sourceEmpty) {
+                            var colId = evt.from.getAttribute('data-column-id');
+                            var div = document.createElement('div');
+                            div.className = 'empty-state text-center py-12 text-gray-500';
+                            div.innerHTML = '<i class="fas fa-tasks text-3xl mb-3 opacity-50"></i><p class="text-sm">No tasks yet</p><button onclick="openTaskModal(\'' + colId + '\')" class="mt-2 text-blue-400 text-sm"><i class="fas fa-plus mr-1"></i>Add first task</button>';
+                            evt.from.appendChild(div);
+                        }
+                    }
+                }
+
+                taskEl.style.transition = 'background 0.3s ease';
+
+                fetch('/task/api/update-position/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        task_id: taskId,
+                        column_id: newColumnId,
+                        order: evt.newIndex
+                    })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.success) {
+                        taskEl.style.background = 'linear-gradient(145deg, #065f46, #047857)';
+                        updateStats(); // Update stats in real-time
+                    } else {
+                        taskEl.style.background = 'linear-gradient(145deg, #991b1b, #b91c1c)';
+                    }
+                    setTimeout(function() { taskEl.style.background = ''; }, 500);
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

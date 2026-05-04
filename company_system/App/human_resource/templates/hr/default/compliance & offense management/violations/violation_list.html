@@ -410,244 +410,99 @@
             </div>
         </div>
 
-        <!-- Handbook Quick Reference -->
-        <div x-data="{ activeTab: 'groups' }" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
-            <div class="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 pt-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                        <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                        </svg>
-                        Handbook Quick Reference
-                    </h2>
-                </div>
-                <div class="flex overflow-x-auto scrollbar-thin">
-                    <button @click="activeTab = 'groups'" 
-                        :class="{'bg-white dark:bg-gray-700 shadow-md': activeTab === 'groups', 'hover:bg-gray-200 dark:hover:bg-gray-600': activeTab !== 'groups'}"
-                        class="relative flex-1 min-w-[150px] py-3 px-4 text-center font-medium rounded-t-xl transition-all duration-300 flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                        </svg>
-                        Offense Groups
-                        <span class="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 text-xs font-bold px-2 py-0.5 rounded-full">{{ offense_groups.count }}</span>
-                        <div x-show="activeTab === 'groups'" class="tab-active-indicator"></div>
-                    </button>
-                    <button @click="activeTab = 'sections'" 
-                        :class="{'bg-white dark:bg-gray-700 shadow-md': activeTab === 'sections', 'hover:bg-gray-200 dark:hover:bg-gray-600': activeTab !== 'sections'}"
-                        class="relative flex-1 min-w-[150px] py-3 px-4 text-center font-medium rounded-t-xl transition-all duration-300 flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
-                        </svg>
-                        Offense Sections
-                        <span class="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 text-xs font-bold px-2 py-0.5 rounded-full">{{ offense_sections.count }}</span>
-                        <div x-show="activeTab === 'sections'" class="tab-active-indicator"></div>
-                    </button>
-                    <button @click="activeTab = 'classifications'" 
-                        :class="{'bg-white dark:bg-gray-700 shadow-md': activeTab === 'classifications', 'hover:bg-gray-200 dark:hover:bg-gray-600': activeTab !== 'classifications'}"
-                        class="relative flex-1 min-w-[150px] py-3 px-4 text-center font-medium rounded-t-xl transition-all duration-300 flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        Classifications
-                        <span class="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 text-xs font-bold px-2 py-0.5 rounded-full">{{ classifications.count }}</span>
-                        <div x-show="activeTab === 'classifications'" class="tab-active-indicator"></div>
-                    </button>
-                </div>
+        <!-- Handbook Quick Reference - 3 Columns -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-gray-100 to-gray-50 dark:from-gray-700 dark:to-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                    Handbook Quick Reference
+                </h2>
             </div>
             
-            <div class="p-6">
-                <!-- Groups Tab -->
-                <div x-show="activeTab === 'groups'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" class="space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                        <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Manage offense groups (Rule 1, Rule 2, etc.)
-                        </div>
-                        <button onclick="openModal('addGroupModal')" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm hover:shadow-md">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            Add Group
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-80 overflow-y-auto scrollbar-thin">
-                        {% for g in offense_groups %}
-                        <div class="card-hover bg-gray-50 dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
-                            <div class="flex items-start justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-20 h-10 bg-blue-500/20 dark:bg-blue-600/30 rounded-xl flex items-center justify-center">
-                                        <span class="text-blue-600 dark:text-blue-400 font-bold text-sm">{{ g.group_number }}</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-semibold text-gray-800 dark:text-gray-100">{{ g.group_name }}</h4>
-                                        {% if g.description %}
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{{ g.description|truncatechars:50 }}</p>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-1">
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium
-                                        {% if g.is_active %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
-                                        {% else %}bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300{% endif %}">
-                                        {{ g.is_active|yesno:'Active,Inactive' }}
-                                    </span>
-                                    <button onclick="editOffenseGroup({{ g.pk }}, '{{ g.group_number }}', '{{ g.group_name|escapejs }}', '{{ g.description|escapejs }}', {{ g.is_active|yesno:'true,false' }})" class="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Edit">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                    </button>
-                                    <button onclick="deleteOffenseGroup({{ g.pk }}, '{{ g.group_number }}')" class="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Delete">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        {% empty %}
-                        <div class="col-span-full text-center py-12">
-                            <div class="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="p-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Offense Groups Column -->
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <div class="bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-t-xl flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                                 </svg>
+                                <h3 class="font-semibold text-blue-800 dark:text-blue-300 text-sm">Groups ({{ offense_groups.count }})</h3>
                             </div>
-                            <h3 class="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">No offense groups yet</h3>
-                            <p class="text-gray-500 dark:text-gray-400">Get started by creating your first group</p>
+                            <button onclick="openModal('addGroupModal')" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded">Add</button>
                         </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                
-                <!-- Sections Tab -->
-                <div x-show="activeTab === 'sections'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" class="space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                        <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Manage offense sections under each group
-                        </div>
-                        <button onclick="openModal('addSectionModal')" class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm hover:shadow-md">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            Add Section
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-80 overflow-y-auto scrollbar-thin">
-                        {% for s in offense_sections %}
-                        <div class="card-hover bg-gray-50 dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
-                            <div class="flex items-start justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 bg-green-500/20 dark:bg-green-600/30 rounded-xl flex items-center justify-center">
-                                        <span class="text-green-600 dark:text-green-400 font-bold text-sm">{{ s.section_number }}</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-semibold text-gray-800 dark:text-gray-100">{{ s.section_title }}</h4>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{% if s.offense_group %}{{ s.offense_group.group_number }} - {{ s.offense_group.group_name|truncatechars:35 }}{% else %}No Group{% endif %}</p>
-                                    </div>
+                        <div class="p-2 max-h-[250px] overflow-y-auto scrollbar-thin">
+                            {% for g in offense_groups %}
+                            <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mb-1">
+                                <span class="w-10 h-6 bg-blue-500/20 dark:bg-blue-600/30 rounded flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs">{{ g.group_number }}</span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-medium text-gray-800 dark:text-gray-100 truncate">{{ g.group_name }}</p>
                                 </div>
-                                <div class="flex items-center gap-1">
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium
-                                        {% if s.is_active %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
-                                        {% else %}bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300{% endif %}">
-                                        {{ s.is_active|yesno:'Active,Inactive' }}
-                                    </span>
-                                    <button onclick="editOffenseSection({{ s.pk }}, {{ s.offense_group.pk }}, '{{ s.section_number }}', '{{ s.section_title|escapejs }}', '{{ s.description|escapejs }}', {{ s.is_active|yesno:'true,false' }})" class="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Edit">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                    </button>
-                                    <button onclick="deleteOffenseSection({{ s.pk }}, '{{ s.section_number }}')" class="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Delete">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                        </svg>
-                                    </button>
-                                </div>
+                                <span class="px-1.5 py-0.5 rounded-full text-xs {% if g.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-600{% endif %}">{{ g.is_active|yesno:'Y,N' }}</span>
                             </div>
+                            {% empty %}
+                            <p class="text-center text-gray-500 py-2 text-xs">None</p>
+                            {% endfor %}
                         </div>
-                        {% empty %}
-                        <div class="col-span-full text-center py-12">
-                            <div class="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    </div>
+                    
+                    <!-- Offense Sections Column -->
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <div class="bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-t-xl flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
                                 </svg>
+                                <h3 class="font-semibold text-green-800 dark:text-green-300 text-sm">Sections ({{ offense_sections.count }})</h3>
                             </div>
-                            <h3 class="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">No offense sections yet</h3>
-                            <p class="text-gray-500 dark:text-gray-400">Get started by creating your first section</p>
+                            <button onclick="openModal('addSectionModal')" class="text-xs bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded">Add</button>
                         </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                
-                <!-- Classifications Tab -->
-                <div x-show="activeTab === 'classifications'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" class="space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                        <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            Manage offense classifications under each section
-                        </div>
-                        <button onclick="openModal('addClassificationModal')" class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm hover:shadow-md">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            Add Classification
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-80 overflow-y-auto scrollbar-thin">
-                        {% for c in classifications %}
-                        <div class="card-hover bg-gray-50 dark:bg-gray-700 rounded-xl p-4 border border-gray-200 dark:border-gray-600">
-                            <div class="flex items-start justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 bg-purple-500/20 dark:bg-purple-600/30 rounded-xl flex items-center justify-center">
-                                        <span class="text-purple-600 dark:text-purple-400 font-bold text-sm">{% if c.offense_section %}{{ c.offense_section.section_number }}{% else %}?{% endif %}</span>
-                                    </div>
-                                    <div>
-                                        <h4 class="font-semibold text-gray-800 dark:text-gray-100 line-clamp-2">{{ c.offense_description|truncatechars:45 }}</h4>
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{% if c.offense_section %}{{ c.offense_section.section_title|truncatechars:35 }}{% else %}No Section{% endif %}</p>
-                                    </div>
+                        <div class="p-2 max-h-[250px] overflow-y-auto scrollbar-thin">
+                            {% for s in offense_sections %}
+                            <div class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mb-1">
+                                <span class="w-6 h-6 bg-green-500/20 dark:bg-green-600/30 rounded flex items-center justify-center text-green-600 dark:text-green-400 font-bold text-xs">{{ s.section_number }}</span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-medium text-gray-800 dark:text-gray-100 truncate">{{ s.section_title }}</p>
                                 </div>
-                                <div class="flex items-center gap-1">
-                                    <span class="px-2 py-1 rounded-full text-xs font-bold
-                                        {% if c.default_range == 'A' %}bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300
-                                        {% elif c.default_range == 'B' %}bg-yellow-100 text-yellow-800 dark:bg-green-700 dark:text-green-200
-                                        {% elif c.default_range == 'C' %}bg-orange-100 text-orange-800 dark:bg-orange-700 dark:text-orange-200
-                                        {% else %}bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-200{% endif %}">
-                                        {{ c.default_range }}
-                                    </span>
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium
-                                        {% if c.is_active %}bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
-                                        {% else %}bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300{% endif %}">
-                                        {{ c.is_active|yesno:'Active,Inactive' }}
-                                    </span>
-                                    <button onclick="{% if c.offense_section %}editClassification({{ c.pk }}, {{ c.offense_section.pk }}, '{{ c.offense_description|escapejs }}', '{{ c.default_range }}', {{ c.is_active|yesno:'true,false' }}){% else %}alert('Please assign a section to this classification first.'){% endif %}" class="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Edit">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                    </button>
-                                    <button onclick="deleteClassification({{ c.pk }}, '{{ c.offense_description|truncatechars:20 }}')" class="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Delete">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                        </svg>
-                                    </button>
-                                </div>
+                                <span class="px-1.5 py-0.5 rounded-full text-xs {% if s.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-600{% endif %}">{{ s.is_active|yesno:'Y,N' }}</span>
                             </div>
+                            {% empty %}
+                            <p class="text-center text-gray-500 py-2 text-xs">None</p>
+                            {% endfor %}
                         </div>
-                        {% empty %}
-                        <div class="col-span-full text-center py-12">
-                            <div class="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    </div>
+                    
+                    <!-- Classifications Column -->
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-xl">
+                        <div class="bg-purple-50 dark:bg-purple-900/20 px-3 py-2 rounded-t-xl flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
+                                <h3 class="font-semibold text-purple-800 dark:text-purple-300 text-sm">Classifications ({{ classifications.count }})</h3>
                             </div>
-                            <h3 class="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">No classifications yet</h3>
-                            <p class="text-gray-500 dark:text-gray-400">Get started by creating your first classification</p>
+                            <button onclick="openModal('addClassificationModal')" class="text-xs bg-purple-600 hover:bg-purple-700 text-white px-2 py-0.5 rounded">Add</button>
                         </div>
-                        {% endfor %}
+                        <div class="p-2 max-h-[250px] overflow-y-auto scrollbar-thin">
+                            {% for c in classifications %}
+                            <div onclick="showClassificationDetail('{{ c.offense_description|escapejs }}', '{% if c.offense_section %}{{ c.offense_section.section_number }}{% else %}?{% endif %}', '{% if c.offense_section %}{{ c.offense_section.section_title|escapejs }}{% else %}None{% endif %}', '{{ c.default_range }}', {{ c.is_active|yesno:'true,false' }})" class="flex items-center gap-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-2 mb-1 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors">
+                                <span class="w-6 h-6 bg-purple-500/20 dark:bg-purple-600/30 rounded flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold text-xs">{% if c.offense_section %}{{ c.offense_section.section_number }}{% else %}?{% endif %}</span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-medium text-gray-800 dark:text-gray-100 truncate">{{ c.offense_description|truncatechars:25 }}</p>
+                                </div>
+                                <span class="px-1.5 py-0.5 rounded-full text-xs font-bold
+                                    {% if c.default_range == 'A' %}bg-blue-100 text-blue-800
+                                    {% elif c.default_range == 'B' %}bg-yellow-100 text-yellow-800
+                                    {% elif c.default_range == 'C' %}bg-orange-100 text-orange-800
+                                    {% else %}bg-red-100 text-red-800{% endif %}">{{ c.default_range }}</span>
+                            </div>
+                            {% empty %}
+                            <p class="text-center text-gray-500 py-2 text-xs">None</p>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -669,12 +524,13 @@
                         <svg class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
-                        <input type="text" name="search" value="{{ search }}" placeholder="Search employee..." 
+                        <input type="text" id="filterSearch" name="search" value="{{ search }}" placeholder="Search employee..." 
+                            onkeydown="if(event.key === 'Enter') applyViolationFilters();"
                             class="pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                     </div>
                     
                     <!-- Employee Filter -->
-                    <select name="employee" class="border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select id="filterEmployee" name="employee" class="border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">All Employees</option>
                         {% for e in employees %}
                         <option value="{{ e.pk }}" {% if employee_filter == e.pk|stringformat:"s" %}selected{% endif %}>{{ e.first_name }} {{ e.last_name }}</option>
@@ -682,7 +538,7 @@
                     </select>
                     
                     <!-- Status Filter (Violation Status) -->
-                    <select name="status" class="border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select id="filterStatus" name="status" class="border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">All Status</option>
                         <option value="done" {% if status_filter == 'done' %}selected{% endif %}>Done</option>
                         <option value="working" {% if status_filter == 'working' %}selected{% endif %}>Working on it</option>
@@ -690,7 +546,7 @@
                     </select>
                     
                     <!-- DA Status Filter -->
-                    <select name="da_status" class="border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select id="filterDAStatus" name="da_status" class="border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">All DA Status</option>
                         <option value="done" {% if da_status_filter == 'done' %}selected{% endif %}>DA Done</option>
                         <option value="working" {% if da_status_filter == 'working' %}selected{% endif %}>DA Working</option>
@@ -698,7 +554,7 @@
                     </select>
                     
                     <!-- Range Filter -->
-                    <select name="range" class="border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select id="filterRange" name="range" class="border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2.5 bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">All Ranges</option>
                         <option value="A" {% if range_filter == 'A' %}selected{% endif %}>Range A</option>
                         <option value="B" {% if range_filter == 'B' %}selected{% endif %}>Range B</option>
@@ -708,26 +564,24 @@
                 </div>
                 
                 <div class="flex items-center gap-2">
-                    <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium flex items-center gap-2 shadow-md hover:shadow-lg transition-all">
+                    <button type="button" onclick="applyViolationFilters()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium flex items-center gap-2 shadow-md hover:shadow-lg transition-all">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                         Filter
                     </button>
-                    {% if search or employee_filter or status_filter or da_status_filter or range_filter %}
-                    <a href="{% url 'human_resource:violation_list' %}" class="px-5 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium flex items-center gap-2 transition-colors">
+                    <button type="button" onclick="clearViolationFilters()" class="px-5 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium flex items-center gap-2 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                         Clear
-                    </a>
-                    {% endif %}
+                    </button>
                 </div>
             </div>
         </form>
 
         <!-- Enhanced Table with Grouped Employee Data -->
-        <div x-data="{ expandedRows: {} }" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+        <div id="violationTableContainer" x-data="{ expandedRows: {} }" class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700">
@@ -1814,6 +1668,32 @@ function closeModal(modalId) {
     document.body.style.overflow = 'auto';
 }
 
+function showClassificationDetail(description, sectionNumber, sectionTitle, range, isActive) {
+    document.getElementById('classificationDetailSectionNumber').textContent = sectionNumber;
+    document.getElementById('classificationDetailSectionTitle').textContent = sectionTitle;
+    document.getElementById('classificationDetailDescription').textContent = description;
+    
+    const rangeEl = document.getElementById('classificationDetailRange');
+    let rangeClass = '';
+    if (range === 'A') rangeClass = 'bg-blue-100 text-blue-800';
+    else if (range === 'B') rangeClass = 'bg-yellow-100 text-yellow-800';
+    else if (range === 'C') rangeClass = 'bg-orange-100 text-orange-800';
+    else rangeClass = 'bg-red-100 text-red-800';
+    rangeEl.textContent = range;
+    rangeEl.className = 'px-3 py-1 rounded-full text-sm font-bold ' + rangeClass;
+    
+    const statusEl = document.getElementById('classificationDetailStatus');
+    if (isActive === 'true') {
+        statusEl.textContent = 'Active';
+        statusEl.className = 'px-3 py-1 rounded-full text-sm bg-green-100 text-green-800';
+    } else {
+        statusEl.textContent = 'Inactive';
+        statusEl.className = 'px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-600';
+    }
+    
+    openModal('classificationDetailModal');
+}
+
 // Close modal when clicking on the backdrop (outside the inner dialog) - wrap in DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('[data-modal]').forEach(modal => {
@@ -2266,6 +2146,65 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// AJAX Filter Functions for Violation List
+function applyViolationFilters() {
+    const search = document.getElementById('filterSearch').value;
+    const employee = document.getElementById('filterEmployee').value;
+    const status = document.getElementById('filterStatus').value;
+    const daStatus = document.getElementById('filterDAStatus').value;
+    const range = document.getElementById('filterRange').value;
+    
+    // Build query string
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (employee) params.append('employee', employee);
+    if (status) params.append('status', status);
+    if (daStatus) params.append('da_status', daStatus);
+    if (range) params.append('range', range);
+    
+    const url = '{% url "human_resource:ajax_violation_filter" %}?' + params.toString();
+    console.log('Filter URL:', url);
+    
+    // Show loading state
+    const tableContainer = document.getElementById('violationTableContainer');
+    tableContainer.innerHTML = '<div class="p-8 text-center text-gray-500">Loading...</div>';
+    
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error('HTTP error: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Replace table content
+        tableContainer.innerHTML = data.html;
+        // Re-initialize Alpine.js data
+        tableContainer.setAttribute('x-data', '{ expandedRows: {} }');
+    })
+    .catch(error => {
+        console.error('Filter error:', error);
+        tableContainer.innerHTML = '<div class="p-8 text-center text-red-600">Error: ' + error.message + '</div>';
+    });
+}
+
+function clearViolationFilters() {
+    // Clear all filter inputs
+    document.getElementById('filterSearch').value = '';
+    document.getElementById('filterEmployee').value = '';
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterDAStatus').value = '';
+    document.getElementById('filterRange').value = '';
+    
+    // Apply empty filters (will show all)
+    applyViolationFilters();
+}
 </script>
 
 <!-- ReactFlow Bundle for Remedial Action Flowchart -->
@@ -2372,6 +2311,16 @@ window.mountRemedialFlowchart = function() {
                 <div>
                     <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Offense Description</label>
                     <div id="classificationDetailDescription" class="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl text-gray-800 dark:text-gray-100 whitespace-pre-wrap"></div>
+                </div>
+                <div class="flex gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Range</label>
+                        <span id="classificationDetailRange" class="px-3 py-1 rounded-full text-sm font-bold"></span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Status</label>
+                        <span id="classificationDetailStatus" class="px-3 py-1 rounded-full text-sm"></span>
+                    </div>
                 </div>
             </div>
             <div class="mt-6 flex justify-end">

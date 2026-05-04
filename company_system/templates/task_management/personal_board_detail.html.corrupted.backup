@@ -1,0 +1,50 @@
+            onEnd: function(evt) {
+                var taskId      = evt.item.getAttribute('data-task-id');
+                var fromColumnId = evt.from.getAttribute('data-column-id');
+                var toColumnId   = evt.to.getAttribute('data-column-id');
+
+                // Optimistically update counts if moving between different columns
+                var fromCountEl = null;
+                var toCountEl = null;
+                if (fromColumnId !== toColumnId) {
+                    fromCountEl = document.getElementById('count-col-' + fromColumnId);
+                    toCountEl   = document.getElementById('count-col-' + toColumnId);
+                    if (fromCountEl) {
+                        var currentFrom = parseInt(fromCountEl.textContent) || 0;
+                        fromCountEl.textContent = currentFrom - 1;
+                    }
+                    if (toCountEl) {
+                        var currentTo = parseInt(toCountEl.textContent) || 0;
+                        toCountEl.textContent = currentTo + 1;
+                    }
+                }
+
+                fetch('/task/personal/api/update-position/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        task_id: taskId,
+                        column_id: toColumnId,
+                        order: evt.newIndex
+                    })
+                })
+                .then(function(r) { return r.json(); })
+                .catch(function(err) {
+                    // If request fails, revert counts to previous state
+                    if (fromColumnId !== toColumnId) {
+                        if (fromCountEl) {
+                            var currentFrom = parseInt(fromCountEl.textContent) || 0;
+                            fromCountEl.textContent = currentFrom + 1;
+                        }
+                        if (toCountEl) {
+                            var currentTo = parseInt(toCountEl.textContent) || 0;
+                            toCountEl.textContent = currentTo - 1;
+                        }
+                    }
+                    console.error('Failed to update position:', err);
+                    showToast('Failed to update position', 'error');
+                });
+            }

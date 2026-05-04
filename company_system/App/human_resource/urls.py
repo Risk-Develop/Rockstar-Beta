@@ -257,6 +257,7 @@ urlpatterns = [
     path('ajax/violation/<int:pk>/', views_handbook.ajax_violation_detail, name='ajax_violation_detail'),
     path('ajax/violation/<int:pk>/status/', views_handbook.ajax_update_violation_status, name='ajax_update_violation_status'),
     path('ajax/violation/<int:pk>/da_status/', views_handbook.ajax_update_violation_da_status, name='ajax_update_violation_da_status'),
+    path('ajax/violations/filter/', views_handbook.ajax_violation_filter, name='ajax_violation_filter'),
 
 
 ]

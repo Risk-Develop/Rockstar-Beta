@@ -1,0 +1,547 @@
+{% extends 'task_management/base.html' %}
+{% load static %}
+{% load hr_extras %}
+
+{% block title %}My Personal Tasks{% endblock %}
+{% block page_title %}My Personal Tasks{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
+<style>
+    .empty-gradient-bg {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    .empty-gradient-bg::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .board-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
+        position: relative;
+        overflow: hidden;
+    }
+    .board-card:hover {
+        transform: translateY(-4px) scale(1.01);
+        border-color: rgba(59, 130, 246, 0.3);
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5),
+                    0 0 20px -5px rgba(59, 130, 246, 0.2);
+    }
+    .board-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        padding: 2px;
+        background: linear-gradient(135deg, transparent 0%, rgba(59, 130, 246, 0.3) 100%);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+    }
+    .board-card:hover::before {
+        opacity: 1;
+    }
+
+    .create-btn {
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .create-btn::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+    .create-btn:active::after {
+        width: 300px;
+        height: 300px;
+    }
+
+    @keyframes progress-fill {
+        from { stroke-dashoffset: 100; }
+    }
+    .progress-ring-circle {
+        animation: progress-fill 1.5s ease-out forwards;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+    }
+
+    .stat-badge {
+        transition: all 0.2s ease;
+    }
+    .stat-badge:hover {
+        transform: scale(1.05);
+    }
+
+    .quick-link {
+        transition: all 0.2s ease;
+    }
+    .quick-link:hover {
+        transform: translateX(4px);
+    }
+    .quick-link:hover i {
+        transform: scale(1.1);
+    }
+    .quick-link i {
+        transition: transform 0.2s ease;
+    }
+
+    .input-group input {
+        transition: all 0.2s ease;
+    }
+    .input-group input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    html.dark .stat-text {
+        color: #9ca3af;
+    }
+    html.dark .board-card {
+        background: linear-gradient(145deg, #1f2937 0%, #111827 100%);
+    }
+
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* FIX: Modal overlay — use flex via Alpine, not Tailwind class conflict */
+    #editBoardModal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.70);
+        backdrop-filter: blur(4px);
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+    }
+    #editBoardModal.is-open {
+        display: flex;
+    }
+
+    /* FIX: Card action buttons should not overlap the card link */
+    .card-actions {
+        position: relative;
+        z-index: 10;
+    }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
+     x-data="personalBoardsData()">
+
+    <div class="max-w-6xl mx-auto p-4 md:p-6 lg:p-8">
+
+        <!-- Header Section -->
+        <div class="mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                            <i class="fas fa-clipboard-list text-blue-600 dark:text-blue-400"></i>
+                        </div>
+                        <h1 class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100">
+                            My Personal Tasks
+                        </h1>
+                    </div>
+                    <p class="text-gray-500 dark:text-gray-400 pl-11">
+                        Track your personal goals, habits, and daily tasks
+                    </p>
+                </div>
+
+                <!-- Create Board Form -->
+                <div class="flex-shrink-0">
+                    <form method="post"
+                          action="{% url 'task_management:personal_board_create' %}"
+                          class="flex flex-col sm:flex-row gap-2">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <input type="text"
+                                   name="name"
+                                   placeholder="Board name"
+                                   class="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-40 transition-all"
+                                   value="My Tasks"
+                                   required>
+                        </div>
+                        <input type="text"
+                               name="description"
+                               placeholder="Description (optional)"
+                               class="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-48 transition-all">
+                        <button type="submit"
+                                class="create-btn px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
+                            <i class="fas fa-plus"></i>
+                            <span>Create Board</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {% if personal_boards %}
+        <!-- Stats Overview -->
+        <div class="mb-6">
+            <div class="flex flex-wrap gap-3">
+                <div class="stat-badge px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                            <i class="fas fa-layer-group text-blue-600 dark:text-blue-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="text-lg font-bold text-gray-800 dark:text-gray-200">
+                                {{ personal_boards|length }}
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 stat-text">Boards</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-badge px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+                            <i class="fas fa-tasks text-green-600 dark:text-green-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="text-lg font-bold text-gray-800 dark:text-gray-200">
+                                {{ total_tasks_count }}
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 stat-text">Total Tasks</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-badge px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                            <i class="fas fa-check-circle text-emerald-600 dark:text-emerald-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="text-lg font-bold text-gray-800 dark:text-gray-200">
+                                {{ completed_tasks_count }}
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 stat-text">Completed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Personal Boards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+
+            {% for board in personal_boards %}
+            {# FIX: Wrap card in a relative div so action buttons sit above the link layer #}
+            <div class="relative">
+                <a href="{% url 'task_management:personal_board_detail' board.id %}"
+                   class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-xl transition-all duration-300 group">
+
+                    <!-- Gradient top accent bar -->
+                    <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
+                         :style="`background: linear-gradient(90deg, ${boardColors[{{ forloop.counter0 }}]} 0%, ${adjustColor(boardColors[{{ forloop.counter0 }}], 40)} 100%)`">
+                    </div>
+
+                    <div class="pt-4">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1 min-w-0 pr-2">
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                    {{ board.name }}
+                                </h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                                    {{ board.description|default:"Personal productivity board" }}
+                                </p>
+                            </div>
+
+                            {# Spacer reserves space for the absolutely-positioned pill buttons #}
+                            <div class="w-32 flex-shrink-0"></div>
+                        </div>
+
+                        <!-- Stats Row -->
+                        <div class="flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                                <i class="fas fa-tasks text-sm"></i>
+                                <span class="text-sm">{{ board.total_tasks|default:0 }}</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                                <i class="fas fa-check-circle text-sm"></i>
+                                <span class="text-sm">{{ board.completed_tasks|default:0 }}</span>
+                            </div>
+                            <div class="flex-1"></div>
+                            <!-- Progress ring -->
+                            <div class="flex items-center gap-2">
+                                {% if board.total_tasks and board.total_tasks > 0 %}
+                                    {% widthratio board.completed_tasks|default:0 board.total_tasks 100 as percentage %}
+                                {% else %}
+                                    {% with percentage=0 %}
+                                    {% endwith %}
+                                    {% comment %}fallback{% endcomment %}
+                                {% endif %}
+                                <div class="relative w-8 h-8">
+                                    <svg class="w-8 h-8" viewBox="0 0 36 36">
+                                        <circle cx="18" cy="18" r="16"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="3"
+                                                class="text-gray-200 dark:text-gray-700"></circle>
+                                        <circle cx="18" cy="18" r="16"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="3"
+                                                stroke-dasharray="{% if board.total_tasks and board.total_tasks > 0 %}{% widthratio board.completed_tasks|default:0 board.total_tasks 100 %}, 100{% else %}0, 100{% endif %}"
+                                                class="text-emerald-500 progress-ring-circle"></circle>
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                    {% if board.total_tasks and board.total_tasks > 0 %}{% widthratio board.completed_tasks|default:0 board.total_tasks 100 %}{% else %}0{% endif %}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+
+                {# Action buttons — outside <a> tag, absolutely positioned top-right inside card #}
+                <div class="card-actions absolute top-3 right-3 flex items-center gap-1.5">
+                    <button onclick="openEditModal({{ board.id }}, '{{ board.name|escapejs }}', '{{ board.description|escapejs }}')"
+                            class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium"
+                            title="Edit board">
+                        <i class="fas fa-edit text-xs"></i>
+                        <span>Edit</span>
+                    </button>
+                    <a href="{% url 'task_management:personal_board_detail' board.id %}"
+                       class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium"
+                       title="Open board">
+                        <i class="fas fa-external-link-alt text-xs"></i>
+                        <span>Open</span>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-gradient-bg relative rounded-2xl p-8 md:p-12 text-center">
+            <div class="relative z-10">
+                <div class="mx-auto w-16 h-16 mb-4 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                    <i class="fas fa-clipboard-list text-3xl text-blue-600 dark:text-blue-400"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                    No personal boards yet
+                </h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                    Use the form above to create your first personal board and start tracking your goals.
+                </p>
+            </div>
+            <div class="absolute top-8 left-8 w-2 h-2 rounded-full bg-blue-400 opacity-50"></div>
+            <div class="absolute bottom-12 right-12 w-3 h-3 rounded-full bg-blue-300 opacity-30"></div>
+            <div class="absolute top-1/2 right-8 w-1.5 h-1.5 rounded-full bg-blue-500 opacity-40"></div>
+        </div>
+        {% endif %}
+
+        <!-- Quick Links -->
+        {% if personal_boards %}
+        <div class="mt-10 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex flex-wrap gap-4">
+                <a href="{% url 'task_management:board_list' %}"
+                   class="quick-link flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-2 rounded-lg">
+                    <i class="fas fa-building text-sm"></i>
+                    <span class="font-medium">Company Tasks</span>
+                </a>
+                <a href="{% url 'task_management:roadmap_list' %}"
+                   class="quick-link flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-2 rounded-lg">
+                    <i class="fas fa-map text-sm"></i>
+                    <span class="font-medium">Roadmaps</span>
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Edit Board Modal — FIX: uses .is-open class instead of conflicting hidden + flex -->
+    <div id="editBoardModal">
+        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-600">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-semibold text-white">Edit Board</h2>
+                <button onclick="closeEditModal()" class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="editBoardForm" method="post" action="">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Board Name</label>
+                        <input type="text" name="name" id="editBoardName" required
+                               class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-200">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Description (optional)</label>
+                        <textarea name="description" id="editBoardDescription" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-200"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 text-gray-300">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg">
+                        <i class="fas fa-save mr-2"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- FIX: Scroll-to-top button — use proper Alpine scroll tracking -->
+    <button x-show="scrolled"
+            x-transition
+            @click="window.scrollTo({top: 0, behavior: 'smooth'})"
+            class="fixed bottom-6 right-6 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all hover:scale-105 z-50"
+            title="Scroll to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js" defer></script>
+<script src="{% static 'js/Sortable.min.js' %}"></script>
+<script>
+    function personalBoardsData() {
+        return {
+            // FIX: scrolled is reactive state tracked via window scroll event
+            scrolled: false,
+
+            init() {
+                const handler = () => { this.scrolled = window.scrollY > 300; };
+                window.addEventListener('scroll', handler, { passive: true });
+                this.$cleanup = () => window.removeEventListener('scroll', handler);
+            },
+
+            boardColors: [
+                '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444',
+                '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1'
+            ],
+
+            adjustColor(hex, percent) {
+                const num = parseInt(hex.replace('#', ''), 16),
+                      amt = Math.round(2.55 * percent),
+                      R = (num >> 16) + amt,
+                      G = (num >> 8 & 0x00FF) + amt,
+                      B = (num & 0x0000FF) + amt;
+                return '#' + (0x1000000 +
+                    (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                    (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                    (B < 255 ? B < 1 ? 0 : B : 255)
+                ).toString(16).slice(1);
+            }
+        };
+    }
+
+    function openEditModal(boardId, name, description) {
+        const modal = document.getElementById('editBoardModal');
+        document.getElementById('editBoardForm').action = '/task/personal/' + boardId + '/edit/';
+        document.getElementById('editBoardName').value = name;
+        document.getElementById('editBoardDescription').value = description || '';
+        // FIX: toggle .is-open instead of removing 'hidden'
+        modal.classList.add('is-open');
+    }
+
+    function closeEditModal() {
+        document.getElementById('editBoardModal').classList.remove('is-open');
+    }
+
+    document.getElementById('editBoardForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalHTML = submitBtn.innerHTML;
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const match = form.action.match(/\/personal\/(\d+)\/edit\//);
+                if (match) {
+                    const boardId = match[1];
+                    // FIX: correct selector — card link uses /boards/ in URL
+                    const cardLink = document.querySelector(`a[href*="/personal/boards/${boardId}/"]`);
+                    if (cardLink) {
+                        const titleEl = cardLink.querySelector('h3');
+                        const descEl  = cardLink.querySelector('p');
+                        if (titleEl) titleEl.textContent = formData.get('name');
+                        if (descEl)  descEl.textContent  = formData.get('description') || 'Personal productivity board';
+                    }
+                }
+                closeEditModal();
+                showToast('Board updated successfully!', 'success');
+            } else {
+                alert('Error: ' + (data.error || 'Failed to update board'));
+            }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            alert('An error occurred while updating the board.');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHTML;
+        });
+    });
+
+    // Close modal on backdrop click
+    document.getElementById('editBoardModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeEditModal();
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeEditModal();
+    });
+
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 ${
+            type === 'success' ? 'bg-green-600' : 'bg-red-600'
+        } text-white`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }
+</script>
+{% endblock %}

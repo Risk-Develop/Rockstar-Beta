@@ -1,0 +1,86 @@
+{% extends 'task_management/base.html' %}
+
+{% block title %}Kanban Boards{% endblock %}
+{% block page_title %}Kanban Boards{% endblock %}
+
+{% block main_content %}
+<div class="p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Kanban Boards</h1>
+                <p class="text-gray-500">Manage your project tasks</p>
+            </div>
+            <button 
+                onclick="document.getElementById('createBoardModal').classList.remove('hidden')"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                <i class="fas fa-plus mr-2"></i>New Board
+            </button>
+        </div>
+
+        <!-- Boards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for board in boards %}
+            <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">
+                            <a href="{% url 'task_management:board_detail' board.id %}" class="hover:text-blue-600">
+                                {{ board.name }}
+                            </a>
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1">{{ board.description|truncatechars:80 }}</p>
+                    </div>
+                    <button 
+                        onclick="event.stopPropagation(); confirmDelete('{{ board.id }}', '{{ board.name }}')"
+                        class="text-gray-400 hover:text-red-500">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="mt-4 flex justify-between items-center text-sm text-gray-500">
+                    <span>{{ board.columns.count }} columns</span>
+                    <span class="text-xs">{{ board.created_at|date:"M d, Y" }}</span>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full text-center py-12">
+                <i class="fas fa-columns text-4xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500">No boards yet. Create your first board!</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Create Board Modal -->
+        <div id="createBoardModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Create New Board</h2>
+                    <button onclick="document.getElementById('createBoardModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form method="post" action="{% url 'task_management:board_create' %}">
+                    {% csrf_token %}
+                    <div class="space-y-4">
+                        {{ board_form.as_p }}
+                    </div>
+                    <div class="flex justify-end gap-2 mt-6">
+                        <button type="button" onclick="document.getElementById('createBoardModal').classList.add('hidden')" 
+                            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(boardId, boardName) {
+    if (confirm(`Delete board "${boardName}"?`)) {
+        window.location.href = `/task/boards/${boardId}/delete/`;
+    }
+}
+</script>
+{% endblock %}

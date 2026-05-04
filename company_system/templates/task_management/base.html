@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% block page_title %}Task Management{% endblock %}{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+
+{% if employee and employee.role %}
+    {% if employee.role.role_name == 'HR' %}
+{% include 'hr/dashboard/hr_sidebar.html' %}
+    {% else %}
+{% include 'master/master_sidebar.html' %}
+    {% endif %}
+{% else %}
+{% include 'master/master_sidebar.html' %}
+{% endif %}
+
+<main
+  id="mainContent"
+  class="md:ml-64 pt-2 px-1 pb-4 min-h-screen p-6 bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+>
+{% block main_content %}{% endblock %}
+</main>
+
+{% block extra_js %}{% endblock %}
+{% endblock %}

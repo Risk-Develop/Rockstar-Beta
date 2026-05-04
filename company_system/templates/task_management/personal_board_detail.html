@@ -1,0 +1,1132 @@
+{% extends 'task_management/base.html' %}
+{% load static %}
+{% load task_management_tags %}
+
+{% block title %}{{ board.name }}{% endblock %}
+{% block page_title %}{{ board.name }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+
+/* Light mode styles */
+.personal-column { 
+min-height: 350px; 
+max-height: 550px;
+width: 100%;
+background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
+overflow-y: auto;
+padding-bottom: 10px;
+
+/* Firefox */
+scrollbar-width: thin;
+scrollbar-color: #d1d5db #f3f4f6;
+}
+html.dark .personal-column { 
+background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+scrollbar-color: #374151 #1f2937;
+}
+/* WebKit pseudo-elements */
+.personal-column::-webkit-scrollbar { width: 6px; }
+.personal-column::-webkit-scrollbar-button { height: 0; }
+.personal-column::-webkit-scrollbar-track { 
+background: #f3f4f6; 
+}
+html.dark .personal-column::-webkit-scrollbar-track { 
+background: #1f2937; 
+}
+.personal-column::-webkit-scrollbar-thumb { 
+background: #d1d5db; 
+border-radius: 4px; 
+}
+html.dark .personal-column::-webkit-scrollbar-thumb { 
+background: #374151; 
+}
+
+/* Light mode task card */
+.personal-task { 
+cursor: grab; 
+transition: all 0.2s ease;
+background: linear-gradient(145deg, #ffffff, #f9fafb);
+border: 1px solid #e5e7eb;
+}
+html.dark .personal-task { 
+background: linear-gradient(145deg, #374151, #1f2937);
+border: 1px solid #4b5563;
+}
+.personal-task:hover {
+transform: translateY(-2px);
+box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+border-color: #9ca3af;
+}
+html.dark .personal-task:hover {
+box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+border-color: #6b7280;
+}
+.personal-task.completed {
+opacity: 0.6;
+border-left: 3px solid #10b981 !important;
+}
+html.dark .personal-task.completed {
+border-left: 3px solid #10b981 !important;
+}
+.personal-task:active { cursor: grabbing; }
+.personal-task.sortable-ghost { opacity: 0.4; background: #e5e7eb; }
+html.dark .personal-task.sortable-ghost { background: #4b5563; }
+
+.priority-low { border-left: 3px solid #10b981 !important; }
+html.dark .priority-low { border-left: 3px solid #10b981 !important; }
+.priority-medium { border-left: 3px solid #3b82f6 !important; }
+html.dark .priority-medium { border-left: 3px solid #3b82f6 !important; }
+.priority-high { border-left: 3px solid #f59e0b !important; }
+html.dark .priority-high { border-left: 3px solid #f59e0b !important; }
+.priority-urgent { border-left: 3px solid #ef4444 !important; }
+html.dark .priority-urgent { border-left: 3px solid #ef4444 !important; }
+
+/* Unified modal system */
+.modal-overlay {
+display: none;
+position: fixed;
+z-index: 50;
+left: 0; top: 0;
+width: 100%; height: 100%;
+background-color: rgb(0 0 0 / 50%);
+align-items: center;
+justify-content: center;
+}
+html.dark .modal-overlay {
+background-color: rgb(0 0 0 / 81%);
+}
+.modal-overlay.show { display: flex; }
+.modal-content {
+background: #ffffff;
+border: 1px solid #e5e7eb;
+border-radius: 12px;
+padding: 24px;
+width: 90%;
+max-width: 70%;
+max-height: 90vh;
+overflow-y: auto;
+}
+html.dark .modal-content {
+background: #1f2937;
+border: 1px solid #374151;
+}
+
+/* Toast notification */
+#toast {
+position: fixed;
+bottom: 80px;
+right: 24px;
+z-index: 9999;
+padding: 12px 20px;
+border-radius: 8px;
+font-size: 14px;
+font-weight: 500;
+opacity: 0;
+transform: translateY(10px);
+transition: all 0.3s ease;
+pointer-events: none;
+}
+#toast.show {
+opacity: 1;
+transform: translateY(0);
+}
+#toast.success { background: #dcfce7; color: #14532d; border: 1px solid #22c55e; }
+html.dark #toast.success { background: #065f46; color: #6ee7b7; border: 1px solid #10b981; }
+#toast.error { background: #fee2e2; color: #7f1d1d; border: 1px solid #ef4444; }
+html.dark #toast.error { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; }
+
+/* Calendar styles */
+#calendar { background: #ffffff; padding: 16px; border-radius: 8px; }
+html.dark #calendar { background: #1f2937; }
+#calendar .fc-toolbar-title { color: #111827; font-size: 1.25rem; }
+html.dark #calendar .fc-toolbar-title { color: #fff; }
+#calendar .fc-button { background: #f3f4f6 !important; border-color: #e5e7eb !important; }
+html.dark #calendar .fc-button { background: #374151 !important; border-color: #4b5563 !important; }
+#calendar .fc-button:hover { background: #e5e7eb !important; }
+html.dark #calendar .fc-button:hover { background: #4b5563 !important; }
+#calendar .fc-button:disabled { background: #d1d5db !important; }
+html.dark #calendar .fc-button:disabled { background: #6b7280 !important; }
+#calendar .fc-daygrid-day { background: #ffffff; }
+html.dark #calendar .fc-daygrid-day { background: #1f2937; }
+#calendar .fc-daygrid-day-number { color: #4b5563; }
+html.dark #calendar .fc-daygrid-day-number { color: #9ca3af; }
+#calendar .fc-day-today { background: #eff6ff !important; }
+html.dark #calendar .fc-day-today { background: #374151 !important; }
+#calendar .fc-col-header-cell { background: #f9fafb; }
+html.dark #calendar .fc-col-header-cell { background: #111827; }
+#calendar .fc-col-header-cell-cushion { color: #4b5563; }
+html.dark #calendar .fc-col-header-cell-cushion { color: #9ca3af; }
+#calendar .fc-event { cursor: pointer; border-radius: 4px; padding: 2px 4px; font-size: 0.85rem; }
+#calendar .fc-event .fc-event-main-content { padding: 2px; }
+#calendar .fc-daygrid-event { margin: 2px; }
+#calendar .fc-list-event:hover { background: #f3f4f6; }
+html.dark #calendar .fc-list-event:hover { background: #374151; }
+#calendar .fc-list-day-cushion { background: #ffffff; }
+html.dark #calendar .fc-list-day-cushion { background: #1f2937; }
+#calendar .fc-list-event-title a { color: #111827; }
+html.dark #calendar .fc-list-event-title a { color: #fff; }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="pt-2 px-2 pb-4">
+<!--<div class="max-w-7xl mx-auto">-->
+<div class="mx-auto">    
+<!-- Header -->
+<div class="flex justify-between items-center mb-6">
+<div class="flex items-center gap-4">
+<a href="{% url 'task_management:personal_board_list' %}" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+<i class="fas fa-arrow-left text-xl"></i>
+</a>
+<div>
+<h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ board.name }}</h1>
+<p class="text-gray-500 dark:text-gray-400">{{ board.description|default:"Personal productivity" }}</p>
+</div>
+</div>
+
+<button onclick="openAddTaskModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+<i class="fas fa-plus mr-2"></i>Add Task
+</button>
+<button onclick="toggleViewMode()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 ml-2">
+<i class="fas fa-calendar-alt mr-2"></i><span id="viewModeBtnText">Timeline</span>
+</button>
+</div>
+
+<!-- Kanban Columns -->
+<div class="flex gap-4 overflow-x-auto pb-4" id="personalKanban">
+{% for column in columns %}
+<div class="flex-shrink-0 w-80 min-w-[320px]">
+<!-- Column Header -->
+<div class="rounded-t-lg px-3 py-3 flex justify-between items-center"
+style="background: linear-gradient(90deg, {{ column.color }}20, transparent); border-top: 3px solid {{ column.color }}">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full" style="background: {{ column.color }}"></span>
+<span class="font-semibold text-gray-700 dark:text-gray-200">{{ column.name }}</span>
+<span class="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-700 dark:text-gray-300">{{ column.tasks_list.count }}</span>
+</div>
+<button onclick="openAddTaskModal('{{ column.id }}')" 
+class="p-1.5 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+title="Add task">
+<i class="fas fa-plus text-sm"></i>
+</button>
+</div>
+
+<!-- Column Body -->
+<div class="personal-column rounded-b-lg p-2"
+data-column-id="{{ column.id }}"
+id="column-{{ column.id }}">
+
+{% for task in column.tasks_list %}
+<div class="personal-task rounded-lg p-3 mb-2 {% if task.is_completed %}completed{% elif task.priority == 'urgent' %}priority-urgent{% elif task.priority == 'high' %}priority-high{% elif task.priority == 'medium' %}priority-medium{% else %}priority-low{% endif %}"
+data-task-id="{{ task.id }}"
+data-title="{{ task.title|escape }}"
+data-priority="{{ task.priority }}"
+data-description="{{ task.description|escape }}"
+data-deadline="{{ task.deadline|default:'' }}"
+data-date-start="{{ task.date_start|default:'' }}"
+data-date-end="{{ task.date_end|default:'' }}"
+data-notes="{{ task.notes|default:''|escape }}"
+draggable="true">
+<div class="flex justify-between items-start">
+<!-- Checkbox -->
+<button onclick="toggleTask('{{ task.id }}')" 
+class="mr-2 mt-1 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center
+{% if task.is_completed %}bg-green-500 border-green-500{% else %}border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-300{% endif %}">
+{% if task.is_completed %}<i class="fas fa-check text-xs text-white"></i>{% endif %}
+</button>
+
+<div class="flex-1 min-w-0">
+<h4 onclick="event.stopPropagation(); openTaskDetail('{{ task.id }}')" title="Click to edit"
+class="task-title font-medium text-gray-800 dark:text-gray-100 text-sm {% if task.is_completed %}line-through text-gray-500{% endif %} cursor-pointer hover:text-blue-600 dark:hover:text-blue-400">
+<i class="fas fa-edit mr-1 text-gray-500"></i>{{ task.title }}
+</h4>
+{% if task.description %}
+<p class="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{{ task.description }}</p>
+{% endif %}
+
+<!-- Tags -->
+<div class="flex items-center gap-2 task-notes" data-notes="{{ task.notes|default:''|escape }}">
+<span class="text-xs px-1.5 py-0.5 rounded {% if task.priority == 'urgent' %}bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400{% elif task.priority == 'high' %}bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400{% elif task.priority == 'medium' %}bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400{% else %}bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400{% endif %}">
+{{ task.priority|title }}
+</span>
+{% if task.is_recurring %}
+<span class="text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
+<i class="fas fa-redo mr-1"></i>{{ task.recurring_type|title }}
+</span>
+{% endif %}
+{% if task.deadline %}
+<span class="text-xs text-gray-600 dark:text-gray-400">
+<i class="fas fa-calendar-alt mr-1"></i>{{ task.deadline|date:"M d" }}
+</span>
+{% endif %}
+{% if task.date_start and task.date_end %}
+<span class="text-xs text-blue-600 dark:text-blue-400">
+<i class="fas fa-calendar-week mr-1"></i>{{ task.date_start|date:"M d" }} - {{ task.date_end|date:"M d" }}
+</span>
+{% endif %}
+</div>
+
+<!-- Notes preview -->
+{% if task.notes %}
+<div class="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-600 dark:text-gray-400">
+<i class="fas fa-sticky-note mr-1"></i>{{ task.notes|truncatechars:50 }}
+</div>
+{% endif %}
+</div>
+
+<!-- Delete -->
+<button onclick="deleteTask('{{ task.id }}')" 
+class="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 p-1 ml-2">
+<i class="fas fa-trash text-xs"></i>
+</button>
+</div>
+</div>
+{% empty %}
+<div class="text-center py-8 text-gray-600 dark:text-gray-400">
+<p class="text-sm">No tasks</p>
+</div>
+{% endfor %}
+</div>
+</div>
+{% endfor %}
+</div>
+
+<!-- Timeline View -->
+<div id="timelineView" class="hidden">
+<div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+<div id="calendar" class="text-gray-800 dark:text-gray-200"></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast"></div>
+
+<!-- Help Modal -->
+<div id="helpModal" class="modal-overlay">
+<div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-300 dark:border-gray-600">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-xl font-semibold text-gray-900 dark:text-white">Keyboard Shortcuts</h2>
+<button onclick="toggleHelp()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-white">
+<i class="fas fa-times"></i>
+</button>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+<span class="text-gray-700 dark:text-gray-300">New Task</span>
+<kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 text-sm">N</kbd>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+<span class="text-gray-700 dark:text-gray-300">Refresh</span>
+<kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 text-sm">R</kbd>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+<span class="text-gray-700 dark:text-gray-300">Close Modal</span>
+<kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 text-sm">Esc</kbd>
+</div>
+<div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
+<span class="text-gray-700 dark:text-gray-300">Help</span>
+<kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 text-sm">H</kbd>
+</div>
+</div>
+<div class="mt-6 p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
+<p class="text-sm text-gray-600 dark:text-gray-400 text-center">
+<i class="fas fa-mouse-pointer mr-2"></i>Drag tasks to move between columns
+</p>
+</div>
+</div>
+</div>
+
+<!-- Add Task Modal -->
+<div id="addTaskModal" class="modal-overlay">
+<div class="modal-content">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-xl font-bold text-gray-900 dark:text-white">Add Personal Task</h2>
+<button onclick="closeAddTaskModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+<i class="fas fa-times text-xl"></i>
+</button>
+</div>
+<form method="post" action="{% url 'task_management:personal_task_create' board.id %}">
+{% csrf_token %}
+<div class="space-y-4">
+<div>
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+<input type="text" name="title" required 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+placeholder="What needs to be done?">
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description (optional)</label>
+<textarea name="description" rows="2" 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+placeholder="Details..."></textarea>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Column</label>
+<select name="column" required 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+{% for column in columns %}
+<option value="{{ column.id }}">{{ column.name }}</option>
+{% endfor %}
+</select>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+<select name="priority" 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+<option value="low">Low</option>
+<option value="medium" selected>Medium</option>
+<option value="high">High</option>
+<option value="urgent">Urgent</option>
+</select>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deadline</label>
+<input type="date" name="deadline" 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Start</label>
+<input type="date" name="date_start" 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date End</label>
+<input type="date" name="date_end" 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+<textarea name="notes" rows="2" 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+placeholder="Personal notes..."></textarea>
+</div>
+<div class="flex items-center gap-2">
+<input type="checkbox" name="is_recurring" id="is_recurring" class="w-4 h-4">
+<label for="is_recurring" class="text-sm text-gray-700 dark:text-gray-300">Recurring task</label>
+</div>
+<div id="recurring_options" class="hidden">
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Repeat</label>
+<select name="recurring_type" 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
+<option value="daily">Daily</option>
+<option value="weekly">Weekly</option>
+<option value="monthly">Monthly</option>
+</select>
+</div>
+</div>
+<div class="mt-6 flex gap-3">
+<button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+Create Task
+</button>
+<button type="button" onclick="closeAddTaskModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">
+Cancel
+</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- Task Detail Modal -->
+<div id="taskDetailModal" class="modal-overlay">
+<div class="modal-content">
+<div class="flex justify-between items-center mb-4">
+<h2 class="text-xl font-bold text-gray-900 dark:text-white">Task Details</h2>
+<button onclick="closeTaskDetailModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+<i class="fas fa-times text-xl"></i>
+</button>
+</div>
+
+<!-- Edit Task Form -->
+<form id="updateTaskForm" method="post">
+{% csrf_token %}
+<div class="space-y-4">
+<div>
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+<input type="text" name="title" id="detailTitle" required 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+<textarea name="description" id="detailDescription" rows="2" 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+placeholder="Description..."></textarea>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+<select name="priority" id="detailPriority" 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
+<option value="low">Low</option>
+<option value="medium">Medium</option>
+<option value="high">High</option>
+<option value="urgent">Urgent</option>
+</select>
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deadline</label>
+<input type="date" name="deadline" id="detailDeadline" 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Start</label>
+<input type="date" name="date_start" id="detailDateStart" 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date End</label>
+<input type="date" name="date_end" id="detailDateEnd" 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
+</div>
+</div>
+</div>
+
+<!-- Checklist Section -->
+<div class="mt-4">
+<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+<i class="fas fa-tasks mr-2 text-blue-500"></i>Checklist
+</h3>
+<div class="flex gap-2 mb-3">
+<input type="text" id="checklistInput" placeholder="Add checklist item..." 
+class="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white text-sm"
+onkeydown="if(event.key==='Enter'){event.preventDefault();submitChecklist();}">
+<button type="button" onclick="submitChecklist()" 
+class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+<i class="fas fa-plus"></i>
+</button>
+</div>
+<div id="checklistItems" class="space-y-2 max-h-48 overflow-y-auto">
+<!-- Checklist items rendered here dynamically -->
+</div>
+</div>
+
+<div class="mt-4">
+<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+<textarea name="notes" id="detailNotes" rows="5" 
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+placeholder="Personal notes..."></textarea>
+</div>
+
+<input type="hidden" name="task_id" id="detailTaskId">
+<div class="flex gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+<button type="button" onclick="deleteDetailTask()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+Delete Task
+</button>
+<button type="button" id="saveBtn" onclick="saveTask()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+Save Changes
+</button>
+</div>
+</form>
+</div>
+</div>
+
+<script src="{% static 'js/fullcalendar.min.js' %}"></script>
+<script src="{% static 'js/Sortable.min.js' %}"></script>
+
+<script>
+var taskChecklists = {};
+{% for column in columns %}
+{% for task in column.tasks_list %}
+taskChecklists[{{ task.id }}] = {{ task.checklist_items_json|safe }};
+{% endfor %}
+{% endfor %}
+
+var isTimelineView = false;
+
+// ── View Mode Toggle ───────────────────────────────────────────────────────────
+
+function toggleViewMode() {
+isTimelineView = !isTimelineView;
+var kanbanView = document.getElementById('personalKanban');
+var timelineView = document.getElementById('timelineView');
+var btnText = document.getElementById('viewModeBtnText');
+
+if (isTimelineView) {
+kanbanView.classList.add('hidden');
+timelineView.classList.remove('hidden');
+btnText.textContent = 'Kanban';
+renderTimeline();
+} else {
+kanbanView.classList.remove('hidden');
+timelineView.classList.add('hidden');
+btnText.textContent = 'Timeline';
+}
+}
+
+function renderTimeline() {
+var calendarEl = document.getElementById('calendar');
+if (!calendarEl) return;
+
+// Check if FullCalendar is available - try both global and window
+var Fc = window.FullCalendar || window.FullCalendar || FullCalendar;
+if (!Fc) {
+return;
+}
+
+var tasks = [];
+{% for column in columns %}
+{% for task in column.tasks_list %}
+{% if task.date_start or task.date_end %}
+tasks.push({
+id: {{ task.id }},
+title: "{{ task.title|escapejs }}",
+start: "{{ task.date_start|default:task.date_end|date:"Y-m-d" }}",
+{% if task.date_end %}
+end: "{{ task.date_end|date:"Y-m-d" }}",
+{% endif %}
+backgroundColor: "{{ column.color }}",
+borderColor: "{{ column.color }}",
+columnName: "{{ column.name|escapejs }}",
+priority: "{{ task.priority }}",
+isCompleted: {{ task.is_completed|yesno:'true,false' }}
+});
+// Fix: FullCalendar end dates are exclusive, add 1 day to make it inclusive
+if (tasks[tasks.length - 1].end) {
+var endDate = new Date(tasks[tasks.length - 1].end);
+endDate.setDate(endDate.getDate() + 1);
+tasks[tasks.length - 1].end = endDate.toISOString().split('T')[0];
+}
+{% endif %}
+{% endfor %}
+{% endfor %}
+
+console.log('Timeline tasks loaded:', tasks);
+if (tasks.length === 0) {
+calendarEl.innerHTML = '<p class="text-gray-400 p-4 text-center">No tasks with timeline dates. Add date_start or date_end to a task.</p>';
+return;
+}
+
+// Destroy existing calendar if any
+if (window.personalCalendar) {
+window.personalCalendar.destroy();
+}
+
+window.personalCalendar = new Fc.Calendar(calendarEl, {
+initialView: 'dayGridMonth',
+themeSystem: 'standard',
+headerToolbar: {
+left: 'prev,next today',
+center: 'title',
+right: 'dayGridMonth,timeGridWeek,listWeek'
+},
+events: tasks,
+eventClick: function(info) {
+openTaskDetail(info.event.id);
+},
+eventContent: function(arg) {
+var columnName = arg.event.extendedProps.columnName || '';
+var priority = arg.event.extendedProps.priority || '';
+return {
+html: '<div class="fc-event-main-content">' +
+'<div class="font-semibold">' + arg.event.title + '</div>' +
+'<div class="text-xs" style="opacity:0.8">' + columnName + '</div>' +
+'</div>'
+};
+},
+eventDidMount: function(info) {
+if (info.event.extendedProps.isCompleted) {
+info.el.style.opacity = '0.5';
+info.el.style.textDecoration = 'line-through';
+}
+},
+height: 'auto'
+});
+
+window.personalCalendar.render();
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+
+function showToast(message, type) {
+var t = document.getElementById('toast');
+t.textContent = message;
+t.className = 'show ' + (type || 'success');
+clearTimeout(window._toastTimer);
+window._toastTimer = setTimeout(function() { t.className = ''; }, 3000);
+}
+
+// ── Modal helpers ────────────────────────────────────────────────────────────
+
+function openAddTaskModal(columnId) {
+if (columnId) {
+var select = document.querySelector('#addTaskModal select[name="column"]');
+if (select) select.value = columnId;
+}
+document.getElementById('addTaskModal').classList.add('show');
+}
+function closeAddTaskModal() {
+document.getElementById('addTaskModal').classList.remove('show');
+}
+function closeTaskDetailModal() {
+document.getElementById('taskDetailModal').classList.remove('show');
+}
+function toggleHelp() {
+document.getElementById('helpModal').classList.toggle('show');
+}
+
+// ── Task Detail ──────────────────────────────────────────────────────────────
+
+function openTaskDetail(taskId) {
+var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+if (!taskEl) return;
+
+document.getElementById('detailTaskId').value      = taskId;
+document.getElementById('detailTitle').value       = taskEl.dataset.title       || '';
+document.getElementById('detailDescription').value = taskEl.dataset.description || '';
+document.getElementById('detailPriority').value    = taskEl.dataset.priority    || 'medium';
+document.getElementById('detailDeadline').value    = taskEl.dataset.deadline    || '';
+document.getElementById('detailDateStart').value   = taskEl.dataset.dateStart   || '';
+document.getElementById('detailDateEnd').value     = taskEl.dataset.dateEnd     || '';
+document.getElementById('detailNotes').value       = taskEl.dataset.notes       || '';
+
+document.getElementById('updateTaskForm').action = '/task/personal/tasks/' + taskId + '/edit/';
+
+loadChecklistItems(taskId);
+document.getElementById('taskDetailModal').classList.add('show');
+}
+
+// ── Checklist rendering ──────────────────────────────────────────────────────
+
+function renderChecklistItem(item) {
+/*
+* FIX: Use the REAL server-assigned item.id (integer from DB),
+* not Date.now(). This makes toggle/delete work correctly.
+*/
+var checked = item.is_completed ? 'checked' : '';
+var textColor = item.is_completed ? 'text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-white';
+return '<div class="flex items-center gap-2 p-2 rounded bg-gray-100 dark:bg-gray-700/50" id="checklist-item-' + item.id + '">' +
+'<input type="checkbox" ' + checked + ' onchange="toggleChecklist(' + item.id + ', this)" class="w-4 h-4">' +
+'<span class="flex-1 text-sm ' + textColor + '">' + escapeHtml(item.text) + '</span>' +
+'<button type="button" onclick="deleteChecklist(' + item.id + ')" class="text-gray-500 dark:text-gray-400 hover:text-red-400 flex-shrink-0">' +
+'<i class="fas fa-times text-xs"></i>' +
+'</button>' +
+'</div>';
+}
+
+function escapeHtml(str) {
+var d = document.createElement('div');
+d.appendChild(document.createTextNode(str));
+return d.innerHTML;
+}
+
+function loadChecklistItems(taskId) {
+var container = document.getElementById('checklistItems');
+if (!container) return;
+
+// Debug: show what's in taskChecklists
+console.log('taskChecklists:', taskChecklists);
+console.log('taskChecklists[2]:', taskChecklists[2]);
+
+// Get from JavaScript variable
+var items = taskChecklists[taskId] || [];
+
+if (items.length === 0) {
+container.innerHTML = '<p class="text-gray-600 dark:text-gray-400 text-sm py-2">No checklist items yet.</p>';
+} else {
+container.innerHTML = items.map(renderChecklistItem).join('');
+}
+}
+
+// ── Submit checklist item (AJAX — uses real server ID from response) ─────────
+
+function submitChecklist() {
+var taskId = document.getElementById('detailTaskId').value;
+var input  = document.getElementById('checklistInput');
+var text   = (input.value || '').trim();
+if (!text || !taskId) return;
+
+input.disabled = true;
+
+var formData = new FormData();
+formData.append('checklist_text', text);
+formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+fetch('/task/personal/tasks/' + taskId + '/checklist/add/', {
+method: 'POST',
+headers: { 
+'X-Requested-With': 'XMLHttpRequest',
+'Content-Type': 'application/x-www-form-urlencoded'
+},
+body: 'checklist_text=' + encodeURIComponent(text) + '&csrfmiddlewaretoken=' + getCookie('csrftoken')
+})
+.then(function(r) {
+if (!r.ok) throw new Error('Server error ' + r.status);
+return r.json();
+})
+.then(function(data) {
+if (!data.id) throw new Error('Server did not return item id');
+
+var container = document.getElementById('checklistItems');
+var noItems = container.querySelector('p');
+if (noItems) noItems.remove();
+
+container.insertAdjacentHTML('beforeend', renderChecklistItem({
+id: data.id,
+text: data.text || text,
+is_completed: false
+}));
+
+// Update the data-checklist attribute on the card
+var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+if (taskEl) {
+var existingChecklist = taskEl.getAttribute('data-checklist') || '';
+var checklist = [];
+try {
+if (existingChecklist.trim()) {
+checklist = JSON.parse(existingChecklist);
+if (!Array.isArray(checklist)) checklist = [];
+}
+} catch(e) { 
+checklist = []; 
+}
+checklist.push({ id: data.id, text: data.text || text, is_completed: false });
+taskEl.setAttribute('data-checklist', JSON.stringify(checklist));
+}
+
+input.value = '';
+showToast('Checklist item added', 'success');
+})
+.catch(function(err) {
+showToast('Failed to add item: ' + err.message, 'error');
+})
+.finally(function() {
+input.disabled = false;
+input.focus();
+});
+}
+
+// ── Toggle checklist item ────────────────────────────────────────────────────
+
+function toggleChecklist(itemId, checkbox) {
+fetch('/task/personal/checklist/' + itemId + '/toggle/', {
+method: 'POST',
+headers: {
+'X-CSRFToken': getCookie('csrftoken'),
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(function(r) {
+if (!r.ok) throw new Error('Toggle failed');
+return r.json();
+})
+.then(function(data) {
+var row  = document.getElementById('checklist-item-' + itemId);
+if (!row) return;
+var span = row.querySelector('span');
+var cb   = row.querySelector('input[type="checkbox"]');
+var done = data.completed;
+if (cb)   cb.checked = done;
+if (span) span.style.textDecoration = done ? 'line-through' : 'none';
+if (span) span.className = 'flex-1 text-sm ' + (done ? 'text-gray-500' : 'text-white');
+
+// Sync data-checklist on card
+var taskId = document.getElementById('detailTaskId').value;
+var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+if (taskEl) {
+try {
+var checklist = JSON.parse(taskEl.dataset.checklist || '[]');
+checklist = checklist.map(function(i) {
+return i.id === itemId ? Object.assign({}, i, { is_completed: done }) : i;
+});
+taskEl.dataset.checklist = JSON.stringify(checklist);
+} catch(e) {}
+}
+})
+.catch(function() {
+// Revert checkbox on failure
+if (checkbox) checkbox.checked = !checkbox.checked;
+showToast('Toggle failed', 'error');
+});
+}
+
+// ── Delete checklist item ────────────────────────────────────────────────────
+
+function deleteChecklist(itemId) {
+if (!confirm('Delete this item?')) return;
+
+fetch('/task/personal/checklist/' + itemId + '/delete/', {
+method: 'POST',
+headers: {
+'X-CSRFToken': getCookie('csrftoken'),
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
+.then(function(r) {
+if (!r.ok) throw new Error('Delete failed');
+var row = document.getElementById('checklist-item-' + itemId);
+if (row) row.remove();
+
+// Sync data-checklist on card
+var taskId = document.getElementById('detailTaskId').value;
+var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+if (taskEl) {
+try {
+var checklist = JSON.parse(taskEl.dataset.checklist || '[]');
+checklist = checklist.filter(function(i) { return i.id !== itemId; });
+taskEl.dataset.checklist = JSON.stringify(checklist);
+} catch(e) {}
+}
+
+var container = document.getElementById('checklistItems');
+if (container && container.children.length === 0) {
+container.innerHTML = '<p class="text-gray-500 text-sm py-2">No checklist items yet.</p>';
+}
+showToast('Item deleted', 'success');
+})
+.catch(function() {
+showToast('Delete failed', 'error');
+});
+}
+
+// ── Save Task (AJAX) ─────────────────────────────────────────────────────────
+
+function saveTask() {
+var taskId  = document.getElementById('detailTaskId').value;
+var saveBtn = document.getElementById('saveBtn');
+if (!taskId) return;
+
+saveBtn.disabled = true;
+saveBtn.textContent = 'Saving…';
+
+var formData = new FormData();
+formData.append('title',       document.getElementById('detailTitle').value);
+formData.append('description', document.getElementById('detailDescription').value);
+formData.append('priority',    document.getElementById('detailPriority').value);
+formData.append('deadline',    document.getElementById('detailDeadline').value);
+formData.append('date_start',  document.getElementById('detailDateStart').value);
+formData.append('date_end',    document.getElementById('detailDateEnd').value);
+formData.append('notes',       document.getElementById('detailNotes').value);
+formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+fetch('/task/personal/tasks/' + taskId + '/edit/', {
+method: 'POST',
+headers: { 'X-Requested-With': 'XMLHttpRequest' },
+body: formData
+})
+.then(function(r) {
+if (!r.ok) throw new Error('Save failed (' + r.status + ')');
+return r.json();
+})
+.then(function(data) {
+// Update the task card in-place
+var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+if (taskEl) {
+var newTitle    = document.getElementById('detailTitle').value;
+var newPriority = document.getElementById('detailPriority').value;
+var newDesc     = document.getElementById('detailDescription').value;
+var newDeadline = document.getElementById('detailDeadline').value;
+var newDateStart = document.getElementById('detailDateStart').value;
+var newDateEnd   = document.getElementById('detailDateEnd').value;
+var newNotes    = document.getElementById('detailNotes').value;
+
+taskEl.dataset.title       = newTitle;
+taskEl.dataset.priority    = newPriority;
+taskEl.dataset.description = newDesc;
+taskEl.dataset.deadline    = newDeadline;
+taskEl.dataset.dateStart   = newDateStart;
+taskEl.dataset.dateEnd     = newDateEnd;
+taskEl.dataset.notes       = newNotes;
+
+var h4 = taskEl.querySelector('h4.task-title');
+if (h4) h4.innerHTML = '<i class="fas fa-edit mr-1 text-gray-500"></i>' + escapeHtml(newTitle);
+}
+
+showToast('Task saved!', 'success');
+closeTaskDetailModal();
+})
+.catch(function(err) {
+showToast(err.message, 'error');
+})
+.finally(function() {
+saveBtn.disabled = false;
+saveBtn.textContent = 'Save Changes';
+});
+}
+
+// ── Other task actions ───────────────────────────────────────────────────────
+
+function deleteDetailTask() {
+var taskId = document.getElementById('detailTaskId').value;
+if (confirm('Delete this task?')) {
+window.location.href = '/task/personal/tasks/' + taskId + '/delete/';
+}
+}
+
+function toggleTask(taskId) {
+var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+var checkboxBtn = taskEl ? taskEl.querySelector('button[onclick*="toggleTask"]') : null;
+
+fetch('/task/personal/tasks/' + taskId + '/toggle/', {
+    method: 'POST',
+    headers: {
+        'X-CSRFToken': getCookie('csrftoken'),
+        'X-Requested-With': 'XMLHttpRequest'
+    },
+    credentials: 'same-origin'
+})
+.then(function(r) { return r.json(); })
+.then(function(data) {
+console.log('Toggle response:', data);
+if (data.success !== false) {
+var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+if (!taskEl) return;
+
+// Check both success and is_completed, or just use is_completed if success is undefined
+var isCompleted = data.completed;
+
+// Toggle completed class
+if (isCompleted) {
+taskEl.classList.add('completed');
+} else {
+taskEl.classList.remove('completed');
+}
+
+// Update checkbox button
+var checkboxBtn = taskEl.querySelector('button[onclick*="toggleTask"]');
+if (checkboxBtn) {
+checkboxBtn.innerHTML = isCompleted ? '<i class="fas fa-check text-xs text-white"></i>' : '';
+checkboxBtn.className = 'mr-2 mt-1 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center ' + 
+(isCompleted ? 'bg-green-500 border-green-500' : 'border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-300');
+}
+
+// Update task title styling
+var titleEl = taskEl.querySelector('h4.task-title');
+if (titleEl) {
+if (isCompleted) {
+titleEl.classList.add('line-through', 'text-gray-500');
+} else {
+titleEl.classList.remove('line-through', 'text-gray-500');
+}
+}
+
+showToast(isCompleted ? 'Task completed!' : 'Task marked incomplete', 'success');
+} else {
+showToast('Failed to update task: ' + (data.message || 'Unknown error'), 'error');
+}
+})
+.catch(function(err) {
+console.error('Toggle error:', err);
+showToast('Failed to update task: ' + err.message, 'error');
+});
+}
+
+function deleteTask(taskId) {
+if (confirm('Delete this task?')) {
+window.location.href = '/task/personal/tasks/' + taskId + '/delete/';
+}
+}
+
+// ── CSRF helper ──────────────────────────────────────────────────────────────
+
+function getCookie(name) {
+var cookieValue = null;
+if (document.cookie && document.cookie !== '') {
+var cookies = document.cookie.split(';');
+for (var i = 0; i < cookies.length; i++) {
+var cookie = cookies[i].trim();
+if (cookie.substring(0, name.length + 1) === (name + '=')) {
+cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+break;
+}
+}
+}
+return cookieValue;
+}
+
+// ── Backdrop click to close ──────────────────────────────────────────────────
+
+document.getElementById('addTaskModal').addEventListener('click',    function(e) { if (e.target === this) closeAddTaskModal(); });
+document.getElementById('taskDetailModal').addEventListener('click', function(e) { if (e.target === this) closeTaskDetailModal(); });
+document.getElementById('helpModal').addEventListener('click',       function(e) { if (e.target === this) toggleHelp(); });
+
+// ── Recurring toggle ─────────────────────────────────────────────────────────
+
+document.getElementById('is_recurring').addEventListener('change', function() {
+    document.getElementById('recurring_options').classList.toggle('hidden', !this.checked);
+});
+
+// ── Keyboard shortcuts ───────────────────────────────────────────────────────
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeAddTaskModal();
+        closeTaskDetailModal();
+        document.getElementById('helpModal').classList.remove('show');
+    }
+    if (e.key === 'n' && !e.target.matches('input, textarea, select')) openAddTaskModal();
+    if (e.key === 'r' && !e.target.matches('input, textarea, select')) location.reload();
+    if (e.key === 'h' && !e.target.matches('input, textarea, select')) toggleHelp();
+});
+
+// ── Drag and drop ────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.personal-column').forEach(function(column) {
+        new Sortable(column, {
+            group: 'personal',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: function(evt) {
+                var taskId      = evt.item.getAttribute('data-task-id');
+                var fromColumnId = evt.from.getAttribute('data-column-id');
+                var toColumnId   = evt.to.getAttribute('data-column-id');
+
+                // Optimistically update counts if moving between different columns
+                var fromCountEl = null;
+                var toCountEl = null;
+                if (fromColumnId !== toColumnId) {
+                    fromCountEl = document.getElementById('count-col-' + fromColumnId);
+                    toCountEl   = document.getElementById('count-col-' + toColumnId);
+                    if (fromCountEl) {
+                        var currentFrom = parseInt(fromCountEl.textContent) || 0;
+                        fromCountEl.textContent = currentFrom - 1;
+                    }
+                    if (toCountEl) {
+                        var currentTo = parseInt(toCountEl.textContent) || 0;
+                        toCountEl.textContent = currentTo + 1;
+                    }
+                }
+
+                fetch('/task/personal/api/update-position/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        task_id: taskId,
+                        column_id: toColumnId,
+                        order: evt.newIndex
+                    })
+                })
+                .then(function(r) { return r.json(); })
+                .catch(function(err) {
+                    // If request fails, revert counts to previous state
+                    if (fromColumnId !== toColumnId) {
+                        if (fromCountEl) {
+                            var currentFrom = parseInt(fromCountEl.textContent) || 0;
+                            fromCountEl.textContent = currentFrom + 1;
+                        }
+                        if (toCountEl) {
+                            var currentTo = parseInt(toCountEl.textContent) || 0;
+                            toCountEl.textContent = currentTo - 1;
+                        }
+                    }
+                    console.error('Failed to update position:', err);
+                    showToast('Failed to update position', 'error');
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

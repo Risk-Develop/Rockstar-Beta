@@ -27,6 +27,7 @@ urlpatterns = [
     path('human_resource/', include('App.human_resource.urls')),  # Direct human_resource access
     path("auth/", include("App.authentication.urls")),
     path("master_dashboard/", include("App.master_dashboard.urls")),
+    path('task/', include('App.task_management.urls')),
     # django-allauth URLs
     path('accounts/', include('allauth.urls')),
 ]

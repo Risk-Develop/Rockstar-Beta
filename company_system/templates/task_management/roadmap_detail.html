@@ -1,0 +1,165 @@
+{% extends 'task_management/base.html' %}
+{% load static %}
+{% load task_management_tags %}
+
+{% block title %}{{ roadmap.name }}{% endblock %}
+{% block page_title %}{{ roadmap.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.modal { display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+.modal.show { display: flex; align-items: center; justify-content: center; }
+.modal-content { background: white; border-radius: 12px; padding: 24px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-4">
+                <a href="{% url 'task_management:roadmap_list' %}" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-arrow-left text-xl"></i>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">{{ roadmap.name }}</h1>
+                    <p class="text-gray-500">{{ roadmap.start_date|date:"M d" }} - {{ roadmap.end_date|date:"M d, Y" }}</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="openAddTaskModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-plus mr-2"></i>Add Task
+                </button>
+                <a href="{% url 'task_management:timeline_view' roadmap.id %}" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                    <i class="fas fa-clock mr-2"></i>Timeline View
+                </a>
+            </div>
+        </div>
+
+        <!-- Tasks Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deadline</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for task in tasks %}
+                    <tr>
+                        <td class="px-6 py-4">
+                            <a href="{% url 'task_management:task_detail' task.id %}" class="text-blue-600 hover:text-blue-800 font-medium">
+                                {{ task.title }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs rounded-full" 
+                                  style="background: {{ task.column.color }}20; color: {{ task.column.color }}">
+                                {{ task.column.name }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs rounded-full {% if task.priority == 'urgent' %}bg-red-100 text-red-800{% elif task.priority == 'high' %}bg-orange-100 text-orange-800{% elif task.priority == 'medium' %}bg-blue-100 text-blue-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ task.get_priority_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                            {% if task.assigned_to %}{{ task.assigned_to.first_name }} {{ task.assigned_to.last_name }}{% else %}Unassigned{% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 {% if task.deadline and task.deadline|is_past %}text-red-500{% endif %}">
+                            {% if task.deadline %}{{ task.deadline|date:"M d, Y" }}{% else %}No deadline{% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                            No tasks in this roadmap. Click "Add Task" to create one.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Task Modal -->
+<div id="addTaskModal" class="modal">
+    <div class="modal-content">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">Add Task to Roadmap</h2>
+            <button onclick="closeAddTaskModal()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <form method="post" action="{% url 'task_management:roadmap_task_create' roadmap.id %}">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <input type="text" name="title" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter task title">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea name="description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter task description"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Column (Status)</label>
+                    <select name="column" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        {% for column in roadmap.board.columns.all %}
+                        <option value="{{ column.id }}">{{ column.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                    <select name="priority" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+                    <select name="assigned_to" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Unassigned</option>
+                        {% for staff in all_staff %}
+                        <option value="{{ staff.id }}">{{ staff.first_name }} {{ staff.last_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
+                    <input type="date" name="deadline" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div class="mt-6 flex gap-3">
+                <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    Create Task
+                </button>
+                <button type="button" onclick="closeAddTaskModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openAddTaskModal() {
+    document.getElementById('addTaskModal').classList.add('show');
+}
+function closeAddTaskModal() {
+    document.getElementById('addTaskModal').classList.remove('show');
+}
+document.getElementById('addTaskModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAddTaskModal();
+});
+</script>
+{% endblock %}

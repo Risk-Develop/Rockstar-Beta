@@ -163,6 +163,30 @@
         </ul>
       </li>
 
+      <!-- Task Management / Kanban -->
+      <li>
+        <a href="{% url 'task_management:board_list' %}" class="nav-item flex items-center justify-start w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200" data-url-name="task_management">
+          <svg class="w-5 h-5 mr-3 sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 01-2 2h-2a2 2 0 01-2-2V7a2 2 0 01-2-2H5a2 2 0 01-2 2"></path></svg>
+          <span class="sidebar-text">Kanban Board</span>
+        </a>
+      </li>
+
+      <!-- Roadmap -->
+      <li>
+        <a href="{% url 'task_management:roadmap_list' %}" class="nav-item flex items-center justify-start w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200" data-url-name="roadmap_list">
+          <svg class="w-5 h-5 mr-3 sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+          <span class="sidebar-text">Roadmap</span>
+        </a>
+      </li>
+
+      <!-- Personal Productivity -->
+      <li>
+        <a href="{% url 'task_management:personal_board_list' %}" class="nav-item flex items-center justify-start w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200" data-url-name="personal_board_list">
+          <svg class="w-5 h-5 mr-3 sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+          <span class="sidebar-text">My Tasks</span>
+        </a>
+      </li>
+
       <li class="border-t border-gray-700 my-3"></li>
 
       <!-- Settings Section -->
@@ -467,6 +491,9 @@
         position_list:             'Position Management',
         department_list:           'Department Management',
         rank_list:                 'Rank Management',
+        board_list:               'Kanban Board',
+        roadmap_list:             'Roadmap',
+        personal_board_list:       'My Tasks',
       };
       if (pageNames[currentUrlName]) currentPageEl.textContent = pageNames[currentUrlName];
     }

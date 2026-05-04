@@ -1,0 +1,7 @@
+/* Custom checkbox/radio checked background color */
+[type='checkbox']:checked,
+[type='radio']:checked,
+.dark [type='checkbox']:checked,
+.dark [type='radio']:checked {
+  background-color: #ff7600 !important;
+}

@@ -422,52 +422,26 @@
         hideWarningModal();
         
         // Tell server to reset too
-        fetch('{% url "extend_session" %}', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'Content-Type': 'application/json'
-            }
-        });
+fetch('{% url "extend_session" %}', {
+             method: 'POST',
+             headers: {
+                 'X-CSRFToken': '{{ csrf_token }}',
+                 'Content-Type': 'application/json'
+             }
+         });
     }
-    
-    // Start client-side countdown
-    const mainInterval = setInterval(function() {
-        timeRemaining--;
-        
-        // Show modal when time reaches WARNING_AT
-        if (timeRemaining <= WARNING_AT && !countdownStarted) {
-            countdownStarted = true;
-            showWarningModal(timeRemaining);
-        }
-        
-        // Auto logout when time runs out
-        if (timeRemaining <= 0) {
-            clearInterval(mainInterval);
-            window.location.href = "{% url 'login' %}?timeout=true";
-        }
-    }, 1000);
-    
-    // Click anywhere to reset timer
-    document.addEventListener('click', resetTimer);
-    // Also reset on keypress
-    document.addEventListener('keypress', resetTimer);
-})();
-{% endif %}
-
-// Extend session function (for the button in warning)
-function extendSession() {
-    fetch('{% url "extend_session" %}', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-            'Content-Type': 'application/json'
-        }
-    }).then(function() {
-        location.reload();
-    });
-}
+    })();
+    {% endif %}
 </script>
+
+<!-- Floating Help Button - fixed position outside main content -->
+<div class="fixed bottom-6 right-6 z-40">
+    <button onclick="toggleHelp()" 
+        class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-white shadow-xl flex items-center justify-center transition hover:scale-110"
+        title="Keyboard Shortcuts">
+        <i class="fas fa-keyboard text-xl"></i>
+    </button>
+</div>
 
 </body>
 </html>

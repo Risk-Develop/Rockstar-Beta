@@ -935,6 +935,91 @@ def ajax_get_employee_violations(request):
     
     return JsonResponse({'violations': data, 'count': violations.count()})
 
+@login_required
+def ajax_violation_filter(request):
+    """AJAX filter endpoint returning HTML table content"""
+    search = request.GET.get('search', '').strip()
+    employee_filter = request.GET.get('employee', '')
+    status_filter = request.GET.get('status', '')
+    da_status_filter = request.GET.get('da_status', '')
+    range_filter = request.GET.get('range', '')
+    page_number = request.GET.get('page', 1)
+    
+    violations = EmployeeViolation.objects.select_related(
+        'employee', 'category', 'violation_type', 'offense_classification', 'submitted_by', 'remedial_action'
+    ).all()
+    
+    if search:
+        violations = violations.filter(
+            Q(employee__first_name__icontains=search) |
+            Q(employee__last_name__icontains=search) |
+            Q(type_of_incident__icontains=search)
+        )
+    
+    if employee_filter:
+        violations = violations.filter(employee_id=employee_filter)
+    if status_filter:
+        violations = violations.filter(status=status_filter)
+    if da_status_filter:
+        violations = violations.filter(da_status=da_status_filter)
+    if range_filter:
+        violations = violations.filter(remedial_action_range=range_filter)
+    
+    violations = violations.order_by('-created_at')
+    
+    # Group by employee
+    employee_violations = {}
+    for v in violations:
+        emp_id = v.employee.id
+        if emp_id not in employee_violations:
+            employee_violations[emp_id] = {
+                'employee': v.employee,
+                'violations': [],
+                'total': 0,
+                'latest_status': None,
+                'latest_range': None,
+            }
+        employee_violations[emp_id]['violations'].append(v)
+        range_to_value = {'A': 1, 'B': 2, 'C': 3, 'D': 4}
+        range_value = range_to_value.get(v.remedial_action_range, 0)
+        employee_violations[emp_id]['total'] += range_value
+        if employee_violations[emp_id]['latest_status'] is None:
+            employee_violations[emp_id]['latest_status'] = v.status
+            employee_violations[emp_id]['latest_range'] = v.remedial_action_range
+    
+    employee_list = list(employee_violations.values())
+    employee_list.sort(key=lambda x: x['violations'][0].created_at if x['violations'] else None, reverse=True)
+    
+    paginator = Paginator(employee_list, 20)
+    page_obj = paginator.get_page(page_number)
+    
+    # Get employees list for filter dropdown
+    employees = Staff.objects.all().order_by('last_name', 'first_name')
+    categories = ViolationCategory.objects.filter(is_active=True).order_by('display_order', 'name')
+    types = ViolationType.objects.filter(is_active=True).order_by('display_order', 'name')
+    
+    # Render only the table body and pagination using a partial template
+    # For simplicity, we'll return rendered HTML strings
+    from django.template.loader import render_to_string
+    
+    html_content = render_to_string('hr/default/compliance & offense management/violations/violation_table_body.html', {
+        'page_obj': page_obj,
+        'search': search,
+        'employee_filter': employee_filter,
+        'status_filter': status_filter,
+        'da_status_filter': da_status_filter,
+        'range_filter': range_filter,
+        'employees': employees,
+    }, request=request)
+    
+    return JsonResponse({
+        'html': html_content,
+        'has_other_pages': page_obj.has_other_pages(),
+        'start_index': page_obj.start_index(),
+        'end_index': page_obj.end_index(),
+        'total': page_obj.paginator.count,
+    })
+
 
 @login_required
 def ajax_violation_detail(request, pk):

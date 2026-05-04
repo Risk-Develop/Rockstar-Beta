@@ -1,0 +1,26 @@
+{% for column in columns %}
+<div class="flex-shrink-0 w-72">
+    <!-- Column Header -->
+    <div class="bg-white rounded-t-lg px-3 py-2 flex justify-between items-center border-t-4"
+         style="border-color: {{ column.color }}">
+        <div class="flex items-center gap-2">
+            <span class="font-semibold text-gray-700">{{ column.name }}</span>
+            <span class="text-xs bg-gray-100 px-2 py-0.5 rounded-full">{{ column.tasks_list.count }}</span>
+        </div>
+    </div>
+    
+    <!-- Column Body -->
+    <div class="kanban-column bg-gray-100 rounded-b-lg p-2 overflow-y-auto"
+         data-column-id="{{ column.id }}"
+         id="column-{{ column.id }}">
+        
+        {% for task in column.tasks_list %}
+            {% include 'task_management/includes/_task_card.html' %}
+        {% empty %}
+        <div class="text-center py-8 text-gray-400 text-sm">
+            No tasks yet
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}

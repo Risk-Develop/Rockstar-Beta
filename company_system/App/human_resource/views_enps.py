@@ -1359,7 +1359,7 @@ def enps_analytics(request, survey_id):
 
 def enps_take_survey(request, survey_id):
     """Employee-facing survey form"""
-    from datetime import date
+    from datetime import date, timedelta
     
     survey = get_object_or_404(ENPSSurvey, id=survey_id)
     

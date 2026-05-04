@@ -1,0 +1,107 @@
+{% extends 'task_management/base.html' %}
+{% load static %}
+
+{% block title %}Timeline - {{ roadmap.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+#calendar { min-height: 550px; margin: 15px 0; }
+.fc-event { cursor: pointer; border-radius: 4px; padding: 2px 5px; font-size: 12px; }
+.fc-event.priority-low { background-color: #10b981; border-color: #059669; }
+.fc-event.priority-medium { background-color: #3b82f6; border-color: #2563eb; }
+.fc-event.priority-high { background-color: #f59e0b; border-color: #d97706; }
+.fc-event.priority-urgent { background-color: #ef4444; border-color: #dc2626; }
+.fc { font-size: 13px; }
+.fc-toolbar-title { font-size: 1.1rem; font-weight: 600; }
+.fc .fc-button { background-color: #64748b; border-color: #64748b; padding: 6px 12px; border-radius: 6px; font-size: 13px; }
+.fc .fc-button:hover { background-color: #475569; }
+.fc .fc-button-primary:not(:disabled).fc-button-active { background-color: #475569; }
+.fc-daygrid-day { min-height: 80px; }
+.fc-daygrid-day-number { padding: 6px 8px; font-size: 12px; }
+.fc-col-header-cell { padding: 8px 0; font-size: 12px; font-weight: 600; color: #64748b; }
+.fc-scrollgrid { border-radius: 8px; border: 1px solid #e2e8f0; }
+.fc-day-today { background-color: #f0fdf4; }
+.fc-day-today .fc-daygrid-day-number { color: #16a34a; font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block page_title %}Timeline{% endblock %}
+
+{% block main_content %}
+<div class="p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
+            <div class="flex items-center gap-3">
+                <a href="{% url 'task_management:roadmap_detail' roadmap.id %}" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">Timeline</h1>
+                    <p class="text-sm text-gray-500">{{ roadmap.name }} &bull; {{ roadmap.start_date|date:"M d" }} - {{ roadmap.end_date|date:"M d, Y" }}</p>
+                </div>
+            </div>
+            <a href="{% url 'task_management:roadmap_detail' roadmap.id %}" class="px-3 py-1.5 bg-gray-100 rounded-lg text-sm text-gray-600 hover:bg-gray-200">
+                <i class="fas fa-arrow-left mr-1"></i> Back
+            </a>
+        </div>
+
+        <!-- Stats -->
+        <div class="flex flex-wrap gap-3 mb-4">
+            <div class="bg-white rounded-lg px-4 py-2 border shadow-sm">
+                <span class="text-lg font-bold text-gray-800">{{ tasks.count }}</span>
+                <span class="text-xs text-gray-500 ml-1">tasks</span>
+            </div>
+            <div class="flex items-center gap-1 text-xs text-gray-500">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span>Low
+                <span class="w-2 h-2 rounded-full bg-blue-500 ml-2"></span>Medium
+                <span class="w-2 h-2 rounded-full bg-yellow-500 ml-2"></span>High
+                <span class="w-2 h-2 rounded-full bg-red-500 ml-2"></span>Urgent
+            </div>
+        </div>
+
+        {% if tasks.count == 0 %}
+        <div class="text-center py-12 bg-white rounded-lg border">
+            <i class="fas fa-calendar-times text-3xl text-gray-300 mb-3"></i>
+            <p class="text-gray-500">No tasks yet</p>
+        </div>
+        {% else %}
+        <div class="bg-white rounded-lg border shadow-sm p-3">
+            <div id="calendar"></div>
+        </div>
+        
+        <script src="{% static 'js/fullcalendar.min.js' %}"></script>
+        <script>window.FullCalendar || document.write('<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"><\/script>')</script>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var events = {{ calendar_events|safe }};
+            var calendarEl = document.getElementById('calendar');
+            
+            if (typeof FullCalendar === 'undefined') {
+                calendarEl.innerHTML = '<p class="text-red-500 p-4">Failed to load</p>';
+                return;
+            }
+            
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                events: events,
+                eventClick: function(info) {
+                    window.location.href = '/task/tasks/' + info.event.id + '/';
+                },
+                editable: false,
+                height: 550,
+                dayMaxEvents: 3,
+                firstDay: 1,
+            });
+            calendar.render();
+        });
+        </script>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

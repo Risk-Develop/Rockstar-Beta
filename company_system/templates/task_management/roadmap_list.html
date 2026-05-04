@@ -1,0 +1,193 @@
+{% extends 'task_management/base.html' %}
+{% load static %}
+
+{% block title %}Roadmaps{% endblock %}
+{% block page_title %}Roadmaps{% endblock %}
+
+{% block extra_css %}
+<style>
+.roadmap-card {
+    background: linear-gradient(145deg, #1f2937, #111827);
+    border: 1px solid #374151;
+    transition: all 0.2s ease;
+}
+.roadmap-card:hover {
+    border-color: #4b5563;
+}
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+            <div class="flex items-center gap-4">
+                <a href="{% url 'task_management:board_list' %}" 
+                    class="p-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition">
+                    <i class="fas fa-arrow-left text-xl"></i>
+                </a>
+                <div>
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Roadmaps</h1>
+                        <span class="px-3 py-1 text-xs rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                            {{ roadmaps|length }} plans
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-1">Strategic planning and timelines</p>
+                </div>
+            </div>
+            <button onclick="document.getElementById('createRoadmapModal').classList.remove('hidden')" 
+                class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition shadow-lg shadow-purple-600/20 whitespace-nowrap">
+                <i class="fas fa-plus mr-2"></i>New Roadmap
+            </button>
+        </div>
+
+        <!-- Stats Summary -->
+        <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                <div class="text-3xl font-bold text-purple-400">{{ roadmaps|length }}</div>
+                <div class="text-sm text-gray-400">Total Roadmaps</div>
+            </div>
+            <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                <div class="text-3xl font-bold text-green-400">
+                    {% for r in roadmaps %}{{ r.tasks.count }}{% endfor %}
+                </div>
+                <div class="text-sm text-gray-400">Total Tasks</div>
+            </div>
+            <div class="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
+                <div class="text-3xl font-bold text-blue-400">
+                    {% for r in roadmaps %}{% if r.tasks.count > 0 %}{{ r.tasks.count }}{% else %}0{% endif %}{% endfor %}
+                </div>
+                <div class="text-sm text-gray-400">Active Tasks</div>
+            </div>
+        </div>
+
+        <!-- Roadmaps Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {% for roadmap in roadmaps %}
+            <div class="roadmap-card rounded-xl p-5">
+                <div class="flex justify-between items-start mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                            <i class="fas fa-map text-purple-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-100">{{ roadmap.name }}</h3>
+                            <p class="text-xs text-gray-400">{{ roadmap.board.name }}</p>
+                        </div>
+                    </div>
+                    <button onclick="confirmDelete('{{ roadmap.id }}')" 
+                        class="p-2 rounded-lg hover:bg-red-500/20 text-gray-500 hover:text-red-400 transition">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+                
+                <p class="text-sm text-gray-400 mb-4 line-clamp-2">
+                    {{ roadmap.description|default:"No description"|truncatechars:80 }}
+                </p>
+                
+                <!-- Timeline Bar -->
+                <div class="mb-4">
+                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>{{ roadmap.start_date|date:"M d" }}</span>
+                        <span>{{ roadmap.end_date|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" style="width: 60%"></div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between text-sm mb-4">
+                    <div class="flex items-center gap-2 text-gray-400">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>{{ roadmap.start_date|date:"M d" }} - {{ roadmap.end_date|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="flex items-center gap-1 text-gray-400">
+                        <i class="fas fa-tasks"></i>
+                        <span>{{ roadmap.tasks.count }} tasks</span>
+                    </div>
+                </div>
+                
+                <div class="flex gap-2">
+                    <a href="{% url 'task_management:roadmap_detail' roadmap.id %}" 
+                        class="flex-1 text-center py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-gray-300 text-sm transition">
+                        <i class="fas fa-eye mr-1"></i>View
+                    </a>
+                    <a href="{% url 'task_management:timeline_view' roadmap.id %}" 
+                        class="flex-1 text-center py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-white text-sm transition">
+                        <i class="fas fa-clock mr-1"></i>Timeline
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-full">
+                <div class="text-center py-20">
+                    <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-800 flex items-center justify-center">
+                        <i class="fas fa-map text-4xl text-gray-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-400 mb-2">No roadmaps yet</h3>
+                    <p class="text-gray-500 mb-6">Create your first roadmap to start planning strategically</p>
+                    <button onclick="document.getElementById('createRoadmapModal').classList.remove('hidden')" 
+                        class="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition inline-flex">
+                        <i class="fas fa-plus mr-2"></i>Create First Roadmap
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Create Roadmap Modal -->
+        <div id="createRoadmapModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+            <div class="modal-content rounded-xl p-6 w-full max-w-lg mx-4 shadow-2xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-white">Create New Roadmap</h2>
+                    <button onclick="document.getElementById('createRoadmapModal').classList.add('hidden')" 
+                        class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form method="post" action="{% url 'task_management:roadmap_create' %}">
+                    {% csrf_token %}
+                    <div class="space-y-4">
+                        {% for field in roadmap_form.visible_fields %}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">{{ field.label }}</label>
+                            {{ field }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button type="button" onclick="document.getElementById('createRoadmapModal').classList.add('hidden')" 
+                            class="px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 text-gray-300 transition">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition">
+                            <i class="fas fa-plus mr-2"></i>Create Roadmap
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(roadmapId) {
+    if (confirm('Delete this roadmap? This action cannot be undone.')) {
+        window.location.href = '/task/roadmaps/' + roadmapId + '/delete/';
+    }
+}
+
+// Close on escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.getElementById('createRoadmapModal').classList.add('hidden');
+    }
+});
+
+document.getElementById('createRoadmapModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.add('hidden');
+    }
+});
+</script>
+{% endblock %}

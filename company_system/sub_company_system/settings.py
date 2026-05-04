@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'App.authentication',
     'App.master_dashboard',
     'App.human_resource',
+    'App.task_management',
 ]
 
 # django-allauth settings
