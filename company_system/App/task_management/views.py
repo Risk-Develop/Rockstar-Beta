@@ -769,6 +769,30 @@ def personal_task_checklist_rename(request, item_id):
 
 @require_POST
 @custom_login_required
+def personal_task_checklist_reorder(request, task_id):
+    """Re-order a checklist item within a task"""
+    try:
+        data = json.loads(request.body)
+        item_id = data.get('item_id')
+        new_order = data.get('order')
+        
+        if item_id is None or new_order is None:
+            return JsonResponse({'success': False, 'error': 'Missing parameters'}, status=400)
+        
+        task = get_object_or_404(PersonalTask, id=task_id, board__user=get_current_staff(request))
+        item = get_object_or_404(PersonalTaskChecklistItem, id=item_id, task=task)
+        
+        # Update to new order
+        item.order = new_order
+        item.save()
+        
+        return JsonResponse({'success': True})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@require_POST
+@custom_login_required
 def personal_task_update_position(request):
     """Update personal task position via drag-drop"""
     try:

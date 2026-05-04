@@ -101,6 +101,16 @@ html.dark .personal-column.sortable-ghost {
 html.dark .personal-column.sortable-ghost {
     border-color: #6b7280;
     background: #1f2937;
+    }
+}
+
+/* Checklist item drag ghost */
+.chosen-checklist-item {
+    opacity: 0.6;
+    background: #dbeafe !important;
+}
+html.dark .chosen-checklist-item {
+    background: #1e3a5f !important;
 }
 
 
@@ -291,7 +301,7 @@ class="mr-2 mt-1 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justif
 
 <div class="flex-1 min-w-0">
 <h4 onclick="event.stopPropagation(); openTaskDetail('{{ task.id }}')" title="Click to edit"
-class="task-title font-medium text-gray-800 dark:text-gray-100 text-sm {% if task.is_completed %}line-through text-gray-500{% endif %} cursor-pointer hover:text-blue-600 dark:hover:text-blue-400">
+class="task-title font-medium text-gray-800 dark:text-gray-100 text-sm {% if task.is_completed %}text-gray-500{% endif %} cursor-pointer hover:text-blue-600 dark:hover:text-blue-400">
 <i class="fas fa-edit mr-1 text-gray-500"></i>{{ task.title }}
 </h4>
 {% if task.description %}
@@ -378,7 +388,7 @@ class="text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-4
 
    <!-- Edit Column Modal -->
    <div id="editColumnModal" class="modal-overlay">
-     <div class="modal-content" style="width: 30%; max-width: 90vw;">
+  <div class="modal-content" style="width: 70%; max-width: 90vw;">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-gray-900 dark:text-white">Edit Column</h2>
         <button onclick="closeEditColumnModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
@@ -552,9 +562,9 @@ Cancel
 </div>
 </div>
 
- <!-- Task Detail Modal -->
- <div id="taskDetailModal" class="modal-overlay">
- <div class="modal-content" style="width: 30%; max-width: 90vw;">
+  <!-- Task Detail Modal -->
+  <div id="taskDetailModal" class="modal-overlay">
+  <div class="modal-content" style="width: 50%; max-width: 90vw;">
 <div class="flex justify-between items-center mb-4">
 <h2 class="text-xl font-bold text-gray-900 dark:text-white">Task Details</h2>
 <button onclick="closeTaskDetailModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
@@ -622,7 +632,7 @@ class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
 <i class="fas fa-plus"></i>
 </button>
 </div>
-<div id="checklistItems" class="space-y-2 max-h-48 overflow-y-auto">
+<div id="checklistItems" class="space-y-1 max-h-48 overflow-y-auto">
 <!-- Checklist items rendered here dynamically -->
 </div>
 </div>
@@ -853,7 +863,12 @@ function closeAddTaskModal() {
 document.getElementById('addTaskModal').classList.remove('show');
 }
 function closeTaskDetailModal() {
-document.getElementById('taskDetailModal').classList.remove('show');
+    document.getElementById('taskDetailModal').classList.remove('show');
+    // Destroy Sortable instance to avoid stale references
+    if (window.checklistSortable) {
+        window.checklistSortable.destroy();
+        window.checklistSortable = null;
+    }
 }
 function toggleHelp() {
     document.getElementById('helpModal').classList.toggle('show');
@@ -865,28 +880,6 @@ function openAddColumnModal() {
 }
 function closeAddColumnModal() {
     document.getElementById('addColumnModal').classList.remove('show');
-}
-
-function openEditColumnModal(columnId, name, color) {
-    document.getElementById('editColumnId').value = columnId;
-    document.getElementById('editColumnName').value = name;
-    document.getElementById('editColumnColor').value = color;
-    document.getElementById('editColumnForm').action = '/task/personal/columns/' + columnId + '/edit/';
-    document.getElementById('editColumnModal').classList.add('show');
-}
-
-function closeEditColumnModal() {
-    document.getElementById('editColumnModal').classList.remove('show');
-}
-
-function openDeleteChecklistModal(itemId) {
-    pendingDeleteChecklistId = itemId;
-    document.getElementById('deleteChecklistModal').classList.add('show');
-}
-
-function closeDeleteChecklistModal() {
-    document.getElementById('deleteChecklistModal').classList.remove('show');
-    pendingDeleteChecklistId = null;
 }
 
 function openEditColumnModal(columnId, name, color) {
@@ -936,15 +929,19 @@ function openTaskDetail(taskId) {
 // ── Checklist rendering ──────────────────────────────────────────────────────
 
 function renderChecklistItem(item) {
-var checked = item.is_completed ? 'checked' : '';
-var textColor = item.is_completed ? 'text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-white';
-return '<div class="flex items-center gap-2 p-2 rounded bg-gray-100 dark:bg-gray-700/50" id="checklist-item-' + item.id + '">' +
-'<input type="checkbox" ' + checked + ' onchange="toggleChecklist(' + item.id + ', this)" class="w-4 h-4">' +
-'<span class="flex-1 text-sm ' + textColor + '" contenteditable="true" onblur="renameChecklist(' + item.id + ', this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}" title="Click to rename">' + escapeHtml(item.text) + '</span>' +
-'<button type="button" onclick="openDeleteChecklistModal(' + item.id + ')" class="text-gray-500 dark:text-gray-400 hover:text-red-400 dark:hover:text-red-500 flex-shrink-0" title="Delete">' +
-'<i class="fas fa-trash text-xs"></i>' +
-'</button>' +
-'</div>';
+    var checked = item.is_completed ? 'checked' : '';
+    var textColor = item.is_completed ? 'text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-white';
+    var html = '<div class="flex items-center gap-2 p-2 rounded bg-gray-100 dark:bg-gray-700/50" id="checklist-item-' + item.id + '" data-item-id="' + item.id + '">';
+    html += '<button type="button" class="drag-handle cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" title="Drag to reorder">';
+    html += '<i class="fas fa-grip-vertical text-xs"></i>';
+    html += '</button>';
+    html += '<input type="checkbox" ' + checked + ' onchange="toggleChecklist(' + item.id + ', this)" class="w-4 h-4">';
+    html += '<span class="flex-1 text-sm ' + textColor + '" contenteditable="true" onblur="renameChecklist(' + item.id + ', this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}" title="Click to rename">' + escapeHtml(item.text) + '</span>';
+    html += '<button type="button" onclick="openDeleteChecklistModal(' + item.id + ')" class="text-gray-500 dark:text-gray-400 hover:text-red-400 dark:hover:text-red-500 flex-shrink-0" title="Delete">';
+    html += '<i class="fas fa-trash text-xs"></i>';
+    html += '</button>';
+    html += '</div>';
+    return html;
 }
 
 function escapeHtml(str) {
@@ -1037,6 +1034,50 @@ function loadChecklistItems(taskId) {
     } else {
         container.innerHTML = items.map(renderChecklistItem).join('');
     }
+
+    // Initialize Sortable for drag and drop
+    if (window.checklistSortable) {
+        window.checklistSortable.destroy();
+        window.checklistSortable = null;
+    }
+    
+    window.checklistSortable = new Sortable(container, {
+        handle: '.drag-handle',
+        animation: 150,
+        chosenClass: 'chosen-checklist-item',
+        dragClass: 'opacity-50',
+        onEnd: function (evt) {
+            var taskId = document.getElementById('detailTaskId').value;
+            var itemId = evt.item.dataset.itemId;
+            
+            // Update taskChecklists array
+            if (taskChecklists[taskId]) {
+                // Move the item to its new position
+                var movedItem = taskChecklists[taskId].splice(evt.oldIndex, 1)[0];
+                taskChecklists[taskId].splice(evt.newIndex, 0, movedItem);
+                
+                // Update the data-checklist attribute on the card
+                var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+                if (taskEl) {
+                    try {
+                        var checklist = JSON.parse(taskEl.getAttribute('data-checklist') || '[]');
+                        // Reorder the checklist array to match the new DOM order
+                        var newOrder = Array.from(container.children)
+                            .map(child => parseInt(child.dataset.itemId))
+                            .filter(id => !isNaN(id));
+                        
+                        var reorderedChecklist = newOrder.map(id => 
+                            checklist.find(item => item.id === id)
+                        ).filter(Boolean);
+                        
+                        taskEl.setAttribute('data-checklist', JSON.stringify(reorderedChecklist));
+                    } catch(e) {
+                        console.error('Failed to update checklist order:', e);
+                    }
+                }
+            }
+        }
+    });
 }
 
 // ── Submit checklist item (AJAX — uses real server ID from response) ─────────
@@ -1130,8 +1171,7 @@ function toggleChecklist(itemId, checkbox) {
         var cb   = row.querySelector('input[type="checkbox"]');
         var done = data.completed;
         if (cb)   cb.checked = done;
-        if (span) span.style.textDecoration = done ? 'line-through' : 'none';
-        if (span) span.className = 'flex-1 text-sm ' + (done ? 'text-gray-500' : 'text-white');
+        if (span) span.className = 'flex-1 text-sm ' + (done ? 'text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-white');
 
         // Get taskId from the currently open modal
         var taskId = document.getElementById('detailTaskId').value;
@@ -1192,49 +1232,101 @@ function saveTask() {
         body: formData
     })
     .then(function(r) {
-        if (!r.ok) throw new Error('Save failed (' + r.status + ')');
+        if (!r.ok) throw new Error('Server error ' + r.status);
         return r.json();
     })
     .then(function(data) {
-        // Update the task card in-place
-        var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
-        if (taskEl) {
-            var newTitle    = document.getElementById('detailTitle').value;
-            var newPriority = document.getElementById('detailPriority').value;
-            var newDesc     = document.getElementById('detailDescription').value;
-            var newDeadline = document.getElementById('detailDeadline').value;
-            var newDateStart = document.getElementById('detailDateStart').value;
-            var newDateEnd   = document.getElementById('detailDateEnd').value;
-            var newNotes    = document.getElementById('detailNotes').value;
-
-            taskEl.dataset.title       = newTitle;
-            taskEl.dataset.priority    = newPriority;
-            taskEl.dataset.description = newDesc;
-            taskEl.dataset.deadline    = newDeadline;
-            taskEl.dataset.dateStart   = newDateStart;
-            taskEl.dataset.dateEnd     = newDateEnd;
-            taskEl.dataset.notes       = newNotes;
-
-            var h4 = taskEl.querySelector('h4.task-title');
-            if (h4) h4.innerHTML = '<i class="fas fa-edit mr-1 text-gray-500"></i>' + escapeHtml(newTitle);
-        }
-
-        // Refresh timeline if currently viewing it
-        if (isTimelineView && window.personalCalendar) {
-            renderTimeline();
-        }
-
-        showToast('Task saved!', 'success');
-        closeTaskDetailModal();
-    })
-    .catch(function(err) {
-        showToast(err.message, 'error');
-    })
-    .finally(function() {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Changes';
-    });
-}
+        if (data.success) {
+            showToast('Task saved successfully', 'success');
+            // Update the task card in the kanban view
+            var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+            if (taskEl) {
+                taskEl.dataset.title = data.title || '';
+                taskEl.dataset.description = data.description || '';
+                taskEl.dataset.priority = data.priority || 'medium';
+                taskEl.dataset.deadline = data.deadline || '';
+                taskEl.dataset.dateStart = data.date_start || '';
+                taskEl.dataset.dateEnd = data.date_end || '';
+                taskEl.dataset.notes = data.notes || '';
+                
+                // Update UI
+                var titleEl = taskEl.querySelector('.task-title');
+                if (titleEl) titleEl.textContent = data.title || '';
+                
+                var descEl = taskEl.querySelector('.text-xs.text-gray-600.dark\\:text-gray-400.mt-1.line-clamp-2');
+                if (descEl) descEl.textContent = data.description || '';
+                
+                // Update priority badge
+                var prioritySpan = taskEl.querySelector('.task-notes span:first-child');
+                if (prioritySpan) {
+                    prioritySpan.className = 'text-xs px-1.5 py-0.5 rounded ' +
+                        (data.priority == 'urgent' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' :
+                         data.priority == 'high' ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' :
+                         data.priority == 'medium' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' :
+                         'bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400');
+                    prioritySpan.textContent = (data.priority || 'medium').charAt(0).toUpperCase() + (data.priority || 'medium').slice(1);
+                }
+                
+                // Update dates
+                var dateSpan = taskEl.querySelector('.task-notes span:not(:first-child):not(:last-child)');
+                if (dateSpan) {
+                    if (data.date_start && data.date_end) {
+                        dateSpan.innerHTML = '<i class="fas fa-calendar-week mr-1"></i>' + 
+                            new Date(data.date_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + 
+                            ' - ' + new Date(data.date_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        dateSpan.className = 'text-xs text-blue-600 dark:text-blue-400';
+                    } else if (data.deadline) {
+                        dateSpan.innerHTML = '<i class="fas fa-calendar-alt mr-1"></i>' + 
+                            new Date(data.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        dateSpan.className = 'text-xs text-gray-600 dark:text-gray-400';
+                    }
+                }
+                
+                // Update completion status
+                if (data.is_completed) {
+                    taskEl.classList.add('completed');
+                    taskEl.querySelector('button[onclick^="toggleTask"]').classList.add('bg-green-500', 'border-green-500');
+                    taskEl.querySelector('button[onclick^="toggleTask"] i').classList.add('fas', 'fa-check', 'text-xs', 'text-white');
+                    taskEl.querySelector('.task-title').classList.add('text-gray-500');
+                } else {
+                    taskEl.classList.remove('completed');
+                    taskEl.querySelector('button[onclick^="toggleTask"]').classList.remove('bg-green-500', 'border-green-500');
+                    taskEl.querySelector('button[onclick^="toggleTask"] i').classList.remove('fas', 'fa-check', 'text-xs', 'text-white');
+                    taskEl.querySelector('.task-title').classList.remove('text-gray-500');
+                }
+                
+                // Update priority border
+                ['priority-low', 'priority-medium', 'priority-high', 'priority-urgent'].forEach(function(cls) {
+                    taskEl.classList.remove(cls);
+                });
+                if (data.priority) {
+                    taskEl.classList.add('priority-' + data.priority);
+                }
+                
+                // Update checklist
+                 taskEl.dataset.checklist = JSON.stringify(data.checklist_items || []);
+                 loadChecklistItems(taskId); // Reload checklist with updated data
+             }
+             
+             // Close modal after successful save
+             closeTaskDetailModal();
+             
+             // Refresh timeline if currently viewing it
+             if (isTimelineView && window.personalCalendar) {
+                 renderTimeline();
+             }
+         } else {
+             showToast(data.error || 'Save failed', 'error');
+         }
+     })
+     .catch(function(err) {
+         showToast('Failed to save: ' + err.message, 'error');
+     })
+     .finally(function() {
+         saveBtn.disabled = false;
+         saveBtn.textContent = 'Save Changes';
+     });
+ }
 
 // ── Other task actions ───────────────────────────────────────────────────────
 
@@ -1292,9 +1384,11 @@ function toggleTask(taskId) {
             var titleEl = taskEl.querySelector('h4.task-title');
             if (titleEl) {
                 if (isCompleted) {
-                    titleEl.classList.add('line-through', 'text-gray-500');
+                    titleEl.classList.add('text-gray-500');
+                    titleEl.classList.remove('text-gray-800');
                 } else {
-                    titleEl.classList.remove('line-through', 'text-gray-500');
+                    titleEl.classList.remove('text-gray-500');
+                    titleEl.classList.add('text-gray-800');
                 }
             }
 
@@ -1352,68 +1446,7 @@ document.getElementById('is_recurring').addEventListener('change', function() {
     document.getElementById('recurring_options').classList.toggle('hidden', !this.checked);
 });
 
-// ── Inline checklist rename ────────────────────────────────────────────────────
-
-function renameChecklist(itemId, spanEl) {
-    var newText = spanEl.textContent.trim();
-    if (!newText) {
-        // Revert to original text from server/cache if empty
-        var taskId = document.getElementById('detailTaskId').value;
-        var originalItem = taskChecklists[taskId] && taskChecklists[taskId].find(function(i) { return i.id === itemId; });
-        if (originalItem) {
-            spanEl.textContent = originalItem.text;
-        } else {
-            spanEl.textContent = 'Untitled';
-        }
-        return;
-    }
-    
-    fetch('/task/personal/checklist/' + itemId + '/rename/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: 'text=' + encodeURIComponent(newText)
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        if (data.success) {
-            // Update cache
-            var taskId = document.getElementById('detailTaskId').value;
-            if (taskChecklists[taskId]) {
-                taskChecklists[taskId] = taskChecklists[taskId].map(function(i) {
-                    return i.id === itemId ? Object.assign({}, i, { text: newText }) : i;
-                });
-            }
-            // Update card data attribute
-            var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
-            if (taskEl) {
-                var checklist = JSON.parse(taskEl.dataset.checklist || '[]');
-                checklist = checklist.map(function(i) {
-                    return i.id === itemId ? Object.assign({}, i, { text: newText }) : i;
-                });
-                taskEl.dataset.checklist = JSON.stringify(checklist);
-            }
-        } else {
-            showToast(data.error || 'Rename failed', 'error');
-            // Revert text
-            var taskId = document.getElementById('detailTaskId').value;
-            var originalItem = taskChecklists[taskId] && taskChecklists[taskId].find(function(i) { return i.id === itemId; });
-            if (originalItem) {
-                spanEl.textContent = originalItem.text;
-            }
-        }
-    })
-    .catch(function(err) {
-        showToast('Failed to rename: ' + err.message, 'error');
-    });
-}
-
 // ── Delete checklist confirmation ──────────────────────────────────────────────
-
-var pendingDeleteChecklistId = null;
 
 function openDeleteChecklistModal(itemId) {
     pendingDeleteChecklistId = itemId;
@@ -1471,6 +1504,49 @@ document.getElementById('confirmDeleteChecklistBtn').addEventListener('click', f
         showToast('Failed to delete: ' + err.message, 'error');
     });
 });
+
+// ── Checklist drag & drop ─────────────────────────────────────────────────────
+
+function initChecklistSortable() {
+    var container = document.getElementById('checklistItems');
+    if (!container || window.checklistSortable) return;
+
+    window.checklistSortable = new Sortable(container, {
+        animation: 150,
+        handle: '.drag-handle',
+        ghostClass: 'sortable-ghost',
+        onEnd: function(evt) {
+            var itemId = parseInt(evt.item.getAttribute('data-item-id'));
+            var newOrder = evt.newIndex;
+            var taskId = document.getElementById('detailTaskId').value;
+            
+            // Update local order immediately
+            if (taskChecklists[taskId]) {
+                var item = taskChecklists[taskId].splice(evt.oldIndex, 1)[0];
+                taskChecklists[taskId].splice(newOrder, 0, item);
+            }
+            
+            // Persist order to server
+            fetch('/task/personal/tasks/' + taskId + '/checklist/reorder/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    item_id: itemId,
+                    order: newOrder
+                })
+            })
+            .then(function(r) { return r.json(); })
+            .catch(function(err) {
+                console.error('Failed to update order:', err);
+                showToast('Failed to update order', 'error');
+            });
+        }
+    });
+}
 
 // ── Keyboard shortcuts ───────────────────────────────────────────────────────
 
@@ -1546,7 +1622,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 var fromColumnId = evt.from.getAttribute('data-column-id');
                 var toColumnId   = evt.to.getAttribute('data-column-id');
 
-                // Optimistically update counts if moving between different columns
+                 // Optimistically update counts if moving between different columns
                 var fromCountEl = null;
                 var toCountEl = null;
                 if (fromColumnId !== toColumnId) {
@@ -1559,6 +1635,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (toCountEl) {
                         var currentTo = parseInt(toCountEl.textContent) || 0;
                         toCountEl.textContent = currentTo + 1;
+                    }
+                }
+
+                // Update "No tasks" message visibility
+                var fromColumnBody = document.getElementById('column-' + fromColumnId);
+                var toColumnBody = document.getElementById('column-' + toColumnId);
+                
+                if (fromColumnBody) {
+                    var fromTasks = fromColumnBody.querySelectorAll('.personal-task');
+                    var fromNoTasks = fromColumnBody.querySelector('.text-center.py-8');
+                    if (fromNoTasks) {
+                        fromNoTasks.style.display = fromTasks.length === 0 ? 'block' : 'none';
+                    }
+                }
+                if (toColumnBody) {
+                    var toTasks = toColumnBody.querySelectorAll('.personal-task');
+                    var toNoTasks = toColumnBody.querySelector('.text-center.py-8');
+                    if (toNoTasks) {
+                        toNoTasks.style.display = toTasks.length === 0 ? 'block' : 'none';
                     }
                 }
 
@@ -1587,9 +1682,25 @@ document.addEventListener('DOMContentLoaded', function() {
                             var currentTo = parseInt(toCountEl.textContent) || 0;
                             toCountEl.textContent = currentTo - 1;
                         }
-                    }
+                     }
                     console.error('Failed to update position:', err);
                     showToast('Failed to update position', 'error');
+                    
+                    // Revert "No tasks" message visibility on error
+                    if (fromColumnBody) {
+                        var fromTasksAfterError = fromColumnBody.querySelectorAll('.personal-task');
+                        var fromNoTasksAfterError = fromColumnBody.querySelector('.text-center.py-8');
+                        if (fromNoTasksAfterError) {
+                            fromNoTasksAfterError.style.display = fromTasksAfterError.length === 0 ? 'block' : 'none';
+                        }
+                    }
+                    if (toColumnBody) {
+                        var toTasksAfterError = toColumnBody.querySelectorAll('.personal-task');
+                        var toNoTasksAfterError = toColumnBody.querySelector('.text-center.py-8');
+                        if (toNoTasksAfterError) {
+                            toNoTasksAfterError.style.display = toTasksAfterError.length === 0 ? 'block' : 'none';
+                        }
+                    }
                 });
             }
         });
