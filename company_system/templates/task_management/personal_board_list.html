@@ -477,14 +477,16 @@
         };
     }
 
-    function openEditModal(boardId, name, description) {
-        const modal = document.getElementById('editBoardModal');
-        document.getElementById('editBoardForm').action = '/task/personal/' + boardId + '/edit/';
-        document.getElementById('editBoardName').value = name;
-        document.getElementById('editBoardDescription').value = description || '';
-        // FIX: toggle .is-open instead of removing 'hidden'
-        modal.classList.add('is-open');
-    }
+     function openEditModal(boardId, name, description) {
+         const modal = document.getElementById('editBoardModal');
+         const editUrl = "{% url 'task_management:personal_board_edit' 0 %}".replace('0', boardId);
+         document.getElementById('editBoardForm').action = editUrl;
+         document.getElementById('editBoardName').value = name;
+         document.getElementById('editBoardDescription').value = description || '';
+         modal.classList.add('is-open');
+         modal.setAttribute('aria-hidden', 'false');
+         document.getElementById('editBoardName').focus();
+     }
 
     function closeEditModal() {
         document.getElementById('editBoardModal').classList.remove('is-open');
@@ -515,11 +517,11 @@
                 const match = form.action.match(/\/personal\/(\d+)\/edit\//);
                 if (match) {
                     const boardId = match[1];
-                    // FIX: correct selector — card link uses /boards/ in URL
-                    const cardLink = document.querySelector(`a[href*="/personal/boards/${boardId}/"]`);
-                    if (cardLink) {
-                        const titleEl = cardLink.querySelector('h3');
-                        const descEl  = cardLink.querySelector('p');
+                    // Find the card by data-board-id attribute for reliability
+                    const card = document.querySelector(`[data-board-id="${boardId}"]`);
+                    if (card) {
+                        const titleEl = card.querySelector('h3');
+                        const descEl  = card.querySelector('p');
                         if (titleEl) titleEl.textContent = formData.get('name');
                         if (descEl)  descEl.textContent  = formData.get('description') || 'Personal productivity board';
                     }
