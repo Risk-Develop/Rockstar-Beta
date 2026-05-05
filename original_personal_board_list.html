@@ -254,7 +254,7 @@
 
             {% for board in personal_boards %}
             {# FIX: Wrap card in a relative div so action buttons sit above the link layer #}
-             <div class="relative" data-board-id="{{ board.id }}">
+            <div class="relative">
                 <a href="{% url 'task_management:personal_board_detail' board.id %}"
                    class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-xl transition-all duration-300 group">
 

@@ -177,21 +177,23 @@ class AuditLog(models.Model):
         return f"{self.task.title} - {self.action} by {self.performed_by}"
 
 
-# ========== PERSONAL PRODUCTIVITY SYSTEM ==========
+ # ========== PERSONAL PRODUCTIVITY SYSTEM ==========
 class PersonalBoard(models.Model):
-    """Private board for personal tasks - separate from company Kanban"""
+    """Private board for personal tasks - separate from company kanban"""
     user = models.ForeignKey(
-        Staff, 
-        on_delete=models.CASCADE, 
+        Staff,
+        on_delete=models.CASCADE,
         related_name='personal_boards'
     )
     name = models.CharField(max_length=100, default="My Tasks")
     description = models.TextField(blank=True)
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.user.first_name}'s Personal Board"
+        return f"{self.user.first_name}'s Personal Board - {self.name}"
 
     class Meta:
         ordering = ['-updated_at']

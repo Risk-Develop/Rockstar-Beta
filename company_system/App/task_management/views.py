@@ -462,7 +462,7 @@ def timeline_view(request, roadmap_id):
     })
 
 
-# ========== PERSONAL PRODUCTIVITY SYSTEM VIEWS ==========
+ # ========== PERSONAL PRODUCTIVITY SYSTEM VIEWS ==========
 
 @custom_login_required
 def personal_board_list(request):
@@ -471,18 +471,21 @@ def personal_board_list(request):
     if not current_staff and not request.session.get('is_owner'):
         messages.warning(request, "Please log in to access personal boards.")
         return redirect('task_management:board_list')
-    
-    # Get or create default personal board for user
+
+    # Get non-archived personal boards for user
     from django.db.models import Count, Q
-    personal_boards = PersonalBoard.objects.filter(user=current_staff).annotate(
+    personal_boards = PersonalBoard.objects.filter(
+        user=current_staff,
+        is_archived=False
+    ).annotate(
         total_tasks=Count('tasks'),
         completed_tasks=Count('tasks', filter=Q(tasks__is_completed=True))
     ) if current_staff else []
-    
+
     # Compute aggregate totals
     total_tasks_count = sum(board.total_tasks for board in personal_boards)
     completed_tasks_count = sum(board.completed_tasks for board in personal_boards)
-    
+
     return render(request, 'task_management/personal_board_list.html', {
         'personal_boards': personal_boards,
         'total_tasks_count': total_tasks_count,
@@ -494,11 +497,17 @@ def personal_board_list(request):
 def personal_board_detail(request, board_id):
     """View personal kanban board"""
     import json
-    
+
     current_staff = get_current_staff(request)
     board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
+
+    # Redirect archived boards to archived list
+    if board.is_archived:
+        messages.info(request, f'Board "{board.name}" is archived. You can restore it from the archived boards list.')
+        return redirect('task_management:personal_board_archived_list')
+
     columns = board.columns.order_by('order')
-    
+
     for column in columns:
         tasks = column.tasks.order_by('order')
         for task in tasks:
@@ -508,7 +517,7 @@ def personal_board_detail(request, board_id):
                 for item in checklist_items
             ])
         column.tasks_list = tasks
-    
+
     return render(request, 'task_management/personal_board_detail.html', {
         'board': board,
         'columns': columns
@@ -522,29 +531,29 @@ def personal_board_create(request):
     if not current_staff:
         messages.error(request, "You must be logged in to create a personal board.")
         return redirect('task_management:board_list')
-    
+
     if request.method == 'POST':
         name = request.POST.get('name', 'My Tasks')
         description = request.POST.get('description', '')
-        
+
         # Check if board already exists for this user
         existing = PersonalBoard.objects.filter(user=current_staff, name=name).first()
         if existing:
             messages.warning(request, f'Board "{name}" already exists.')
             return redirect('task_management:personal_board_detail', board_id=existing.id)
-        
+
         board = PersonalBoard.objects.create(
             user=current_staff,
             name=name,
             description=description
         )
-        
+
         # Create default columns
         for col in PersonalColumn.DEFAULT_COLUMNS:
             PersonalColumn.objects.create(board=board, **col)
-        
+
         messages.success(request, f'Personal board "{board.name}" created!')
-    
+
     return redirect('task_management:personal_board_list')
 
 
@@ -553,23 +562,97 @@ def personal_board_edit(request, board_id):
     """Edit a personal board's name and description"""
     current_staff = get_current_staff(request)
     board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
-    
+
+    # Prevent editing archived boards
+    if board.is_archived:
+        messages.warning(request, "Archived boards cannot be edited. Please restore it first.")
+        return redirect('task_management:personal_board_archived_list')
+
     if request.method == 'POST':
         name = request.POST.get('name', board.name)
         description = request.POST.get('description', board.description)
-        
+
         board.name = name
         board.description = description
         board.save()
-        
+
         messages.success(request, f'Board "{board.name}" updated!')
-        
+
         # Return JSON for AJAX requests
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             from django.http import JsonResponse
             return JsonResponse({'success': True, 'message': 'Board updated!'})
-    
+
     return redirect('task_management:personal_board_list')
+
+
+@custom_login_required
+def personal_board_archive(request, board_id):
+    """Archive a personal board"""
+    current_staff = get_current_staff(request)
+    board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
+
+    if request.method == 'POST':
+        from django.utils import timezone
+        board.is_archived = True
+        board.archived_at = timezone.now()
+        board.save()
+        messages.success(request, f'Board "{board.name}" has been archived.')
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            from django.http import JsonResponse
+            return JsonResponse({'success': True, 'archived': True})
+
+    return redirect('task_management:personal_board_list')
+
+
+@custom_login_required
+def personal_board_restore(request, board_id):
+    """Restore an archived personal board"""
+    current_staff = get_current_staff(request)
+    board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
+
+    if request.method == 'POST':
+        board.is_archived = False
+        board.archived_at = None
+        board.save()
+        messages.success(request, f'Board "{board.name}" has been restored.')
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            from django.http import JsonResponse
+            return JsonResponse({'success': True, 'restored': True})
+
+        # Redirect to active boards list
+        return redirect('task_management:personal_board_list')
+
+    return redirect('task_management:personal_board_archived_list')
+
+
+@custom_login_required
+def personal_board_archived_list(request):
+    """List all archived personal boards for current user"""
+    current_staff = get_current_staff(request)
+    if not current_staff and not request.session.get('is_owner'):
+        messages.warning(request, "Please log in to access archived boards.")
+        return redirect('task_management:board_list')
+
+    from django.db.models import Count, Q
+    archived_boards = PersonalBoard.objects.filter(
+        user=current_staff,
+        is_archived=True
+    ).annotate(
+        total_tasks=Count('tasks'),
+        completed_tasks=Count('tasks', filter=Q(tasks__is_completed=True))
+    ) if current_staff else []
+
+    total_tasks_count = sum(board.total_tasks for board in archived_boards)
+    completed_tasks_count = sum(board.completed_tasks for board in archived_boards)
+
+    return render(request, 'task_management/personal_board_archived.html', {
+        'archived_boards': archived_boards,
+        'total_tasks_count': total_tasks_count,
+        'completed_tasks_count': completed_tasks_count,
+    })
 
 
 @custom_login_required
