@@ -386,23 +386,49 @@ html.dark .task-actions {
   transition: all 0.15s ease;
 }
 
-/* Mobile responsive adjustments */
-@media (max-width: 640px) {
-  .personal-task {
-    padding: 0.75rem;
-  }
-  .task-meta {
-    gap: 0.5rem;
-    font-size: 0.6875rem;
-  }
-  .priority-badge {
-    font-size: 0.6875rem;
-    padding: 0.1875rem 0.5rem;
-  }
-  .task-title {
-    font-size: 0.875rem;
-  }
-}
+   /* Mobile responsive adjustments */
+   @media (max-width: 640px) {
+     .personal-task {
+       padding: 0.75rem;
+     }
+     .task-meta {
+       gap: 0.5rem;
+       font-size: 0.6875rem;
+     }
+     .priority-badge {
+       font-size: 0.6875rem;
+       padding: 0.1875rem 0.5rem;
+     }
+     .task-title {
+       font-size: 0.875rem;
+     }
+   }
+
+   /* Filter bar styles */
+   .filter-bar {
+     margin-bottom: 1rem;
+   }
+   .filter-bar select {
+     cursor: pointer;
+   }
+   .filter-bar button {
+     white-space: nowrap;
+   }
+
+   /* Mobile responsive for filter bar */
+   @media (max-width: 640px) {
+     .filter-bar .flex.flex-wrap.gap-3 {
+       flex-direction: column;
+       align-items: stretch;
+     }
+     .filter-bar .flex-1.min-w-[200px] {
+       min-width: 100%;
+     }
+     .filter-bar .flex.items-center.gap-2 {
+       flex-wrap: wrap;
+       justify-content: space-between;
+     }
+   }
 
 /* Focus states for keyboard navigation */
 .personal-task:focus-within {
@@ -1180,8 +1206,54 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
   </div>
 
 
-<!-- Kanban Columns -->
-<div class="flex gap-4 overflow-x-auto pb-4" id="personalKanban">
+  <!-- Filter Bar -->
+  <div class="mb-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Search Input -->
+      <div class="flex-1 min-w-[200px]">
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          <input type="text"
+                 id="taskFilterInput"
+                 placeholder="Search tasks..."
+                 class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+        </div>
+      </div>
+
+      <!-- Priority Filter -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-gray-600 dark:text-gray-400">Priority:</label>
+        <select id="priorityFilter"
+                class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+          <option value="all">All Priorities</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="urgent">Urgent</option>
+        </select>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-gray-600 dark:text-gray-400">Status:</label>
+        <select id="statusFilter"
+                class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+          <option value="all">All Tasks</option>
+          <option value="active">Active</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+
+      <!-- Clear Filters Button -->
+      <button id="clearFilters"
+              class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+        <i class="fas fa-times mr-1"></i>Clear
+      </button>
+    </div>
+  </div>
+
+  <!-- Kanban Columns -->
+  <div class="flex gap-4 overflow-x-auto pb-4" id="personalKanban">
 {% for column in columns %}
 <div class="flex-shrink-0 w-80 min-w-[320px]">
 <!-- Column Header -->
@@ -1425,39 +1497,39 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
             Column Color
           </label>
           
-          <!-- Preset colors -->
-          <div class="grid grid-cols-6 gap-2 mb-3">
-            <button type="button" 
-                    class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    style="background: #3b82f6;"
-                    onclick="document.getElementById('addColumnColor').value='#3b82f6'; updateColorPresetSelection(this)">
-            </button>
-            <button type="button" 
-                    class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    style="background: #10b981;"
-                    onclick="document.getElementById('addColumnColor').value='#10b981'; updateColorPresetSelection(this)">
-            </button>
-            <button type="button" 
-                    class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    style="background: #f59e0b;"
-                    onclick="document.getElementById('addColumnColor').value='#f59e0b'; updateColorPresetSelection(this)">
-            </button>
-            <button type="button" 
-                    class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    style="background: #ef4444;"
-                    onclick="document.getElementById('addColumnColor').value='#ef4444'; updateColorPresetSelection(this)">
-            </button>
-            <button type="button" 
-                    class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    style="background: #8b5cf6;"
-                    onclick="document.getElementById('addColumnColor').value='#8b5cf6'; updateColorPresetSelection(this)">
-            </button>
-            <button type="button" 
-                    class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    style="background: #ec4899;"
-                    onclick="document.getElementById('addColumnColor').value='#ec4899'; updateColorPresetSelection(this)">
-            </button>
-          </div>
+           <!-- Preset colors -->
+           <div class="flex flex-nowrap gap-2 mb-3 overflow-x-auto py-1" style="min-height: 2.5rem;">
+             <button type="button"
+                     class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                     style="background: #3b82f6;"
+                     onclick="document.getElementById('addColumnColor').value='#3b82f6'; updateColorPresetSelection(this)">
+             </button>
+             <button type="button"
+                     class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                     style="background: #10b981;"
+                     onclick="document.getElementById('addColumnColor').value='#10b981'; updateColorPresetSelection(this)">
+             </button>
+             <button type="button"
+                     class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                     style="background: #f59e0b;"
+                     onclick="document.getElementById('addColumnColor').value='#f59e0b'; updateColorPresetSelection(this)">
+             </button>
+             <button type="button"
+                     class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                     style="background: #ef4444;"
+                     onclick="document.getElementById('addColumnColor').value='#ef4444'; updateColorPresetSelection(this)">
+             </button>
+             <button type="button"
+                     class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                     style="background: #8b5cf6;"
+                     onclick="document.getElementById('addColumnColor').value='#8b5cf6'; updateColorPresetSelection(this)">
+             </button>
+             <button type="button"
+                     class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                     style="background: #ec4899;"
+                     onclick="document.getElementById('addColumnColor').value='#ec4899'; updateColorPresetSelection(this)">
+             </button>
+           </div>
 
           <!-- Custom color picker -->
           <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
@@ -1549,39 +1621,39 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
                  Column Color
                </label>
                
-               <!-- Preset colors -->
-               <div class="grid grid-cols-6 gap-2 mb-3">
-                 <button type="button" 
-                         class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                         style="background: #3b82f6;"
-                         onclick="document.getElementById('editColumnColor').value='#3b82f6'; updateColorPresetSelection(this); updateColorHex('edit')">
-                 </button>
-                 <button type="button" 
-                         class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                         style="background: #10b981;"
-                         onclick="document.getElementById('editColumnColor').value='#10b981'; updateColorPresetSelection(this); updateColorHex('edit')">
-                 </button>
-                 <button type="button" 
-                         class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                         style="background: #f59e0b;"
-                         onclick="document.getElementById('editColumnColor').value='#f59e0b'; updateColorPresetSelection(this); updateColorHex('edit')">
-                 </button>
-                 <button type="button" 
-                         class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                         style="background: #ef4444;"
-                         onclick="document.getElementById('editColumnColor').value='#ef4444'; updateColorPresetSelection(this); updateColorHex('edit')">
-                 </button>
-                 <button type="button" 
-                         class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                         style="background: #8b5cf6;"
-                         onclick="document.getElementById('editColumnColor').value='#8b5cf6'; updateColorPresetSelection(this); updateColorHex('edit')">
-                 </button>
-                 <button type="button" 
-                         class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                         style="background: #ec4899;"
-                         onclick="document.getElementById('editColumnColor').value='#ec4899'; updateColorPresetSelection(this); updateColorHex('edit')">
-                 </button>
-               </div>
+                <!-- Preset colors -->
+                <div class="flex flex-nowrap gap-2 mb-3 overflow-x-auto py-1" style="min-height: 2.5rem;">
+                  <button type="button"
+                          class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          style="background: #3b82f6;"
+                          onclick="document.getElementById('editColumnColor').value='#3b82f6'; updateColorPresetSelection(this); updateColorHex('edit')">
+                  </button>
+                  <button type="button"
+                          class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          style="background: #10b981;"
+                          onclick="document.getElementById('editColumnColor').value='#10b981'; updateColorPresetSelection(this); updateColorHex('edit')">
+                  </button>
+                  <button type="button"
+                          class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          style="background: #f59e0b;"
+                          onclick="document.getElementById('editColumnColor').value='#f59e0b'; updateColorPresetSelection(this); updateColorHex('edit')">
+                  </button>
+                  <button type="button"
+                          class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          style="background: #ef4444;"
+                          onclick="document.getElementById('editColumnColor').value='#ef4444'; updateColorPresetSelection(this); updateColorHex('edit')">
+                  </button>
+                  <button type="button"
+                          class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          style="background: #8b5cf6;"
+                          onclick="document.getElementById('editColumnColor').value='#8b5cf6'; updateColorPresetSelection(this); updateColorHex('edit')">
+                  </button>
+                  <button type="button"
+                          class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          style="background: #ec4899;"
+                          onclick="document.getElementById('editColumnColor').value='#ec4899'; updateColorPresetSelection(this); updateColorHex('edit')">
+                  </button>
+                </div>
 
                <!-- Custom color picker -->
                <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
@@ -3616,6 +3688,82 @@ function toggleArchivedDrawer() {
         closeArchivedTasks();
     }
 }
+
+// ── Task Filtering ──────────────────────────────────────────────────────────────
+
+let currentFilter = {
+    search: '',
+    priority: 'all',
+    status: 'all'
+};
+
+function applyTaskFilters() {
+    document.querySelectorAll('.personal-task').forEach(taskEl => {
+        const title = (taskEl.dataset.title || '').toLowerCase();
+        const priority = taskEl.dataset.priority || '';
+        const isCompleted = taskEl.classList.contains('completed');
+
+        const matchesSearch = title.includes(currentFilter.search);
+        const matchesPriority = currentFilter.priority === 'all' || priority === currentFilter.priority;
+        const matchesStatus = currentFilter.status === 'all' ||
+                            (currentFilter.status === 'active' && !isCompleted) ||
+                            (currentFilter.status === 'completed' && isCompleted);
+
+        if (matchesSearch && matchesPriority && matchesStatus) {
+            taskEl.classList.remove('hidden');
+        } else {
+            taskEl.classList.add('hidden');
+        }
+    });
+}
+
+// Debounce helper for search input
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+// Initialize filter event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('taskFilterInput');
+    const priorityFilter = document.getElementById('priorityFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const clearBtn = document.getElementById('clearFilters');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(function(e) {
+            currentFilter.search = e.target.value.toLowerCase().trim();
+            applyTaskFilters();
+        }, 300));
+    }
+
+    if (priorityFilter) {
+        priorityFilter.addEventListener('change', function(e) {
+            currentFilter.priority = e.target.value;
+            applyTaskFilters();
+        });
+    }
+
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function(e) {
+            currentFilter.status = e.target.value;
+            applyTaskFilters();
+        });
+    }
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            currentFilter = { search: '', priority: 'all', status: 'all' };
+            if (searchInput) searchInput.value = '';
+            if (priorityFilter) priorityFilter.value = 'all';
+            if (statusFilter) statusFilter.value = 'all';
+            applyTaskFilters();
+        });
+    }
+});
 
 // ── Column Count Updater ──────────────────────────────────────────────────────
 function updateColumnCounts() {
