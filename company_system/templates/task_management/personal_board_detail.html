@@ -868,6 +868,12 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
     color: #9ca3af;
   }
   
+  .color-preset.selected {
+    border-color: #1d4ed8 !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+    transform: scale(1.1);
+  }
+  
   .floating-label-group {
     position: relative;
   }
@@ -1134,67 +1140,251 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 
   <!-- Add Column Modal -->
   <div id="addColumnModal" class="modal-overlay">
-    <div class="modal-content" style="width: 30%; max-width: 90vw;">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Add Column</h2>
-        <button onclick="closeAddColumnModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-          <i class="fas fa-times text-xl"></i>
-        </button>
-      </div>
-      <form id="addColumnForm" method="post" action="{% url 'task_management:personal_column_create' board.id %}">
-        {% csrf_token %}
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-            <input type="text" name="name" required 
-                   class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                   placeholder="Column name">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color</label>
-            <input type="color" name="color" value="#6b7280" 
-                   class="w-full h-10 px-1 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md cursor-pointer">
-          </div>
-        </div>
-        <div class="mt-6 flex gap-3">
-          <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create Column</button>
-          <button type="button" onclick="closeAddColumnModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
-        </div>
-      </form>
+  <div class="modal-content" style="max-width: 480px;">
+  <div class="modal-header-accent"></div>
+  <div class="flex justify-between items-start mb-6">
+    <div class="flex-1">
+      <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <i class="fas fa-columns text-purple-500"></i>
+        Add New Column
+      </h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Organize your tasks with a custom column</p>
     </div>
+    <button onclick="closeAddColumnModal()" 
+            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            aria-label="Close modal">
+      <i class="fas fa-times text-xl"></i>
+    </button>
   </div>
 
-   <!-- Edit Column Modal -->
-   <div id="editColumnModal" class="modal-overlay">
-  <div class="modal-content" style="width: 30%; max-width: 90vw;">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Edit Column</h2>
-        <button onclick="closeEditColumnModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-          <i class="fas fa-times text-xl"></i>
-        </button>
+  <form id="addColumnForm" method="post" action="{% url 'task_management:personal_column_create' board.id %}" novalidate>
+    {% csrf_token %}
+
+    <!-- Basic Info -->
+    <section class="form-section">
+      <h3 class="form-section-title">
+        <i class="fas fa-info-circle text-blue-500"></i>
+        Column Details
+      </h3>
+
+      <div class="space-y-4">
+        <!-- Column Name -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Column Name *
+          </label>
+          <input type="text" 
+                 name="name" 
+                 id="addColumnName"
+                 required 
+                 minlength="2"
+                 maxlength="50"
+                 class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                 placeholder="e.g., In Progress, Review, Done"
+                 oninput="updateCharCount('addColumnName', 'addColNameCount')">
+          <div class="char-count">
+            <span id="addColNameCount">0</span>/50 characters
+          </div>
+        </div>
+
+        <!-- Color Picker with Presets -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Column Color
+          </label>
+          
+          <!-- Preset colors -->
+          <div class="grid grid-cols-6 gap-2 mb-3">
+            <button type="button" 
+                    class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    style="background: #3b82f6;"
+                    onclick="document.getElementById('addColumnColor').value='#3b82f6'; updateColorPresetSelection(this)">
+            </button>
+            <button type="button" 
+                    class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    style="background: #10b981;"
+                    onclick="document.getElementById('addColumnColor').value='#10b981'; updateColorPresetSelection(this)">
+            </button>
+            <button type="button" 
+                    class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    style="background: #f59e0b;"
+                    onclick="document.getElementById('addColumnColor').value='#f59e0b'; updateColorPresetSelection(this)">
+            </button>
+            <button type="button" 
+                    class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    style="background: #ef4444;"
+                    onclick="document.getElementById('addColumnColor').value='#ef4444'; updateColorPresetSelection(this)">
+            </button>
+            <button type="button" 
+                    class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    style="background: #8b5cf6;"
+                    onclick="document.getElementById('addColumnColor').value='#8b5cf6'; updateColorPresetSelection(this)">
+            </button>
+            <button type="button" 
+                    class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    style="background: #ec4899;"
+                    onclick="document.getElementById('addColumnColor').value='#ec4899'; updateColorPresetSelection(this)">
+            </button>
+          </div>
+
+          <!-- Custom color picker -->
+          <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+              Custom:
+            </label>
+            <input type="color" 
+                   name="color" 
+                   id="addColumnColor"
+                   value="#6b7280"
+                   class="w-12 h-10 rounded cursor-pointer border-0"
+                   onchange="updateColorPresetSelectionFromInput(this)">
+            <span class="text-sm text-gray-500 dark:text-gray-400" id="addColorHex">#6b7280</span>
+          </div>
+        </div>
       </div>
-      <form id="editColumnForm" method="post">
-        {% csrf_token %}
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-            <input type="text" name="name" id="editColumnName" required 
-                   class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color</label>
-            <input type="color" name="color" id="editColumnColor" 
-                   class="w-full h-10 px-1 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md cursor-pointer">
-          </div>
-        </div>
-        <input type="hidden" name="column_id" id="editColumnId">
-        <div class="mt-6 flex gap-3">
-          <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Changes</button>
-          <button type="button" onclick="closeEditColumnModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
-        </div>
-      </form>
+    </section>
+
+    <!-- Form Actions -->
+    <div class="modal-actions">
+      <button type="button" 
+              onclick="closeAddColumnModal()"
+              class="btn-secondary px-4 py-3 rounded-lg font-medium transition-colors">
+        Cancel
+      </button>
+      <button type="submit" 
+              id="addColumnSubmitBtn"
+              class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 font-medium transition-all shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+        <i class="fas fa-plus"></i>
+        <span>Create Column</span>
+      </button>
     </div>
+  </form>
   </div>
+  </div>
+
+    <!-- Edit Column Modal -->
+    <div id="editColumnModal" class="modal-overlay">
+   <div class="modal-content" style="max-width: 480px;">
+   <div class="modal-header-accent"></div>
+       <div class="flex justify-between items-start mb-6">
+         <div class="flex-1">
+           <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+             <i class="fas fa-edit text-indigo-500"></i>
+             Edit Column
+           </h2>
+           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Update column name and color</p>
+         </div>
+         <button onclick="closeEditColumnModal()" 
+                 class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                 aria-label="Close modal">
+           <i class="fas fa-times text-xl"></i>
+         </button>
+       </div>
+       <form id="editColumnForm" method="post">
+         {% csrf_token %}
+         <input type="hidden" name="column_id" id="editColumnId">
+
+         <!-- Basic Info -->
+         <section class="form-section">
+           <h3 class="form-section-title">
+             <i class="fas fa-info-circle text-blue-500"></i>
+             Column Details
+           </h3>
+
+           <div class="space-y-4">
+             <!-- Column Name -->
+             <div>
+               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                 Column Name *
+               </label>
+               <input type="text" 
+                      name="name" 
+                      id="editColumnName"
+                      required 
+                      minlength="2"
+                      maxlength="50"
+                      class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Column name"
+                      oninput="updateCharCount('editColumnName', 'editColNameCount')">
+               <div class="char-count">
+                 <span id="editColNameCount">0</span>/50 characters
+               </div>
+             </div>
+
+             <!-- Color Picker with Presets -->
+             <div>
+               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                 Column Color
+               </label>
+               
+               <!-- Preset colors -->
+               <div class="grid grid-cols-6 gap-2 mb-3">
+                 <button type="button" 
+                         class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                         style="background: #3b82f6;"
+                         onclick="document.getElementById('editColumnColor').value='#3b82f6'; updateColorPresetSelection(this); updateColorHex('edit')">
+                 </button>
+                 <button type="button" 
+                         class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                         style="background: #10b981;"
+                         onclick="document.getElementById('editColumnColor').value='#10b981'; updateColorPresetSelection(this); updateColorHex('edit')">
+                 </button>
+                 <button type="button" 
+                         class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                         style="background: #f59e0b;"
+                         onclick="document.getElementById('editColumnColor').value='#f59e0b'; updateColorPresetSelection(this); updateColorHex('edit')">
+                 </button>
+                 <button type="button" 
+                         class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                         style="background: #ef4444;"
+                         onclick="document.getElementById('editColumnColor').value='#ef4444'; updateColorPresetSelection(this); updateColorHex('edit')">
+                 </button>
+                 <button type="button" 
+                         class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                         style="background: #8b5cf6;"
+                         onclick="document.getElementById('editColumnColor').value='#8b5cf6'; updateColorPresetSelection(this); updateColorHex('edit')">
+                 </button>
+                 <button type="button" 
+                         class="color-preset w-8 h-8 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                         style="background: #ec4899;"
+                         onclick="document.getElementById('editColumnColor').value='#ec4899'; updateColorPresetSelection(this); updateColorHex('edit')">
+                 </button>
+               </div>
+
+               <!-- Custom color picker -->
+               <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                 <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                   Custom:
+                 </label>
+                 <input type="color" 
+                        name="color" 
+                        id="editColumnColor"
+                        value="#6b7280"
+                        class="w-12 h-10 rounded cursor-pointer border-0"
+                        onchange="updateColorPresetSelectionFromInput(this); updateColorHex('edit')">
+                 <span class="text-sm text-gray-500 dark:text-gray-400" id="editColorHex">#6b7280</span>
+               </div>
+             </div>
+           </div>
+         </section>
+
+         <!-- Form Actions -->
+         <div class="modal-actions">
+           <button type="button" 
+                   onclick="closeEditColumnModal()"
+                   class="btn-secondary px-4 py-3 rounded-lg font-medium transition-colors">
+             Cancel
+           </button>
+           <button type="submit" 
+                   id="editColumnSubmitBtn"
+                   class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 font-medium transition-all shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+             <i class="fas fa-save"></i>
+             <span>Save Changes</span>
+           </button>
+         </div>
+       </form>
+     </div>
+   </div>
 
   </div>
 </div>
@@ -2385,8 +2575,24 @@ function toggleHelp() {
 
 // Column Modal helpers
 function openAddColumnModal() {
+    // Reset form
+    document.getElementById('addColumnForm').reset();
+    
+    // Reset character counter
+    const counter = document.getElementById('addColNameCount');
+    if (counter) counter.textContent = '0';
+    
+    // Reset color to default and clear preset selection
+    document.getElementById('addColumnColor').value = '#6b7280';
+    document.querySelectorAll('#addColumnModal .color-preset').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    updateColorHex('add');
+    
+    // Show modal
     document.getElementById('addColumnModal').classList.add('show');
 }
+
 function closeAddColumnModal() {
     document.getElementById('addColumnModal').classList.remove('show');
 }
@@ -2396,6 +2602,17 @@ function openEditColumnModal(columnId, name, color) {
     document.getElementById('editColumnName').value = name;
     document.getElementById('editColumnColor').value = color;
     document.getElementById('editColumnForm').action = '/task/personal/columns/' + columnId + '/edit/';
+    
+    // Update character count
+    const counter = document.getElementById('editColNameCount');
+    if (counter) counter.textContent = name.length;
+    
+    // Update color preset selection
+    setTimeout(() => {
+        updateColorPresetSelectionFromInput(document.getElementById('editColumnColor'));
+        updateColorHex('edit');
+    }, 0);
+    
     document.getElementById('editColumnModal').classList.add('show');
 }
 
@@ -3888,264 +4105,36 @@ function initPrioritySelectors() {
     });
 }
 
-// Character counters
-function initCharacterCounters() {
-    ['addTitle', 'addDescription', 'addNotes'].forEach(id => {
-        const input = document.getElementById(id);
-        if (input && !input.parentElement.querySelector('.char-count')) {
-            const counter = document.createElement('div');
-            counter.className = 'char-count';
-            counter.innerHTML = `<span id="${id}Count">0</span>/${input.maxLength || 500} characters`;
-            input.parentElement.appendChild(counter);
-            input.addEventListener('input', () => {
-                document.getElementById(id + 'Count').textContent = input.value.length;
-            });
-            document.getElementById(id + 'Count').textContent = input.value.length;
-        }
-    });
-}
-
-function initCharacterCountersForDetail() {
-    ['detailTitle', 'detailDescription', 'detailNotes'].forEach(id => {
-        const input = document.getElementById(id);
-        if (input && !input.parentElement.querySelector('.char-count')) {
-            const counter = document.createElement('div');
-            counter.className = 'char-count';
-            counter.innerHTML = `<span id="${id}Count">0</span>/${input.maxLength || 500} characters`;
-            input.parentElement.appendChild(counter);
-            input.addEventListener('input', () => {
-                document.getElementById(id + 'Count').textContent = input.value.length;
-            });
-            document.getElementById(id + 'Count').textContent = input.value.length;
-        }
-    });
-}
-
-// Enhanced Checklist Manager
-const ChecklistManager = {
-    items: {},
-    currentTaskId: null,
-    draggedItem: null,
-
-    init(taskId, items) {
-        this.currentTaskId = taskId;
-        this.items = items || { list: [] };
-        if (!this.items.list) this.items.list = [];
-        this.render();
-        this.updateProgress();
-    },
-
-    add(text) {
-        if (!text.trim()) return;
-        
-        const newItem = {
-            id: Date.now(),
-            text: text.trim(),
-            is_completed: false
-        };
-        
-        this.items.list.push(newItem);
-        this.save();
-        this.render();
-        this.updateProgress();
-        
-        document.getElementById('checklistInput').value = '';
-        return newItem;
-    },
-
-    toggle(id) {
-        const item = this.find(id);
-        if (item) {
-            item.is_completed = !item.is_completed;
-            this.save();
-            this.render();
-            this.updateProgress();
-        }
-    },
-
-    delete(id) {
-        if (confirm('Delete this checklist item?')) {
-            this.items.list = this.items.list.filter(item => item.id !== id);
-            this.save();
-            this.render();
-            this.updateProgress();
-        }
-    },
-
-    edit(id, newText) {
-        const item = this.find(id);
-        if (item && newText.trim()) {
-            item.text = newText.trim();
-            this.save();
-            this.render();
-        }
-    },
-
-    find(id) {
-        return this.items.list?.find(item => item.id === parseInt(id));
-    },
-
-    checkAll() {
-        if (this.items.list) {
-            this.items.list.forEach(item => item.is_completed = true);
-            this.save();
-            this.render();
-            this.updateProgress();
-        }
-    },
-
-    uncheckAll() {
-        if (this.items.list) {
-            this.items.list.forEach(item => item.is_completed = false);
-            this.save();
-            this.render();
-            this.updateProgress();
-        }
-    },
-
-    deleteCompleted() {
-        if (this.items.list) {
-            const count = this.items.list.filter(item => item.is_completed).length;
-            if (count > 0 && confirm(`Delete ${count} completed item(s)?`)) {
-                this.items.list = this.items.list.filter(item => !item.is_completed);
-                this.save();
-                this.render();
-                this.updateProgress();
-            }
-        }
-    },
-
-    updateProgress() {
-        const total = this.items.list?.length || 0;
-        const completed = this.items.list?.filter(item => item.is_completed).length || 0;
-        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-        
-        const progressText = document.getElementById('checklistProgressText');
-        const progressFill = document.getElementById('checklistProgressFill');
-        
-        if (progressText) progressText.textContent = `${completed}/${total} completed`;
-        if (progressFill) progressFill.style.width = percentage + '%';
-    },
-
-    render() {
-        const container = document.getElementById('checklistItems');
-        if (!container) return;
-        
-        if (!this.items.list || this.items.list.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-6 text-gray-500 dark:text-gray-400">
-                    <i class="fas fa-clipboard-list text-2xl mb-2 opacity-50"></i>
-                    <p class="text-sm">No checklist items yet</p>
-                    <p class="text-xs mt-1">Add items above to track subtasks</p>
-                </div>
-            `;
-            return;
-        }
-        
-        container.innerHTML = this.items.list.map(item => `
-            <div class="checklist-item ${item.is_completed ? 'completed' : ''}" 
-                 draggable="true"
-                 data-id="${item.id}"
-                 ondragstart="checklistManager.handleDragStart(event)"
-                 ondragend="checklistManager.handleDragEnd(event)">
-                <input type="checkbox" 
-                       class="subtask-checkbox"
-                       ${item.is_completed ? 'checked' : ''}
-                       onchange="checklistManager.toggle(${item.id})">
-                <span class="subtask-text ${item.is_completed ? 'completed' : ''}">${escapeHtml(item.text)}</span>
-                <div class="checklist-actions">
-                    <button type="button" 
-                            class="checklist-action-btn"
-                            onclick='checklistManager.editPrompt(${item.id}, ${JSON.stringify(item.text)})'
-                            title="Edit">
-                        <i class="fas fa-edit text-xs"></i>
-                    </button>
-                    <button type="button" 
-                            class="checklist-action-btn delete"
-                            onclick="checklistManager.delete(${item.id})"
-                            title="Delete">
-                        <i class="fas fa-trash text-xs"></i>
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    },
-
-    handleDragStart(e) {
-        this.draggedItem = parseInt(e.target.dataset.id);
-        e.target.closest('.checklist-item').classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-    },
-
-    handleDragEnd(e) {
-        e.target.closest('.checklist-item')?.classList.remove('dragging');
-    },
-
-    handleDragOver(e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        
-        const container = document.getElementById('checklistItems');
-        const afterElement = this.getDragAfterElement(container, e.clientY);
-        const dragging = container.querySelector('.dragging');
-        
-        if (!dragging) return;
-        
-        if (afterElement == null) {
-            container.appendChild(dragging);
-        } else {
-            container.insertBefore(dragging, afterElement);
-        }
-    },
-
-    getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.checklist-item:not(.dragging)')];
-        
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
-    },
-
-    save() {
-        if (this.currentTaskId) {
-            taskChecklists[this.currentTaskId] = this.items;
-            this.persist();
-        }
-    },
-
-    async persist() {
-        try {
-            await fetch('/task_management/update_checklist/', {
-                method: 'POST',
-                headers: { 
-                    'X-Requested-With': 'XMLHttpRequest', 
-                    'Content-Type': 'application/json' 
-                },
-                body: JSON.stringify({
-                    task_id: this.currentTaskId,
-                    checklist_items: this.items.list || [],
-                    csrfmiddlewaretoken: getCookie('csrftoken')
-                })
-            });
-        } catch (err) {
-            console.warn('Failed to persist checklist:', err);
-        }
-    },
-
-    editPrompt(id, currentText) {
-        const newText = prompt('Edit checklist item:', currentText);
-        if (newText !== null && newText.trim() !== '') {
-            this.edit(id, newText);
-        }
+// Color preset helpers for column modals
+function updateColorPresetSelection(button) {
+    const modal = button.closest('.modal-overlay');
+    if (modal) {
+        modal.querySelectorAll('.color-preset').forEach(btn => {
+            btn.classList.remove('selected');
+        });
     }
-};
+    button.classList.add('selected');
+}
+
+function updateColorPresetSelectionFromInput(colorInput) {
+    const modal = colorInput.closest('.modal-overlay');
+    if (modal) {
+        modal.querySelectorAll('.color-preset').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+    }
+}
+
+function updateColorHex(mode) {
+    const colorInputId = mode === 'add' ? 'addColumnColor' : 'editColumnColor';
+    const hexSpanId = mode === 'add' ? 'addColorHex' : 'editColorHex';
+    
+    const input = document.getElementById(colorInputId);
+    const span = document.getElementById(hexSpanId);
+    if (input && span) {
+        span.textContent = input.value.toUpperCase();
+    }
+}
 
 // Modal initialization
 function initModals() {
