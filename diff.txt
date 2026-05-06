@@ -1,0 +1,215 @@
+diff --git a/company_system/templates/task_management/personal_board_detail.html b/company_system/templates/task_management/personal_board_detail.html
+index c9c78aa..1ec17c7 100644
+--- a/company_system/templates/task_management/personal_board_detail.html
++++ b/company_system/templates/task_management/personal_board_detail.html
+@@ -1401,10 +1401,15 @@ function loadChecklistItems(taskId) {
+ function submitChecklist() {
+     var taskId = document.getElementById('detailTaskId').value;
+     var input  = document.getElementById('checklistInput');
++    var addBtn = document.querySelector('#checklistItems').previousElementSibling.querySelector('button[type="button"]');
+     var text   = (input.value || '').trim();
+     if (!text || !taskId) return;
+ 
+     input.disabled = true;
++    if (addBtn) {
++        addBtn.disabled = true;
++        addBtn.classList.add('btn-loading');
++    }
+ 
+     fetch('/task/personal/tasks/' + taskId + '/checklist/add/', {
+         method: 'POST',
+@@ -1458,6 +1463,10 @@ function submitChecklist() {
+         showToast('Failed to add item: ' + err.message, 'error');
+     })
+     .finally(function() {
++        if (addBtn) {
++            addBtn.disabled = false;
++            addBtn.classList.remove('btn-loading');
++        }
+         input.disabled = false;
+         input.focus();
+     });
+@@ -1467,6 +1476,12 @@ function submitChecklist() {
+ 
+ function toggleChecklist(itemId, checkbox) {
+     console.log('toggleChecklist called, itemId:', itemId);
++    var row = document.getElementById('checklist-item-' + itemId);
++    if (!row) return;
++
++    // Disable checkbox during toggle
++    checkbox.disabled = true;
++
+     fetch('/task/personal/checklist/' + itemId + '/toggle/', {
+         method: 'POST',
+         headers: {
+@@ -1514,10 +1529,13 @@ function toggleChecklist(itemId, checkbox) {
+                 console.log('Updated data-checklist on card:', taskEl.dataset.checklist);
+             } catch(e) {}
+         }
++        // Re-enable checkbox
++        checkbox.disabled = false;
+     })
+     .catch(function() {
+         // Revert checkbox on failure
+         if (checkbox) checkbox.checked = !checkbox.checked;
++        if (checkbox) checkbox.disabled = false;
+         showToast('Toggle failed', 'error');
+     });
+ }
+@@ -1664,6 +1682,10 @@ function saveTask() {
+ function toggleTask(taskId) {
+     var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+     var checkboxBtn = taskEl ? taskEl.querySelector('button[onclick*="toggleTask"]') : null;
++    if (checkboxBtn) {
++        checkboxBtn.disabled = true;
++        checkboxBtn.classList.add('btn-loading');
++    }
+ 
+     fetch('/task/personal/tasks/' + taskId + '/toggle/', {
+         method: 'POST',
+@@ -1729,6 +1751,12 @@ function toggleTask(taskId) {
+     .catch(function(err) {
+         console.error('Toggle error:', err);
+         showToast('Failed to update task: ' + err.message, 'error');
++    })
++    .finally(function() {
++        if (checkboxBtn) {
++            checkboxBtn.disabled = false;
++            checkboxBtn.classList.remove('btn-loading');
++        }
+     });
+ }
+ 
+@@ -1893,13 +1921,58 @@ function archiveTask(taskId) {
+     showConfirmModal(
+         'Archive Task',
+         'Are you sure you want to archive this task? It will be moved to your archived tasks.',
+-        function() {
+-            fetch('/task/personal/tasks/' + taskId + '/archive/', {
+-                method: 'POST',
+-                headers: {
+-                    'X-CSRFToken': getCookie('csrftoken'),
+-                    'X-Requested-With': 'XMLHttpRequest'
+-                }
++         function() {
++             var btn = document.getElementById('archiveDetailBtn');
++             if (btn) setButtonLoading(btn, true, 'Archiving…');
++
++             fetch('/task/personal/tasks/' + taskId + '/archive/', {
++                 method: 'POST',
++                 headers: {
++                     'X-CSRFToken': getCookie('csrftoken'),
++                     'X-Requested-With': 'XMLHttpRequest'
++                 }
++             })
++             .then(r => r.json())
++             .then(data => {
++                 if (data.success || data.archived) {
++                     showToast('Task archived', 'success');
++                     closeTaskDetailModal();
++                     if (taskEl) taskEl.remove();
++                     var columnEl = taskEl ? taskEl.closest('.personal-column') : null;
++                     if (columnEl) {
++                         var columnId = columnEl.getAttribute('data-column-id');
++                         var countEl = document.getElementById('count-col-' + columnId);
++                         if (countEl) {
++                             var newCount = Math.max(0, (parseInt(countEl.textContent) || 0) - 1);
++                             countEl.textContent = newCount;
++                             if (newCount === 0) {
++                                 var noTasksMsg = columnEl.querySelector('.text-center.py-8');
++                                 if (!noTasksMsg) {
++                                     noTasksMsg = document.createElement('div');
++                                     noTasksMsg.className = 'text-center py-8 text-gray-600 dark:text-gray-400';
++                                     noTasksMsg.innerHTML = '<p class="text-sm">No tasks</p>';
++                                     columnEl.appendChild(noTasksMsg);
++                                 } else {
++                                     noTasksMsg.style.display = 'block';
++                                 }
++                             }
++                         }
++                     }
++                     updateArchivedCount(1);
++                     if (taskData) prependArchivedTask(taskData);
++                 } else {
++                     showToast('Archive failed', 'error');
++                 }
++             })
++             .catch(err => {
++                 showToast('Failed: ' + err.message, 'error');
++             })
++             .finally(function() {
++                 if (btn) setButtonLoading(btn, false, 'Archive Task');
++             });
++         }
++     );
++ }
+             })
+             .then(r => r.json())
+             .then(data => {
+@@ -1939,24 +2012,27 @@ function archiveTask(taskId) {
+     );
+ }
+ 
+-function archiveDetailTask() {
+-    var taskId = document.getElementById('detailTaskId').value;
+-    if (!taskId) return;
+-    var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+-    var taskData = taskEl ? {
+-        id: parseInt(taskId),
+-        title: taskEl.dataset.title || '',
+-        description: taskEl.dataset.description || '',
+-        priority: taskEl.dataset.priority || 'medium',
+-        deadline: taskEl.dataset.deadline || '',
+-        is_completed: taskEl.classList.contains('completed')
+-    } : null;
+-
+-    showConfirmModal(
+-        'Archive Task',
+-        'Are you sure you want to archive this task? It will be moved to your archived tasks.',
+-        function() {
+-            fetch('/task/personal/tasks/' + taskId + '/archive/', {
++ function archiveDetailTask() {
++     var taskId = document.getElementById('detailTaskId').value;
++     if (!taskId) return;
++     var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
++     var taskData = taskEl ? {
++         id: parseInt(taskId),
++         title: taskEl.dataset.title || '',
++         description: taskEl.dataset.description || '',
++         priority: taskEl.dataset.priority || 'medium',
++         deadline: taskEl.dataset.deadline || '',
++         is_completed: taskEl.classList.contains('completed')
++     } : null;
++
++     showConfirmModal(
++         'Archive Task',
++         'Are you sure you want to archive this task? It will be moved to your archived tasks.',
++         function() {
++             var btn = document.getElementById('archiveDetailBtn');
++             if (btn) setButtonLoading(btn, true, 'Archiving…');
++
++             fetch('/task/personal/tasks/' + taskId + '/archive/', {
+                 method: 'POST',
+                 headers: {
+                     'X-CSRFToken': getCookie('csrftoken'),
+@@ -2148,7 +2224,9 @@ function deleteArchivedTask(taskId) {
+ // Delete confirmation button
+ document.getElementById('confirmDeleteChecklistBtn').addEventListener('click', function() {
+     if (!pendingDeleteChecklistId) return;
+-    
++
++    setButtonLoading(this, true, 'Deleting…');
++
+     fetch('/task/personal/checklist/' + pendingDeleteChecklistId + '/delete/', {
+         method: 'POST',
+         headers: {
+@@ -2189,6 +2267,9 @@ document.getElementById('confirmDeleteChecklistBtn').addEventListener('click', f
+     })
+     .catch(function(err) {
+         showToast('Failed to delete: ' + err.message, 'error');
++    })
++    .finally(function() {
++        setButtonLoading(document.getElementById('confirmDeleteChecklistBtn'), false, 'Delete');
+     });
+ });
+ 

@@ -391,7 +391,7 @@ class="task-title font-medium text-gray-800 dark:text-gray-100 text-sm {% if tas
 
    <!-- Edit Column Modal -->
    <div id="editColumnModal" class="modal-overlay">
-  <div class="modal-content" style="width: 70%; max-width: 90vw;">
+  <div class="modal-content" style="width: 30%; max-width: 90vw;">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-gray-900 dark:text-white">Edit Column</h2>
         <button onclick="closeEditColumnModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
@@ -779,6 +779,7 @@ placeholder="Personal notes..."></textarea>
 var isTimelineView = false;
 var pendingDeleteChecklistId = null;
 var pendingDeleteArchivedId = null;
+var pendingColumnDeletes = new Set(); // Track columns with pending drag operations
 
 // ── Utility Functions ──────────────────────────────────────────────────────────
 
@@ -957,6 +958,11 @@ function handleAddColumnFormSubmit(form) {
                 option.textContent = data.column.name;
                 select.appendChild(option);
                 select.value = data.column.id; // auto-select new column
+            }
+            // Initialize Sortable for the new column
+            var newColumnEl = document.getElementById('column-' + data.column.id);
+            if (newColumnEl) {
+                initColumnSortable(newColumnEl);
             }
         } else {
             showToast(data.error || 'Failed to create column', 'error');
@@ -1207,11 +1213,46 @@ function closeEditColumnModal() {
 }
 
 function deleteColumn(columnId) {
+    // Check if column has a pending drag operation
+    if (pendingColumnDeletes.has(columnId.toString())) {
+        showToast('Please wait for the drag operation to complete...', 'error');
+        return;
+    }
+    
     showConfirmModal(
         'Delete Column',
-        'Delete this column? All tasks in this column must be moved or deleted first.',
+        'Are you sure you want to delete this column?',
         function() {
-            window.location.href = '/task/personal/columns/' + columnId + '/delete/';
+            fetch('/task/personal/columns/' + columnId + '/delete/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success || data.deleted) {
+                    showToast('Column deleted', 'success');
+                    // Remove the entire column wrapper (header + body)
+                    var columnBody = document.getElementById('column-' + columnId);
+                    if (columnBody) {
+                        var columnWrapper = columnBody.closest('.flex-shrink-0');
+                        if (columnWrapper) columnWrapper.remove();
+                    }
+                    // Also remove column from add task modal select
+                    var select = document.querySelector('#addTaskModal select[name="column"]');
+                    if (select) {
+                        var option = select.querySelector('option[value="' + columnId + '"]');
+                        if (option) option.remove();
+                    }
+                } else {
+                    showToast(data.error || 'Cannot delete column with tasks. Move or delete tasks first.', 'error');
+                }
+            })
+            .catch(err => {
+                showToast('Failed: ' + err.message, 'error');
+            });
         }
     );
 }
@@ -2309,16 +2350,15 @@ document.getElementById('editColumnForm').addEventListener('submit', function(e)
 
 // ── Drag and drop ────────────────────────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.personal-column').forEach(function(column) {
-        new Sortable(column, {
-            group: 'personal',
-            animation: 150,
-            ghostClass: 'sortable-ghost',
-            onEnd: function(evt) {
-                var taskId      = evt.item.getAttribute('data-task-id');
-                var fromColumnId = evt.from.getAttribute('data-column-id');
-                var toColumnId   = evt.to.getAttribute('data-column-id');
+function initColumnSortable(columnEl) {
+    new Sortable(columnEl, {
+        group: 'personal',
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        onEnd: function(evt) {
+            var taskId      = evt.item.getAttribute('data-task-id');
+            var fromColumnId = evt.from.getAttribute('data-column-id');
+            var toColumnId   = evt.to.getAttribute('data-column-id');
 
                  // Optimistically update counts if moving between different columns
                 var fromCountEl = null;
@@ -2381,27 +2421,32 @@ document.addEventListener('DOMContentLoaded', function() {
                             toCountEl.textContent = currentTo - 1;
                         }
                      }
-                    console.error('Failed to update position:', err);
-                    showToast('Failed to update position', 'error');
-                    
-                    // Revert "No tasks" message visibility on error
-                    if (fromColumnBody) {
-                        var fromTasksAfterError = fromColumnBody.querySelectorAll('.personal-task');
-                        var fromNoTasksAfterError = fromColumnBody.querySelector('.text-center.py-8');
-                        if (fromNoTasksAfterError) {
-                            fromNoTasksAfterError.style.display = fromTasksAfterError.length === 0 ? 'block' : 'none';
-                        }
-                    }
-                    if (toColumnBody) {
-                        var toTasksAfterError = toColumnBody.querySelectorAll('.personal-task');
-                        var toNoTasksAfterError = toColumnBody.querySelector('.text-center.py-8');
-                        if (toNoTasksAfterError) {
-                            toNoTasksAfterError.style.display = toTasksAfterError.length === 0 ? 'block' : 'none';
-                        }
-                    }
+                     console.error('Failed to update position:', err);
+                     showToast('Failed to update position', 'error');
+                     
+                     // Revert "No tasks" message visibility on error
+                     if (fromColumnBody) {
+                         var fromTasksAfterError = fromColumnBody.querySelectorAll('.personal-task');
+                         var fromNoTasksAfterError = fromColumnBody.querySelector('.text-center.py-8');
+                         if (fromNoTasksAfterError) {
+                             fromNoTasksAfterError.style.display = fromTasksAfterError.length === 0 ? 'block' : 'none';
+                         }
+                     }
+                     if (toColumnBody) {
+                         var toTasksAfterError = toColumnBody.querySelectorAll('.personal-task');
+                         var toNoTasksAfterError = toColumnBody.querySelector('.text-center.py-8');
+                         if (toNoTasksAfterError) {
+                             toNoTasksAfterError.style.display = toTasksAfterError.length === 0 ? 'block' : 'none';
+                         }
+                     }
                 });
-            }
-        });
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.personal-column').forEach(function(column) {
+        initColumnSortable(column);
     });
 
     // Column reordering

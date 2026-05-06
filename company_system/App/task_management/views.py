@@ -108,6 +108,19 @@ def get_current_staff(request):
     return None
 
 
+def _enrich_personal_task_checklist(task):
+    """Populate checklist JSON + count/completion % attrs on a PersonalTask instance."""
+    items = list(task.checklist_items.all())
+    task.checklist_items_json = json.dumps(
+        [{'id': i.id, 'text': i.text, 'is_completed': i.is_completed} for i in items]
+    )
+    total = len(items)
+    completed = sum(1 for i in items if i.is_completed)
+    task.checklist_items_count = total
+    task.checklist_completion_percentage = int((completed / total) * 100) if total else 0
+
+
+
 @custom_login_required
 def board_list(request):
     boards = KanbanBoard.objects.filter(is_active=True)
@@ -453,7 +466,6 @@ def personal_board_list(request):
     })
 
 
-@custom_login_required
 def personal_board_detail(request, board_id):
     import json
     current_staff = get_current_staff(request)
@@ -468,14 +480,12 @@ def personal_board_detail(request, board_id):
     for column in columns:
         tasks = column.tasks.filter(is_archived=False).order_by('order')
         for task in tasks:
-            checklist_items = list(task.checklist_items.all())
-            task.checklist_items_json = json.dumps([{'id': item.id, 'text': item.text, 'is_completed': item.is_completed} for item in checklist_items])
+            _enrich_personal_task_checklist(task)
         column.tasks_list = tasks
 
     archived_tasks_qs = PersonalTask.objects.filter(board=board, is_archived=True).select_related('column').order_by('-archived_at')
     for task in archived_tasks_qs:
-        checklist_items = list(task.checklist_items.all())
-        task.checklist_items_json = json.dumps([{'id': item.id, 'text': item.text, 'is_completed': item.is_completed} for item in checklist_items])
+        _enrich_personal_task_checklist(task)
     archived_tasks = list(archived_tasks_qs)
 
     return render(request, 'task_management/personal_board_detail.html', {
@@ -890,13 +900,21 @@ def personal_column_create(request, board_id):
 def personal_column_delete(request, column_id):
     current_staff = get_current_employee(request)
     column = get_object_or_404(PersonalColumn, id=column_id, board__user=current_staff)
-    if column.tasks.exists():
-        messages.error(request, 'Cannot delete column with tasks. Move or delete tasks first.')
+    board_id = column.board.id
+    
+    # Check only non-archived tasks (matches UI behavior)
+    if column.tasks.filter(is_archived=False).exists():
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Cannot delete column with active tasks. Move or delete tasks first.'}, status=400)
+        messages.error(request, 'Cannot delete column with active tasks. Move or delete tasks first.')
     else:
         column_name = column.name
         column.delete()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': f'Column "{column_name}" deleted.'})
         messages.success(request, f'Column "{column_name}" deleted.')
-    return redirect('task_management:personal_board_detail', board_id=column.board.id)
+    
+    return redirect('task_management:personal_board_detail', board_id=board_id)
 
 
 @custom_login_required
