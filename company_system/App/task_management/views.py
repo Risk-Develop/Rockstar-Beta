@@ -764,7 +764,7 @@ def personal_task_edit(request, task_id):
         raw_deadline_time = request.POST.get('deadline_time')
         raw_date_start = request.POST.get('date_start')
         raw_date_end = request.POST.get('date_end')
-        
+
         task.title = request.POST.get('title', task.title)
         task.description = request.POST.get('description', task.description)
         task.priority = request.POST.get('priority', task.priority)
@@ -792,6 +792,23 @@ def personal_task_edit(request, task_id):
             })
         messages.success(request, 'Task updated!')
         return redirect('task_management:personal_board_detail', board_id=task.board.id)
+
+
+@require_POST
+@custom_login_required
+def personal_task_set_priority(request, task_id):
+    """Update priority for a personal task via AJAX"""
+    current_staff = get_current_staff(request)
+    task = get_object_or_404(PersonalTask, id=task_id, board__user=current_staff)
+    priority = request.POST.get('priority', 'medium')
+    valid_priorities = ['low', 'medium', 'high', 'urgent']
+    if priority not in valid_priorities:
+        priority = 'medium'
+    task.priority = priority
+    task.save()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'priority': task.priority})
+    messages.success(request, f'Priority updated to {priority}.')
     return redirect('task_management:personal_board_detail', board_id=task.board.id)
 
 

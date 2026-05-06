@@ -3486,7 +3486,52 @@ function toggleTask(taskId) {
     });
 }
 
+// ── Cycle Priority ────────────────────────────────────────────────────────────
+function cyclePriority(taskId) {
+    const priorityOrder = ['low', 'medium', 'high', 'urgent'];
+    const taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+    if (!taskEl) return;
 
+    const current = taskEl.dataset.priority || 'medium';
+    const currentIndex = priorityOrder.indexOf(current);
+    const nextPriority = priorityOrder[(currentIndex + 1) % priorityOrder.length];
+
+    // Update UI
+    taskEl.dataset.priority = nextPriority;
+    const badge = taskEl.querySelector('.priority-badge');
+    if (badge) {
+        badge.className = 'priority-badge priority-' + nextPriority;
+        badge.innerHTML = '<span class="indicator"></span>' + nextPriority.charAt(0).toUpperCase() + nextPriority.slice(1);
+        // Add pulse animation
+        badge.classList.add('updated');
+        setTimeout(() => badge.classList.remove('updated'), 300);
+    }
+
+    // Send update to server
+    fetch('/task/personal/tasks/' + taskId + '/set_priority/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'priority=' + nextPriority
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Failed to update priority');
+        return response.json();
+    })
+    .then(data => {
+        showToast('Priority updated to ' + nextPriority, 'success');
+    })
+    .catch(err => {
+        showToast('Failed: ' + err.message, 'error');
+        // Revert on error
+        taskEl.dataset.priority = current;
+        badge.className = 'priority-badge priority-' + current;
+        badge.innerHTML = '<span class="indicator"></span>' + current.charAt(0).toUpperCase() + current.slice(1);
+    });
+}
 
 // ── Generic Confirmation Modal ─────────────────────────────────────────────────
 
@@ -3927,22 +3972,7 @@ function getPriorityBorderClass(priority) {
 
 
 
-// ── CSRF helper ──────────────────────────────────────────────────────────────
 
-function getCookie(name) {
-var cookieValue = null;
-if (document.cookie && document.cookie !== '') {
-var cookies = document.cookie.split(';');
-for (var i = 0; i < cookies.length; i++) {
-var cookie = cookies[i].trim();
-if (cookie.substring(0, name.length + 1) === (name + '=')) {
-cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-break;
-}
-}
-}
-return cookieValue;
-}
 
 // ── Backdrop click to close ──────────────────────────────────────────────────
 
