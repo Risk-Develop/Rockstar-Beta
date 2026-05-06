@@ -1954,32 +1954,40 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
       </h3>
 
       <div class="space-y-4">
-        <!-- Title -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">What needs to be done? *</label>
-          <input type="text" 
-                 name="title" 
-                 id="addTitle"
-                 required 
-                 minlength="3"
-                 maxlength="200"
-                 class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                 placeholder="Task title">
-        </div>
+         <!-- Title -->
+         <div>
+           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">What needs to be done? *</label>
+           <input type="text"
+                  name="title"
+                  id="addTitle"
+                  required
+                  minlength="3"
+                  maxlength="200"
+                  class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Task title"
+                  oninput="updateCharCount('addTitle', 'addTitleCount')">
+           <div class="char-count">
+             <span id="addTitleCount">0</span>/200 characters
+           </div>
+         </div>
 
-        <!-- Description -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-            Description
-            <span class="text-gray-400 font-normal">(optional)</span>
-          </label>
-          <textarea name="description" 
-                    id="addDescription"
-                    rows="3"
-                    maxlength="1000"
-                    class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    placeholder="Add more details..."></textarea>
-        </div>
+         <!-- Description -->
+         <div>
+           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+             Description
+             <span class="text-gray-400 font-normal">(optional)</span>
+           </label>
+           <textarea name="description"
+                     id="addDescription"
+                     rows="3"
+                     maxlength="1000"
+                     class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                     placeholder="Add more details..."
+                     oninput="updateCharCount('addDescription', 'addDescriptionCount')"></textarea>
+           <div class="char-count">
+             <span id="addDescriptionCount">0</span>/1000 characters
+           </div>
+         </div>
 
         <!-- Column selection -->
         <div>
@@ -2127,12 +2135,13 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
         Notes
       </h3>
       <div>
-        <textarea name="notes" 
-                  id="addNotes"
-                  rows="3"
-                  maxlength="500"
-                  class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  placeholder="Any additional notes or reminders..."></textarea>
+         <textarea name="notes"
+                   id="addNotes"
+                   rows="3"
+                   maxlength="500"
+                   class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                   placeholder="Any additional notes or reminders..."
+                   oninput="updateCharCount('addNotes', 'addNotesCount')"></textarea>
         <div class="char-count">
           <span id="addNotesCount">0</span>/500 characters
         </div>
@@ -2221,29 +2230,37 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
       </h3>
 
       <div class="space-y-4">
-        <!-- Title -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Task title *</label>
-          <input type="text" 
-                 name="title" 
-                 id="detailTitle"
-                 required 
-                 minlength="3"
-                 maxlength="200"
-                 class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                 placeholder="Task title">
-        </div>
+         <!-- Title -->
+         <div>
+           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Task title *</label>
+           <input type="text"
+                  name="title"
+                  id="detailTitle"
+                  required
+                  minlength="3"
+                  maxlength="200"
+                  class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Task title"
+                  oninput="updateCharCount('detailTitle', 'detailTitleCount')">
+           <div class="char-count">
+             <span id="detailTitleCount">0</span>/200 characters
+           </div>
+         </div>
 
-        <!-- Description -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
-          <textarea name="description" 
-                    id="detailDescription"
-                    rows="3"
-                    maxlength="1000"
-                    class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    placeholder="Describe what needs to be done..."></textarea>
-        </div>
+         <!-- Description -->
+         <div>
+           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
+           <textarea name="description"
+                     id="detailDescription"
+                     rows="3"
+                     maxlength="1000"
+                     class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                     placeholder="Describe what needs to be done..."
+                     oninput="updateCharCount('detailDescription', 'detailDescriptionCount')"></textarea>
+           <div class="char-count">
+             <span id="detailDescriptionCount">0</span>/1000 characters
+           </div>
+         </div>
 
         <!-- Column -->
         <div>
@@ -2443,21 +2460,25 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
       </div>
     </section>
 
-    <!-- Notes Section -->
-    <section class="form-section">
-      <h3 class="form-section-title">
-        <i class="fas fa-sticky-note text-yellow-500"></i>
-        Notes
-      </h3>
-      <div>
-        <textarea name="notes" 
-                  id="detailNotes"
-                  rows="4"
-                  maxlength="1000"
-                  class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  placeholder="Additional notes, links, or reminders..."></textarea>
-      </div>
-    </section>
+     <!-- Notes Section -->
+     <section class="form-section">
+       <h3 class="form-section-title">
+         <i class="fas fa-sticky-note text-yellow-500"></i>
+         Notes
+       </h3>
+       <div>
+         <textarea name="notes"
+                   id="detailNotes"
+                   rows="4"
+                   maxlength="1000"
+                   class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                   placeholder="Additional notes, links, or reminders..."
+                   oninput="updateCharCount('detailNotes', 'detailNotesCount')"></textarea>
+         <div class="char-count">
+           <span id="detailNotesCount">0</span>/1000 characters
+         </div>
+       </div>
+     </section>
 
     <!-- Action Buttons -->
     <div class="modal-actions">
@@ -3129,11 +3150,16 @@ function openTaskDetail(taskId) {
     // Update deadline display
     updateDeadlineDisplay('edit');
 
-    document.getElementById('detailDateStart').value   = taskEl.dataset.dateStart   || '';
-    document.getElementById('detailDateEnd').value     = taskEl.dataset.dateEnd     || '';
-    document.getElementById('detailNotes').value       = taskEl.dataset.notes       || '';
+     document.getElementById('detailDateStart').value   = taskEl.dataset.dateStart   || '';
+     document.getElementById('detailDateEnd').value     = taskEl.dataset.dateEnd     || '';
+     document.getElementById('detailNotes').value       = taskEl.dataset.notes       || '';
 
-    document.getElementById('updateTaskForm').action = '/task/personal/tasks/' + taskId + '/edit/';
+     // Update character counters for detail modal
+     updateCharCount('detailTitle', 'detailTitleCount');
+     updateCharCount('detailDescription', 'detailDescriptionCount');
+     updateCharCount('detailNotes', 'detailNotesCount');
+
+     document.getElementById('updateTaskForm').action = '/task/personal/tasks/' + taskId + '/edit/';
 
     // Load checklist (initializes ChecklistManager internally)
     loadChecklistItems(taskId);
