@@ -502,6 +502,134 @@ html.dark .modal-overlay {
   opacity: 1;
   visibility: visible;
 }
+
+/* Base modal content - responsive default */
+.modal-content {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  width: 95%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  margin: 1rem auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  /* Smooth scrolling inside modal */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+html.dark .modal-content {
+  background: #1f2937;
+  border: 1px solid #374151;
+}
+
+/* Modal header spacing */
+.modal-header-accent {
+  margin: 0 -16px 16px -16px;
+}
+@media (min-width: 480px) {
+  .modal-content {
+    padding: 20px;
+  }
+  .modal-header-accent {
+    margin: 0 -20px 20px -20px;
+  }
+}
+@media (min-width: 640px) {
+  .modal-content {
+    padding: 24px;
+  }
+  .modal-header-accent {
+    margin: 0 -24px 24px -24px;
+  }
+}
+
+/* Responsive sizing variants */
+@media (min-width: 480px) {
+  .modal-content {
+    width: 90%;
+  }
+}
+
+@media (min-width: 640px) {
+  .modal-content {
+    max-width: 560px;
+  }
+}
+
+@media (min-width: 768px) {
+  .modal-content {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .modal-content {
+    max-width: 700px;
+    width: 80%;
+  }
+}
+
+@media (min-width: 1280px) {
+  .modal-content {
+    max-width: 800px;
+  }
+}
+
+/* Size modifiers for specific use cases */
+.modal-content.sm {
+  max-width: 360px;
+}
+@media (min-width: 640px) {
+  .modal-content.sm {
+    max-width: 420px;
+  }
+}
+
+.modal-content.lg {
+  max-width: 700px;
+}
+@media (min-width: 1024px) {
+  .modal-content.lg {
+    max-width: 900px;
+  }
+}
+
+.modal-content.xl {
+  max-width: 800px;
+}
+@media (min-width: 1024px) {
+  .modal-content.xl {
+    max-width: 1100px;
+    width: 90%;
+  }
+}
+
+/* Small confirmation dialogs (delete confirmations) */
+.modal-content.confirm {
+  max-width: 320px;
+}
+@media (min-width: 640px) {
+  .modal-content.confirm {
+    max-width: 380px;
+  }
+}
+
+/* Full-screen on very small devices (< 480px) */
+@media (max-width: 479px) {
+  .modal-content {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    margin: 0;
+  }
+  .modal-header-accent {
+    margin: 0 -16px 16px -16px;
+  }
+}
 html.dark .modal-overlay {
   background-color: rgb(0 0 0 / 81%);
 }
@@ -509,19 +637,96 @@ html.dark .modal-overlay {
   opacity: 1;
   visibility: visible;
 }
+
+/* Base modal content - responsive default */
 .modal-content {
-background: #ffffff;
-border: 1px solid #e5e7eb;
-border-radius: 12px;
-padding: 24px;
-width: 90%;
-max-width: 70%;
-max-height: 90vh;
-overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  width: 95%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  margin: 1rem auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 html.dark .modal-content {
-background: #1f2937;
-border: 1px solid #374151;
+  background: #1f2937;
+  border: 1px solid #374151;
+}
+
+/* Responsive sizing variants */
+@media (min-width: 480px) {
+  .modal-content {
+    width: 90%;
+    padding: 20px;
+  }
+}
+
+@media (min-width: 640px) {
+  .modal-content {
+    max-width: 560px;
+    padding: 24px;
+  }
+}
+
+@media (min-width: 768px) {
+  .modal-content {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .modal-content {
+    max-width: 700px;
+    width: 80%;
+  }
+}
+
+@media (min-width: 1280px) {
+  .modal-content {
+    max-width: 800px;
+  }
+}
+
+/* Size modifiers for specific use cases */
+.modal-content.sm {
+  max-width: 400px;
+}
+@media (min-width: 640px) {
+  .modal-content.sm {
+    max-width: 480px;
+  }
+}
+
+.modal-content.lg {
+  max-width: 700px;
+}
+@media (min-width: 1024px) {
+  .modal-content.lg {
+    max-width: 900px;
+  }
+}
+
+.modal-content.xl {
+  max-width: 800px;
+}
+@media (min-width: 1024px) {
+  .modal-content.xl {
+    max-width: 1000px;
+    width: 90%;
+  }
+}
+
+/* Small confirmation dialogs (delete confirmations) */
+.modal-content.confirm {
+  max-width: 360px;
+}
+@media (min-width: 640px) {
+  .modal-content.confirm {
+    max-width: 400px;
+  }
 }
 
 /* Toast notification */
@@ -681,18 +886,7 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
     font-weight: 700;
   }
   
-   /* Modal improvements CSS will be added here */
-   .modal-content {
-     width: 90%;
-     max-width: 600px;
-     margin: 1rem auto;
-     border-radius: 16px;
-     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-   }
 
-   @media (min-width: 640px) {
-     .modal-content { width: 85%; max-width: 560px; }
-   }
 
    /* Consistent modal header accent bar */
    .modal-header-accent {
@@ -712,22 +906,25 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
    /* Consistent modal close button - using direct styles to avoid @apply issues */
    /* Note: close buttons already have Tailwind utility classes inline */
 
-   @media (min-width: 1024px) {
-    .modal-content { width: 50%; max-width: 640px; }
-  }
-  
-  .form-section {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 1.25rem;
-    margin-bottom: 1rem;
-  }
-  
-  html.dark .form-section {
-    background: rgba(55, 65, 81, 0.3);
-    border-color: #374151;
-  }
+   .form-section {
+     background: #f9fafb;
+     border: 1px solid #e5e7eb;
+     border-radius: 12px;
+     padding: 1rem;
+     margin-bottom: 0.75rem;
+   }
+
+   @media (min-width: 480px) {
+     .form-section {
+       padding: 1.25rem;
+       margin-bottom: 1rem;
+     }
+   }
+   
+   html.dark .form-section {
+     background: rgba(55, 65, 81, 0.3);
+     border-color: #374151;
+   }
   
   .form-section-title {
     font-size: 0.75rem;
@@ -916,18 +1113,25 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
     color: #d1d5db;
   }
   
-  .modal-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid #e5e7eb;
-  }
-  
-  html.dark .modal-actions {
-    border-color: #374151;
-  }
+   .modal-actions {
+     display: grid;
+     grid-template-columns: 1fr 1fr;
+     gap: 0.75rem;
+     margin-top: 1.5rem;
+     padding-top: 1.25rem;
+     border-top: 1px solid #e5e7eb;
+   }
+
+   /* Stack buttons on very small screens for easier tapping */
+   @media (max-width: 480px) {
+     .modal-actions {
+       grid-template-columns: 1fr;
+     }
+   }
+   
+   html.dark .modal-actions {
+     border-color: #374151;
+   }
   
   .btn-secondary {
     background: #f3f4f6 !important;
@@ -1178,7 +1382,7 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 <!--<div class="max-w-7xl mx-auto">-->
 <div class="mx-auto">    
  <!-- Header -->
- <div class="flex justify-between items-center mb-6">
+   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
    <div class="flex items-center gap-4">
      <a href="{% url 'task_management:personal_board_list' %}" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
        <i class="fas fa-arrow-left text-xl"></i>
@@ -1443,23 +1647,23 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
     {% endfor %}
 
   <!-- Add Column Modal -->
-  <div id="addColumnModal" class="modal-overlay">
-  <div class="modal-content" style="max-width: 480px;">
-  <div class="modal-header-accent"></div>
-  <div class="flex justify-between items-start mb-6">
-    <div class="flex-1">
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <i class="fas fa-columns text-purple-500"></i>
-        Add New Column
-      </h2>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Organize your tasks with a custom column</p>
-    </div>
-    <button onclick="closeAddColumnModal()" 
-            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-            aria-label="Close modal">
-      <i class="fas fa-times text-xl"></i>
-    </button>
-  </div>
+   <div id="addColumnModal" class="modal-overlay">
+   <div class="modal-content sm">
+   <div class="modal-header-accent"></div>
+   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+     <div class="flex-1">
+       <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+         <i class="fas fa-columns text-purple-500"></i>
+         Add New Column
+       </h2>
+       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Organize your tasks with a custom column</p>
+     </div>
+     <button onclick="closeAddColumnModal()"
+             class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+             aria-label="Close modal">
+       <i class="fas fa-times text-xl"></i>
+     </button>
+   </div>
 
   <form id="addColumnForm" method="post" action="{% url 'task_management:personal_column_create' board.id %}" novalidate>
     {% csrf_token %}
@@ -1568,9 +1772,9 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 
     <!-- Edit Column Modal -->
     <div id="editColumnModal" class="modal-overlay">
-   <div class="modal-content" style="max-width: 480px;">
+   <div class="modal-content sm">
    <div class="modal-header-accent"></div>
-       <div class="flex justify-between items-start mb-6">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
          <div class="flex-1">
            <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
              <i class="fas fa-edit text-indigo-500"></i>
@@ -1814,14 +2018,14 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 
 <!-- Delete Archived Task Confirmation Modal -->
 <div id="deleteArchivedModal" class="modal-overlay">
-  <div class="modal-content" style="width: 30%; max-width: 90vw;">
+  <div class="modal-content confirm">
     <div class="modal-header-accent"></div>
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
       <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
         <i class="fas fa-trash-alt text-red-500"></i>
         Confirm Permanent Delete
       </h2>
-      <button onclick="closeDeleteArchivedModal()" 
+      <button onclick="closeDeleteArchivedModal()"
               class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               aria-label="Close modal">
         <i class="fas fa-times text-xl"></i>
@@ -1848,14 +2052,14 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 
 <!-- Generic Confirmation Modal (for Archive/Restore) -->
 <div id="confirmModal" class="modal-overlay">
-  <div class="modal-content" style="width: 30%; max-width: 90vw;">
+  <div class="modal-content confirm">
     <div class="modal-header-accent"></div>
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
       <h2 id="confirmModalTitle" class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
         <i class="fas fa-question-circle text-blue-500"></i>
         Confirm Action
       </h2>
-      <button onclick="closeConfirmModal()" 
+      <button onclick="closeConfirmModal()"
               class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               aria-label="Close modal">
         <i class="fas fa-times text-xl"></i>
@@ -1883,8 +2087,8 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 
 <!-- Help Modal -->
 <div id="helpModal" class="modal-overlay">
-<div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-300 dark:border-gray-600">
-<div class="flex justify-between items-center mb-6">
+<div class="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-300 dark:border-gray-600">
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
 <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Keyboard Shortcuts</h2>
 <button onclick="toggleHelp()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-white">
 <i class="fas fa-times"></i>
@@ -1925,8 +2129,8 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 </div>
 
   <!-- Add Task Modal -->
-  <div id="addTaskModal" class="modal-overlay">
-  <div class="modal-content" style="max-width: 560px;">
+   <div id="addTaskModal" class="modal-overlay">
+   <div class="modal-content">
   <div class="modal-header-accent"></div>
   <div class="flex justify-between items-start mb-6">
     <div class="flex-1">
@@ -2166,10 +2370,10 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
    </div>
    </div>
 
-   <!-- Delete Task Confirmation Modal -->
-   <div id="deleteTaskModal" class="modal-overlay">
-     <div class="modal-content" style="width: 30%; max-width: 90vw;">
-       <div class="flex justify-between items-center mb-4">
+    <!-- Delete Task Confirmation Modal -->
+    <div id="deleteTaskModal" class="modal-overlay">
+      <div class="modal-content confirm">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
          <h2 class="text-xl font-bold text-gray-900 dark:text-white">
            <i class="fas fa-trash-alt text-red-500 mr-2"></i>Confirm Delete
          </h2>
@@ -2198,9 +2402,9 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
      </div>
    </div>
 
-   <!-- Task Detail Modal -->
-   <div id="taskDetailModal" class="modal-overlay">
-   <div class="modal-content" style="max-width: 640px;">
+    <!-- Task Detail Modal -->
+    <div id="taskDetailModal" class="modal-overlay">
+    <div class="modal-content lg">
    <div class="modal-header-accent"></div>
   <div class="flex justify-between items-start mb-6">
     <div class="flex-1">
@@ -2401,7 +2605,7 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 
     <!-- Checklist Section -->
     <section class="form-section">
-      <div class="flex justify-between items-center mb-4">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
           <i class="fas fa-tasks text-blue-500"></i>
           Checklist
@@ -2503,8 +2707,8 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 
 <!-- Delete Checklist Confirmation Modal -->
 <div id="deleteChecklistModal" class="modal-overlay">
-  <div class="modal-content" style="width: 30%; max-width: 90vw;">
-    <div class="flex justify-between items-center mb-4">
+  <div class="modal-content confirm">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
       <h2 class="text-xl font-bold text-gray-900 dark:text-white">Confirm Delete</h2>
       <button onclick="closeDeleteChecklistModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
         <i class="fas fa-times text-xl"></i>
