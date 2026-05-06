@@ -1000,23 +1000,33 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
     text-transform: capitalize;
   }
   
-  .deadline-display {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem;
-    background: #f3f4f6;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  
-  html.dark .deadline-display {
-    background: #374151;
-    border-color: #4b5563;
-    color: #f3f4f6;
-  }
+   .deadline-display {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     padding: 0.75rem;
+     background: #f3f4f6;
+     border: 1px solid #e5e7eb;
+     border-radius: 0.5rem;
+     cursor: pointer;
+     transition: all 0.15s;
+   }
+
+   .deadline-display:focus {
+     outline: 2px solid #3b82f6;
+     outline-offset: 2px;
+     border-color: #3b82f6;
+   }
+
+   html.dark .deadline-display:focus {
+     outline-color: #60a5fa;
+   }
+
+   html.dark .deadline-display {
+     background: #374151;
+     border-color: #4b5563;
+     color: #f3f4f6;
+   }
   
   .deadline-display:hover {
     border-color: #3b82f6;
@@ -2253,15 +2263,16 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
             <span class="text-gray-400 font-normal">(optional)</span>
           </label>
           <div class="deadline-wrapper">
-            <div class="deadline-display" id="addDeadlineDisplay" onclick="openAddDeadlinePicker()">
-              <span class="deadline-text" id="addDeadlineText">
+            <div class="deadline-display" id="addDeadlineDisplay" onclick="openAddDeadlinePicker()" onkeydown="if(event.key==='Enter'||event.key===' ') {event.preventDefault(); openAddDeadlinePicker();}" role="button" tabindex="0" aria-label="Set deadline">
+              <span class="deadline-text" id="addDeadlineText" aria-live="polite">
                 <i class="fas fa-calendar-plus text-gray-400 mr-2"></i>
                 <span class="text-gray-500">Set deadline</span>
               </span>
-              <button type="button" 
+              <button type="button"
                       class="deadline-clear-btn"
                       id="addDeadlineClearBtn"
-                      onclick="event.stopPropagation(); clearDeadline('add')">
+                      onclick="event.stopPropagation(); clearDeadline('add')"
+                      aria-label="Clear deadline">
                 Clear
               </button>
             </div>
@@ -2524,15 +2535,16 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
             <span class="text-gray-400 font-normal">(optional)</span>
           </label>
           <div class="deadline-wrapper">
-            <div class="deadline-display" id="editDeadlineDisplay" onclick="openEditDeadlinePicker()">
-              <span class="deadline-text" id="editDeadlineText">
+            <div class="deadline-display" id="editDeadlineDisplay" onclick="openEditDeadlinePicker()" onkeydown="if(event.key==='Enter'||event.key===' ') {event.preventDefault(); openEditDeadlinePicker();}" role="button" tabindex="0" aria-label="Edit deadline">
+              <span class="deadline-text" id="editDeadlineText" aria-live="polite">
                 <i class="fas fa-calendar-plus text-gray-400 mr-2"></i>
                 <span class="text-gray-500">Set deadline</span>
               </span>
-              <button type="button" 
+              <button type="button"
                       class="deadline-clear-btn"
                       id="editDeadlineClearBtn"
-                      onclick="event.stopPropagation(); clearDeadline('edit')">
+                      onclick="event.stopPropagation(); clearDeadline('edit')"
+                      aria-label="Clear deadline">
                 Clear
               </button>
             </div>
