@@ -7,6 +7,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
 <style>
 
 /* Light mode styles */
@@ -207,6 +208,108 @@ html.dark #calendar .fc-list-event:hover { background: #374151; }
 html.dark #calendar .fc-list-day-cushion { background: #1f2937; }
 #calendar .fc-list-event-title a { color: #111827; }
 html.dark #calendar .fc-list-event-title a { color: #fff; }
+
+/* Flatpickr Dark Mode */
+html.dark .flatpickr-calendar {
+    background: #1f2937 !important;
+    border: 1px solid #374151 !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+html.dark .flatpickr-months {
+    background: #111827 !important;
+    border-bottom: 1px solid #374151 !important;
+}
+html.dark .flatpickr-month {
+    color: #fff !important;
+}
+html.dark .flatpickr-current-month .flatpickr-monthDropdown-item,
+html.dark .flatpickr-current-month input,
+html.dark .flatpickr-current-month .numInputWrapper span {
+    color: #d1d5db !important;
+}
+html.dark .flatpickr-weekdaycontainer {
+    border-bottom: 1px solid #374151 !important;
+}
+html.dark .flatpickr-weekday {
+    color: #9ca3af !important;
+}
+html.dark .flatpickr-day {
+    background: #1f2937 !important;
+    color: #d1d5db !important;
+  
+}
+html.dark .flatpickr-day:hover {
+    background: #374151 !important;
+    color: #fff !important;
+    border-color: #4b5563 !important;
+}
+html.dark .flatpickr-day.selected,
+html.dark .flatpickr-day.startRange,
+html.dark .flatpickr-day.endRange,
+html.dark .flatpickr-day.inRange {
+    background: #3b82f6 !important;
+    color: #fff !important;
+    border-color: #60a5fa !important;
+}
+html.dark .flatpickr-day.today {
+    border-color: #3b82f6 !important;
+}
+html.dark .flatpickr-day.weekSelected {
+    background: #374151 !important;
+}
+html.dark .flatpickr-time {
+    background: #111827 !important;
+    border-top: 1px solid #374151 !important;
+}
+html.dark .flatpickr-time .flatpickr-ampm,
+html.dark .flatpickr-time input {
+    color: #d1d5db !important;
+    background: #1f2937 !important;
+    border: 1px solid #374151 !important;
+}
+html.dark .flatpickr-time .flatpickr-ampm:hover,
+html.dark .flatpickr-time input:hover {
+    background: #374151 !important;
+}
+html.dark .flatpickr-time .flatpickr-am-pm-select {
+    background: #1f2937 !important;
+    color: #d1d5db !important;
+}
+html.dark .flatpickr-time input:focus {
+    background: #374151 !important;
+    color: #fff !important;
+}
+html.dark .flatpickr-time .numInputWrapper span {
+    color: #9ca3af !important;
+}
+html.dark .flatpickr-time .flatpickr-time-separator {
+    color: #9ca3af !important;
+}
+html.dark .flatpickr-next-month svg,
+html.dark .flatpickr-prev-month svg {
+    fill: #d1d5db !important;
+}
+html.dark .flatpickr-months .flatpickr-prev-month,
+html.dark .flatpickr-months .flatpickr-next-month {
+    color: #d1d5db !important;
+}
+html.dark .flatpickr-months .flatpickr-prev-month:hover,
+html.dark .flatpickr-months .flatpickr-next-month:hover {
+    color: #fff !important;
+}
+html.dark .flatpickr-calendar .flatpickr-month-dropdown {
+    color: #d1d5db !important;
+    background: #1f2937 !important;
+}
+html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown-item:hover {
+    background: #374151 !important;
+    color: #fff !important;
+}
+html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown-item.selected {
+    background: #3b82f6 !important;
+    color: #fff !important;
+    font-weight: 700;
+}
 </style>
 {% endblock %}
 
@@ -289,8 +392,9 @@ html.dark #calendar .fc-list-event-title a { color: #fff; }
  data-title="{{ task.title|escape }}"
  data-priority="{{ task.priority }}"
  data-description="{{ task.description|escape }}"
- data-deadline="{{ task.deadline|date:'Y-m-d' }}"
- data-date-start="{{ task.date_start|date:'Y-m-d' }}"
+  data-deadline="{{ task.deadline|date:'Y-m-d' }}"
+  data-deadline_time="{% if task.deadline_time %}{{ task.deadline_time|time:'H:i' }}{% endif %}"
+  data-date-start="{{ task.date_start|date:'Y-m-d' }}"
  data-date-end="{{ task.date_end|date:'Y-m-d' }}"
  data-notes="{{ task.notes|default:''|escape }}"
  data-checklist="{{ task.checklist_items_json|escape }}"
@@ -324,7 +428,7 @@ class="task-title font-medium text-gray-800 dark:text-gray-100 text-sm {% if tas
 {% endif %}
 {% if task.deadline %}
 <span class="text-xs text-gray-600 dark:text-gray-400">
-<i class="fas fa-calendar-alt mr-1"></i>{{ task.deadline|date:"M d" }}
+<i class="fas fa-calendar-alt mr-1"></i>{{ task.deadline|date:"M d" }}{% if task.deadline_time %} {{ task.deadline_time|time:"g:i A" }}{% endif %}
 </span>
 {% endif %}
 {% if task.date_start and task.date_end %}
@@ -442,9 +546,9 @@ class="task-title font-medium text-gray-800 dark:text-gray-100 text-sm {% if tas
       <i class="fas fa-times text-xl"></i>
     </button>
   </div>
-  <div id="archivedTasksList" class="p-4 overflow-y-auto h-[calc(100%-64px)]">
-    {% for task in archived_tasks %}
-    <div class="p-3 mb-2 rounded-lg border-l-4 {% if task.priority == 'urgent' %}bg-red-50 dark:bg-red-900/20 border-red-500{% elif task.priority == 'high' %}bg-orange-50 dark:bg-orange-900/20 border-orange-500{% elif task.priority == 'medium' %}bg-blue-50 dark:bg-blue-900/20 border-blue-500{% else %}bg-gray-50 dark:bg-gray-700/50 border-gray-400{% endif %}" data-task-id="{{ task.id }}">
+   <div id="archivedTasksList" class="p-4 overflow-y-auto h-[calc(100%-64px)]">
+     {% for task in archived_tasks %}
+     <div class="p-3 mb-2 rounded-lg border-l-4 {% if task.priority == 'urgent' %}bg-red-50 dark:bg-red-900/20 border-red-500{% elif task.priority == 'high' %}bg-orange-50 dark:bg-orange-900/20 border-orange-500{% elif task.priority == 'medium' %}bg-blue-50 dark:bg-blue-900/20 border-blue-500{% else %}bg-gray-50 dark:bg-gray-700/50 border-gray-400{% endif %}" data-task-id="{{ task.id }}" data-deadline_time="{% if task.deadline_time %}{{ task.deadline_time|time:'H:i' }}{% endif %}">
       <div class="flex justify-between items-start">
         <div class="flex-1 min-w-0">
           <h4 class="font-medium text-gray-800 dark:text-gray-100 text-sm {% if task.is_completed %}text-gray-500{% endif %}">{{ task.title }}</h4>
@@ -457,7 +561,7 @@ class="task-title font-medium text-gray-800 dark:text-gray-100 text-sm {% if tas
             </span>
             {% if task.deadline %}
             <span class="text-xs text-gray-600 dark:text-gray-400">
-              <i class="fas fa-calendar-alt mr-1"></i>{{ task.deadline|date:"M d, Y" }}
+              <i class="fas fa-calendar-alt mr-1"></i>{{ task.deadline|date:"M d, Y" }}{% if task.deadline_time %} {{ task.deadline_time|time:"g:i A" }}{% endif %}
             </span>
             {% endif %}
           </div>
@@ -608,30 +712,32 @@ class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark
 <option value="urgent">Urgent</option>
 </select>
 </div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deadline</label>
-<input type="date" name="deadline" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+ <div>
+ <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deadline</label>
+ <input type="text" id="addDeadlineDisplay" placeholder="Select date & time"
+ class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+ <input type="hidden" name="deadline" id="addDeadlineDate">
+ <input type="hidden" name="deadline_time" id="addDeadlineTime">
+ </div>
 </div>
-</div>
-<div class="grid grid-cols-2 gap-4">
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Start</label>
-<input type="date" name="date_start" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date End</label>
-<input type="date" name="date_end" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-</div>
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-<textarea name="notes" rows="2" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-placeholder="Personal notes..."></textarea>
-</div>
+   <div class="grid grid-cols-2 gap-4">
+   <div>
+   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Start</label>
+   <input type="date" name="date_start" id="addDateStart"
+   class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+   </div>
+   <div>
+   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date End</label>
+   <input type="date" name="date_end" id="addDateEnd"
+   class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+   </div>
+   </div>
+  <div>
+  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+  <textarea name="notes" rows="2"
+  class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+  placeholder="Personal notes..."></textarea>
+  </div>
 <div class="flex items-center gap-2">
 <input type="checkbox" name="is_recurring" id="is_recurring" class="w-4 h-4">
 <label for="is_recurring" class="text-sm text-gray-700 dark:text-gray-300">Recurring task</label>
@@ -674,19 +780,19 @@ Cancel
 <div class="space-y-4">
 <div>
 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
-<input type="text" name="title" id="detailTitle" required 
+<input type="text" name="title" id="detailTitle" required
 class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
 </div>
 <div>
 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-<textarea name="description" id="detailDescription" rows="2" 
+<textarea name="description" id="detailDescription" rows="2"
 class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
 placeholder="Description..."></textarea>
 </div>
 <div class="grid grid-cols-2 gap-4">
 <div>
 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
-<select name="priority" id="detailPriority" 
+<select name="priority" id="detailPriority"
 class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
 <option value="low">Low</option>
 <option value="medium">Medium</option>
@@ -696,23 +802,24 @@ class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark
 </div>
 <div>
 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deadline</label>
-<input type="date" name="deadline" id="detailDeadline" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
+<input type="text" id="editDeadlineDisplay" placeholder="Select date & time"
+class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
+<input type="hidden" name="deadline" id="detailDeadline">
+<input type="hidden" name="deadline_time" id="detailDeadlineTime">
 </div>
 </div>
-<div class="grid grid-cols-2 gap-4">
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Start</label>
-<input type="date" name="date_start" id="detailDateStart" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date End</label>
-<input type="date" name="date_end" id="detailDateEnd" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
-</div>
-</div>
-</div>
+ <div class="grid grid-cols-2 gap-4">
+ <div>
+ <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Start</label>
+ <input type="date" name="date_start" id="detailDateStart"
+ class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+ </div>
+ <div>
+ <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date End</label>
+ <input type="date" name="date_end" id="detailDateEnd"
+ class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+ </div>
+ </div>
 
 <!-- Checklist Section -->
 <div class="mt-4">
@@ -720,7 +827,7 @@ class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark
 <i class="fas fa-tasks mr-2 text-blue-500"></i>Checklist
 </h3>
 <div class="flex gap-2 mb-3">
-<input type="text" id="checklistInput" placeholder="Add checklist item..." 
+<input type="text" id="checklistInput" placeholder="Add checklist item..."
 class="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white text-sm"
 onkeydown="if(event.key==='Enter'){event.preventDefault();submitChecklist();}">
 <button type="button" onclick="submitChecklist()"
@@ -735,22 +842,22 @@ class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
 
 <div class="mt-4">
 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-<textarea name="notes" id="detailNotes" rows="5" 
+<textarea name="notes" id="detailNotes" rows="5"
 class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
 placeholder="Personal notes..."></textarea>
 </div>
 
 <input type="hidden" name="task_id" id="detailTaskId">
- <div class="flex gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-   <button type="button" onclick="archiveDetailTask()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
-     Archive Task
-   </button>
-   <button type="button" id="saveBtn" onclick="saveTask()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-     Save Changes
-   </button>
- </div>
+<div class="flex gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+<button type="button" onclick="archiveDetailTask()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+Archive Task
+</button>
+<button type="button" id="saveBtn" onclick="saveTask()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+Save Changes
+</button>
+</div>
 </form>
-  </div>
+</div>
 </div>
 
 <!-- Delete Checklist Confirmation Modal -->
@@ -761,6 +868,7 @@ placeholder="Personal notes..."></textarea>
       <button onclick="closeDeleteChecklistModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
         <i class="fas fa-times text-xl"></i>
       </button>
+    </div>
     <div class="space-y-4">
       <p class="text-gray-600 dark:text-gray-300">Are you sure you want to delete this checklist item? This action cannot be undone.</p>
       <div class="mt-6 flex gap-3">
@@ -773,6 +881,7 @@ placeholder="Personal notes..."></textarea>
 
 <script src="{% static 'js/fullcalendar.min.js' %}"></script>
 <script src="{% static 'js/Sortable.min.js' %}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
 <script>
 // ── Global State ────────────────────────────────────────────────────────────────
 
@@ -882,6 +991,7 @@ function buildTaskCardHtml(task) {
         ' data-priority="' + task.priority + '"' +
         ' data-description="' + escapeHtml(task.description || '') + '"' +
         ' data-deadline="' + (task.deadline || '') + '"' +
+        ' data-deadline_time="' + (task.deadline_time || '') + '"' +
         ' data-date-start="' + (task.date_start || '') + '"' +
         ' data-date-end="' + (task.date_end || '') + '"' +
         ' data-notes="' + escapeHtml(task.notes || '') + '"' +
@@ -906,8 +1016,14 @@ function buildTaskCardHtml(task) {
             '<i class="fas fa-redo mr-1"></i>' + task.recurring_type.charAt(0).toUpperCase() + task.recurring_type.slice(1) + '</span>';
     }
     if (task.deadline) {
-        html += '<span class="text-xs text-gray-600 dark:text-gray-400"><i class="fas fa-calendar-alt mr-1"></i>' +
-            new Date(task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>';
+        var deadlineDate = new Date(task.deadline);
+        var dateStr = deadlineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        var timeStr = '';
+        if (task.deadline_time) {
+            var timeObj = new Date('1970-01-01T' + task.deadline_time);
+            timeStr = ' ' + timeObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        }
+        html += '<span class="text-xs text-gray-600 dark:text-gray-400"><i class="fas fa-calendar-alt mr-1"></i>' + dateStr + timeStr + '</span>';
     }
     if (task.date_start && task.date_end) {
         html += '<span class="text-xs text-blue-600 dark:text-blue-400"><i class="fas fa-calendar-week mr-1"></i>' +
@@ -1052,21 +1168,21 @@ function renderTimeline() {
         var dateStart = taskEl.getAttribute('data-date-start');
         var dateEnd = taskEl.getAttribute('data-date-end');
         var deadline = taskEl.getAttribute('data-deadline');
+        var deadline_time = taskEl.getAttribute('data-deadline_time');
         var title = taskEl.getAttribute('data-title') || 'Untitled';
         var taskId = taskEl.getAttribute('data-task-id');
         
-        console.log('Task', taskId, 'start:', dateStart, 'end:', dateEnd, 'deadline:', deadline);
-        
-        // Determine start and end dates - prefer date_start/date_end, fallback to deadline
+        // Determine start and end - prefer date_range, else deadline (date+time if available)
         var start, end;
         if (dateStart || dateEnd) {
             start = dateStart || dateEnd;
             end = dateEnd || null;
         } else if (deadline && deadline !== '') {
-            start = deadline;
-            end = null; // single day event
+            // Combine date and time if time provided
+            start = deadline_time ? deadline + 'T' + deadline_time : deadline;
+            end = null;
         } else {
-            return; // skip tasks without any dates
+            return;
         }
         
         var columnEl = taskEl.closest('.personal-column');
@@ -1171,17 +1287,68 @@ window._toastTimer = setTimeout(function() { t.className = ''; }, 3000);
 // ── Modal helpers ────────────────────────────────────────────────────────────
 
 function openAddTaskModal(columnId) {
-if (columnId) {
-var select = document.querySelector('#addTaskModal select[name="column"]');
-if (select) select.value = columnId;
-}
-document.getElementById('addTaskModal').classList.add('show');
+    if (columnId) {
+        var select = document.querySelector('#addTaskModal select[name="column"]');
+        if (select) select.value = columnId;
+    }
+    // Reset deadline fields
+    var displayEl = document.getElementById('addDeadlineDisplay');
+    var dateEl = document.getElementById('addDeadlineDate');
+    var timeEl = document.getElementById('addDeadlineTime');
+    if (displayEl) displayEl.value = '';
+    if (dateEl) dateEl.value = '';
+    if (timeEl) timeEl.value = '';
+    // Initialize flatpickr if not already
+    if (!window.deadlineFlatpickr) {
+        window.deadlineFlatpickr = flatpickr('#addDeadlineDisplay', {
+            enableTime: true,
+            dateFormat: "M j, Y h:i K",
+            time_24hr: false,
+            onChange: function(selectedDates) {
+                if (selectedDates.length > 0) {
+                    var date = selectedDates[0];
+                    var year = date.getFullYear();
+                    var month = String(date.getMonth() + 1).padStart(2, '0');
+                    var day = String(date.getDate()).padStart(2, '0');
+                    document.getElementById('addDeadlineDate').value = `${year}-${month}-${day}`;
+                    var hours = String(date.getHours()).padStart(2, '0');
+                    var minutes = String(date.getMinutes()).padStart(2, '0');
+                    document.getElementById('addDeadlineTime').value = `${hours}:${minutes}`;
+                    // Clear date range fields when deadline is set
+                    document.getElementById('addDateStart').value = '';
+                    document.getElementById('addDateEnd').value = '';
+                } else {
+                    document.getElementById('addDeadlineDate').value = '';
+                    document.getElementById('addDeadlineTime').value = '';
+                }
+            }
+            
+        });
+    } else {
+        window.deadlineFlatpickr.clear();
+        document.getElementById('addDeadlineDate').value = '';
+        document.getElementById('addDeadlineTime').value = '';
+    }
+    document.getElementById('addTaskModal').classList.add('show');
 }
 function closeAddTaskModal() {
-document.getElementById('addTaskModal').classList.remove('show');
+    document.getElementById('addTaskModal').classList.remove('show');
+    if (window.deadlineFlatpickr) {
+        window.deadlineFlatpickr.clear();
+        document.getElementById('addDeadlineDate').value = '';
+        document.getElementById('addDeadlineTime').value = '';
+    }
 }
 function closeTaskDetailModal() {
     document.getElementById('taskDetailModal').classList.remove('show');
+    // Clear flatpickr and hidden fields
+    if (window.editDeadlineFlatpickr) {
+        window.editDeadlineFlatpickr.clear();
+        var deadlineEl = document.getElementById('detailDeadline');
+        var deadlineTimeEl = document.getElementById('detailDeadlineTime');
+        if (deadlineEl) deadlineEl.value = '';
+        if (deadlineTimeEl) deadlineTimeEl.value = '';
+    }
     // Destroy Sortable instance to avoid stale references
     if (window.checklistSortable) {
         window.checklistSortable.destroy();
@@ -1272,7 +1439,61 @@ function openTaskDetail(taskId) {
     document.getElementById('detailTitle').value       = taskEl.dataset.title       || '';
     document.getElementById('detailDescription').value = taskEl.dataset.description || '';
     document.getElementById('detailPriority').value    = taskEl.dataset.priority    || 'medium';
-    document.getElementById('detailDeadline').value    = taskEl.dataset.deadline    || '';
+    
+    var deadline = taskEl.dataset.deadline || '';
+    var deadlineTime = taskEl.dataset.deadline_time || '';
+    document.getElementById('detailDeadline').value    = deadline;
+    document.getElementById('detailDeadlineTime').value = deadlineTime;
+    
+    // Set deadline display for flatpickr - build in expected format
+    var displayValue = '';
+    if (deadline) {
+        var date = new Date(deadline);
+        if (deadlineTime && deadlineTime !== '') {
+            var [h, m] = deadlineTime.split(':');
+            date.setHours(parseInt(h), parseInt(m));
+        }
+        // Format: "May 7, 2026 9:00 AM" - matches flatpickr's dateFormat
+        var month = date.toLocaleString('en-US', { month: 'short' });
+        var day = date.getDate();
+        var year = date.getFullYear();
+        var hours = date.getHours();
+        var minutes = date.getMinutes();
+        var ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        displayValue = month + ' ' + day + ', ' + year + ' ' + hours + ':' + (minutes < 10 ? '0' : '') + minutes + ' ' + ampm;
+    }
+    document.getElementById('editDeadlineDisplay').value = displayValue;
+    
+    // Initialize flatpickr for edit modal if not already
+    if (!window.editDeadlineFlatpickr) {
+        window.editDeadlineFlatpickr = flatpickr('#editDeadlineDisplay', {
+            enableTime: true,
+            dateFormat: "M j, Y h:i K",
+            time_24hr: false,
+            onChange: function(selectedDates) {
+                if (selectedDates.length > 0) {
+                    var date = selectedDates[0];
+                    document.getElementById('detailDeadline').value = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+                    document.getElementById('detailDeadlineTime').value = `${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+                } else {
+                    document.getElementById('detailDeadline').value = '';
+                    document.getElementById('detailDeadlineTime').value = '';
+                }
+            }
+            
+            
+        });
+    }
+    // Set flatpickr date (without triggering onChange)
+    var currentDate = deadline ? new Date(deadline) : null;
+    if (deadlineTime && currentDate) {
+        var [h, m] = deadlineTime.split(':');
+        currentDate.setHours(h, m);
+    }
+    window.editDeadlineFlatpickr.setDate(currentDate, false);
+    
     document.getElementById('detailDateStart').value   = taskEl.dataset.dateStart   || '';
     document.getElementById('detailDateEnd').value     = taskEl.dataset.dateEnd     || '';
     document.getElementById('detailNotes').value       = taskEl.dataset.notes       || '';
@@ -1578,6 +1799,7 @@ function saveTask() {
     formData.append('description', document.getElementById('detailDescription').value);
     formData.append('priority',    document.getElementById('detailPriority').value);
     formData.append('deadline',    document.getElementById('detailDeadline').value);
+    formData.append('deadline_time', document.getElementById('detailDeadlineTime').value);
     formData.append('date_start',  document.getElementById('detailDateStart').value);
     formData.append('date_end',    document.getElementById('detailDateEnd').value);
     formData.append('notes',       document.getElementById('detailNotes').value);
@@ -1624,19 +1846,54 @@ function saveTask() {
                     prioritySpan.textContent = (data.priority || 'medium').charAt(0).toUpperCase() + (data.priority || 'medium').slice(1);
                 }
                 
-                // Update dates
-                var dateSpan = taskEl.querySelector('.task-notes span:not(:first-child):not(:last-child)');
-                if (dateSpan) {
-                    if (data.date_start && data.date_end) {
-                        dateSpan.innerHTML = '<i class="fas fa-calendar-week mr-1"></i>' + 
-                            new Date(data.date_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + 
-                            ' - ' + new Date(data.date_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                        dateSpan.className = 'text-xs text-blue-600 dark:text-blue-400';
-                    } else if (data.deadline) {
-                        dateSpan.innerHTML = '<i class="fas fa-calendar-alt mr-1"></i>' + 
-                            new Date(data.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                        dateSpan.className = 'text-xs text-gray-600 dark:text-gray-400';
+                // Update dates: handle deadline and date range separately
+                var notesContainer = taskEl.querySelector('.task-notes');
+                
+                // Find or create deadline span (calendar-alt icon)
+                var deadlineSpan = notesContainer.querySelector('span .fa-calendar-alt');
+                if (!deadlineSpan) {
+                    deadlineSpan = document.createElement('span');
+                    deadlineSpan.className = 'text-xs text-gray-600 dark:text-gray-400';
+                    notesContainer.appendChild(deadlineSpan);
+                } else {
+                    deadlineSpan = deadlineSpan.closest('span');
+                }
+                
+                // Find or create date range span (calendar-week icon)
+                var dateRangeSpan = notesContainer.querySelector('span .fa-calendar-week');
+                if (!dateRangeSpan) {
+                    dateRangeSpan = document.createElement('span');
+                    dateRangeSpan.className = 'text-xs text-blue-600 dark:text-blue-400';
+                    notesContainer.appendChild(dateRangeSpan);
+                } else {
+                    dateRangeSpan = dateRangeSpan.closest('span');
+                }
+                
+                // Update deadline span
+                if (data.deadline) {
+                    var dateObj = new Date(data.deadline);
+                    var dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    var timeStr = '';
+                    if (data.deadline_time) {
+                        var [h, m] = data.deadline_time.split(':');
+                        var timeDate = new Date();
+                        timeDate.setHours(parseInt(h), parseInt(m));
+                        timeStr = ' ' + timeDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
                     }
+                    deadlineSpan.innerHTML = '<i class="fas fa-calendar-alt mr-1"></i>' + dateStr + timeStr;
+                    deadlineSpan.style.display = '';
+                } else {
+                    deadlineSpan.style.display = 'none';
+                }
+                
+                // Update date range span
+                if (data.date_start && data.date_end) {
+                    dateRangeSpan.innerHTML = '<i class="fas fa-calendar-week mr-1"></i>' + 
+                        new Date(data.date_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + 
+                        ' - ' + new Date(data.date_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    dateRangeSpan.style.display = '';
+                } else {
+                    dateRangeSpan.style.display = 'none';
                 }
                 
                 // Update completion status safely
@@ -1928,6 +2185,7 @@ function archiveTask(taskId) {
         description: taskEl.dataset.description || '',
         priority: taskEl.dataset.priority || 'medium',
         deadline: taskEl.dataset.deadline || '',
+        deadline_time: taskEl.dataset.deadline_time || '',
         is_completed: taskEl.classList.contains('completed')
     };
 
@@ -1990,6 +2248,7 @@ function archiveDetailTask() {
         description: taskEl.dataset.description || '',
         priority: taskEl.dataset.priority || 'medium',
         deadline: taskEl.dataset.deadline || '',
+        deadline_time: taskEl.dataset.deadline_time || '',
         is_completed: taskEl.classList.contains('completed')
     } : null;
 
@@ -2063,6 +2322,12 @@ function prependArchivedTask(task) {
 
     var priorityClass = getPriorityBorderClass(task.priority);
     var dateStr = task.deadline ? new Date(task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    var timeStr = '';
+    if (task.deadline_time) {
+        var timeObj = new Date('1970-01-01T' + task.deadline_time);
+        timeStr = ' ' + timeObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+    var dateTimeStr = dateStr + timeStr;
     var html = '<div class="p-3 mb-2 rounded-lg border-l-4 ' + priorityClass + '" data-task-id="' + task.id + '">' +
         '<div class="flex justify-between items-start">' +
         '<div class="flex-1 min-w-0">' +
@@ -2070,7 +2335,7 @@ function prependArchivedTask(task) {
         (task.description ? '<p class="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">' + escapeHtml(task.description) + '</p>' : '') +
         '<div class="flex items-center gap-2 mt-2">' +
         '<span class="text-xs px-1.5 py-0.5 rounded ' + getPriorityBadgeClass(task.priority) + '">' + task.priority.charAt(0).toUpperCase() + task.priority.slice(1) + '</span>' +
-        (dateStr ? '<span class="text-xs text-gray-600 dark:text-gray-400"><i class="fas fa-calendar-alt mr-1"></i>' + dateStr + '</span>' : '') +
+        (dateTimeStr ? '<span class="text-xs text-gray-600 dark:text-gray-400"><i class="fas fa-calendar-alt mr-1"></i>' + dateTimeStr + '</span>' : '') +
         '</div></div>' +
         '<div class="flex items-center gap-2 flex-shrink-0 ml-2">' +
         '<button onclick="restoreTask(' + task.id + ')" class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700" title="Restore task">' +
@@ -2359,6 +2624,10 @@ function initColumnSortable(columnEl) {
             var taskId      = evt.item.getAttribute('data-task-id');
             var fromColumnId = evt.from.getAttribute('data-column-id');
             var toColumnId   = evt.to.getAttribute('data-column-id');
+            
+            // Mark columns as having pending drag operations
+            if (fromColumnId) pendingColumnDeletes.add(fromColumnId);
+            if (toColumnId) pendingColumnDeletes.add(toColumnId);
 
                  // Optimistically update counts if moving between different columns
                 var fromCountEl = null;
@@ -2409,8 +2678,13 @@ function initColumnSortable(columnEl) {
                     })
                 })
                 .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    // Operation completed — clear pending flags
+                    if (fromColumnId) pendingColumnDeletes.delete(fromColumnId);
+                    if (toColumnId) pendingColumnDeletes.delete(toColumnId);
+                })
                 .catch(function(err) {
-                    // If request fails, revert counts to previous state
+                    // If request fails, revert counts and clear pending flag
                     if (fromColumnId !== toColumnId) {
                         if (fromCountEl) {
                             var currentFrom = parseInt(fromCountEl.textContent) || 0;
@@ -2421,6 +2695,9 @@ function initColumnSortable(columnEl) {
                             toCountEl.textContent = currentTo - 1;
                         }
                      }
+                     // Clear pending flag on error so user can retry delete
+                     if (fromColumnId) pendingColumnDeletes.delete(fromColumnId);
+                     if (toColumnId) pendingColumnDeletes.delete(toColumnId);
                      console.error('Failed to update position:', err);
                      showToast('Failed to update position', 'error');
                      

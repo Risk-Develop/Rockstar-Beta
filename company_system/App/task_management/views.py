@@ -593,6 +593,7 @@ def personal_task_create(request, board_id):
         column_id = request.POST.get('column')
         priority = request.POST.get('priority', 'medium')
         deadline = request.POST.get('deadline') or None
+        deadline_time = request.POST.get('deadline_time') or None
         date_start = request.POST.get('date_start') or None
         date_end = request.POST.get('date_end') or None
         notes = request.POST.get('notes', '')
@@ -604,25 +605,27 @@ def personal_task_create(request, board_id):
             order = (max_order.order + 1) if max_order else 0
             task = PersonalTask.objects.create(
                 board=board, column=column, title=title, description=description,
-                priority=priority, deadline=deadline, date_start=date_start,
-                date_end=date_end, notes=notes, is_recurring=is_recurring,
+                priority=priority, deadline=deadline, deadline_time=deadline_time,
+                date_start=date_start, date_end=date_end, notes=notes, is_recurring=is_recurring,
                 recurring_type=recurring_type if is_recurring else None, order=order
             )
             # Prepare task data for JSON response
+            checklist_items = list(task.checklist_items.all())
             task_data = {
                 'id': task.id,
                 'title': task.title,
                 'description': task.description or '',
                 'priority': task.priority,
-                'deadline': task.deadline.isoformat() if task.deadline else '',
-                'date_start': task.date_start.isoformat() if task.date_start else '',
-                'date_end': task.date_end.isoformat() if task.date_end else '',
-                'notes': task.notes or '',
-                'is_recurring': task.is_recurring,
-                'recurring_type': task.recurring_type if task.is_recurring else None,
+                'deadline': deadline or '',
+                'deadline_time': deadline_time or '',
+                'date_start': date_start or '',
+                'date_end': date_end or '',
+                'notes': notes or '',
+                'is_recurring': is_recurring,
+                'recurring_type': recurring_type if is_recurring else None,
                 'is_completed': task.is_completed,
                 'column_id': column.id,
-                'checklist_items': []
+                'checklist_items': [{'id': ci.id, 'text': ci.text, 'is_completed': ci.is_completed} for ci in checklist_items]
             }
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({
@@ -700,6 +703,7 @@ def personal_task_restore(request, task_id):
             'description': task.description or '',
             'priority': task.priority,
             'deadline': task.deadline.isoformat() if task.deadline else '',
+            'deadline_time': task.deadline_time.isoformat() if task.deadline_time else '',
             'date_start': task.date_start.isoformat() if task.date_start else '',
             'date_end': task.date_end.isoformat() if task.date_end else '',
             'notes': task.notes or '',
@@ -726,6 +730,7 @@ def personal_task_list_archived(request, board_id):
         tasks_data.append({
             'id': task.id, 'title': task.title, 'description': task.description,
             'priority': task.priority, 'deadline': task.deadline.isoformat() if task.deadline else None,
+            'deadline_time': task.deadline_time.isoformat() if task.deadline_time else None,
             'date_start': task.date_start.isoformat() if task.date_start else None,
             'date_end': task.date_end.isoformat() if task.date_end else None,
             'notes': task.notes, 'is_completed': task.is_completed,
@@ -754,12 +759,19 @@ def personal_task_edit(request, task_id):
     current_staff = get_current_staff(request)
     task = get_object_or_404(PersonalTask, id=task_id, board__user=current_staff)
     if request.method == 'POST':
+        # Extract raw values for date/time fields to avoid isoformat() on strings
+        raw_deadline = request.POST.get('deadline')
+        raw_deadline_time = request.POST.get('deadline_time')
+        raw_date_start = request.POST.get('date_start')
+        raw_date_end = request.POST.get('date_end')
+        
         task.title = request.POST.get('title', task.title)
         task.description = request.POST.get('description', task.description)
         task.priority = request.POST.get('priority', task.priority)
-        task.deadline = request.POST.get('deadline') or None
-        task.date_start = request.POST.get('date_start') or None
-        task.date_end = request.POST.get('date_end') or None
+        task.deadline = raw_deadline or None
+        task.deadline_time = raw_deadline_time or None
+        task.date_start = raw_date_start or None
+        task.date_end = raw_date_end or None
         task.notes = request.POST.get('notes', task.notes)
         task.save()
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -770,9 +782,10 @@ def personal_task_edit(request, task_id):
                 'title': task.title,
                 'description': task.description or '',
                 'priority': task.priority,
-                'deadline': task.deadline.isoformat() if task.deadline else '',
-                'date_start': task.date_start.isoformat() if task.date_start else '',
-                'date_end': task.date_end.isoformat() if task.date_end else '',
+                'deadline': raw_deadline or '',
+                'deadline_time': raw_deadline_time or '',
+                'date_start': raw_date_start or '',
+                'date_end': raw_date_end or '',
                 'notes': task.notes or '',
                 'is_completed': task.is_completed,
                 'checklist_items': [{'id': ci.id, 'text': ci.text, 'is_completed': ci.is_completed} for ci in checklist_items]

@@ -245,6 +245,7 @@ class PersonalTask(models.Model):
     order = models.PositiveIntegerField(default=0)
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
     deadline = models.DateField(null=True, blank=True)
+    deadline_time = models.TimeField(null=True, blank=True)
     date_start = models.DateField(null=True, blank=True)
     date_end = models.DateField(null=True, blank=True)
     
