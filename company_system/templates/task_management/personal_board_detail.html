@@ -258,6 +258,16 @@ html.dark .task-meta-item {
   opacity: 0.8;
 }
 
+/* Special states with distinct colors */
+.task-meta-item.text-red-600.dark\:text-red-400 { color: #dc2626; }
+html.dark .task-meta-item.text-red-600 { color: #f87171; }
+
+.task-meta-item.text-blue-600.dark\:text-blue-400 { color: #2563eb; }
+html.dark .task-meta-item.text-blue-600 { color: #60a5fa; }
+
+.task-meta-item.text-amber-600.dark\:text-amber-400 { color: #d97706; }
+html.dark .task-meta-item.text-amber-600 { color: #fbbf24; }
+
 /* Date range special styling */
 .date-range {
   display: inline-flex;
@@ -319,14 +329,52 @@ html.dark .task-description {
   color: #d1d5db;
 }
 
-/* Action buttons row (optional compact actions) */
+/* Action buttons row */
 .task-actions {
   display: flex;
   gap: 0.25rem;
   margin-top: 0.5rem;
   padding-top: 0.5rem;
   border-top: 1px solid #e5e7eb;
+  opacity: 0;
+  transition: opacity 0.15s ease;
 }
+.personal-task:hover .task-actions { opacity: 1; }
+html.dark .task-actions {
+  border-color: #374151;
+}
+
+.task-action-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 0.375rem;
+  transition: all 0.15s ease;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.task-action-btn:hover { transform: scale(1.1); }
+
+/* Quick action buttons (icon-only, shown on hover) */
+.task-quick-action {
+  opacity: 0;
+  transition: all 0.15s ease;
+  padding: 0.375rem;
+  border-radius: 0.375rem;
+}
+.personal-task:hover .task-quick-action { opacity: 1; }
+.task-quick-action:hover {
+  transform: scale(1.1);
+}
+html.dark .task-quick-action:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.task-quick-action.archive-btn { color: #9ca3af; }
+.task-quick-action.archive-btn:hover { color: #d97706; }
 html.dark .task-actions {
   border-color: #374151;
 }
@@ -406,19 +454,34 @@ html.dark .chosen-checklist-item {
 
 /* Unified modal system */
 .modal-overlay {
-display: none;
-position: fixed;
-z-index: 50;
-left: 0; top: 0;
-width: 100%; height: 100%;
-background-color: rgb(0 0 0 / 50%);
-align-items: center;
-justify-content: center;
+  display: flex;
+  position: fixed;
+  z-index: 50;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background-color: rgb(0 0 0 / 50%);
+  align-items: center;
+  justify-content: center;
+
+  /* Hidden by default */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 html.dark .modal-overlay {
-background-color: rgb(0 0 0 / 81%);
+  background-color: rgb(0 0 0 / 81%);
 }
-.modal-overlay.show { display: flex; }
+.modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+html.dark .modal-overlay {
+  background-color: rgb(0 0 0 / 81%);
+}
+.modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
 .modal-content {
 background: #ffffff;
 border: 1px solid #e5e7eb;
@@ -591,20 +654,38 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
     font-weight: 700;
   }
   
-  /* Modal improvements CSS will be added here */
-  .modal-content {
-    width: 90%;
-    max-width: 600px;
-    margin: 1rem auto;
-    border-radius: 16px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  }
-  
-  @media (min-width: 640px) {
-    .modal-content { width: 85%; max-width: 560px; }
-  }
-  
-  @media (min-width: 1024px) {
+   /* Modal improvements CSS will be added here */
+   .modal-content {
+     width: 90%;
+     max-width: 600px;
+     margin: 1rem auto;
+     border-radius: 16px;
+     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+   }
+
+   @media (min-width: 640px) {
+     .modal-content { width: 85%; max-width: 560px; }
+   }
+
+   /* Consistent modal header accent bar */
+   .modal-header-accent {
+     height: 4px;
+     background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+     border-radius: 16px 16px 0 0;
+     margin: 0 -24px 24px -24px;
+     background-size: 200% 100%;
+     animation: shimmer 3s linear infinite;
+   }
+
+   @keyframes shimmer {
+     0% { background-position: 0% 0%; }
+     100% { background-position: 200% 0%; }
+   }
+
+   /* Consistent modal close button - using direct styles to avoid @apply issues */
+   /* Note: close buttons already have Tailwind utility classes inline */
+
+   @media (min-width: 1024px) {
     .modal-content { width: 50%; max-width: 640px; }
   }
   
@@ -676,15 +757,19 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
     height: 0;
   }
   
-  .priority-option .priority-icon {
-    display: block;
-    width: 20px;
-    height: 20px;
-    margin: 0 auto 0.375rem;
-    border-radius: 50%;
-  }
-  
-  .priority-option .priority-label {
+   .priority-option .priority-icon {
+     display: block;
+     width: 20px;
+     height: 20px;
+     margin: 0 auto 0.375rem;
+     border-radius: 50%;
+   }
+   .priority-option.priority-low .priority-icon { background-color: #10b981; }
+   .priority-option.priority-medium .priority-icon { background-color: #3b82f6; }
+   .priority-option.priority-high .priority-icon { background-color: #f59e0b; }
+   .priority-option.priority-urgent .priority-icon { background-color: #ef4444; }
+
+   .priority-option .priority-label {
     display: block;
     font-size: 0.75rem;
     font-weight: 600;
@@ -857,22 +942,36 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
     animation: spin 0.8s linear infinite;
   }
   
-  .char-count {
-    font-size: 0.75rem;
-    color: #6b7280;
-    text-align: right;
-    margin-top: 0.25rem;
-  }
-  
-  html.dark .char-count {
-    color: #9ca3af;
-  }
-  
-  .color-preset.selected {
-    border-color: #1d4ed8 !important;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
-    transform: scale(1.1);
-  }
+   .char-count {
+     font-size: 0.75rem;
+     color: #6b7280;
+     text-align: right;
+     margin-top: 0.25rem;
+   }
+
+   html.dark .char-count {
+     color: #9ca3af;
+   }
+
+   /* Archived Tasks Drawer Filter Buttons */
+   .archived-filter-btn {
+     transition: all 0.15s ease;
+     cursor: pointer;
+     border-width: 1px;
+   }
+   .archived-filter-btn:hover {
+     transform: translateY(-1px);
+   }
+    .archived-filter-btn.active {
+      box-shadow: 0 0 0 2px #3b82f6, 0 0 0 4px rgba(59, 130, 246, 0.2);
+    }
+
+    /* Color Presets */
+   .color-preset.selected {
+     border-color: #1d4ed8 !important;
+     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+     transform: scale(1.1);
+   }
   
   .floating-label-group {
     position: relative;
@@ -941,15 +1040,98 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
     color: #fcd34d;
   }
   
-  @keyframes slideDown {
-    from { opacity: 0; max-height: 0; transform: translateY(-10px); }
-    to { opacity: 1; max-height: 200px; transform: translateY(0); }
-  }
-  
-  @keyframes slideUp {
-    from { opacity: 1; max-height: 200px; transform: translateY(0); }
-    to { opacity: 0; max-height: 0; transform: translateY(-10px); }
-  }
+   @keyframes slideDown {
+     from { opacity: 0; max-height: 0; transform: translateY(-10px); }
+     to { opacity: 1; max-height: 200px; transform: translateY(0); }
+   }
+
+   @keyframes slideUp {
+     from { opacity: 1; max-height: 200px; transform: translateY(0); }
+     to { opacity: 0; max-height: 0; transform: translateY(-10px); }
+   }
+
+   /* Task card entrance animation */
+   @keyframes taskEnter {
+     from {
+       opacity: 0;
+       transform: translateY(12px) scale(0.98);
+     }
+     to {
+       opacity: 1;
+       transform: translateY(0) scale(1);
+     }
+   }
+
+   .personal-task {
+     animation: taskEnter 0.25s ease-out both;
+   }
+
+   /* Staggered animation based on position in column */
+   .personal-column .personal-task:nth-child(1) { animation-delay: 0.02s; }
+   .personal-column .personal-task:nth-child(2) { animation-delay: 0.04s; }
+   .personal-column .personal-task:nth-child(3) { animation-delay: 0.06s; }
+   .personal-column .personal-task:nth-child(4) { animation-delay: 0.08s; }
+   .personal-column .personal-task:nth-child(5) { animation-delay: 0.10s; }
+   .personal-column .personal-task:nth-child(6) { animation-delay: 0.12s; }
+   .personal-column .personal-task:nth-child(7) { animation-delay: 0.14s; }
+   .personal-column .personal-task:nth-child(8) { animation-delay: 0.16s; }
+   .personal-column .personal-task:nth-child(9) { animation-delay: 0.18s; }
+   .personal-column .personal-task:nth-child(10) { animation-delay: 0.20s; }
+
+   /* Checkbox checkmark animation */
+   .task-checkbox i {
+     animation: checkmark 0.2s ease-out;
+   }
+
+   @keyframes checkmark {
+     0% {
+       transform: scale(0) rotate(-45deg);
+       opacity: 0;
+     }
+     50% {
+       transform: scale(1.2) rotate(10deg);
+     }
+     100% {
+       transform: scale(1) rotate(0deg);
+       opacity: 1;
+     }
+   }
+
+   /* Priority badge pulse on change */
+   @keyframes priorityPulse {
+     0% { transform: scale(1); }
+     50% { transform: scale(1.1); }
+     100% { transform: scale(1); }
+   }
+
+   .priority-badge.updated {
+     animation: priorityPulse 0.3s ease-out;
+   }
+
+   /* Task item removal animation */
+   @keyframes taskExit {
+     to {
+       opacity: 0;
+       transform: scale(0.9) translateX(20px);
+       margin-bottom: -100px;
+       padding-top: 0;
+       padding-bottom: 0;
+       max-height: 0;
+     }
+   }
+
+   .personal-task.removing {
+     animation: taskExit 0.3s ease-out forwards;
+   }
+
+   /* Archived drawer smooth fade */
+   #archivedDrawer {
+     opacity: 0;
+     transition: opacity 0.3s ease, transform 0.3s ease;
+   }
+   #archivedDrawer:not(.translate-x-full) {
+     opacity: 1;
+   }
   
   #recurring_options,
   #detailRecurringOptions {
@@ -1079,27 +1261,51 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
       </p>
       {% endif %}
       
-      <!-- Priority + Deadline + Recurring (single meta row) -->
-      <div class="task-meta">
-        <span class="priority-badge priority-{{ task.priority }}">
-          <span class="indicator"></span>
-          {{ task.priority|title }}
-        </span>
-        
-        {% if task.deadline %}
-        <span class="task-meta-item" title="{% if task.deadline_time %}Due {{ task.deadline|date:'M d, Y' }} at {{ task.deadline_time|time:'g:i A' }}{% else %}Due {{ task.deadline|date:'M d, Y' }}{% endif %}">
-          <i class="fas fa-calendar-alt"></i>
-          {{ task.deadline|date:"M d" }}{% if task.deadline_time %} {{ task.deadline_time|time:"g:i A" }}{% endif %}
-        </span>
-        {% endif %}
-        
-        {% if task.is_recurring %}
-        <span class="task-meta-item" title="Recurring {{ task.recurring_type|title }}">
-          <i class="fas fa-redo"></i>
-          {{ task.recurring_type|title }}
-        </span>
-        {% endif %}
-      </div>
+       <!-- Priority + Deadline + Recurring + Blockers/Dependencies (single meta row) -->
+       <div class="task-meta">
+         <span class="priority-badge priority-{{ task.priority }}">
+           <span class="indicator"></span>
+           {{ task.priority|title }}
+         </span>
+
+         {% if task.deadline %}
+         <span class="task-meta-item" title="{% if task.deadline_time %}Due {{ task.deadline|date:'M d, Y' }} at {{ task.deadline_time|time:'g:i A' }}{% else %}Due {{ task.deadline|date:'M d, Y' }}{% endif %}">
+           <i class="fas fa-calendar-alt"></i>
+           {{ task.deadline|date:"M d" }}{% if task.deadline_time %} {{ task.deadline_time|time:"g:i A" }}{% endif %}
+         </span>
+         {% endif %}
+
+         {% if task.is_recurring %}
+         <span class="task-meta-item" title="Recurring {{ task.recurring_type|title }}">
+           <i class="fas fa-redo"></i>
+           {{ task.recurring_type|title }}
+         </span>
+         {% endif %}
+
+         {# Blocker indicator #}
+         {% if task.is_blocked or task.blocked_by %}
+         <span class="task-meta-item text-red-600 dark:text-red-400" title="Blocked by: {{ task.blocked_by|join:', ' }}">
+           <i class="fas fa-exclamation-triangle"></i>
+           Blocked
+         </span>
+         {% endif %}
+
+         {# Dependencies indicator #}
+         {% if task.dependencies or task.dependency_count %}
+         <span class="task-meta-item text-blue-600 dark:text-blue-400" title="Waiting on {{ task.dependency_count }} dependency(ies)">
+           <i class="fas fa-link"></i>
+           {{ task.dependency_count|default:task.dependencies|length }} dep
+         </span>
+         {% endif %}
+
+         {# Waiting (blocking others) indicator #}
+         {% if task.is_blocking %}
+         <span class="task-meta-item text-amber-600 dark:text-amber-400" title="Blocking other tasks">
+           <i class="fas fa-chain-broken"></i>
+           Blocking
+         </span>
+         {% endif %}
+       </div>
       
       <!-- Date range if present -->
       {% if task.date_start and task.date_end %}
@@ -1118,21 +1324,46 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
         <span title="{{ task.notes|escape }}">{{ task.notes|truncatechars:80 }}</span>
       </div>
       {% endif %}
+        <!-- Inline Task Actions Row -->
+        <div class="task-actions">
+          <button onclick="event.stopPropagation(); openTaskDetail('{{ task.id }}')" 
+                  class="task-action-btn text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  title="Edit task">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button onclick="event.stopPropagation(); cyclePriority('{{ task.id }}')" 
+                  class="task-action-btn text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                  title="Change priority">
+            <i class="fas fa-flag"></i>
+          </button>
+          <button onclick="event.stopPropagation(); openDeleteTaskModal('{{ task.id }}')" 
+                  class="task-action-btn text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  title="Delete task">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </div>
+
+        </div>
+
+
+
+        <!-- Desktop hover quick actions -->
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button onclick="event.stopPropagation(); openTaskDetail('{{ task.id }}')" 
+                  class="task-quick-action p-1.5 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20"
+                  aria-label="View task details: {{ task.title|escape }}"
+                  title="View details">
+            <i class="fas fa-eye text-sm"></i>
+          </button>
+          <button onclick="event.stopPropagation(); archiveTask('{{ task.id }}')" 
+                  class="task-quick-action archive-btn p-1.5 rounded-md text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-900/20"
+                  aria-label="Archive task: {{ task.title|escape }}"
+                  title="Archive task">
+            <i class="fas fa-archive text-sm"></i>
+          </button>
+        </div>
+      </div>
     </div>
-    
-    <!-- Quick Actions (shown on hover) -->
-    <div class="flex items-center gap-1 flex-shrink-0">
-      <button onclick="archiveTask('{{ task.id }}')" 
-              class="task-quick-action archive-btn p-1.5 rounded-md
-                     text-gray-400 hover:text-amber-500 hover:bg-amber-50 
-                     dark:hover:text-amber-400 dark:hover:bg-amber-900/20"
-              aria-label="Archive task: {{ task.title|escape }}"
-              title="Archive task">
-        <i class="fas fa-archive text-sm"></i>
-      </button>
-    </div>
-  </div>
-</div>
 {% endfor %}
       </div>
     </div>
@@ -1401,15 +1632,78 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 <!-- Archived Tasks Drawer -->
 <div id="archivedBackdrop" class="fixed inset-0 bg-black/50 hidden z-40" onclick="closeArchivedTasks()"></div>
 <div id="archivedDrawer" class="fixed top-0 right-0 h-full w-96 max-w-full bg-white dark:bg-gray-800 shadow-2xl transform translate-x-full transition-transform duration-300 z-50 border-l border-gray-300 dark:border-gray-600">
+  <!-- Header with title and close -->
   <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-    <h2 class="text-xl font-bold text-gray-900 dark:text-white">Archived Tasks</h2>
-    <button onclick="closeArchivedTasks()" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+    <div>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <i class="fas fa-archive text-amber-500"></i>
+        Archived Tasks
+      </h2>
+      <p id="archivedCount" class="text-xs text-gray-500 dark:text-gray-400">{{ archived_tasks|length }} total</p>
+    </div>
+    <button onclick="closeArchivedTasks()" 
+            class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            aria-label="Close archived tasks">
       <i class="fas fa-times text-xl"></i>
     </button>
   </div>
-   <div id="archivedTasksList" class="p-4 overflow-y-auto h-[calc(100%-64px)]">
-     {% for task in archived_tasks %}
-     <div class="p-3 mb-2 rounded-lg border-l-4 {% if task.priority == 'urgent' %}bg-red-50 dark:bg-red-900/20 border-red-500{% elif task.priority == 'high' %}bg-orange-50 dark:bg-orange-900/20 border-orange-500{% elif task.priority == 'medium' %}bg-blue-50 dark:bg-blue-900/20 border-blue-500{% else %}bg-gray-50 dark:bg-gray-700/50 border-gray-400{% endif %}" data-task-id="{{ task.id }}" data-deadline_time="{% if task.deadline_time %}{{ task.deadline_time|time:'H:i' }}{% endif %}">
+
+  <!-- Filter Bar -->
+  <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 space-y-3">
+    <!-- Search input -->
+    <div class="relative">
+      <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+      <input type="text" 
+             id="archivedSearchInput"
+             placeholder="Search archived..." 
+             class="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+             oninput="filterArchivedTasks()">
+    </div>
+
+    <!-- Priority filter buttons -->
+    <div class="flex gap-1 flex-wrap">
+      <button onclick="setArchivedPriorityFilter('all')" 
+              class="archived-filter-btn px-2 py-1 text-xs rounded-full transition-all border
+                     bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
+              data-filter="all">
+        All
+      </button>
+      <button onclick="setArchivedPriorityFilter('urgent')" 
+              class="archived-filter-btn px-2 py-1 text-xs rounded-full transition-all border
+                     bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/20"
+              data-filter="urgent">
+        Urgent
+      </button>
+      <button onclick="setArchivedPriorityFilter('high')" 
+              class="archived-filter-btn px-2 py-1 text-xs rounded-full transition-all border
+                     bg-white dark:bg-gray-800 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-900/30 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+              data-filter="high">
+        High
+      </button>
+      <button onclick="setArchivedPriorityFilter('medium')" 
+              class="archived-filter-btn px-2 py-1 text-xs rounded-full transition-all border
+                     bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/30 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              data-filter="medium">
+        Medium
+      </button>
+      <button onclick="setArchivedPriorityFilter('low')" 
+              class="archived-filter-btn px-2 py-1 text-xs rounded-full transition-all border
+                     bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+              data-filter="low">
+        Low
+      </button>
+    </div>
+  </div>
+
+  <!-- Tasks List -->
+  <div id="archivedTasksList" class="p-4 overflow-y-auto h-[calc(100%-140px)]">
+    {% for task in archived_tasks %}
+    <div class="archived-task p-3 mb-2 rounded-lg border-l-4 
+                {% if task.priority == 'urgent' %}bg-red-50 dark:bg-red-900/20 border-red-500{% elif task.priority == 'high' %}bg-orange-50 dark:bg-orange-900/20 border-orange-500{% elif task.priority == 'medium' %}bg-blue-50 dark:bg-blue-900/20 border-blue-500{% else %}bg-gray-50 dark:bg-gray-700/50 border-gray-400{% endif %}"
+          data-task-id="{{ task.id }}"
+          data-priority="{{ task.priority }}"
+          data-title="{{ task.title|escape }}"
+          data-deadline_time="{% if task.deadline_time %}{{ task.deadline_time|time:'H:i' }}{% endif %}">
       <div class="flex justify-between items-start">
         <div class="flex-1 min-w-0">
           <h4 class="font-medium text-gray-800 dark:text-gray-100 text-sm {% if task.is_completed %}text-gray-500{% endif %}">{{ task.title }}</h4>
@@ -1428,15 +1722,15 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
           </div>
          </div>
          <div class="flex items-center gap-2 flex-shrink-0 ml-2">
-           <button onclick="restoreTask('{{ task.id }}')" class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700" title="Restore task">
+           <button onclick="restoreTask('{{ task.id }}')" class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors" title="Restore task">
              <i class="fas fa-undo mr-1"></i>Restore
            </button>
-           <button onclick="openDeleteArchivedModal('{{ task.id }}')" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700" title="Delete permanently">
+           <button onclick="openDeleteArchivedModal('{{ task.id }}')" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors" title="Delete permanently">
              <i class="fas fa-trash mr-1"></i>Delete
            </button>
          </div>
        </div>
-     </div>
+    </div>
     {% empty %}
     <div class="text-center py-8 text-gray-600 dark:text-gray-400">
       <p class="text-sm">No archived tasks</p>
@@ -1448,17 +1742,32 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 <!-- Delete Archived Task Confirmation Modal -->
 <div id="deleteArchivedModal" class="modal-overlay">
   <div class="modal-content" style="width: 30%; max-width: 90vw;">
+    <div class="modal-header-accent"></div>
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white">Confirm Permanent Delete</h2>
-      <button onclick="closeDeleteArchivedModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+      <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <i class="fas fa-trash-alt text-red-500"></i>
+        Confirm Permanent Delete
+      </h2>
+      <button onclick="closeDeleteArchivedModal()" 
+              class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              aria-label="Close modal">
         <i class="fas fa-times text-xl"></i>
       </button>
     </div>
     <div class="space-y-4">
+      <input type="hidden" name="task_id" id="deleteArchivedTaskId">
       <p class="text-gray-600 dark:text-gray-300">Are you sure you want to permanently delete this task? This action cannot be undone.</p>
       <div class="mt-6 flex gap-3">
-        <button id="confirmDeleteArchivedBtn" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete Permanently</button>
-        <button type="button" onclick="closeDeleteArchivedModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
+        <button id="confirmDeleteArchivedBtn" 
+                class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors flex items-center justify-center gap-2"
+                onclick="confirmDeleteArchived()">
+          <i class="fas fa-trash-alt mr-2"></i>Delete Permanently
+        </button>
+        <button type="button" 
+                onclick="closeDeleteArchivedModal()" 
+                class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">
+          Cancel
+        </button>
       </div>
     </div>
   </div>
@@ -1467,17 +1776,30 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 <!-- Generic Confirmation Modal (for Archive/Restore) -->
 <div id="confirmModal" class="modal-overlay">
   <div class="modal-content" style="width: 30%; max-width: 90vw;">
+    <div class="modal-header-accent"></div>
     <div class="flex justify-between items-center mb-4">
-      <h2 id="confirmModalTitle" class="text-xl font-bold text-gray-900 dark:text-white">Confirm Action</h2>
-      <button onclick="closeConfirmModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+      <h2 id="confirmModalTitle" class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <i class="fas fa-question-circle text-blue-500"></i>
+        Confirm Action
+      </h2>
+      <button onclick="closeConfirmModal()" 
+              class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              aria-label="Close modal">
         <i class="fas fa-times text-xl"></i>
       </button>
     </div>
     <div class="space-y-4">
       <p id="confirmModalMessage" class="text-gray-600 dark:text-gray-300">Are you sure?</p>
       <div class="mt-6 flex gap-3">
-        <button id="confirmModalYes" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Yes</button>
-        <button type="button" onclick="closeConfirmModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
+        <button id="confirmModalYes" 
+                class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center justify-center gap-2">
+          <i class="fas fa-check"></i>Yes
+        </button>
+        <button type="button" 
+                onclick="closeConfirmModal()" 
+                class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">
+          Cancel
+        </button>
       </div>
     </div>
   </div>
@@ -1759,8 +2081,40 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
       </button>
     </div>
   </form>
-  </div>
-  </div>
+   </div>
+   </div>
+
+   <!-- Delete Task Confirmation Modal -->
+   <div id="deleteTaskModal" class="modal-overlay">
+     <div class="modal-content" style="width: 30%; max-width: 90vw;">
+       <div class="flex justify-between items-center mb-4">
+         <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+           <i class="fas fa-trash-alt text-red-500 mr-2"></i>Confirm Delete
+         </h2>
+         <button onclick="closeDeleteTaskModal()" 
+                 class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                 aria-label="Close modal">
+           <i class="fas fa-times text-xl"></i>
+         </button>
+       </div>
+       <div class="space-y-4">
+         <input type="hidden" name="task_id" id="deleteTaskId">
+         <p class="text-gray-600 dark:text-gray-300">Are you sure you want to delete this task? This action cannot be undone.</p>
+         <div class="mt-6 flex gap-3">
+           <button id="confirmDeleteTaskBtn" 
+                   class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+                   onclick="confirmDeleteTask()">
+             <i class="fas fa-trash-alt mr-2"></i>Delete Permanently
+           </button>
+           <button type="button" 
+                   onclick="closeDeleteTaskModal()" 
+                   class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-colors">
+             Cancel
+           </button>
+         </div>
+       </div>
+     </div>
+   </div>
 
    <!-- Task Detail Modal -->
    <div id="taskDetailModal" class="modal-overlay">
@@ -2089,6 +2443,15 @@ function escapeHtml(str) {
     var d = document.createElement('div');
     d.appendChild(document.createTextNode(str));
     return d.innerHTML;
+}
+
+// Character counter for form fields
+function updateCharCount(inputId, counterId) {
+    var input = document.getElementById(inputId);
+    var counter = document.getElementById(counterId);
+    if (input && counter) {
+        counter.textContent = input.value.length;
+    }
 }
 
 function getCookie(name) {
@@ -2684,15 +3047,15 @@ function openTaskDetail(taskId) {
     const priority = taskEl.dataset.priority || 'medium';
     const priorityRadio = document.querySelector(`#updateTaskForm input[name="priority"][value="${priority}"]`);
     if (priorityRadio) priorityRadio.checked = true;
-    
+
     var deadline = taskEl.dataset.deadline || '';
     var deadlineTime = taskEl.dataset.deadline_time || '';
     document.getElementById('detailDeadline').value    = deadline;
     document.getElementById('detailDeadlineTime').value = deadlineTime;
-    
+
     // Update deadline display
     updateDeadlineDisplay('edit');
-    
+
     document.getElementById('detailDateStart').value   = taskEl.dataset.dateStart   || '';
     document.getElementById('detailDateEnd').value     = taskEl.dataset.dateEnd     || '';
     document.getElementById('detailNotes').value       = taskEl.dataset.notes       || '';
@@ -2701,13 +3064,13 @@ function openTaskDetail(taskId) {
 
     // Load checklist (initializes ChecklistManager internally)
     loadChecklistItems(taskId);
-    
+
     // Initialize UI enhancements
-    initCharacterCountersForDetail();
+    // initCharacterCountersForDetail();  // Removed - function not defined
     initPrioritySelectors();
-    
-    // Show modal
-    document.getElementById('taskDetailModal').classList.add('show');
+
+     // Show modal
+     document.getElementById('taskDetailModal').classList.add('show');
 }
 
 // ── Checklist rendering ──────────────────────────────────────────────────────
@@ -3142,13 +3505,45 @@ function closeConfirmModal() {
     pendingConfirmCallback = null;
 }
 
-document.getElementById('confirmModalYes').addEventListener('click', function() {
-    if (pendingConfirmCallback) {
-        pendingConfirmCallback();
-        pendingConfirmCallback = null;
-    }
-    closeConfirmModal();
-});
+// ── Delete Task Modal ────────────────────────────────────────────────────────
+function openDeleteTaskModal(taskId) {
+    document.getElementById('deleteTaskId').value = taskId;
+    document.getElementById('deleteTaskModal').classList.add('show');
+}
+
+function closeDeleteTaskModal() {
+    document.getElementById('deleteTaskModal').classList.remove('show');
+}
+
+function confirmDeleteTask() {
+    const taskId = document.getElementById('deleteTaskId').value;
+    closeDeleteTaskModal();
+    fetch('/task/personal/tasks/' + taskId + '/delete/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Failed to delete task');
+        return response.json();
+    })
+    .then(data => {
+        showToast('Task deleted successfully', 'success');
+        // Animate removal
+        const taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+        if (taskEl) {
+            taskEl.classList.add('removing');
+            setTimeout(() => taskEl.remove(), 300);
+        }
+        // Update column count
+        updateColumnCounts();
+    })
+    .catch(err => {
+        showToast('Failed to delete: ' + err.message, 'error');
+    });
+}
 
 // ── Archived Tasks ─────────────────────────────────────────────────────────────
 
@@ -3157,6 +3552,9 @@ function showArchivedTasks() {
     var backdrop = document.getElementById('archivedBackdrop');
     drawer.classList.remove('translate-x-full');
     backdrop.classList.remove('hidden');
+
+    // Reset filters when opening
+    resetArchivedFilters();
 }
 
 function closeArchivedTasks() {
@@ -3171,6 +3569,90 @@ function toggleArchivedDrawer() {
     } else {
         closeArchivedTasks();
     }
+}
+
+// ── Column Count Updater ──────────────────────────────────────────────────────
+function updateColumnCounts() {
+    document.querySelectorAll('.personal-column').forEach(column => {
+        const taskCount = column.querySelectorAll('.personal-task').length;
+        const countEl = document.getElementById('count-col-' + column.dataset.columnId);
+        if (countEl) {
+            countEl.textContent = taskCount;
+        }
+    });
+}
+
+// ── Archived Tasks Filtering ──────────────────────────────────────────────────
+var currentArchivedFilter = 'all';
+var archivedSearchQuery = '';
+
+function resetArchivedFilters() {
+    // Reset filter to 'all'
+    currentArchivedFilter = 'all';
+    archivedSearchQuery = '';
+    document.getElementById('archivedSearchInput').value = '';
+
+    // Reset button active states
+    updateArchivedFilterButtons();
+
+    // Show all tasks
+    filterArchivedTasks();
+}
+
+function setArchivedPriorityFilter(filterValue) {
+    currentArchivedFilter = filterValue;
+    updateArchivedFilterButtons();
+    filterArchivedTasks();
+}
+
+function updateArchivedFilterButtons() {
+    document.querySelectorAll('.archived-filter-btn').forEach(btn => {
+        const isActive = btn.dataset.filter === currentArchivedFilter;
+        if (isActive) {
+            btn.classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
+            // Also update background to indicate active
+            if (btn.dataset.filter === 'all') {
+                btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                btn.classList.remove('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300', 'border-gray-300', 'dark:border-gray-600');
+            } else {
+                btn.classList.add('bg-blue-50', 'dark:bg-blue-900/30', 'border-blue-500');
+            }
+        } else {
+            btn.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500', 'bg-blue-600', 'text-white', 'border-blue-600', 'bg-blue-50', 'dark:bg-blue-900/30', 'border-blue-500');
+            // Reset to default based on type (priority or all)
+            if (btn.dataset.filter === 'all') {
+                btn.classList.add('bg-gray-100', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300', 'border-gray-300', 'dark:border-gray-600');
+            } else {
+                // Priority-specific defaults are handled by static HTML classes
+            }
+        }
+    });
+}
+
+function filterArchivedTasks() {
+    const search = document.getElementById('archivedSearchInput').value.toLowerCase().trim();
+    archivedSearchQuery = search;
+
+    let visibleCount = 0;
+    document.querySelectorAll('#archivedTasksList .archived-task').forEach(taskEl => {
+        const priority = taskEl.dataset.priority;
+        const title = taskEl.dataset.title || '';
+
+        const matchesSearch = title.includes(search);
+        const matchesPriority = currentArchivedFilter === 'all' || priority === currentArchivedFilter;
+
+        if (matchesSearch && matchesPriority) {
+            taskEl.style.display = '';
+            taskEl.style.opacity = '1';
+            visibleCount++;
+        } else {
+            taskEl.style.display = 'none';
+            taskEl.style.opacity = '0';
+        }
+    });
+
+    // Update count of visible tasks
+    document.getElementById('archivedCount').textContent = visibleCount + ' shown';
 }
 
 
@@ -3292,7 +3774,9 @@ function archiveTask(taskId) {
             .then(data => {
                 if (data.success || data.archived) {
                     showToast('Task archived', 'success');
-                    taskEl.remove();
+                    // Animate removal
+                    taskEl.classList.add('removing');
+                    setTimeout(() => taskEl.remove(), 300);
                     var columnEl = taskEl.closest('.personal-column');
                     if (columnEl) {
                         var columnId = columnEl.getAttribute('data-column-id');
@@ -3416,7 +3900,7 @@ function prependArchivedTask(task) {
         timeStr = ' ' + timeObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     }
     var dateTimeStr = dateStr + timeStr;
-    var html = '<div class="p-3 mb-2 rounded-lg border-l-4 ' + priorityClass + '" data-task-id="' + task.id + '">' +
+    var html = '<div class="archived-task p-3 mb-2 rounded-lg border-l-4 ' + priorityClass + '" data-task-id="' + task.id + '" data-priority="' + task.priority + '" data-title="' + escapeHtml(task.title).toLowerCase() + '">' +
         '<div class="flex justify-between items-start">' +
         '<div class="flex-1 min-w-0">' +
         '<h4 class="font-medium text-gray-800 dark:text-gray-100 text-sm' + (task.is_completed ? ' text-gray-500' : '') + '">' + escapeHtml(task.title) + '</h4>' +
@@ -4138,11 +4622,11 @@ function updateColorHex(mode) {
 
 // Modal initialization
 function initModals() {
-    initCharacterCounters();
+    // initCharacterCounters();  // Removed - undefined
     initPrioritySelectors();
     updateDeadlineDisplay('add');
     updateDeadlineDisplay('edit');
-    
+
     // Initialize flatpickr
     if (typeof flatpickr !== 'undefined') {
         flatpickr.localize(flatpickr.l10ns.en);
