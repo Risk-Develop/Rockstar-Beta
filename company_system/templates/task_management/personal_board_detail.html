@@ -589,7 +589,372 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
     background: #3b82f6 !important;
     color: #fff !important;
     font-weight: 700;
-}
+  }
+  
+  /* Modal improvements CSS will be added here */
+  .modal-content {
+    width: 90%;
+    max-width: 600px;
+    margin: 1rem auto;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  }
+  
+  @media (min-width: 640px) {
+    .modal-content { width: 85%; max-width: 560px; }
+  }
+  
+  @media (min-width: 1024px) {
+    .modal-content { width: 50%; max-width: 640px; }
+  }
+  
+  .form-section {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  
+  html.dark .form-section {
+    background: rgba(55, 65, 81, 0.3);
+    border-color: #374151;
+  }
+  
+  .form-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #6b7280;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  
+  html.dark .form-section-title {
+    color: #9ca3af;
+  }
+  
+  .priority-selector {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+  }
+  
+  .priority-option {
+    position: relative;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    transition: all 0.2s ease;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  html.dark .priority-option {
+    background: #374151;
+  }
+  
+  .priority-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .priority-option.selected {
+    border-color: currentColor;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+  
+  .priority-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .priority-option .priority-icon {
+    display: block;
+    width: 20px;
+    height: 20px;
+    margin: 0 auto 0.375rem;
+    border-radius: 50%;
+  }
+  
+  .priority-option .priority-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+  
+  .deadline-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  
+  html.dark .deadline-display {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f3f4f6;
+  }
+  
+  .deadline-display:hover {
+    border-color: #3b82f6;
+  }
+  
+  .deadline-clear-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    opacity: 0;
+    transition: all 0.15s;
+  }
+  
+  html.dark .deadline-clear-btn {
+    background: #4b5563;
+    border-color: #6b7280;
+    color: #9ca3af;
+  }
+  
+  .deadline-display:hover .deadline-clear-btn {
+    opacity: 1;
+  }
+  
+  .checklist-progress-bar {
+    height: 4px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+  }
+  
+  html.dark .checklist-progress-bar {
+    background: #374151;
+  }
+  
+  .checklist-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+  
+  .checklist-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.15s;
+  }
+  
+  html.dark .checklist-item {
+    background: #374151;
+    border-color: #4b5563;
+  }
+  
+  .checklist-item:hover {
+    border-color: #3b82f6;
+  }
+  
+  .checklist-actions {
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  
+  .checklist-item:hover .checklist-actions {
+    opacity: 1;
+  }
+  
+  .checklist-action-btn {
+    padding: 0.375rem;
+    border-radius: 0.375rem;
+    color: #6b7280;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .checklist-action-btn:hover {
+    background: #f3f4f6;
+    color: #374151;
+  }
+  
+  html.dark .checklist-action-btn:hover {
+    background: #4b5563;
+    color: #d1d5db;
+  }
+  
+  .modal-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #e5e7eb;
+  }
+  
+  html.dark .modal-actions {
+    border-color: #374151;
+  }
+  
+  .btn-secondary {
+    background: #f3f4f6 !important;
+    color: #374151 !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  html.dark .btn-secondary {
+    background: #374151 !important;
+    color: #d1d5db !important;
+    border-color: #4b5563 !important;
+  }
+  
+  .btn-secondary:hover {
+    background: #e5e7eb !important;
+  }
+  
+  html.dark .btn-secondary:hover {
+    background: #4b5563 !important;
+  }
+  
+  .btn-loading {
+    position: relative;
+    pointer-events: none;
+  }
+  
+  .btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  
+  .char-count {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-align: right;
+    margin-top: 0.25rem;
+  }
+  
+  html.dark .char-count {
+    color: #9ca3af;
+  }
+  
+  .floating-label-group {
+    position: relative;
+  }
+  
+  .floating-label {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: white;
+    padding: 0 0.25rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+    transition: all 0.15s;
+    pointer-events: none;
+  }
+  
+  html.dark .floating-label {
+    background: #374151;
+    color: #9ca3af;
+  }
+  
+  .floating-label-group input:focus + .floating-label,
+  .floating-label-group input:not(:placeholder-shown) + .floating-label {
+    top: 0;
+    font-size: 0.75rem;
+    color: #3b82f6;
+    font-weight: 500;
+  }
+  
+  html.dark .floating-label-group input:focus + .floating-label,
+  html.dark .floating-label-group input:not(:placeholder-shown) + .floating-label {
+    color: #60a5fa;
+  }
+  
+  .validation-indicator {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+  }
+  
+  .validation-indicator.valid {
+    color: #10b981;
+  }
+  
+  .validation-indicator.invalid {
+    color: #ef4444;
+  }
+  
+  .quick-tip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.625rem;
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  html.dark .quick-tip {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fcd34d;
+  }
+  
+  @keyframes slideDown {
+    from { opacity: 0; max-height: 0; transform: translateY(-10px); }
+    to { opacity: 1; max-height: 200px; transform: translateY(0); }
+  }
+  
+  @keyframes slideUp {
+    from { opacity: 1; max-height: 200px; transform: translateY(0); }
+    to { opacity: 0; max-height: 0; transform: translateY(-10px); }
+  }
+  
+  #recurring_options,
+  #detailRecurringOptions {
+    overflow: hidden;
+  }
+  
+  #recurring_options.hidden,
+  #detailRecurringOptions.hidden {
+    max-height: 0;
+    opacity: 0;
+  }
 </style>
 {% endblock %}
 
@@ -974,197 +1339,529 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 </div>
 </div>
 
- <!-- Add Task Modal -->
- <div id="addTaskModal" class="modal-overlay">
- <div class="modal-content" style="width: 30%; max-width: 90vw;">
-<div class="flex justify-between items-center mb-4">
-<h2 class="text-xl font-bold text-gray-900 dark:text-white">Add Personal Task</h2>
-<button onclick="closeAddTaskModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-<i class="fas fa-times text-xl"></i>
-</button>
-</div>
-<form id="addTaskForm" method="post" action="{% url 'task_management:personal_task_create' board.id %}">
-{% csrf_token %}
-<div class="space-y-4">
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
-<input type="text" name="title" required 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-placeholder="What needs to be done?">
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description (optional)</label>
-<textarea name="description" rows="2" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-placeholder="Details..."></textarea>
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Column</label>
-<select name="column" required 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-{% for column in columns %}
-<option value="{{ column.id }}">{{ column.name }}</option>
-{% endfor %}
-</select>
-</div>
-<div class="grid grid-cols-2 gap-4">
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
-<select name="priority" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-<option value="low">Low</option>
-<option value="medium" selected>Medium</option>
-<option value="high">High</option>
-<option value="urgent">Urgent</option>
-</select>
-</div>
- <div>
- <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deadline</label>
- <input type="text" id="addDeadlineDisplay" placeholder="Select date & time"
- class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
- <input type="hidden" name="deadline" id="addDeadlineDate">
- <input type="hidden" name="deadline_time" id="addDeadlineTime">
- </div>
-</div>
-   <div class="grid grid-cols-2 gap-4">
-   <div>
-   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Start</label>
-   <input type="date" name="date_start" id="addDateStart"
-   class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-   </div>
-   <div>
-   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date End</label>
-   <input type="date" name="date_end" id="addDateEnd"
-   class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-   </div>
-   </div>
-  <div>
-  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-  <textarea name="notes" rows="2"
-  class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-  placeholder="Personal notes..."></textarea>
+  <!-- Add Task Modal -->
+  <div id="addTaskModal" class="modal-overlay">
+  <div class="modal-content" style="max-width: 560px;">
+  <div class="modal-header-accent"></div>
+  <div class="flex justify-between items-start mb-6">
+    <div class="flex-1">
+      <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <i class="fas fa-plus-circle text-blue-500"></i>
+        Add Personal Task
+      </h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Create a new task to boost your productivity</p>
+    </div>
+    <button onclick="closeAddTaskModal()" 
+            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            aria-label="Close modal">
+      <i class="fas fa-times text-xl"></i>
+    </button>
   </div>
-<div class="flex items-center gap-2">
-<input type="checkbox" name="is_recurring" id="is_recurring" class="w-4 h-4">
-<label for="is_recurring" class="text-sm text-gray-700 dark:text-gray-300">Recurring task</label>
-</div>
-<div id="recurring_options" class="hidden">
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Repeat</label>
-<select name="recurring_type" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
-<option value="daily">Daily</option>
-<option value="weekly">Weekly</option>
-<option value="monthly">Monthly</option>
-</select>
-</div>
-</div>
-<div class="mt-6 flex gap-3">
-<button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-Create Task
-</button>
-<button type="button" onclick="closeAddTaskModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">
-Cancel
-</button>
-</div>
-</form>
-</div>
-</div>
 
-  <!-- Task Detail Modal -->
-  <div id="taskDetailModal" class="modal-overlay">
-  <div class="modal-content" style="width: 50%; max-width: 90vw;">
-<div class="flex justify-between items-center mb-4">
-<h2 class="text-xl font-bold text-gray-900 dark:text-white">Task Details</h2>
-<button onclick="closeTaskDetailModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-<i class="fas fa-times text-xl"></i>
-</button>
-</div>
+  <form id="addTaskForm" method="post" action="{% url 'task_management:personal_task_create' board.id %}" novalidate>
+    {% csrf_token %}
 
-<!-- Edit Task Form -->
-<form id="updateTaskForm" method="post">
-{% csrf_token %}
-<div class="space-y-4">
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
-<input type="text" name="title" id="detailTitle" required
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-<textarea name="description" id="detailDescription" rows="2"
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-placeholder="Description..."></textarea>
-</div>
-<div class="grid grid-cols-2 gap-4">
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
-<select name="priority" id="detailPriority"
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
-<option value="low">Low</option>
-<option value="medium">Medium</option>
-<option value="high">High</option>
-<option value="urgent">Urgent</option>
-</select>
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deadline</label>
-<input type="text" id="editDeadlineDisplay" placeholder="Select date & time"
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
-<input type="hidden" name="deadline" id="detailDeadline">
-<input type="hidden" name="deadline_time" id="detailDeadlineTime">
-</div>
-</div>
- <div class="grid grid-cols-2 gap-4">
- <div>
- <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Start</label>
- <input type="date" name="date_start" id="detailDateStart"
- class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
- </div>
- <div>
- <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date End</label>
- <input type="date" name="date_end" id="detailDateEnd"
- class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
- </div>
- </div>
+    <!-- Basic Information Section -->
+    <section class="form-section">
+      <h3 class="form-section-title">
+        <i class="fas fa-info-circle text-blue-500"></i>
+        Basic Information
+      </h3>
 
-<!-- Checklist Section -->
-<div class="mt-4">
-<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-<i class="fas fa-tasks mr-2 text-blue-500"></i>Checklist
-</h3>
-<div class="flex gap-2 mb-3">
-<input type="text" id="checklistInput" placeholder="Add checklist item..."
-class="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white text-sm"
-onkeydown="if(event.key==='Enter'){event.preventDefault();submitChecklist();}">
-<button type="button" onclick="submitChecklist()"
-class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-<i class="fas fa-plus"></i>
-</button>
-</div>
-<div id="checklistItems" class="space-y-1 max-h-48 overflow-y-auto">
-<!-- Checklist items rendered here dynamically -->
-</div>
-</div>
+      <div class="space-y-4">
+        <!-- Title -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">What needs to be done? *</label>
+          <input type="text" 
+                 name="title" 
+                 id="addTitle"
+                 required 
+                 minlength="3"
+                 maxlength="200"
+                 class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                 placeholder="Task title">
+        </div>
 
-<div class="mt-4">
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-<textarea name="notes" id="detailNotes" rows="5"
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-placeholder="Personal notes..."></textarea>
-</div>
+        <!-- Description -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Description
+            <span class="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <textarea name="description" 
+                    id="addDescription"
+                    rows="3"
+                    maxlength="1000"
+                    class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    placeholder="Add more details..."></textarea>
+        </div>
 
-<input type="hidden" name="task_id" id="detailTaskId">
-<div class="flex gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-<button type="button" onclick="archiveDetailTask()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
-Archive Task
-</button>
-<button type="button" id="saveBtn" onclick="saveTask()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-Save Changes
-</button>
-</div>
-</form>
-</div>
-</div>
+        <!-- Column selection -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Column</label>
+          <select name="column" 
+                  required
+                  class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer">
+            {% for column in columns %}
+            <option value="{{ column.id }}" {% if forloop.first %}selected{% endif %}>
+              {{ column.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Schedule Section -->
+    <section class="form-section">
+      <h3 class="form-section-title">
+        <i class="fas fa-calendar-alt text-green-500"></i>
+        Schedule & Priority
+      </h3>
+
+      <div class="space-y-4">
+        <!-- Visual Priority Selector -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Priority Level
+          </label>
+          <div class="priority-selector">
+            <label class="priority-option priority-low" data-value="low">
+              <input type="radio" name="priority" value="low" class="sr-only">
+              <span class="priority-icon"></span>
+              <span class="priority-label">Low</span>
+            </label>
+            <label class="priority-option priority-medium" data-value="medium">
+              <input type="radio" name="priority" value="medium" class="sr-only" checked>
+              <span class="priority-icon"></span>
+              <span class="priority-label">Medium</span>
+            </label>
+            <label class="priority-option priority-high" data-value="high">
+              <input type="radio" name="priority" value="high" class="sr-only">
+              <span class="priority-icon"></span>
+              <span class="priority-label">High</span>
+            </label>
+            <label class="priority-option priority-urgent" data-value="urgent">
+              <input type="radio" name="priority" value="urgent" class="sr-only">
+              <span class="priority-icon"></span>
+              <span class="priority-label">Urgent</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Deadline -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Deadline
+            <span class="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <div class="deadline-wrapper">
+            <div class="deadline-display" id="addDeadlineDisplay" onclick="openAddDeadlinePicker()">
+              <span class="deadline-text" id="addDeadlineText">
+                <i class="fas fa-calendar-plus text-gray-400 mr-2"></i>
+                <span class="text-gray-500">Set deadline</span>
+              </span>
+              <button type="button" 
+                      class="deadline-clear-btn"
+                      id="addDeadlineClearBtn"
+                      onclick="event.stopPropagation(); clearDeadline('add')">
+                Clear
+              </button>
+            </div>
+            <input type="hidden" name="deadline" id="addDeadlineDate">
+            <input type="hidden" name="deadline_time" id="addDeadlineTime">
+          </div>
+        </div>
+
+        <!-- Date Range -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Start Date
+              <span class="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input type="date" 
+                   name="date_start" 
+                   id="addDateStart"
+                   class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              End Date
+              <span class="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input type="date" 
+                   name="date_end" 
+                   id="addDateEnd"
+                   class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recurring Section -->
+    <section class="form-section">
+      <h3 class="form-section-title">
+        <i class="fas fa-redo text-purple-500"></i>
+        Recurrence
+      </h3>
+
+      <div class="flex items-center gap-3 mb-3">
+        <input type="checkbox" 
+               name="is_recurring" 
+               id="is_recurring"
+               class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500"
+               onchange="toggleRecurringOptions('add')">
+        <label for="is_recurring" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+          Repeat this task
+        </label>
+      </div>
+
+      <div id="recurring_options" class="hidden space-y-3 pl-7">
+        <div class="quick-tip">
+          <i class="fas fa-lightbulb"></i>
+          <span>Tasks will automatically create new instances when completed</span>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Repeat</label>
+          <select name="recurring_type" 
+                  id="addRecurringType"
+                  class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Notes Section -->
+    <section class="form-section">
+      <h3 class="form-section-title">
+        <i class="fas fa-sticky-note text-yellow-500"></i>
+        Notes
+      </h3>
+      <div>
+        <textarea name="notes" 
+                  id="addNotes"
+                  rows="3"
+                  maxlength="500"
+                  class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  placeholder="Any additional notes or reminders..."></textarea>
+        <div class="char-count">
+          <span id="addNotesCount">0</span>/500 characters
+        </div>
+      </div>
+    </section>
+
+    <!-- Form Actions -->
+    <div class="modal-actions">
+      <button type="button" 
+              onclick="closeAddTaskModal()"
+              class="btn-secondary px-4 py-3 rounded-lg font-medium transition-colors">
+        Cancel
+      </button>
+      <button type="submit" 
+              id="addTaskSubmitBtn"
+              class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 font-medium transition-all shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+        <i class="fas fa-plus"></i>
+        <span>Create Task</span>
+      </button>
+    </div>
+  </form>
+  </div>
+  </div>
+
+   <!-- Task Detail Modal -->
+   <div id="taskDetailModal" class="modal-overlay">
+   <div class="modal-content" style="max-width: 640px;">
+   <div class="modal-header-accent"></div>
+  <div class="flex justify-between items-start mb-6">
+    <div class="flex-1">
+      <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <i class="fas fa-tasks text-indigo-500"></i>
+        Task Details
+      </h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Update task information and track progress</p>
+    </div>
+    <button onclick="closeTaskDetailModal()" 
+            class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            aria-label="Close modal">
+      <i class="fas fa-times text-xl"></i>
+    </button>
+  </div>
+
+  <!-- Edit Task Form -->
+  <form id="updateTaskForm" method="post" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="task_id" id="detailTaskId">
+
+    <!-- Basic Info Section -->
+    <section class="form-section">
+      <h3 class="form-section-title">
+        <i class="fas fa-info-circle text-blue-500"></i>
+        Basic Information
+      </h3>
+
+      <div class="space-y-4">
+        <!-- Title -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Task title *</label>
+          <input type="text" 
+                 name="title" 
+                 id="detailTitle"
+                 required 
+                 minlength="3"
+                 maxlength="200"
+                 class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                 placeholder="Task title">
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
+          <textarea name="description" 
+                    id="detailDescription"
+                    rows="3"
+                    maxlength="1000"
+                    class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    placeholder="Describe what needs to be done..."></textarea>
+        </div>
+
+        <!-- Column -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Column</label>
+          <select name="column" 
+                  required
+                  class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer">
+            {% for column in columns %}
+            <option value="{{ column.id }}">{{ column.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Schedule & Priority Section -->
+    <section class="form-section">
+      <h3 class="form-section-title">
+        <i class="fas fa-calendar-alt text-green-500"></i>
+        Schedule & Priority
+      </h3>
+
+      <div class="space-y-4">
+        <!-- Visual Priority Selector -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Priority Level
+          </label>
+          <div class="priority-selector">
+            <label class="priority-option priority-low" data-value="low">
+              <input type="radio" name="priority" value="low" class="sr-only">
+              <span class="priority-icon"></span>
+              <span class="priority-label">Low</span>
+            </label>
+            <label class="priority-option priority-medium" data-value="medium">
+              <input type="radio" name="priority" value="medium" class="sr-only" checked>
+              <span class="priority-icon"></span>
+              <span class="priority-label">Medium</span>
+            </label>
+            <label class="priority-option priority-high" data-value="high">
+              <input type="radio" name="priority" value="high" class="sr-only">
+              <span class="priority-icon"></span>
+              <span class="priority-label">High</span>
+            </label>
+            <label class="priority-option priority-urgent" data-value="urgent">
+              <input type="radio" name="priority" value="urgent" class="sr-only">
+              <span class="priority-icon"></span>
+              <span class="priority-label">Urgent</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Deadline -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            Deadline
+            <span class="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <div class="deadline-wrapper">
+            <div class="deadline-display" id="editDeadlineDisplay" onclick="openEditDeadlinePicker()">
+              <span class="deadline-text" id="editDeadlineText">
+                <i class="fas fa-calendar-plus text-gray-400 mr-2"></i>
+                <span class="text-gray-500">Set deadline</span>
+              </span>
+              <button type="button" 
+                      class="deadline-clear-btn"
+                      id="editDeadlineClearBtn"
+                      onclick="event.stopPropagation(); clearDeadline('edit')">
+                Clear
+              </button>
+            </div>
+            <input type="hidden" name="deadline" id="detailDeadline">
+            <input type="hidden" name="deadline_time" id="detailDeadlineTime">
+          </div>
+        </div>
+
+        <!-- Date Range -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Start Date
+              <span class="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input type="date" 
+                   name="date_start" 
+                   id="detailDateStart"
+                   class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              End Date
+              <span class="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input type="date" 
+                   name="date_end" 
+                   id="detailDateEnd"
+                   class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Recurring Section -->
+    <section class="form-section">
+      <h3 class="form-section-title">
+        <i class="fas fa-redo text-purple-500"></i>
+        Recurrence
+      </h3>
+
+      <div class="flex items-center gap-3 mb-3">
+        <input type="checkbox" 
+               name="is_recurring" 
+               id="detailIsRecurring"
+               class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500"
+               onchange="toggleRecurringOptions('edit')">
+        <label for="detailIsRecurring" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+          Repeat this task
+        </label>
+      </div>
+
+      <div id="detailRecurringOptions" class="hidden space-y-3 pl-7">
+        <div class="quick-tip">
+          <i class="fas fa-lightbulb"></i>
+          <span>Tasks will automatically create new instances when completed</span>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Repeat</label>
+          <select name="recurring_type" 
+                  id="detailRecurringType"
+                  class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Checklist Section -->
+    <section class="form-section">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <i class="fas fa-tasks text-blue-500"></i>
+          Checklist
+        </h3>
+        <span class="checklist-progress" id="checklistProgressText">
+          0/0 completed
+        </span>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="checklist-progress-bar mb-4">
+        <div class="checklist-progress-fill" id="checklistProgressFill" style="width: 0%"></div>
+      </div>
+
+      <!-- Bulk Actions -->
+      <div class="checklist-bulk-actions">
+        <button type="button" 
+                class="bulk-action-btn"
+                onclick="if(window.checklistManager) checklistManager.checkAll()">
+          <i class="fas fa-check-square mr-1"></i>
+          Check All
+        </button>
+        <button type="button" 
+                class="bulk-action-btn"
+                onclick="if(window.checklistManager) checklistManager.uncheckAll()">
+          <i class="fas fa-square mr-1"></i>
+          Uncheck All
+        </button>
+        <button type="button" 
+                class="bulk-action-btn"
+                onclick="if(window.checklistManager) checklistManager.deleteCompleted()">
+          <i class="fas fa-trash-alt mr-1"></i>
+          Delete Completed
+        </button>
+      </div>
+
+      <!-- Add Item -->
+      <div class="flex gap-2 mb-4">
+        <input type="text" 
+               id="checklistInput"
+               placeholder="Add a new checklist item..."
+               class="flex-1 px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+               onkeydown="if(event.key==='Enter'){event.preventDefault(); submitChecklist();}">
+        <button type="button" 
+                onclick="submitChecklist()"
+                class="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+          <i class="fas fa-plus"></i>
+          <span>Add</span>
+        </button>
+      </div>
+
+      <!-- Checklist Items -->
+      <div id="checklistItems" 
+           class="space-y-2 max-h-64 overflow-y-auto pr-1">
+        <!-- Items rendered via JS -->
+      </div>
+    </section>
+
+    <!-- Notes Section -->
+    <section class="form-section">
+      <h3 class="form-section-title">
+        <i class="fas fa-sticky-note text-yellow-500"></i>
+        Notes
+      </h3>
+      <div>
+        <textarea name="notes" 
+                  id="detailNotes"
+                  rows="4"
+                  maxlength="1000"
+                  class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  placeholder="Additional notes, links, or reminders..."></textarea>
+      </div>
+    </section>
+
+    <!-- Action Buttons -->
+    <div class="modal-actions">
+      <button type="button" 
+              onclick="archiveDetailTask()"
+              class="px-4 py-3 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/50 font-medium transition-colors flex items-center justify-center gap-2"
+              id="archiveBtn">
+        <i class="fas fa-archive"></i>
+        Archive
+      </button>
+      <button type="button" 
+              id="saveBtn" 
+              onclick="saveTask()"
+              class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 font-medium transition-all shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+        <i class="fas fa-save"></i>
+        <span>Save Changes</span>
+      </button>
+    </div>
+  </form>
+  </div>
+  </div>
 
 <!-- Delete Checklist Confirmation Modal -->
 <div id="deleteChecklistModal" class="modal-overlay">
@@ -1254,11 +1951,27 @@ function handleAddTaskFormSubmit(form) {
         if (data.success) {
             showToast(data.message || 'Task created!', 'success');
             closeAddTaskModal();
+            
+            // Reset form fields
             form.reset();
+            
+            // Reset custom UI components
+            initPrioritySelectors(); // reset priority visuals to default (Medium)
+            updateDeadlineDisplay('add'); // reset deadline display
+            document.getElementById('recurring_options').classList.add('hidden'); // hide recurring options
+            
+            // Reset character counters
+            ['addTitle', 'addDescription', 'addNotes'].forEach(id => {
+                const counter = document.getElementById(id + 'Count');
+                if (counter) counter.textContent = '0';
+            });
+            
+            // Update column count
             var countEl = document.getElementById('count-col-' + data.column_id);
             if (countEl) {
                 countEl.textContent = parseInt(countEl.textContent || 0) + 1;
             }
+            // Add new task to column
             var taskHtml = buildTaskCardHtml(data.task);
             if (!isTimelineView) {
                 var columnEl = document.getElementById('column-' + data.column_id);
@@ -1616,50 +2329,36 @@ function openAddTaskModal(columnId) {
         var select = document.querySelector('#addTaskModal select[name="column"]');
         if (select) select.value = columnId;
     }
-    // Reset deadline fields
-    var displayEl = document.getElementById('addDeadlineDisplay');
-    var dateEl = document.getElementById('addDeadlineDate');
-    var timeEl = document.getElementById('addDeadlineTime');
-    if (displayEl) displayEl.value = '';
-    if (dateEl) dateEl.value = '';
-    if (timeEl) timeEl.value = '';
-    // Initialize flatpickr if not already
-    if (!window.deadlineFlatpickr) {
-        window.deadlineFlatpickr = flatpickr('#addDeadlineDisplay', {
-            enableTime: true,
-            dateFormat: "M j, Y h:i K",
-            time_24hr: false,
-            onChange: function(selectedDates) {
-                if (selectedDates.length > 0) {
-                    var date = selectedDates[0];
-                    var year = date.getFullYear();
-                    var month = String(date.getMonth() + 1).padStart(2, '0');
-                    var day = String(date.getDate()).padStart(2, '0');
-                    document.getElementById('addDeadlineDate').value = `${year}-${month}-${day}`;
-                    var hours = String(date.getHours()).padStart(2, '0');
-                    var minutes = String(date.getMinutes()).padStart(2, '0');
-                    document.getElementById('addDeadlineTime').value = `${hours}:${minutes}`;
-                    // Clear date range fields when deadline is set
-                    document.getElementById('addDateStart').value = '';
-                    document.getElementById('addDateEnd').value = '';
-                } else {
-                    document.getElementById('addDeadlineDate').value = '';
-                    document.getElementById('addDeadlineTime').value = '';
-                }
-            }
-            
-        });
-    } else {
-        window.deadlineFlatpickr.clear();
-        document.getElementById('addDeadlineDate').value = '';
-        document.getElementById('addDeadlineTime').value = '';
+    
+    // Reset form to defaults
+    document.getElementById('addTaskForm').reset();
+    
+    // Reset deadline display and hidden fields
+    clearDeadline('add');
+    
+    // Hide recurring options
+    const recurringEl = document.getElementById('recurring_options');
+    if (recurringEl) {
+        recurringEl.classList.add('hidden');
     }
+    
+    // Reset character counters
+    ['addTitle', 'addDescription', 'addNotes'].forEach(id => {
+        const counter = document.getElementById(id + 'Count');
+        if (counter) counter.textContent = '0';
+    });
+    
+    // Reset priority visuals to default (Medium)
+    initPrioritySelectors();
+    
+    // Show modal
     document.getElementById('addTaskModal').classList.add('show');
 }
+
 function closeAddTaskModal() {
     document.getElementById('addTaskModal').classList.remove('show');
-    if (window.deadlineFlatpickr) {
-        window.deadlineFlatpickr.clear();
+    if (window.addDeadlineFlatpickr) {
+        window.addDeadlineFlatpickr.clear();
         document.getElementById('addDeadlineDate').value = '';
         document.getElementById('addDeadlineTime').value = '';
     }
@@ -1760,64 +2459,22 @@ function openTaskDetail(taskId) {
         return;
     }
 
+    // Populate form fields
     document.getElementById('detailTaskId').value      = taskId;
     document.getElementById('detailTitle').value       = taskEl.dataset.title       || '';
     document.getElementById('detailDescription').value = taskEl.dataset.description || '';
-    document.getElementById('detailPriority').value    = taskEl.dataset.priority    || 'medium';
+    // Set priority radio
+    const priority = taskEl.dataset.priority || 'medium';
+    const priorityRadio = document.querySelector(`#updateTaskForm input[name="priority"][value="${priority}"]`);
+    if (priorityRadio) priorityRadio.checked = true;
     
     var deadline = taskEl.dataset.deadline || '';
     var deadlineTime = taskEl.dataset.deadline_time || '';
     document.getElementById('detailDeadline').value    = deadline;
     document.getElementById('detailDeadlineTime').value = deadlineTime;
     
-    // Set deadline display for flatpickr - build in expected format
-    var displayValue = '';
-    if (deadline) {
-        var date = new Date(deadline);
-        if (deadlineTime && deadlineTime !== '') {
-            var [h, m] = deadlineTime.split(':');
-            date.setHours(parseInt(h), parseInt(m));
-        }
-        // Format: "May 7, 2026 9:00 AM" - matches flatpickr's dateFormat
-        var month = date.toLocaleString('en-US', { month: 'short' });
-        var day = date.getDate();
-        var year = date.getFullYear();
-        var hours = date.getHours();
-        var minutes = date.getMinutes();
-        var ampm = hours >= 12 ? 'PM' : 'AM';
-        hours = hours % 12;
-        hours = hours ? hours : 12;
-        displayValue = month + ' ' + day + ', ' + year + ' ' + hours + ':' + (minutes < 10 ? '0' : '') + minutes + ' ' + ampm;
-    }
-    document.getElementById('editDeadlineDisplay').value = displayValue;
-    
-    // Initialize flatpickr for edit modal if not already
-    if (!window.editDeadlineFlatpickr) {
-        window.editDeadlineFlatpickr = flatpickr('#editDeadlineDisplay', {
-            enableTime: true,
-            dateFormat: "M j, Y h:i K",
-            time_24hr: false,
-            onChange: function(selectedDates) {
-                if (selectedDates.length > 0) {
-                    var date = selectedDates[0];
-                    document.getElementById('detailDeadline').value = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-                    document.getElementById('detailDeadlineTime').value = `${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
-                } else {
-                    document.getElementById('detailDeadline').value = '';
-                    document.getElementById('detailDeadlineTime').value = '';
-                }
-            }
-            
-            
-        });
-    }
-    // Set flatpickr date (without triggering onChange)
-    var currentDate = deadline ? new Date(deadline) : null;
-    if (deadlineTime && currentDate) {
-        var [h, m] = deadlineTime.split(':');
-        currentDate.setHours(h, m);
-    }
-    window.editDeadlineFlatpickr.setDate(currentDate, false);
+    // Update deadline display
+    updateDeadlineDisplay('edit');
     
     document.getElementById('detailDateStart').value   = taskEl.dataset.dateStart   || '';
     document.getElementById('detailDateEnd').value     = taskEl.dataset.dateEnd     || '';
@@ -1825,7 +2482,14 @@ function openTaskDetail(taskId) {
 
     document.getElementById('updateTaskForm').action = '/task/personal/tasks/' + taskId + '/edit/';
 
+    // Load checklist (initializes ChecklistManager internally)
     loadChecklistItems(taskId);
+    
+    // Initialize UI enhancements
+    initCharacterCountersForDetail();
+    initPrioritySelectors();
+    
+    // Show modal
     document.getElementById('taskDetailModal').classList.add('show');
 }
 
@@ -1834,15 +2498,14 @@ function openTaskDetail(taskId) {
 function renderChecklistItem(item) {
     var checked = item.is_completed ? 'checked' : '';
     var textColor = item.is_completed ? 'text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-white';
-    var html = '<div class="flex items-center gap-2 p-2 rounded bg-gray-100 dark:bg-gray-700/50" id="checklist-item-' + item.id + '" data-item-id="' + item.id + '">';
-    html += '<button type="button" class="drag-handle cursor-grab active:cursor-grabbing p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" title="Drag to reorder">';
-    html += '<i class="fas fa-grip-vertical text-xs"></i>';
-    html += '</button>';
-    html += '<input type="checkbox" ' + checked + ' onchange="toggleChecklist(' + item.id + ', this)" class="w-4 h-4">';
-    html += '<span class="flex-1 text-sm ' + textColor + '" contenteditable="true" onblur="renameChecklist(' + item.id + ', this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}" title="Click to rename">' + escapeHtml(item.text) + '</span>';
-    html += '<button type="button" onclick="openDeleteChecklistModal(' + item.id + ')" class="text-gray-500 dark:text-gray-400 hover:text-red-400 dark:hover:text-red-500 flex-shrink-0" title="Delete">';
+    var html = '<div class="checklist-item" id="checklist-item-' + item.id + '" data-item-id="' + item.id + '">';
+    html += '<input type="checkbox" ' + checked + ' onchange="toggleChecklist(' + item.id + ', this)" class="subtask-checkbox">';
+    html += '<span class="subtask-text ' + (item.is_completed ? 'completed' : '') + '">' + escapeHtml(item.text) + '</span>';
+    html += '<div class="checklist-actions">';
+    html += '<button type="button" onclick="openDeleteChecklistModal(' + item.id + ')" class="checklist-action-btn delete" title="Delete">';
     html += '<i class="fas fa-trash text-xs"></i>';
     html += '</button>';
+    html += '</div>';
     html += '</div>';
     return html;
 }
@@ -1915,7 +2578,7 @@ function loadChecklistItems(taskId) {
 
     var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
     if (!taskEl) {
-        container.innerHTML = '<p class="text-gray-600 dark:text-gray-400 text-sm py-2">Task not found.</p>';
+        container.innerHTML = '<p class="text-center py-6 text-gray-500 dark:text-gray-400">Task not found.</p>';
         return;
     }
 
@@ -1924,63 +2587,27 @@ function loadChecklistItems(taskId) {
     if (checklistData) {
         try {
             items = JSON.parse(checklistData);
+            if (!Array.isArray(items)) items = [];
         } catch(e) {
             console.error('Failed to parse checklist data:', e);
+            items = [];
         }
     }
 
-    // Keep cache in sync (optional)
+    // Keep cache in sync as array
     taskChecklists[taskId] = items;
 
-    if (!items || items.length === 0) {
-        container.innerHTML = '<p class="text-gray-600 dark:text-gray-400 text-sm py-2">No checklist items yet.</p>';
+    // Render using ChecklistManager if available
+    if (window.checklistManager) {
+        checklistManager.init(taskId, { list: items });
     } else {
-        container.innerHTML = items.map(renderChecklistItem).join('');
-    }
-
-    // Initialize Sortable for drag and drop
-    if (window.checklistSortable) {
-        window.checklistSortable.destroy();
-        window.checklistSortable = null;
-    }
-    
-    window.checklistSortable = new Sortable(container, {
-        handle: '.drag-handle',
-        animation: 150,
-        chosenClass: 'chosen-checklist-item',
-        dragClass: 'opacity-50',
-        onEnd: function (evt) {
-            var taskId = document.getElementById('detailTaskId').value;
-            var itemId = evt.item.dataset.itemId;
-            
-            // Update taskChecklists array
-            if (taskChecklists[taskId]) {
-                // Move the item to its new position
-                var movedItem = taskChecklists[taskId].splice(evt.oldIndex, 1)[0];
-                taskChecklists[taskId].splice(evt.newIndex, 0, movedItem);
-                
-                // Update the data-checklist attribute on the card
-                var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
-                if (taskEl) {
-                    try {
-                        var checklist = JSON.parse(taskEl.getAttribute('data-checklist') || '[]');
-                        // Reorder the checklist array to match the new DOM order
-                        var newOrder = Array.from(container.children)
-                            .map(child => parseInt(child.dataset.itemId))
-                            .filter(id => !isNaN(id));
-                        
-                        var reorderedChecklist = newOrder.map(id => 
-                            checklist.find(item => item.id === id)
-                        ).filter(Boolean);
-                        
-                        taskEl.setAttribute('data-checklist', JSON.stringify(reorderedChecklist));
-                    } catch(e) {
-                        console.error('Failed to update checklist order:', e);
-                    }
-                }
-            }
+        // Fallback: simple render using renderChecklistItem
+        if (!items || items.length === 0) {
+            container.innerHTML = '<p class="text-center py-6 text-gray-500 dark:text-gray-400"><i class="fas fa-clipboard-list text-xl mb-2 opacity-50"></i><br>No checklist items yet</p>';
+        } else {
+            container.innerHTML = items.map(renderChecklistItem).join('');
         }
-    });
+    }
 }
 
 // ── Submit checklist item (AJAX — uses real server ID from response) ─────────
@@ -2038,6 +2665,14 @@ function submitChecklist() {
             taskEl.setAttribute('data-checklist', JSON.stringify(checklist));
         }
 
+        // Sync with ChecklistManager if active
+        if (window.checklistManager && checklistManager.currentTaskId == taskId) {
+            // Add to manager's list and re-render
+            checklistManager.items.list.push(newItem);
+            checklistManager.render();
+            checklistManager.updateProgress();
+        }
+
         input.value = '';
         showToast('Checklist item added', 'success');
     })
@@ -2086,7 +2721,6 @@ function toggleChecklist(itemId, checkbox) {
             taskChecklists[taskId] = taskChecklists[taskId].map(function(i) {
                 return i.id === itemId ? Object.assign({}, i, { is_completed: done }) : i;
             });
-            console.log('taskChecklists after update:', JSON.stringify(taskChecklists[taskId]));
         }
 
         // Also update data-checklist on card
@@ -2098,8 +2732,14 @@ function toggleChecklist(itemId, checkbox) {
                     return i.id === itemId ? Object.assign({}, i, { is_completed: done }) : i;
                 });
                 taskEl.dataset.checklist = JSON.stringify(checklist);
-                console.log('Updated data-checklist on card:', taskEl.dataset.checklist);
             } catch(e) {}
+        }
+
+        // Sync with ChecklistManager if active
+        if (window.checklistManager && checklistManager.currentTaskId == taskId) {
+            checklistManager.items = { list: taskChecklists[taskId] };
+            checklistManager.render();
+            checklistManager.updateProgress();
         }
     })
     .catch(function() {
@@ -2706,14 +3346,21 @@ document.getElementById('confirmDeleteChecklistBtn').addEventListener('click', f
                 });
             }
             
-            var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
-            if (taskEl) {
-                var checklist = JSON.parse(taskEl.dataset.checklist || '[]');
-                checklist = checklist.filter(function(i) { return i.id !== pendingDeleteChecklistId; });
-                taskEl.dataset.checklist = JSON.stringify(checklist);
-            }
-            
-            var container = document.getElementById('checklistItems');
+             var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+             if (taskEl) {
+                 var checklist = JSON.parse(taskEl.dataset.checklist || '[]');
+                 checklist = checklist.filter(function(i) { return i.id !== pendingDeleteChecklistId; });
+                 taskEl.dataset.checklist = JSON.stringify(checklist);
+             }
+             
+             // Sync with ChecklistManager if active
+             if (window.checklistManager && checklistManager.currentTaskId == taskId) {
+                 checklistManager.items = { list: taskChecklists[taskId] };
+                 checklistManager.render();
+                 checklistManager.updateProgress();
+             }
+             
+             var container = document.getElementById('checklistItems');
             if (container && container.querySelectorAll('.flex.items-center').length === 0) {
                 container.innerHTML = '<p class="text-gray-500 text-sm py-2">No checklist items yet.</p>';
             }
@@ -3003,5 +3650,571 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// ========== UI/UX ENHANCEMENTS ==========
+
+// Deadline display management
+function updateDeadlineDisplay(mode) {
+    const dateField = mode === 'add' ? 'addDeadlineDate' : 'detailDeadline';
+    const timeField = mode === 'add' ? 'addDeadlineTime' : 'detailDeadlineTime';
+    const display = mode === 'add' ? 'addDeadlineDisplay' : 'editDeadlineDisplay';
+    const textEl = mode === 'add' ? 'addDeadlineText' : 'editDeadlineText';
+    const clearBtn = mode === 'add' ? 'addDeadlineClearBtn' : 'editDeadlineClearBtn';
+
+    const dateVal = document.getElementById(dateField).value;
+    const timeVal = document.getElementById(timeField).value;
+    const displayEl = document.getElementById(display);
+    const textSpan = document.getElementById(textEl);
+    const clearBtnEl = document.getElementById(clearBtn);
+
+    if (dateVal) {
+        const date = new Date(dateVal + (timeVal ? 'T' + timeVal : ''));
+        const includeTime = !!timeVal;
+        const options = includeTime
+            ? { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }
+            : { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+        const formatted = date.toLocaleString('en-US', options);
+        
+        textSpan.innerHTML = `<i class="fas fa-calendar-check text-green-500 mr-2"></i><span class="text-gray-900 dark:text-white font-medium">${formatted}</span>`;
+        clearBtnEl.style.opacity = '1';
+        displayEl.classList.remove('has-error');
+    } else {
+        textSpan.innerHTML = `<i class="fas fa-calendar-plus text-gray-400 mr-2"></i><span class="text-gray-500">Set deadline</span>`;
+        clearBtnEl.style.opacity = '0';
+        displayEl.classList.remove('has-error');
+    }
+}
+
+function openAddDeadlinePicker() {
+    if (!window.addDeadlineFlatpickr) {
+        window.addDeadlineFlatpickr = flatpickr(document.getElementById('addDeadlineDisplay'), {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            onChange: function(selectedDates, dateStr) {
+                const parts = dateStr.split(' ');
+                document.getElementById('addDeadlineDate').value = parts[0];
+                document.getElementById('addDeadlineTime').value = parts[1] || '';
+                // Clear date range fields when deadline is set
+                document.getElementById('addDateStart').value = '';
+                document.getElementById('addDateEnd').value = '';
+                updateDeadlineDisplay('add');
+            }
+        });
+    }
+    window.addDeadlineFlatpickr.open();
+}
+
+function openEditDeadlinePicker() {
+    if (!window.editDeadlineFlatpickr) {
+        window.editDeadlineFlatpickr = flatpickr(document.getElementById('editDeadlineDisplay'), {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            onChange: function(selectedDates, dateStr) {
+                const parts = dateStr.split(' ');
+                document.getElementById('detailDeadline').value = parts[0];
+                document.getElementById('detailDeadlineTime').value = parts[1] || '';
+                updateDeadlineDisplay('edit');
+            }
+        });
+    }
+    
+    const existingDate = document.getElementById('detailDeadline').value;
+    const existingTime = document.getElementById('detailDeadlineTime').value;
+    if (existingDate) {
+        window.editDeadlineFlatpickr.setDate(existingDate + ' ' + (existingTime || '00:00'));
+    } else {
+        window.editDeadlineFlatpickr.clear();
+    }
+    window.editDeadlineFlatpickr.open();
+}
+
+function clearDeadline(mode) {
+    const dateField = mode === 'add' ? 'addDeadlineDate' : 'detailDeadline';
+    const timeField = mode === 'add' ? 'addDeadlineTime' : 'detailDeadlineTime';
+    const picker = mode === 'add' ? window.addDeadlineFlatpickr : window.editDeadlineFlatpickr;
+
+    document.getElementById(dateField).value = '';
+    document.getElementById(timeField).value = '';
+    if (picker) picker.clear();
+    updateDeadlineDisplay(mode);
+}
+
+// Recurring options toggle
+function toggleRecurringOptions(mode) {
+    const checkbox = mode === 'add' ? 'is_recurring' : 'detailIsRecurring';
+    const optionsDiv = mode === 'add' ? 'recurring_options' : 'detailRecurringOptions';
+    
+    const checkboxEl = document.getElementById(checkbox);
+    const optionsEl = document.getElementById(optionsDiv);
+    
+    if (checkboxEl.checked) {
+        optionsEl.classList.remove('hidden');
+        optionsEl.style.animation = 'slideDown 0.2s ease-out forwards';
+    } else {
+        optionsEl.style.animation = 'slideUp 0.2s ease-out forwards';
+        setTimeout(() => {
+            if (!checkboxEl.checked) {
+                optionsEl.classList.add('hidden');
+            }
+        }, 200);
+    }
+}
+
+// Form validation
+function validateField(field) {
+    const errorDiv = field.parentElement.querySelector('.error-message');
+    
+    if (!field.validity.valid) {
+        field.classList.add('input-error');
+        if (errorDiv) {
+            errorDiv.textContent = field.validationMessage;
+            errorDiv.style.display = 'block';
+        }
+        return false;
+    } else {
+        field.classList.remove('input-error');
+        if (errorDiv) {
+            errorDiv.style.display = 'none';
+        }
+        return true;
+    }
+}
+
+function validateForm(formId) {
+    const form = document.getElementById(formId);
+    if (!form) return true;
+    
+    const required = form.querySelectorAll('[required]');
+    let isValid = true;
+    
+    required.forEach(field => {
+        if (!validateField(field)) {
+            isValid = false;
+        }
+    });
+    
+    return isValid;
+}
+
+// Button loading state
+function setButtonLoading(btn, loading, originalText) {
+    if (loading) {
+        btn.classList.add('btn-loading');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>' + (originalText || 'Saving...');
+    } else {
+        btn.classList.remove('btn-loading');
+        btn.disabled = false;
+        btn.innerHTML = originalText || btn.textContent;
+    }
+}
+
+// Enhanced form submission
+const originalHandleAddTaskFormSubmit = handleAddTaskFormSubmit;
+handleAddTaskFormSubmit = function(form) {
+    if (!validateForm('addTaskForm')) {
+        showToast('Please fill in all required fields', 'error');
+        return false;
+    }
+    
+    const submitBtn = document.getElementById('addTaskSubmitBtn');
+    setButtonLoading(submitBtn, true, 'Creating Task...');
+    
+    return originalHandleAddTaskFormSubmit(form);
+};
+
+// Override saveTask to include validation and loading
+window.originalSaveTask = window.originalSaveTask || saveTask;
+saveTask = function() {
+    if (!validateForm('updateTaskForm')) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    const saveBtn = document.getElementById('saveBtn');
+    setButtonLoading(saveBtn, true, 'Saving...');
+    
+    if (typeof window.originalSaveTask === 'function') {
+        window.originalSaveTask();
+    }
+};
+
+// Priority selector styling - safe to call multiple times
+function initPrioritySelectors() {
+    document.querySelectorAll('.priority-option').forEach(option => {
+        const radio = option.querySelector('input[type="radio"]');
+        if (!radio) return;
+        
+        // Prevent duplicate listeners
+        if (radio.__priorityListenerAttached) return;
+        radio.__priorityListenerAttached = true;
+        
+        // Change handler to update visuals
+        radio.addEventListener('change', () => {
+            const parent = option.parentElement;
+            parent.querySelectorAll('.priority-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            if (radio.checked) {
+                option.classList.add('selected');
+            }
+        });
+        
+        // Click handler on label to ensure radio is checked
+        option.addEventListener('click', () => {
+            if (!radio.checked) {
+                // Uncheck all radios in same group
+                const allRadios = document.querySelectorAll(`input[name="${radio.name}"]`);
+                allRadios.forEach(r => {
+                    if (r !== radio) {
+                        r.checked = false;
+                        r.dispatchEvent(new Event('change'));
+                    }
+                });
+                radio.checked = true;
+                radio.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+    
+    // Set initial visual state for all selectors on page
+    document.querySelectorAll('.priority-option').forEach(option => {
+        const radio = option.querySelector('input[type="radio"]');
+        if (radio && radio.checked) {
+            option.classList.add('selected');
+        } else if (radio) {
+            option.classList.remove('selected');
+        }
+    });
+}
+
+// Character counters
+function initCharacterCounters() {
+    ['addTitle', 'addDescription', 'addNotes'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input && !input.parentElement.querySelector('.char-count')) {
+            const counter = document.createElement('div');
+            counter.className = 'char-count';
+            counter.innerHTML = `<span id="${id}Count">0</span>/${input.maxLength || 500} characters`;
+            input.parentElement.appendChild(counter);
+            input.addEventListener('input', () => {
+                document.getElementById(id + 'Count').textContent = input.value.length;
+            });
+            document.getElementById(id + 'Count').textContent = input.value.length;
+        }
+    });
+}
+
+function initCharacterCountersForDetail() {
+    ['detailTitle', 'detailDescription', 'detailNotes'].forEach(id => {
+        const input = document.getElementById(id);
+        if (input && !input.parentElement.querySelector('.char-count')) {
+            const counter = document.createElement('div');
+            counter.className = 'char-count';
+            counter.innerHTML = `<span id="${id}Count">0</span>/${input.maxLength || 500} characters`;
+            input.parentElement.appendChild(counter);
+            input.addEventListener('input', () => {
+                document.getElementById(id + 'Count').textContent = input.value.length;
+            });
+            document.getElementById(id + 'Count').textContent = input.value.length;
+        }
+    });
+}
+
+// Enhanced Checklist Manager
+const ChecklistManager = {
+    items: {},
+    currentTaskId: null,
+    draggedItem: null,
+
+    init(taskId, items) {
+        this.currentTaskId = taskId;
+        this.items = items || { list: [] };
+        if (!this.items.list) this.items.list = [];
+        this.render();
+        this.updateProgress();
+    },
+
+    add(text) {
+        if (!text.trim()) return;
+        
+        const newItem = {
+            id: Date.now(),
+            text: text.trim(),
+            is_completed: false
+        };
+        
+        this.items.list.push(newItem);
+        this.save();
+        this.render();
+        this.updateProgress();
+        
+        document.getElementById('checklistInput').value = '';
+        return newItem;
+    },
+
+    toggle(id) {
+        const item = this.find(id);
+        if (item) {
+            item.is_completed = !item.is_completed;
+            this.save();
+            this.render();
+            this.updateProgress();
+        }
+    },
+
+    delete(id) {
+        if (confirm('Delete this checklist item?')) {
+            this.items.list = this.items.list.filter(item => item.id !== id);
+            this.save();
+            this.render();
+            this.updateProgress();
+        }
+    },
+
+    edit(id, newText) {
+        const item = this.find(id);
+        if (item && newText.trim()) {
+            item.text = newText.trim();
+            this.save();
+            this.render();
+        }
+    },
+
+    find(id) {
+        return this.items.list?.find(item => item.id === parseInt(id));
+    },
+
+    checkAll() {
+        if (this.items.list) {
+            this.items.list.forEach(item => item.is_completed = true);
+            this.save();
+            this.render();
+            this.updateProgress();
+        }
+    },
+
+    uncheckAll() {
+        if (this.items.list) {
+            this.items.list.forEach(item => item.is_completed = false);
+            this.save();
+            this.render();
+            this.updateProgress();
+        }
+    },
+
+    deleteCompleted() {
+        if (this.items.list) {
+            const count = this.items.list.filter(item => item.is_completed).length;
+            if (count > 0 && confirm(`Delete ${count} completed item(s)?`)) {
+                this.items.list = this.items.list.filter(item => !item.is_completed);
+                this.save();
+                this.render();
+                this.updateProgress();
+            }
+        }
+    },
+
+    updateProgress() {
+        const total = this.items.list?.length || 0;
+        const completed = this.items.list?.filter(item => item.is_completed).length || 0;
+        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+        
+        const progressText = document.getElementById('checklistProgressText');
+        const progressFill = document.getElementById('checklistProgressFill');
+        
+        if (progressText) progressText.textContent = `${completed}/${total} completed`;
+        if (progressFill) progressFill.style.width = percentage + '%';
+    },
+
+    render() {
+        const container = document.getElementById('checklistItems');
+        if (!container) return;
+        
+        if (!this.items.list || this.items.list.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-6 text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-clipboard-list text-2xl mb-2 opacity-50"></i>
+                    <p class="text-sm">No checklist items yet</p>
+                    <p class="text-xs mt-1">Add items above to track subtasks</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = this.items.list.map(item => `
+            <div class="checklist-item ${item.is_completed ? 'completed' : ''}" 
+                 draggable="true"
+                 data-id="${item.id}"
+                 ondragstart="checklistManager.handleDragStart(event)"
+                 ondragend="checklistManager.handleDragEnd(event)">
+                <input type="checkbox" 
+                       class="subtask-checkbox"
+                       ${item.is_completed ? 'checked' : ''}
+                       onchange="checklistManager.toggle(${item.id})">
+                <span class="subtask-text ${item.is_completed ? 'completed' : ''}">${escapeHtml(item.text)}</span>
+                <div class="checklist-actions">
+                    <button type="button" 
+                            class="checklist-action-btn"
+                            onclick='checklistManager.editPrompt(${item.id}, ${JSON.stringify(item.text)})'
+                            title="Edit">
+                        <i class="fas fa-edit text-xs"></i>
+                    </button>
+                    <button type="button" 
+                            class="checklist-action-btn delete"
+                            onclick="checklistManager.delete(${item.id})"
+                            title="Delete">
+                        <i class="fas fa-trash text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    },
+
+    handleDragStart(e) {
+        this.draggedItem = parseInt(e.target.dataset.id);
+        e.target.closest('.checklist-item').classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    },
+
+    handleDragEnd(e) {
+        e.target.closest('.checklist-item')?.classList.remove('dragging');
+    },
+
+    handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        const container = document.getElementById('checklistItems');
+        const afterElement = this.getDragAfterElement(container, e.clientY);
+        const dragging = container.querySelector('.dragging');
+        
+        if (!dragging) return;
+        
+        if (afterElement == null) {
+            container.appendChild(dragging);
+        } else {
+            container.insertBefore(dragging, afterElement);
+        }
+    },
+
+    getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.checklist-item:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    },
+
+    save() {
+        if (this.currentTaskId) {
+            taskChecklists[this.currentTaskId] = this.items;
+            this.persist();
+        }
+    },
+
+    async persist() {
+        try {
+            await fetch('/task_management/update_checklist/', {
+                method: 'POST',
+                headers: { 
+                    'X-Requested-With': 'XMLHttpRequest', 
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({
+                    task_id: this.currentTaskId,
+                    checklist_items: this.items.list || [],
+                    csrfmiddlewaretoken: getCookie('csrftoken')
+                })
+            });
+        } catch (err) {
+            console.warn('Failed to persist checklist:', err);
+        }
+    },
+
+    editPrompt(id, currentText) {
+        const newText = prompt('Edit checklist item:', currentText);
+        if (newText !== null && newText.trim() !== '') {
+            this.edit(id, newText);
+        }
+    }
+};
+
+// Modal initialization
+function initModals() {
+    initCharacterCounters();
+    initPrioritySelectors();
+    updateDeadlineDisplay('add');
+    updateDeadlineDisplay('edit');
+    
+    // Initialize flatpickr
+    if (typeof flatpickr !== 'undefined') {
+        flatpickr.localize(flatpickr.l10ns.en);
+    }
+}
+
+// Keyboard shortcuts and focus trapping
+document.addEventListener('keydown', (e) => {
+    if (document.querySelector('.modal-overlay.show')) {
+        if (e.key === 'Escape') {
+            closeAllModals();
+        }
+        if (e.key === 'Tab') {
+            manageTabTrap(e);
+        }
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            const saveBtn = document.getElementById('saveBtn');
+            if (saveBtn && !saveBtn.disabled) {
+                saveTask();
+            }
+        }
+    }
+});
+
+function manageTabTrap(e) {
+    const modal = document.querySelector('.modal-overlay.show .modal-content');
+    if (!modal) return;
+    
+    const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    
+    if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+    }
+}
+
+function closeAllModals() {
+    if (typeof closeAddTaskModal === 'function') closeAddTaskModal();
+    if (typeof closeTaskDetailModal === 'function') closeTaskDetailModal();
+    if (typeof closeAddColumnModal === 'function') closeAddColumnModal();
+    if (typeof closeEditColumnModal === 'function') closeEditColumnModal();
+    if (typeof closeArchivedTasks === 'function') closeArchivedTasks();
+    if (typeof toggleHelp === 'function') toggleHelp(false);
+}
+
+// Initialize modals and UI components immediately
+initModals();
+
+// Expose globally
+window.checklistManager = ChecklistManager;
+window.updateDeadlineDisplay = updateDeadlineDisplay;
+window.clearDeadline = clearDeadline;
+window.toggleRecurringOptions = toggleRecurringOptions;
+window.validateForm = validateForm;
+window.saveTask = saveTask;
+
 </script>
 {% endblock %}
