@@ -44,42 +44,331 @@ html.dark .personal-column::-webkit-scrollbar-thumb {
 background: #374151; 
 }
 
-/* Light mode task card */
-.personal-task { 
-cursor: grab; 
-transition: all 0.2s ease;
-background: linear-gradient(145deg, #ffffff, #f9fafb);
-border: 1px solid #e5e7eb;
+/* Priority badge improvements with better visual hierarchy */
+ .priority-badge {
+   display: inline-flex;
+   align-items: center;
+   gap: 0.375rem;
+   font-size: 0.75rem;
+   font-weight: 600;
+   padding: 0.25rem 0.625rem;
+   border-radius: 9999px;
+   letter-spacing: 0.025em;
+   transition: all 0.15s ease;
+ }
+.priority-badge .indicator {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
-html.dark .personal-task { 
-background: linear-gradient(145deg, #374151, #1f2937);
-border: 1px solid #4b5563;
+.priority-low {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+.dark .priority-low {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+.priority-low .indicator { background-color: #10b981; }
+
+.priority-medium {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+.dark .priority-medium {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+.priority-medium .indicator { background-color: #3b82f6; }
+
+.priority-high {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+.dark .priority-high {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+.priority-high .indicator { background-color: #f59e0b; }
+
+.priority-urgent {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+.dark .priority-urgent {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+.priority-urgent .indicator { background-color: #ef4444; }
+
+/* Improved task card structure */
+.personal-task {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+.personal-task::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 .personal-task:hover {
-transform: translateY(-2px);
-box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-border-color: #9ca3af;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 html.dark .personal-task:hover {
-box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-border-color: #6b7280;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
+
+/* Priority color as top border on hover */
+.personal-task[data-priority="low"]:hover::before { color: #10b981; opacity: 1; }
+.personal-task[data-priority="medium"]:hover::before { color: #3b82f6; opacity: 1; }
+.personal-task[data-priority="high"]:hover::before { color: #f59e0b; opacity: 1; }
+.personal-task[data-priority="urgent"]:hover::before { color: #ef4444; opacity: 1; }
+
+/* Completed task styling */
 .personal-task.completed {
-opacity: 0.6;
-border-left: 3px solid #10b981 !important;
+  opacity: 0.7;
+  background: linear-gradient(145deg, 
+    rgba(249, 250, 251, 0.6), 
+    rgba(243, 244, 246, 0.4) 100%);
+  border-style: dashed;
+  border-color: #d1d5db;
 }
 html.dark .personal-task.completed {
-border-left: 3px solid #10b981 !important;
+  background: linear-gradient(145deg, 
+    rgba(31, 41, 55, 0.6), 
+    rgba(17, 24, 39, 0.4) 100%);
+  border-color: #4b5563;
 }
-.personal-task:active { cursor: grabbing; }
-.personal-task.sortable-ghost { 
-    opacity: 0.6; 
-    background: #e5e7eb; 
-    border: 2px dashed #9ca3af;
+.personal-task.completed .task-title {
+  text-decoration: line-through;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+  opacity: 0.75;
 }
-html.dark .personal-task.sortable-ghost { 
-    background: #4b5563; 
-    border-color: #6b7280;
+
+/* Larger, more accessible checkbox */
+.task-checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 0.375rem;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #d1d5db;
+  background: white;
+}
+html.dark .task-checkbox {
+  background: #374151;
+  border-color: #6b7280;
+}
+.task-checkbox:hover {
+  border-color: #9ca3af;
+  transform: scale(1.05);
+}
+html.dark .task-checkbox:hover {
+  border-color: #9ca3af;
+}
+.task-checkbox.checked {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: #10b981;
+}
+.task-checkbox.checked:hover {
+  transform: scale(1.1);
+}
+.task-checkbox i {
+  font-size: 0.6875rem;
+  line-height: 1;
+}
+
+/* Task title with better interaction */
+.task-title {
+  transition: color 0.15s ease;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline;
+}
+.task-title:hover {
+  color: #2563eb;
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-underline-offset: 2px;
+}
+html.dark .task-title:hover {
+  color: #60a5fa;
+}
+
+/* Quick action buttons with better affordance */
+.task-quick-action {
+  opacity: 0;
+  transition: all 0.15s ease;
+  padding: 0.375rem;
+  border-radius: 0.375rem;
+}
+.personal-task:hover .task-quick-action {
+  opacity: 1;
+}
+.task-quick-action:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: scale(1.1);
+}
+html.dark .task-quick-action:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Metadata row styling */
+.task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.task-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #6b7280;
+}
+html.dark .task-meta-item {
+  color: #9ca3af;
+}
+.task-meta-item i {
+  font-size: 0.6875rem;
+  opacity: 0.8;
+}
+
+/* Date range special styling */
+.date-range {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #2563eb;
+  font-weight: 500;
+}
+html.dark .date-range {
+  color: #60a5fa;
+}
+
+/* Notes preview with indicator */
+.notes-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.375rem 0.625rem;
+  background: #f3f4f6;
+  border-radius: 0.375rem;
+  border-left: 2px solid #d1d5db;
+}
+html.dark .notes-preview {
+  background: rgba(55, 65, 81, 0.5);
+  border-color: #4b5563;
+}
+.notes-preview i {
+  color: #6b7280;
+  font-size: 0.75rem;
+  margin-top: 0.125rem;
+}
+html.dark .notes-preview i {
+  color: #9ca3af;
+}
+.notes-preview span {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #4b5563;
+}
+html.dark .notes-preview span {
+  color: #d1d5db;
+}
+
+/* Archive button as dropdown on hover? */
+.archive-btn {
+  position: relative;
+}
+
+/* Collapsible description */
+.task-description {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #4b5563;
+}
+html.dark .task-description {
+  color: #d1d5db;
+}
+
+/* Action buttons row (optional compact actions) */
+.task-actions {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+html.dark .task-actions {
+  border-color: #374151;
+}
+.task-action-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 0.25rem;
+  transition: all 0.15s ease;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .personal-task {
+    padding: 0.75rem;
+  }
+  .task-meta {
+    gap: 0.5rem;
+    font-size: 0.6875rem;
+  }
+  .priority-badge {
+    font-size: 0.6875rem;
+    padding: 0.1875rem 0.5rem;
+  }
+  .task-title {
+    font-size: 0.875rem;
+  }
+}
+
+/* Focus states for keyboard navigation */
+.personal-task:focus-within {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+html.dark .personal-task:focus-within {
+  outline-color: #60a5fa;
+}
+
+/* Drag and drop cursor */
+.personal-task.sortable-drag {
+  opacity: 0.9;
+  transform: rotate(2deg);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
 }
 
 /* Column drag ghost */
@@ -114,15 +403,6 @@ html.dark .chosen-checklist-item {
     background: #1e3a5f !important;
 }
 
-
-.priority-low { border-left: 3px solid #10b981 !important; }
-html.dark .priority-low { border-left: 3px solid #10b981 !important; }
-.priority-medium { border-left: 3px solid #3b82f6 !important; }
-html.dark .priority-medium { border-left: 3px solid #3b82f6 !important; }
-.priority-high { border-left: 3px solid #f59e0b !important; }
-html.dark .priority-high { border-left: 3px solid #f59e0b !important; }
-.priority-urgent { border-left: 3px solid #ef4444 !important; }
-html.dark .priority-urgent { border-left: 3px solid #ef4444 !important; }
 
 /* Unified modal system */
 .modal-overlay {
@@ -387,76 +667,102 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
            id="column-{{ column.id }}">
 
 {% for task in column.tasks_list %}
-<div class="personal-task rounded-lg p-3 mb-2 {% if task.is_completed %}completed{% elif task.priority == 'urgent' %}priority-urgent{% elif task.priority == 'high' %}priority-high{% elif task.priority == 'medium' %}priority-medium{% else %}priority-low{% endif %}"
- data-task-id="{{ task.id }}"
- data-title="{{ task.title|escape }}"
- data-priority="{{ task.priority }}"
- data-description="{{ task.description|escape }}"
-  data-deadline="{{ task.deadline|date:'Y-m-d' }}"
-  data-deadline_time="{% if task.deadline_time %}{{ task.deadline_time|time:'H:i' }}{% endif %}"
-  data-date-start="{{ task.date_start|date:'Y-m-d' }}"
- data-date-end="{{ task.date_end|date:'Y-m-d' }}"
- data-notes="{{ task.notes|default:''|escape }}"
- data-checklist="{{ task.checklist_items_json|escape }}"
- draggable="true">
-<div class="flex justify-between items-start">
-<!-- Checkbox -->
-<button onclick="toggleTask('{{ task.id }}')" 
-class="mr-2 mt-1 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center
-{% if task.is_completed %}bg-green-500 border-green-500{% else %}border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-300{% endif %}">
-{% if task.is_completed %}<i class="fas fa-check text-xs text-white"></i>{% endif %}
-</button>
-
-<div class="flex-1 min-w-0">
-<h4 onclick="event.stopPropagation(); openTaskDetail('{{ task.id }}')" title="Click to edit"
-class="task-title font-medium text-gray-800 dark:text-gray-100 text-sm {% if task.is_completed %}text-gray-500{% endif %} cursor-pointer hover:text-blue-600 dark:hover:text-blue-400">
-<i class="fas fa-edit mr-1 text-gray-500"></i>{{ task.title }}
-</h4>
-{% if task.description %}
-<p class="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{{ task.description }}</p>
-{% endif %}
-
-<!-- Tags -->
-<div class="flex items-center gap-2 task-notes" data-notes="{{ task.notes|default:''|escape }}">
-<span class="text-xs px-1.5 py-0.5 rounded {% if task.priority == 'urgent' %}bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400{% elif task.priority == 'high' %}bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400{% elif task.priority == 'medium' %}bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400{% else %}bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400{% endif %}">
-{{ task.priority|title }}
-</span>
-{% if task.is_recurring %}
-<span class="text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
-<i class="fas fa-redo mr-1"></i>{{ task.recurring_type|title }}
-</span>
-{% endif %}
-{% if task.deadline %}
-<span class="text-xs text-gray-600 dark:text-gray-400">
-<i class="fas fa-calendar-alt mr-1"></i>{{ task.deadline|date:"M d" }}{% if task.deadline_time %} {{ task.deadline_time|time:"g:i A" }}{% endif %}
-</span>
-{% endif %}
-{% if task.date_start and task.date_end %}
-<span class="text-xs text-blue-600 dark:text-blue-400">
-<i class="fas fa-calendar-week mr-1"></i>{{ task.date_start|date:"M d" }} - {{ task.date_end|date:"M d" }}
-</span>
-{% endif %}
+<div class="personal-task rounded-lg p-4 mb-3 
+         {% if task.is_completed %}completed{% endif %}"
+     data-task-id="{{ task.id }}"
+     data-title="{{ task.title|escape }}"
+     data-priority="{{ task.priority }}"
+     data-description="{{ task.description|escape }}"
+     data-deadline="{{ task.deadline|date:'Y-m-d' }}"
+     data-deadline_time="{% if task.deadline_time %}{{ task.deadline_time|time:'H:i' }}{% endif %}"
+     data-date-start="{{ task.date_start|date:'Y-m-d' }}"
+     data-date-end="{{ task.date_end|date:'Y-m-d' }}"
+     data-notes="{{ task.notes|default:''|escape }}"
+     data-checklist="{{ task.checklist_items_json|escape }}"
+     draggable="true"
+     tabindex="0"
+     role="article"
+     aria-label="Task: {{ task.title }}{% if task.is_completed %}, completed{% endif %}">
+  
+  <div class="flex items-start gap-3">
+    <!-- Enhanced Checkbox -->
+     <button onclick="toggleTask('{{ task.id }}')" 
+             class="task-checkbox mt-0.5 flex-shrink-0
+                    {% if task.is_completed %}checked{% endif %}"
+             aria-label="{% if task.is_completed %}Mark {{ task.title }} as incomplete{% else %}Mark {{ task.title }} as complete{% endif %}">
+       {% if task.is_completed %}<i class="fas fa-check text-xs text-white"></i>{% endif %}
+     </button>
+    
+    <!-- Main Content -->
+    <div class="flex-1 min-w-0">
+      <!-- Title Row -->
+      <h4 onclick="event.stopPropagation(); openTaskDetail('{{ task.id }}')"
+          class="task-title font-semibold text-gray-900 dark:text-gray-100 text-base leading-tight mb-1.5">
+        {{ task.title }}
+      </h4>
+      
+      <!-- Description preview (if exists, truncated) -->
+      {% if task.description %}
+      <p class="task-description text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+        {{ task.description }}
+      </p>
+      {% endif %}
+      
+      <!-- Priority + Deadline + Recurring (single meta row) -->
+      <div class="task-meta">
+        <span class="priority-badge priority-{{ task.priority }}">
+          <span class="indicator"></span>
+          {{ task.priority|title }}
+        </span>
+        
+        {% if task.deadline %}
+        <span class="task-meta-item" title="{% if task.deadline_time %}Due {{ task.deadline|date:'M d, Y' }} at {{ task.deadline_time|time:'g:i A' }}{% else %}Due {{ task.deadline|date:'M d, Y' }}{% endif %}">
+          <i class="fas fa-calendar-alt"></i>
+          {{ task.deadline|date:"M d" }}{% if task.deadline_time %} {{ task.deadline_time|time:"g:i A" }}{% endif %}
+        </span>
+        {% endif %}
+        
+        {% if task.is_recurring %}
+        <span class="task-meta-item" title="Recurring {{ task.recurring_type|title }}">
+          <i class="fas fa-redo"></i>
+          {{ task.recurring_type|title }}
+        </span>
+        {% endif %}
+      </div>
+      
+      <!-- Date range if present -->
+      {% if task.date_start and task.date_end %}
+      <div class="mt-1.5">
+        <span class="date-range">
+          <i class="fas fa-calendar-week"></i>
+          {{ task.date_start|date:"M d" }} - {{ task.date_end|date:"M d" }}
+        </span>
+      </div>
+      {% endif %}
+      
+      <!-- Notes preview if exists -->
+      {% if task.notes %}
+      <div class="notes-preview mt-2">
+        <i class="fas fa-sticky-note"></i>
+        <span title="{{ task.notes|escape }}">{{ task.notes|truncatechars:80 }}</span>
+      </div>
+      {% endif %}
+    </div>
+    
+    <!-- Quick Actions (shown on hover) -->
+    <div class="flex items-center gap-1 flex-shrink-0">
+      <button onclick="archiveTask('{{ task.id }}')" 
+              class="task-quick-action archive-btn p-1.5 rounded-md
+                     text-gray-400 hover:text-amber-500 hover:bg-amber-50 
+                     dark:hover:text-amber-400 dark:hover:bg-amber-900/20"
+              aria-label="Archive task: {{ task.title|escape }}"
+              title="Archive task">
+        <i class="fas fa-archive text-sm"></i>
+      </button>
+    </div>
+  </div>
 </div>
-
-<!-- Notes preview -->
-{% if task.notes %}
-<div class="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-600 dark:text-gray-400">
-<i class="fas fa-sticky-note mr-1"></i>{{ task.notes|truncatechars:50 }}
-</div>
-{% endif %}
-                 </div>
-
-                 <!-- Archive -->
-                 <button onclick="archiveTask('{{ task.id }}')" class="text-gray-500 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 p-1" title="Archive task">
-                   <i class="fas fa-archive text-xs"></i>
-                 </button>
-               </div>
-             </div>
-        {% empty %}
-        <div class="text-center py-8 text-gray-600 dark:text-gray-400">
-          <p class="text-sm">No tasks</p>
-        </div>
-        {% endfor %}
+{% endfor %}
       </div>
     </div>
     {% endfor %}
@@ -555,10 +861,10 @@ class="task-title font-medium text-gray-800 dark:text-gray-100 text-sm {% if tas
           {% if task.description %}
           <p class="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{{ task.description }}</p>
           {% endif %}
-          <div class="flex items-center gap-2 mt-2 task-notes">
-            <span class="text-xs px-1.5 py-0.5 rounded {% if task.priority == 'urgent' %}bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400{% elif task.priority == 'high' %}bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400{% elif task.priority == 'medium' %}bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400{% else %}bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400{% endif %}">
-              {{ task.priority|title }}
-            </span>
+           <div class="flex items-center gap-2 mt-2 task-notes">
+             <span class="priority-badge priority-{{ task.priority }}">
+               <span class="indicator"></span>{{ task.priority|title }}
+             </span>
             {% if task.deadline %}
             <span class="text-xs text-gray-600 dark:text-gray-400">
               <i class="fas fa-calendar-alt mr-1"></i>{{ task.deadline|date:"M d, Y" }}{% if task.deadline_time %} {{ task.deadline_time|time:"g:i A" }}{% endif %}
@@ -961,6 +1267,7 @@ function handleAddTaskFormSubmit(form) {
                     // Hide "No tasks" placeholder if present
                     var noTasksMsg = columnEl.querySelector('.text-center.py-8');
                     if (noTasksMsg) noTasksMsg.style.display = 'none';
+                    taskChecklists[data.task.id] = data.task.checklist_items || [];
                 }
             }
         } else {
@@ -978,14 +1285,16 @@ function handleAddTaskFormSubmit(form) {
 }
 
 function buildTaskCardHtml(task) {
-    var priorityClass = getTaskPriorityClass(task.priority);
+    var priorityClass = 'priority-' + task.priority;
     var statusClass = task.is_completed ? 'completed' : '';
-    var titleClass = task.is_completed ? 'text-gray-500' : '';
-    var checklist = (task.checklist_items || []).map(item => ({
-        id: item.id, text: item.text, is_completed: item.is_completed
-    }));
+    var titleClass = task.is_completed ? 'text-gray-500 line-through' : 'text-gray-900 dark:text-gray-100';
+    
+    var checklist = (task.checklist_items || []).map(function(item) {
+        return { id: item.id, text: item.text, is_completed: item.is_completed };
+    });
     var checklistAttr = 'data-checklist=\'' + escapeHtml(JSON.stringify(checklist)) + '\'';
-    var html = '<div class="personal-task rounded-lg p-3 mb-2 ' + statusClass + ' ' + priorityClass + '"' +
+    
+    var html = '<div class="personal-task rounded-lg p-4 mb-3 ' + statusClass + '"' +
         ' data-task-id="' + task.id + '"' +
         ' data-title="' + escapeHtml(task.title) + '"' +
         ' data-priority="' + task.priority + '"' +
@@ -996,25 +1305,28 @@ function buildTaskCardHtml(task) {
         ' data-date-end="' + (task.date_end || '') + '"' +
         ' data-notes="' + escapeHtml(task.notes || '') + '"' +
         ' ' + checklistAttr +
-        ' draggable="true">';
-    html += '<div class="flex justify-between items-start">';
-    html += '<button onclick="toggleTask(' + task.id + ')" class="mr-2 mt-1 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center ' +
-        (task.is_completed ? 'bg-green-500 border-green-500' : 'border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-300') + '">';
-    if (task.is_completed) html += '<i class="fas fa-check text-xs text-white"></i>';
-    html += '</button>';
+        '" draggable="true" tabindex="0" role="article"' +
+        ' aria-label="Task: ' + escapeHtml(task.title) + (task.is_completed ? ', completed' : '') + '">';
+    
+    html += '<div class="flex items-start gap-3">';
+    
+    // Checkbox
+     var checkboxIcon = task.is_completed ? '<i class="fas fa-check text-xs text-white"></i>' : '';
+     html += '<button onclick="toggleTask(' + task.id + ')" class="task-checkbox mt-0.5 flex-shrink-0 ' + (task.is_completed ? 'checked' : '') + '" aria-label="' + 
+         (task.is_completed ? 'Mark ' + escapeHtml(task.title) + ' as incomplete' : 'Mark ' + escapeHtml(task.title) + ' as complete') + '">' + checkboxIcon + '</button>';
+    
+    // Main content
     html += '<div class="flex-1 min-w-0">';
-    html += '<h4 onclick="event.stopPropagation(); openTaskDetail(' + task.id + ')" title="Click to edit"' +
-        ' class="task-title font-medium text-gray-800 dark:text-gray-100 text-sm ' + titleClass + ' cursor-pointer hover:text-blue-600 dark:hover:text-blue-400">' +
-        '<i class="fas fa-edit mr-1 text-gray-500"></i>' + escapeHtml(task.title) + '</h4>';
+    html += '<h4 onclick="event.stopPropagation(); openTaskDetail(' + task.id + ')" class="task-title font-semibold text-base leading-tight mb-1.5">' + escapeHtml(task.title) + '</h4>';
+    
     if (task.description) {
-        html += '<p class="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">' + escapeHtml(task.description) + '</p>';
+        html += '<p class="task-description text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">' + escapeHtml(task.description) + '</p>';
     }
-    html += '<div class="flex items-center gap-2 task-notes">';
-    html += '<span class="text-xs px-1.5 py-0.5 rounded ' + getPriorityBadgeClass(task.priority) + '">' + task.priority.charAt(0).toUpperCase() + task.priority.slice(1) + '</span>';
-    if (task.is_recurring) {
-        html += '<span class="text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">' +
-            '<i class="fas fa-redo mr-1"></i>' + task.recurring_type.charAt(0).toUpperCase() + task.recurring_type.slice(1) + '</span>';
-    }
+    
+    // Meta row: priority, deadline, recurring
+    html += '<div class="task-meta">';
+    html += '<span class="priority-badge priority-' + task.priority + '"><span class="indicator"></span>' + task.priority.charAt(0).toUpperCase() + task.priority.slice(1) + '</span>';
+    
     if (task.deadline) {
         var deadlineDate = new Date(task.deadline);
         var dateStr = deadlineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -1023,22 +1335,42 @@ function buildTaskCardHtml(task) {
             var timeObj = new Date('1970-01-01T' + task.deadline_time);
             timeStr = ' ' + timeObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
         }
-        html += '<span class="text-xs text-gray-600 dark:text-gray-400"><i class="fas fa-calendar-alt mr-1"></i>' + dateStr + timeStr + '</span>';
+        html += '<span class="task-meta-item" title="' + (task.deadline_time ? 'Due ' + deadlineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + timeObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'Due ' + deadlineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })) + '">' +
+            '<i class="fas fa-calendar-alt"></i>' + dateStr + timeStr + '</span>';
     }
+    
+    if (task.is_recurring) {
+        html += '<span class="task-meta-item" title="Recurring ' + task.recurring_type.charAt(0).toUpperCase() + task.recurring_type.slice(1) + '">' +
+            '<i class="fas fa-redo"></i>' + task.recurring_type.charAt(0).toUpperCase() + task.recurring_type.slice(1) + '</span>';
+    }
+    html += '</div>';
+    
+    // Date range
     if (task.date_start && task.date_end) {
-        html += '<span class="text-xs text-blue-600 dark:text-blue-400"><i class="fas fa-calendar-week mr-1"></i>' +
+        html += '<div class="mt-1.5">' +
+            '<span class="date-range"><i class="fas fa-calendar-week"></i>' +
             new Date(task.date_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' - ' +
-            new Date(task.date_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + '</span>';
+            new Date(task.date_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+            '</span></div>';
     }
-    html += '</div>';
+    
+    // Notes preview
     if (task.notes) {
-        html += '<div class="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-600 dark:text-gray-400">' +
-            '<i class="fas fa-sticky-note mr-1"></i>' + escapeHtml(task.notes.substring(0, 50)) + '</div>';
+        html += '<div class="notes-preview mt-2">' +
+            '<i class="fas fa-sticky-note"></i>' +
+            '<span title="' + escapeHtml(task.notes) + '">' + escapeHtml(task.notes.substring(0, 80)) + '</span>' +
+            '</div>';
     }
+    
     html += '</div>';
+    
     // Archive button
-    html += '<button onclick="archiveTask(' + task.id + ')" class="text-gray-500 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 p-1" title="Archive task">' +
-        '<i class="fas fa-archive text-xs"></i></button>';
+    html += '<div class="flex items-center gap-1 flex-shrink-0">' +
+        '<button onclick="archiveTask(' + task.id + ')" class="task-quick-action archive-btn p-1.5 rounded-md text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-900/20" ' +
+        'aria-label="Archive task: ' + escapeHtml(task.title) + '" title="Archive task">' +
+        '<i class="fas fa-archive text-sm"></i></button>' +
+        '</div>';
+    
     html += '</div></div>';
     return html;
 }
@@ -1115,13 +1447,6 @@ function buildColumnHtml(column) {
     html += '<div class="text-center py-8 text-gray-600 dark:text-gray-400"><p class="text-sm">No tasks</p></div>';
     html += '</div></div>';
     return html;
-}
-
-function getTaskPriorityClass(priority) {
-    if (priority === 'urgent') return 'priority-urgent';
-    if (priority === 'high') return 'priority-high';
-    if (priority === 'medium') return 'priority-medium';
-    return 'priority-low';
 }
 
 // ── View Mode Toggle ───────────────────────────────────────────────────────────
@@ -1819,122 +2144,34 @@ function saveTask() {
             showToast('Task saved successfully', 'success');
             // Update the task card in the kanban view
             var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
-            if (taskEl) {
-                taskEl.dataset.title = data.title || '';
-                taskEl.dataset.description = data.description || '';
-                taskEl.dataset.priority = data.priority || 'medium';
-                taskEl.dataset.deadline = data.deadline || '';
-                taskEl.dataset.dateStart = data.date_start || '';
-                taskEl.dataset.dateEnd = data.date_end || '';
-                taskEl.dataset.notes = data.notes || '';
-                
-                // Update UI
-                var titleEl = taskEl.querySelector('.task-title');
-                if (titleEl) titleEl.textContent = data.title || '';
-                
-                var descEl = taskEl.querySelector('.text-xs.text-gray-600.dark\\:text-gray-400.mt-1.line-clamp-2');
-                if (descEl) descEl.textContent = data.description || '';
-                
-                // Update priority badge
-                var prioritySpan = taskEl.querySelector('.task-notes span:first-child');
-                if (prioritySpan) {
-                    prioritySpan.className = 'text-xs px-1.5 py-0.5 rounded ' +
-                        (data.priority == 'urgent' ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400' :
-                         data.priority == 'high' ? 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400' :
-                         data.priority == 'medium' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' :
-                         'bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400');
-                    prioritySpan.textContent = (data.priority || 'medium').charAt(0).toUpperCase() + (data.priority || 'medium').slice(1);
-                }
-                
-                // Update dates: handle deadline and date range separately
-                var notesContainer = taskEl.querySelector('.task-notes');
-                
-                // Find or create deadline span (calendar-alt icon)
-                var deadlineSpan = notesContainer.querySelector('span .fa-calendar-alt');
-                if (!deadlineSpan) {
-                    deadlineSpan = document.createElement('span');
-                    deadlineSpan.className = 'text-xs text-gray-600 dark:text-gray-400';
-                    notesContainer.appendChild(deadlineSpan);
-                } else {
-                    deadlineSpan = deadlineSpan.closest('span');
-                }
-                
-                // Find or create date range span (calendar-week icon)
-                var dateRangeSpan = notesContainer.querySelector('span .fa-calendar-week');
-                if (!dateRangeSpan) {
-                    dateRangeSpan = document.createElement('span');
-                    dateRangeSpan.className = 'text-xs text-blue-600 dark:text-blue-400';
-                    notesContainer.appendChild(dateRangeSpan);
-                } else {
-                    dateRangeSpan = dateRangeSpan.closest('span');
-                }
-                
-                // Update deadline span
-                if (data.deadline) {
-                    var dateObj = new Date(data.deadline);
-                    var dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                    var timeStr = '';
-                    if (data.deadline_time) {
-                        var [h, m] = data.deadline_time.split(':');
-                        var timeDate = new Date();
-                        timeDate.setHours(parseInt(h), parseInt(m));
-                        timeStr = ' ' + timeDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-                    }
-                    deadlineSpan.innerHTML = '<i class="fas fa-calendar-alt mr-1"></i>' + dateStr + timeStr;
-                    deadlineSpan.style.display = '';
-                } else {
-                    deadlineSpan.style.display = 'none';
-                }
-                
-                // Update date range span
-                if (data.date_start && data.date_end) {
-                    dateRangeSpan.innerHTML = '<i class="fas fa-calendar-week mr-1"></i>' + 
-                        new Date(data.date_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + 
-                        ' - ' + new Date(data.date_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                    dateRangeSpan.style.display = '';
-                } else {
-                    dateRangeSpan.style.display = 'none';
-                }
-                
-                // Update completion status safely
-                var toggleBtn = taskEl.querySelector('button[onclick^="toggleTask"]');
-                var toggleIcon = toggleBtn ? toggleBtn.querySelector('i') : null;
-                var titleEl = taskEl.querySelector('.task-title');
-                if (data.is_completed) {
-                    taskEl.classList.add('completed');
-                    if (toggleBtn) {
-                        toggleBtn.classList.add('bg-green-500', 'border-green-500');
-                        if (!toggleIcon) {
-                            toggleIcon = document.createElement('i');
-                            toggleIcon.className = 'fas fa-check text-xs text-white';
-                            toggleBtn.appendChild(toggleIcon);
-                        } else {
-                            toggleIcon.classList.add('fas', 'fa-check', 'text-xs', 'text-white');
-                        }
-                    }
-                    if (titleEl) titleEl.classList.add('text-gray-500');
-                } else {
-                    taskEl.classList.remove('completed');
-                    if (toggleBtn) {
-                        toggleBtn.classList.remove('bg-green-500', 'border-green-500');
-                        if (toggleIcon) {
-                            toggleIcon.remove();
-                        }
-                    }
-                    if (titleEl) titleEl.classList.remove('text-gray-500');
-                }
-                
-                // Update priority border
-                ['priority-low', 'priority-medium', 'priority-high', 'priority-urgent'].forEach(function(cls) {
-                    taskEl.classList.remove(cls);
-                });
-                if (data.priority) {
-                    taskEl.classList.add('priority-' + data.priority);
-                }
-                
-                // Update checklist
-                 taskEl.dataset.checklist = JSON.stringify(data.checklist_items || []);
-                 loadChecklistItems(taskId); // Reload checklist with updated data
+             if (taskEl) {
+                 // Rebuild task card using updated data
+                 var updatedTask = {
+                     id: taskId,
+                     title: data.title || '',
+                     description: data.description || '',
+                     priority: data.priority || 'medium',
+                     deadline: data.deadline || '',
+                     deadline_time: data.deadline_time || '',
+                     date_start: data.date_start || '',
+                     date_end: data.date_end || '',
+                     notes: data.notes || '',
+                     is_recurring: data.is_recurring || false,
+                     recurring_type: data.recurring_type || '',
+                     checklist_items: data.checklist_items || [],
+                     is_completed: data.is_completed || false
+                 };
+                 var newHtml = buildTaskCardHtml(updatedTask);
+                 var tempDiv = document.createElement('div');
+                 tempDiv.innerHTML = newHtml;
+                 var newTaskEl = tempDiv.firstElementChild;
+                 taskEl.replaceWith(newTaskEl);
+                 // Update global checklist store
+                 taskChecklists[taskId] = updatedTask.checklist_items;
+                 // Refresh Sortable on the column
+                 var columnEl = newTaskEl.parentElement;
+                 var sortable = Sortable.get(columnEl);
+                 if (sortable) sortable.refresh();
              }
              
              // Close modal after successful save
@@ -1998,8 +2235,7 @@ function toggleTask(taskId) {
             var checkboxBtn = taskEl.querySelector('button[onclick*="toggleTask"]');
             if (checkboxBtn) {
                 checkboxBtn.innerHTML = isCompleted ? '<i class="fas fa-check text-xs text-white"></i>' : '';
-                checkboxBtn.className = 'mr-2 mt-1 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center ' + 
-                (isCompleted ? 'bg-green-500 border-green-500' : 'border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-300');
+                checkboxBtn.classList.toggle('checked', isCompleted);
             }
 
             // Update task title styling
@@ -2082,12 +2318,7 @@ function toggleArchivedDrawer() {
 
 
 
-function getPriorityBadgeClass(priority) {
-    if (priority === 'urgent') return 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400';
-    if (priority === 'high') return 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400';
-    if (priority === 'medium') return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400';
-    return 'bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400';
-}
+
 
 function restoreTask(taskId) {
     showConfirmModal(
@@ -2334,7 +2565,7 @@ function prependArchivedTask(task) {
         '<h4 class="font-medium text-gray-800 dark:text-gray-100 text-sm' + (task.is_completed ? ' text-gray-500' : '') + '">' + escapeHtml(task.title) + '</h4>' +
         (task.description ? '<p class="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">' + escapeHtml(task.description) + '</p>' : '') +
         '<div class="flex items-center gap-2 mt-2">' +
-        '<span class="text-xs px-1.5 py-0.5 rounded ' + getPriorityBadgeClass(task.priority) + '">' + task.priority.charAt(0).toUpperCase() + task.priority.slice(1) + '</span>' +
+        '<span class="priority-badge priority-' + task.priority + '"><span class="indicator"></span>' + task.priority.charAt(0).toUpperCase() + task.priority.slice(1) + '</span>' +
         (dateTimeStr ? '<span class="text-xs text-gray-600 dark:text-gray-400"><i class="fas fa-calendar-alt mr-1"></i>' + dateTimeStr + '</span>' : '') +
         '</div></div>' +
         '<div class="flex items-center gap-2 flex-shrink-0 ml-2">' +
