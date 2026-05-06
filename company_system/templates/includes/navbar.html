@@ -16,7 +16,8 @@
     </button>
 
     <!-- Page Title -->
-    {% block page_title %}{% endblock %}
+    {% block page_title %}
+    {% endblock %}
   </div>
 
   <!-- Right section: Messages + Theme toggle + User Menu -->
@@ -42,7 +43,7 @@
     </button>
 
     <!-- User Profile Dropdown - Icon Only -->
-    <div class="relative" style="z-index: 60;">
+    <div class="relative" style="z-index: 10;">
       <button id="user-menu-btn" class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors" title="User Menu">
         <!-- User Icon -->
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -51,28 +52,29 @@
       </button>
 
       <!-- Dropdown Menu - with dark mode styles -->
-      <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 rounded-lg shadow-lg py-1" 
-           style="z-index: 70; background-color: #374151; color: #e5e7eb;">
+      <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 rounded-lg shadow-lg py-1" style="z-index: 70; background-color: #374151; color: #e5e7eb;">
         <!-- User Info Header -->
         <div class="px-4 py-2 border-b" style="border-color: #4b5563;">
           <p class="text-sm font-semibold" style="color: #f9fafb;">
-            {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}
+            {% if user.first_name %}
+              {{ user.first_name }}
+            {% else %}
+              {{ user.username }}
+            {% endif %}
           </p>
-          <p class="text-xs" style="color: #9ca3af;">{{ user.email|default:"User" }}</p>
+          <p class="text-xs" style="color: #9ca3af;">{{ user.email|default:'User' }}</p>
         </div>
-        
+
         <a href="#" class="flex items-center px-4 py-2 hover:bg-gray-600" style="color: #e5e7eb;">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          Profile
+          </svg>Profile
         </a>
         <a href="#" class="flex items-center px-4 py-2 hover:bg-gray-600" style="color: #e5e7eb;">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          Settings
+          </svg>Settings
         </a>
         <div class="border-t my-1" style="border-color: #4b5563;"></div>
         <form method="post" action="{% url 'logout' %}?next=/login/" id="navbar-logout-form">
@@ -80,8 +82,7 @@
           <button type="button" onclick="confirmLogout('navbar-logout-form')" class="flex items-center w-full text-left px-4 py-2 hover:bg-gray-600" style="color: #f87171;">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Logout
+            </svg>Logout
           </button>
         </form>
       </div>
@@ -103,125 +104,125 @@
 
 <script>
   // Initialize theme toggle after a small delay to ensure base.html has run
-  setTimeout(function() {
+  setTimeout(function () {
     // Hide page loader on initial load
-    var pageLoader = document.getElementById('page-loader');
+    var pageLoader = document.getElementById('page-loader')
     if (pageLoader) {
-      pageLoader.classList.remove('active');
+      pageLoader.classList.remove('active')
     }
-    
-    var themeToggle = document.getElementById('theme-toggle');
-    var sunIcon = document.getElementById('sun-icon');
-    var moonIcon = document.getElementById('moon-icon');
-    
-    if (!themeToggle) return;
-    
+  
+    var themeToggle = document.getElementById('theme-toggle')
+    var sunIcon = document.getElementById('sun-icon')
+    var moonIcon = document.getElementById('moon-icon')
+  
+    if (!themeToggle) return
+  
     // Check current dark state (set by base.html or localStorage)
-    var isDark = document.documentElement.classList.contains('dark');
-    
+    var isDark = document.documentElement.classList.contains('dark')
+  
     // If localStorage says light, force remove dark class
     if (localStorage.getItem('theme') === 'light') {
-      document.documentElement.classList.remove('dark');
-      isDark = false;
+      document.documentElement.classList.remove('dark')
+      isDark = false
     }
-    
+  
     // Update icon visibility
     function updateThemeIcons() {
       if (sunIcon && moonIcon) {
-        sunIcon.classList.toggle('hidden', !isDark);
-        moonIcon.classList.toggle('hidden', isDark);
+        sunIcon.classList.toggle('hidden', !isDark)
+        moonIcon.classList.toggle('hidden', isDark)
       }
     }
-    
+  
     // Set initial state
-    updateThemeIcons();
-    
+    updateThemeIcons()
+  
     // Click handler
-    themeToggle.onclick = function() {
-      isDark = !isDark;
-      
+    themeToggle.onclick = function () {
+      isDark = !isDark
+  
       if (isDark) {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
+        document.documentElement.classList.add('dark')
+        localStorage.setItem('theme', 'dark')
       } else {
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
+        document.documentElement.classList.remove('dark')
+        localStorage.setItem('theme', 'light')
       }
-      updateThemeIcons();
-    };
-  }, 50);
-
+      updateThemeIcons()
+    }
+  }, 50)
+  
   // Desktop sidebar toggle button functionality - triggers collapse
-  var sidebarToggleDesktop = document.getElementById('sidebarToggleDesktop');
+  var sidebarToggleDesktop = document.getElementById('sidebarToggleDesktop')
   if (sidebarToggleDesktop) {
-    sidebarToggleDesktop.addEventListener('click', function() {
-      var sidebar = document.getElementById('sidebar');
-      if (!sidebar) return;
-      
+    sidebarToggleDesktop.addEventListener('click', function () {
+      var sidebar = document.getElementById('sidebar')
+      if (!sidebar) return
+  
       // Check current width to determine collapsed state
-      var currentWidth = sidebar.style.width;
-      var isCollapsed = currentWidth === '64px';
-      
-      var mainContent = document.getElementById('mainContent');
-      var header = document.getElementById('mainHeader');
-      var toggleText = document.getElementById('toggleText');
-      var sidebarTextElements = document.querySelectorAll('.sidebar-text');
-      
+      var currentWidth = sidebar.style.width
+      var isCollapsed = currentWidth === '64px'
+  
+      var mainContent = document.getElementById('mainContent')
+      var header = document.getElementById('mainHeader')
+      var toggleText = document.getElementById('toggleText')
+      var sidebarTextElements = document.querySelectorAll('.sidebar-text')
+  
       if (isCollapsed) {
         // Expand
-        sidebar.style.width = '256px';
-        if (toggleText) toggleText.textContent = 'Collapse';
-        if (sidebarTextElements) sidebarTextElements.forEach(el => el.style.display = '');
-        if (mainContent) mainContent.style.marginLeft = '256px';
-        if (header) header.style.marginLeft = '256px';
-        localStorage.setItem('sidebarCollapsed', 'false');
+        sidebar.style.width = '256px'
+        if (toggleText) toggleText.textContent = 'Collapse'
+        if (sidebarTextElements) sidebarTextElements.forEach((el) => (el.style.display = ''))
+        if (mainContent) mainContent.style.marginLeft = '256px'
+        if (header) header.style.marginLeft = '256px'
+        localStorage.setItem('sidebarCollapsed', 'false')
       } else {
         // Collapse
-        sidebar.style.width = '64px';
-        if (toggleText) toggleText.textContent = '';
-        if (sidebarTextElements) sidebarTextElements.forEach(el => el.style.display = 'none');
-        if (mainContent) mainContent.style.marginLeft = '64px';
-        if (header) header.style.marginLeft = '64px';
-        localStorage.setItem('sidebarCollapsed', 'true');
+        sidebar.style.width = '64px'
+        if (toggleText) toggleText.textContent = ''
+        if (sidebarTextElements) sidebarTextElements.forEach((el) => (el.style.display = 'none'))
+        if (mainContent) mainContent.style.marginLeft = '64px'
+        if (header) header.style.marginLeft = '64px'
+        localStorage.setItem('sidebarCollapsed', 'true')
       }
-    });
+    })
   }
-
+  
   // User dropdown
-  (function() {
-    var userMenuBtn = document.getElementById('user-menu-btn');
-    var userDropdown = document.getElementById('user-dropdown');
-    
+  ;(function () {
+    var userMenuBtn = document.getElementById('user-menu-btn')
+    var userDropdown = document.getElementById('user-dropdown')
+  
     if (userMenuBtn && userDropdown) {
-      userMenuBtn.onclick = function(e) {
-        e.stopPropagation();
-        userDropdown.classList.toggle('hidden');
-      };
-      
-      document.onclick = function(e) {
+      userMenuBtn.onclick = function (e) {
+        e.stopPropagation()
+        userDropdown.classList.toggle('hidden')
+      }
+  
+      document.onclick = function (e) {
         if (!userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
-          userDropdown.classList.add('hidden');
+          userDropdown.classList.add('hidden')
         }
-      };
+      }
     }
-  })();
-
+  })()
+  
   // Logout modal functions
   function confirmLogout(formId) {
-    document.getElementById('logout-modal').classList.remove('hidden');
-    document.getElementById('logout-modal').dataset.formId = formId;
+    document.getElementById('logout-modal').classList.remove('hidden')
+    document.getElementById('logout-modal').dataset.formId = formId
   }
-
+  
   function cancelLogout() {
-    document.getElementById('logout-modal').classList.add('hidden');
+    document.getElementById('logout-modal').classList.add('hidden')
   }
-
+  
   function submitLogout() {
-    var formId = document.getElementById('logout-modal').dataset.formId;
-    document.getElementById(formId).submit();
+    var formId = document.getElementById('logout-modal').dataset.formId
+    document.getElementById(formId).submit()
   }
-
-  document.getElementById('logout-modal').onclick = function(e) {
-    if (e.target === e.currentTarget) cancelLogout();
-  };
+  
+  document.getElementById('logout-modal').onclick = function (e) {
+    if (e.target === e.currentTarget) cancelLogout()
+  }
 </script>

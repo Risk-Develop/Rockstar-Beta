@@ -1,779 +1,4 @@
-{% extends 'task_management/base.html' %}
-{% load static %}
-{% load task_management_tags %}
-
-{% block title %}{{ board.name }}{% endblock %}
-{% block page_title %}{{ board.name }}{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<style>
-
-/* Light mode styles */
-.personal-column { 
-min-height: 350px; 
-max-height: 550px;
-width: 100%;
-background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
-overflow-y: auto;
-padding-bottom: 10px;
-
-/* Firefox */
-scrollbar-width: thin;
-scrollbar-color: #d1d5db #f3f4f6;
-}
-html.dark .personal-column { 
-background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
-scrollbar-color: #374151 #1f2937;
-}
-/* WebKit pseudo-elements */
-.personal-column::-webkit-scrollbar { width: 6px; }
-.personal-column::-webkit-scrollbar-button { height: 0; }
-.personal-column::-webkit-scrollbar-track { 
-background: #f3f4f6; 
-}
-html.dark .personal-column::-webkit-scrollbar-track { 
-background: #1f2937; 
-}
-.personal-column::-webkit-scrollbar-thumb { 
-background: #d1d5db; 
-border-radius: 4px; 
-}
-html.dark .personal-column::-webkit-scrollbar-thumb { 
-background: #374151; 
-}
-
-/* Light mode task card */
-.personal-task { 
-cursor: grab; 
-transition: all 0.2s ease;
-background: linear-gradient(145deg, #ffffff, #f9fafb);
-border: 1px solid #e5e7eb;
-}
-html.dark .personal-task { 
-background: linear-gradient(145deg, #374151, #1f2937);
-border: 1px solid #4b5563;
-}
-.personal-task:hover {
-transform: translateY(-2px);
-box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-border-color: #9ca3af;
-}
-html.dark .personal-task:hover {
-box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-border-color: #6b7280;
-}
-.personal-task.completed {
-opacity: 0.6;
-border-left: 3px solid #10b981 !important;
-}
-html.dark .personal-task.completed {
-border-left: 3px solid #10b981 !important;
-}
-.personal-task:active { cursor: grabbing; }
-.personal-task.sortable-ghost { 
-    opacity: 0.6; 
-    background: #e5e7eb; 
-    border: 2px dashed #9ca3af;
-}
-html.dark .personal-task.sortable-ghost { 
-    background: #4b5563; 
-    border-color: #6b7280;
-}
-
-/* Column drag ghost */
-.personal-column.sortable-ghost {
-    opacity: 0.8;
-    border: 2px dashed #3b82f6;
-    background: #dbeafe;
-}
-html.dark .personal-column.sortable-ghost {
-    border-color: #60a5fa;
-    background: #1e3a5f;
-}
-
-/* Column drag ghost */
-.personal-column.sortable-ghost {
-    opacity: 0.7;
-    border: 2px dashed #9ca3af;
-    background: #f3f4f6;
-}
-html.dark .personal-column.sortable-ghost {
-    border-color: #6b7280;
-    background: #1f2937;
-    }
-}
-
-/* Checklist item drag ghost */
-.chosen-checklist-item {
-    opacity: 0.6;
-    background: #dbeafe !important;
-}
-html.dark .chosen-checklist-item {
-    background: #1e3a5f !important;
-}
-
-
-.priority-low { border-left: 3px solid #10b981 !important; }
-html.dark .priority-low { border-left: 3px solid #10b981 !important; }
-.priority-medium { border-left: 3px solid #3b82f6 !important; }
-html.dark .priority-medium { border-left: 3px solid #3b82f6 !important; }
-.priority-high { border-left: 3px solid #f59e0b !important; }
-html.dark .priority-high { border-left: 3px solid #f59e0b !important; }
-.priority-urgent { border-left: 3px solid #ef4444 !important; }
-html.dark .priority-urgent { border-left: 3px solid #ef4444 !important; }
-
-/* Unified modal system */
-.modal-overlay {
-display: none;
-position: fixed;
-z-index: 50;
-left: 0; top: 0;
-width: 100%; height: 100%;
-background-color: rgb(0 0 0 / 50%);
-align-items: center;
-justify-content: center;
-}
-html.dark .modal-overlay {
-background-color: rgb(0 0 0 / 81%);
-}
-.modal-overlay.show { display: flex; }
-.modal-content {
-background: #ffffff;
-border: 1px solid #e5e7eb;
-border-radius: 12px;
-padding: 24px;
-width: 90%;
-max-width: 70%;
-max-height: 90vh;
-overflow-y: auto;
-}
-html.dark .modal-content {
-background: #1f2937;
-border: 1px solid #374151;
-}
-
-/* Toast notification */
-#toast {
-position: fixed;
-bottom: 80px;
-right: 24px;
-z-index: 9999;
-padding: 12px 20px;
-border-radius: 8px;
-font-size: 14px;
-font-weight: 500;
-opacity: 0;
-transform: translateY(10px);
-transition: all 0.3s ease;
-pointer-events: none;
-}
-#toast.show {
-opacity: 1;
-transform: translateY(0);
-}
-#toast.success { background: #dcfce7; color: #14532d; border: 1px solid #22c55e; }
-html.dark #toast.success { background: #065f46; color: #6ee7b7; border: 1px solid #10b981; }
-#toast.error { background: #fee2e2; color: #7f1d1d; border: 1px solid #ef4444; }
-html.dark #toast.error { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; }
-
-/* Calendar styles */
-#calendar { background: #ffffff; padding: 16px; border-radius: 8px; }
-html.dark #calendar { background: #1f2937; }
-#calendar .fc-toolbar-title { color: #111827; font-size: 1.25rem; }
-html.dark #calendar .fc-toolbar-title { color: #fff; }
-#calendar .fc-button { background: #f3f4f6 !important; border-color: #e5e7eb !important; }
-html.dark #calendar .fc-button { background: #374151 !important; border-color: #4b5563 !important; }
-#calendar .fc-button:hover { background: #e5e7eb !important; }
-html.dark #calendar .fc-button:hover { background: #4b5563 !important; }
-#calendar .fc-button:disabled { background: #d1d5db !important; }
-html.dark #calendar .fc-button:disabled { background: #6b7280 !important; }
-#calendar .fc-daygrid-day { background: #ffffff; }
-html.dark #calendar .fc-daygrid-day { background: #1f2937; }
-#calendar .fc-daygrid-day-number { color: #4b5563; }
-html.dark #calendar .fc-daygrid-day-number { color: #9ca3af; }
-#calendar .fc-day-today { background: #eff6ff !important; }
-html.dark #calendar .fc-day-today { background: #374151 !important; }
-#calendar .fc-col-header-cell { background: #f9fafb; }
-html.dark #calendar .fc-col-header-cell { background: #111827; }
-#calendar .fc-col-header-cell-cushion { color: #4b5563; }
-html.dark #calendar .fc-col-header-cell-cushion { color: #9ca3af; }
-#calendar .fc-event { cursor: pointer; border-radius: 4px; padding: 2px 4px; font-size: 0.85rem; }
-#calendar .fc-event .fc-event-main-content { padding: 2px; }
-#calendar .fc-daygrid-event { margin: 2px; }
-#calendar .fc-list-event:hover { background: #f3f4f6; }
-html.dark #calendar .fc-list-event:hover { background: #374151; }
-#calendar .fc-list-day-cushion { background: #ffffff; }
-html.dark #calendar .fc-list-day-cushion { background: #1f2937; }
-#calendar .fc-list-event-title a { color: #111827; }
-html.dark #calendar .fc-list-event-title a { color: #fff; }
-</style>
-{% endblock %}
-
-{% block main_content %}
-<div class="pt-2 px-2 pb-4">
-<!--<div class="max-w-7xl mx-auto">-->
-<div class="mx-auto">    
- <!-- Header -->
- <div class="flex justify-between items-center mb-6">
-   <div class="flex items-center gap-4">
-     <a href="{% url 'task_management:personal_board_list' %}" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-       <i class="fas fa-arrow-left text-xl"></i>
-     </a>
-     <div>
-       <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ board.name }}</h1>
-       <p class="text-gray-500 dark:text-gray-400">{{ board.description|default:"Personal productivity" }}</p>
-     </div>
-   </div>
-   
-   <div class="flex items-center gap-2">
-     <button onclick="openAddTaskModal()" class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
-       <i class="fas fa-plus mr-1"></i>Add Task
-     </button>
-     <button onclick="openAddColumnModal()" class="px-3 py-1.5 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-400 dark:hover:bg-gray-500">
-       <i class="fas fa-columns mr-1"></i>Add Column
-     </button>
-      <button onclick="toggleViewMode()" class="px-3 py-1.5 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-400 dark:hover:bg-gray-500">
-        <i class="fas fa-calendar-alt mr-1"></i><span id="viewModeBtnText">Timeline</span>
-      </button>
-      <button onclick="showArchivedTasks()" class="px-3 py-1.5 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-400 dark:hover:bg-gray-500 relative" id="archivedBtn">
-        <i class="fas fa-archive mr-1"></i><span id="archivedBtnText">Archived</span><span id="archivedCountBadge" class="ml-1 px-2 py-0.5 rounded-full text-xs font-medium {% if not archived_tasks %}hidden{% endif %}" style="background:#6b7280;color:white;">{{ archived_tasks|length }}</span>
-      </button>
-    </div>
-  </div>
-
-
-<!-- Kanban Columns -->
-<div class="flex gap-4 overflow-x-auto pb-4" id="personalKanban">
-{% for column in columns %}
-<div class="flex-shrink-0 w-80 min-w-[320px]">
-<!-- Column Header -->
-<div class="rounded-t-lg px-3 py-3 flex justify-between items-center column-header"
-     style="background: linear-gradient(90deg, {{ column.color }}20, transparent); border-top: 3px solid {{ column.color }}">
-        <div class="flex items-center gap-2">
-          <span class="w-3 h-3 rounded-full" style="background: {{ column.color }}"></span>
-          <span class="font-semibold text-gray-700 dark:text-gray-200 column-name">{{ column.name }}</span>
-
-          <span id="count-col-{{ column.id }}" class="text-xs bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full text-gray-700 dark:text-gray-300">{{ column.tasks_list.count }}</span>
-
-        </div>
-        <div class="flex items-center gap-1">
-          <button onclick="openAddTaskModal('{{ column.id }}')" 
-                  class="p-1.5 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  title="Add task">
-            <i class="fas fa-plus text-sm"></i>
-          </button>
-          <button onclick="openEditColumnModal('{{ column.id }}', '{{ column.name|escapejs }}', '{{ column.color }}')" 
-                  class="p-1.5 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  title="Edit column">
-            <i class="fas fa-edit text-sm"></i>
-          </button>
-          <button onclick="deleteColumn('{{ column.id }}')" 
-                  class="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900 text-red-500 hover:text-red-700"
-                  title="Delete column">
-            <i class="fas fa-trash text-sm"></i>
-          </button>
-        </div>
-      </div>
-
-<!-- Column Body -->
-      <div class="personal-column rounded-b-lg p-2"
-           data-column-id="{{ column.id }}"
-           data-column-order="{{ forloop.counter0 }}"
-           data-column-color="{{ column.color }}"
-           id="column-{{ column.id }}">
-
-{% for task in column.tasks_list %}
-<div class="personal-task rounded-lg p-3 mb-2 {% if task.is_completed %}completed{% elif task.priority == 'urgent' %}priority-urgent{% elif task.priority == 'high' %}priority-high{% elif task.priority == 'medium' %}priority-medium{% else %}priority-low{% endif %}"
- data-task-id="{{ task.id }}"
- data-title="{{ task.title|escape }}"
- data-priority="{{ task.priority }}"
- data-description="{{ task.description|escape }}"
- data-deadline="{{ task.deadline|date:'Y-m-d' }}"
- data-date-start="{{ task.date_start|date:'Y-m-d' }}"
- data-date-end="{{ task.date_end|date:'Y-m-d' }}"
- data-notes="{{ task.notes|default:''|escape }}"
- data-checklist="{{ task.checklist_items_json|escape }}"
- draggable="true">
-<div class="flex justify-between items-start">
-<!-- Checkbox -->
-<button onclick="toggleTask('{{ task.id }}')" 
-class="mr-2 mt-1 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center
-{% if task.is_completed %}bg-green-500 border-green-500{% else %}border-gray-300 dark:border-gray-500 hover:border-gray-400 dark:hover:border-gray-300{% endif %}">
-{% if task.is_completed %}<i class="fas fa-check text-xs text-white"></i>{% endif %}
-</button>
-
-<div class="flex-1 min-w-0">
-<h4 onclick="event.stopPropagation(); openTaskDetail('{{ task.id }}')" title="Click to edit"
-class="task-title font-medium text-gray-800 dark:text-gray-100 text-sm {% if task.is_completed %}text-gray-500{% endif %} cursor-pointer hover:text-blue-600 dark:hover:text-blue-400">
-<i class="fas fa-edit mr-1 text-gray-500"></i>{{ task.title }}
-</h4>
-{% if task.description %}
-<p class="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{{ task.description }}</p>
-{% endif %}
-
-<!-- Tags -->
-<div class="flex items-center gap-2 task-notes" data-notes="{{ task.notes|default:''|escape }}">
-<span class="text-xs px-1.5 py-0.5 rounded {% if task.priority == 'urgent' %}bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400{% elif task.priority == 'high' %}bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400{% elif task.priority == 'medium' %}bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400{% else %}bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400{% endif %}">
-{{ task.priority|title }}
-</span>
-{% if task.is_recurring %}
-<span class="text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
-<i class="fas fa-redo mr-1"></i>{{ task.recurring_type|title }}
-</span>
-{% endif %}
-{% if task.deadline %}
-<span class="text-xs text-gray-600 dark:text-gray-400">
-<i class="fas fa-calendar-alt mr-1"></i>{{ task.deadline|date:"M d" }}
-</span>
-{% endif %}
-{% if task.date_start and task.date_end %}
-<span class="text-xs text-blue-600 dark:text-blue-400">
-<i class="fas fa-calendar-week mr-1"></i>{{ task.date_start|date:"M d" }} - {{ task.date_end|date:"M d" }}
-</span>
-{% endif %}
-</div>
-
-<!-- Notes preview -->
-{% if task.notes %}
-<div class="mt-2 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-600 dark:text-gray-400">
-<i class="fas fa-sticky-note mr-1"></i>{{ task.notes|truncatechars:50 }}
-</div>
-{% endif %}
-                 </div>
-
-                 <!-- Archive -->
-                 <button onclick="archiveTask('{{ task.id }}')" class="text-gray-500 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 p-1" title="Archive task">
-                   <i class="fas fa-archive text-xs"></i>
-                 </button>
-               </div>
-             </div>
-        {% empty %}
-        <div class="text-center py-8 text-gray-600 dark:text-gray-400">
-          <p class="text-sm">No tasks</p>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% endfor %}
-
-  <!-- Add Column Modal -->
-  <div id="addColumnModal" class="modal-overlay">
-    <div class="modal-content" style="width: 30%; max-width: 90vw;">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Add Column</h2>
-        <button onclick="closeAddColumnModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-          <i class="fas fa-times text-xl"></i>
-        </button>
-      </div>
-      <form id="addColumnForm" method="post" action="{% url 'task_management:personal_column_create' board.id %}">
-        {% csrf_token %}
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-            <input type="text" name="name" required 
-                   class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                   placeholder="Column name">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color</label>
-            <input type="color" name="color" value="#6b7280" 
-                   class="w-full h-10 px-1 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md cursor-pointer">
-          </div>
-        </div>
-        <div class="mt-6 flex gap-3">
-          <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create Column</button>
-          <button type="button" onclick="closeAddColumnModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-   <!-- Edit Column Modal -->
-   <div id="editColumnModal" class="modal-overlay">
-  <div class="modal-content" style="width: 70%; max-width: 90vw;">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-white">Edit Column</h2>
-        <button onclick="closeEditColumnModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-          <i class="fas fa-times text-xl"></i>
-        </button>
-      </div>
-      <form id="editColumnForm" method="post">
-        {% csrf_token %}
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
-            <input type="text" name="name" id="editColumnName" required 
-                   class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color</label>
-            <input type="color" name="color" id="editColumnColor" 
-                   class="w-full h-10 px-1 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md cursor-pointer">
-          </div>
-        </div>
-        <input type="hidden" name="column_id" id="editColumnId">
-        <div class="mt-6 flex gap-3">
-          <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Changes</button>
-          <button type="button" onclick="closeEditColumnModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  </div>
-</div>
-
-<!-- Timeline View -->
-<div id="timelineView" class="hidden">
-<div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
-<div id="calendar" class="text-gray-800 dark:text-gray-200"></div>
-</div>
-</div>
-  </div>
-</div>
-
-<!-- Archived Tasks Drawer -->
-<div id="archivedBackdrop" class="fixed inset-0 bg-black/50 hidden z-40" onclick="closeArchivedTasks()"></div>
-<div id="archivedDrawer" class="fixed top-0 right-0 h-full w-96 max-w-full bg-white dark:bg-gray-800 shadow-2xl transform translate-x-full transition-transform duration-300 z-50 border-l border-gray-300 dark:border-gray-600">
-  <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-    <h2 class="text-xl font-bold text-gray-900 dark:text-white">Archived Tasks</h2>
-    <button onclick="closeArchivedTasks()" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-      <i class="fas fa-times text-xl"></i>
-    </button>
-  </div>
-  <div id="archivedTasksList" class="p-4 overflow-y-auto h-[calc(100%-64px)]">
-    {% for task in archived_tasks %}
-    <div class="p-3 mb-2 rounded-lg border-l-4 {% if task.priority == 'urgent' %}bg-red-50 dark:bg-red-900/20 border-red-500{% elif task.priority == 'high' %}bg-orange-50 dark:bg-orange-900/20 border-orange-500{% elif task.priority == 'medium' %}bg-blue-50 dark:bg-blue-900/20 border-blue-500{% else %}bg-gray-50 dark:bg-gray-700/50 border-gray-400{% endif %}" data-task-id="{{ task.id }}">
-      <div class="flex justify-between items-start">
-        <div class="flex-1 min-w-0">
-          <h4 class="font-medium text-gray-800 dark:text-gray-100 text-sm {% if task.is_completed %}text-gray-500{% endif %}">{{ task.title }}</h4>
-          {% if task.description %}
-          <p class="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{{ task.description }}</p>
-          {% endif %}
-          <div class="flex items-center gap-2 mt-2 task-notes">
-            <span class="text-xs px-1.5 py-0.5 rounded {% if task.priority == 'urgent' %}bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400{% elif task.priority == 'high' %}bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400{% elif task.priority == 'medium' %}bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400{% else %}bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400{% endif %}">
-              {{ task.priority|title }}
-            </span>
-            {% if task.deadline %}
-            <span class="text-xs text-gray-600 dark:text-gray-400">
-              <i class="fas fa-calendar-alt mr-1"></i>{{ task.deadline|date:"M d, Y" }}
-            </span>
-            {% endif %}
-          </div>
-         </div>
-         <div class="flex items-center gap-2 flex-shrink-0 ml-2">
-           <button onclick="restoreTask('{{ task.id }}')" class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700" title="Restore task">
-             <i class="fas fa-undo mr-1"></i>Restore
-           </button>
-           <button onclick="openDeleteArchivedModal('{{ task.id }}')" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700" title="Delete permanently">
-             <i class="fas fa-trash mr-1"></i>Delete
-           </button>
-         </div>
-       </div>
-     </div>
-    {% empty %}
-    <div class="text-center py-8 text-gray-600 dark:text-gray-400">
-      <p class="text-sm">No archived tasks</p>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-
-<!-- Delete Archived Task Confirmation Modal -->
-<div id="deleteArchivedModal" class="modal-overlay">
-  <div class="modal-content" style="width: 30%; max-width: 90vw;">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white">Confirm Permanent Delete</h2>
-      <button onclick="closeDeleteArchivedModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-        <i class="fas fa-times text-xl"></i>
-      </button>
-    </div>
-    <div class="space-y-4">
-      <p class="text-gray-600 dark:text-gray-300">Are you sure you want to permanently delete this task? This action cannot be undone.</p>
-      <div class="mt-6 flex gap-3">
-        <button id="confirmDeleteArchivedBtn" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete Permanently</button>
-        <button type="button" onclick="closeDeleteArchivedModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Generic Confirmation Modal (for Archive/Restore) -->
-<div id="confirmModal" class="modal-overlay">
-  <div class="modal-content" style="width: 30%; max-width: 90vw;">
-    <div class="flex justify-between items-center mb-4">
-      <h2 id="confirmModalTitle" class="text-xl font-bold text-gray-900 dark:text-white">Confirm Action</h2>
-      <button onclick="closeConfirmModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-        <i class="fas fa-times text-xl"></i>
-      </button>
-    </div>
-    <div class="space-y-4">
-      <p id="confirmModalMessage" class="text-gray-600 dark:text-gray-300">Are you sure?</p>
-      <div class="mt-6 flex gap-3">
-        <button id="confirmModalYes" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Yes</button>
-        <button type="button" onclick="closeConfirmModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Toast notification -->
-<div id="toast"></div>
-
-<!-- Help Modal -->
-<div id="helpModal" class="modal-overlay">
-<div class="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-300 dark:border-gray-600">
-<div class="flex justify-between items-center mb-6">
-<h2 class="text-xl font-semibold text-gray-900 dark:text-white">Keyboard Shortcuts</h2>
-<button onclick="toggleHelp()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-white">
-<i class="fas fa-times"></i>
-</button>
-</div>
-<div class="space-y-3">
-<div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
-<span class="text-gray-700 dark:text-gray-300">New Task</span>
-<kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 text-sm">N</kbd>
-</div>
-<div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
-<span class="text-gray-700 dark:text-gray-300">Refresh Page</span>
-<kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 text-sm">R</kbd>
-</div>
-<div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
-<span class="text-gray-700 dark:text-gray-300">Toggle Timeline/Kanban</span>
-<kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 text-sm">T</kbd>
-</div>
-<div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
-<span class="text-gray-700 dark:text-gray-300">Toggle Archived Tasks</span>
-<kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 text-sm">A</kbd>
-</div>
-<div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
-<span class="text-gray-700 dark:text-gray-300">Help</span>
-<kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 text-sm">H</kbd>
-</div>
-<div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700">
-<span class="text-gray-700 dark:text-gray-300">Close All / Cancel</span>
-<kbd class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300 text-sm">Esc</kbd>
-</div>
-</div>
-<div class="mt-6 p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
-<p class="text-sm text-gray-600 dark:text-gray-400 text-center">
-<i class="fas fa-mouse-pointer mr-2"></i>Drag tasks to move between columns
-</p>
-</div>
-</div>
-</div>
-
- <!-- Add Task Modal -->
- <div id="addTaskModal" class="modal-overlay">
- <div class="modal-content" style="width: 30%; max-width: 90vw;">
-<div class="flex justify-between items-center mb-4">
-<h2 class="text-xl font-bold text-gray-900 dark:text-white">Add Personal Task</h2>
-<button onclick="closeAddTaskModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-<i class="fas fa-times text-xl"></i>
-</button>
-</div>
-<form id="addTaskForm" method="post" action="{% url 'task_management:personal_task_create' board.id %}">
-{% csrf_token %}
-<div class="space-y-4">
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
-<input type="text" name="title" required 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-placeholder="What needs to be done?">
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description (optional)</label>
-<textarea name="description" rows="2" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-placeholder="Details..."></textarea>
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Column</label>
-<select name="column" required 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-{% for column in columns %}
-<option value="{{ column.id }}">{{ column.name }}</option>
-{% endfor %}
-</select>
-</div>
-<div class="grid grid-cols-2 gap-4">
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
-<select name="priority" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-<option value="low">Low</option>
-<option value="medium" selected>Medium</option>
-<option value="high">High</option>
-<option value="urgent">Urgent</option>
-</select>
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deadline</label>
-<input type="date" name="deadline" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-</div>
-</div>
-<div class="grid grid-cols-2 gap-4">
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Start</label>
-<input type="date" name="date_start" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date End</label>
-<input type="date" name="date_end" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-</div>
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-<textarea name="notes" rows="2" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-placeholder="Personal notes..."></textarea>
-</div>
-<div class="flex items-center gap-2">
-<input type="checkbox" name="is_recurring" id="is_recurring" class="w-4 h-4">
-<label for="is_recurring" class="text-sm text-gray-700 dark:text-gray-300">Recurring task</label>
-</div>
-<div id="recurring_options" class="hidden">
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Repeat</label>
-<select name="recurring_type" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
-<option value="daily">Daily</option>
-<option value="weekly">Weekly</option>
-<option value="monthly">Monthly</option>
-</select>
-</div>
-</div>
-<div class="mt-6 flex gap-3">
-<button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-Create Task
-</button>
-<button type="button" onclick="closeAddTaskModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">
-Cancel
-</button>
-</div>
-</form>
-</div>
-</div>
-
-  <!-- Task Detail Modal -->
-  <div id="taskDetailModal" class="modal-overlay">
-  <div class="modal-content" style="width: 50%; max-width: 90vw;">
-<div class="flex justify-between items-center mb-4">
-<h2 class="text-xl font-bold text-gray-900 dark:text-white">Task Details</h2>
-<button onclick="closeTaskDetailModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-<i class="fas fa-times text-xl"></i>
-</button>
-</div>
-
-<!-- Edit Task Form -->
-<form id="updateTaskForm" method="post">
-{% csrf_token %}
-<div class="space-y-4">
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
-<input type="text" name="title" id="detailTitle" required 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-<textarea name="description" id="detailDescription" rows="2" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-placeholder="Description..."></textarea>
-</div>
-<div class="grid grid-cols-2 gap-4">
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
-<select name="priority" id="detailPriority" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
-<option value="low">Low</option>
-<option value="medium">Medium</option>
-<option value="high">High</option>
-<option value="urgent">Urgent</option>
-</select>
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deadline</label>
-<input type="date" name="deadline" id="detailDeadline" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
-</div>
-</div>
-<div class="grid grid-cols-2 gap-4">
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date Start</label>
-<input type="date" name="date_start" id="detailDateStart" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
-</div>
-<div>
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date End</label>
-<input type="date" name="date_end" id="detailDateEnd" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white">
-</div>
-</div>
-</div>
-
-<!-- Checklist Section -->
-<div class="mt-4">
-<h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-<i class="fas fa-tasks mr-2 text-blue-500"></i>Checklist
-</h3>
-<div class="flex gap-2 mb-3">
-<input type="text" id="checklistInput" placeholder="Add checklist item..." 
-class="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white text-sm"
-onkeydown="if(event.key==='Enter'){event.preventDefault();submitChecklist();}">
-<button type="button" onclick="submitChecklist()"
-class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-<i class="fas fa-plus"></i>
-</button>
-</div>
-<div id="checklistItems" class="space-y-1 max-h-48 overflow-y-auto">
-<!-- Checklist items rendered here dynamically -->
-</div>
-</div>
-
-<div class="mt-4">
-<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-<textarea name="notes" id="detailNotes" rows="5" 
-class="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-placeholder="Personal notes..."></textarea>
-</div>
-
-<input type="hidden" name="task_id" id="detailTaskId">
- <div class="flex gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-   <button type="button" onclick="archiveDetailTask()" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
-     Archive Task
-   </button>
-   <button type="button" id="saveBtn" onclick="saveTask()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-     Save Changes
-   </button>
- </div>
-</form>
-  </div>
-</div>
-
-<!-- Delete Checklist Confirmation Modal -->
-<div id="deleteChecklistModal" class="modal-overlay">
-  <div class="modal-content" style="width: 30%; max-width: 90vw;">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white">Confirm Delete</h2>
-      <button onclick="closeDeleteChecklistModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
-        <i class="fas fa-times text-xl"></i>
-      </button>
-    <div class="space-y-4">
-      <p class="text-gray-600 dark:text-gray-300">Are you sure you want to delete this checklist item? This action cannot be undone.</p>
-      <div class="mt-6 flex gap-3">
-        <button id="confirmDeleteChecklistBtn" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
-        <button type="button" onclick="closeDeleteChecklistModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500">Cancel</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script src="{% static 'js/fullcalendar.min.js' %}"></script>
-<script src="{% static 'js/Sortable.min.js' %}"></script>
-<script>
+>
 // ── Global State ────────────────────────────────────────────────────────────────
 
 var isTimelineView = false;
@@ -814,11 +39,11 @@ function showToast(message, type) {
 // ── Task Checklist Initialization ──────────────────────────────────────────────
 
 var taskChecklists = {};
-{% for column in columns %}
-{% for task in column.tasks_list %}
-taskChecklists[{{ task.id }}] = {{ task.checklist_items_json|safe }};
-{% endfor %}
-{% endfor %}
+
+
+taskChecklists[null] = null;
+
+
 
 // ── AJAX Form Submissions ────────────────────────────────────────────────────────
 
@@ -1207,13 +432,9 @@ function closeEditColumnModal() {
 }
 
 function deleteColumn(columnId) {
-    showConfirmModal(
-        'Delete Column',
-        'Delete this column? All tasks in this column must be moved or deleted first.',
-        function() {
-            window.location.href = '/task/personal/columns/' + columnId + '/delete/';
-        }
-    );
+    if (confirm('Delete this column? All tasks in this column must be moved or deleted first.')) {
+        window.location.href = '/task/personal/columns/' + columnId + '/delete/';
+    }
 }
 
 // ── Task Detail ──────────────────────────────────────────────────────────────
@@ -1734,31 +955,6 @@ function toggleTask(taskId) {
 
 
 
-// ── Generic Confirmation Modal ─────────────────────────────────────────────────
-
-var pendingConfirmCallback = null;
-
-function showConfirmModal(title, message, onConfirm) {
-    pendingConfirmCallback = onConfirm;
-    var modal = document.getElementById('confirmModal');
-    document.getElementById('confirmModalTitle').textContent = title;
-    document.getElementById('confirmModalMessage').textContent = message;
-    modal.classList.add('show');
-}
-
-function closeConfirmModal() {
-    document.getElementById('confirmModal').classList.remove('show');
-    pendingConfirmCallback = null;
-}
-
-document.getElementById('confirmModalYes').addEventListener('click', function() {
-    if (pendingConfirmCallback) {
-        pendingConfirmCallback();
-        pendingConfirmCallback = null;
-    }
-    closeConfirmModal();
-});
-
 // ── Archived Tasks ─────────────────────────────────────────────────────────────
 
 function showArchivedTasks() {
@@ -1773,15 +969,6 @@ function closeArchivedTasks() {
     document.getElementById('archivedBackdrop').classList.add('hidden');
 }
 
-function toggleArchivedDrawer() {
-    var drawer = document.getElementById('archivedDrawer');
-    if (drawer.classList.contains('translate-x-full')) {
-        showArchivedTasks();
-    } else {
-        closeArchivedTasks();
-    }
-}
-
 
 
 function getPriorityBadgeClass(priority) {
@@ -1792,50 +979,45 @@ function getPriorityBadgeClass(priority) {
 }
 
 function restoreTask(taskId) {
-    showConfirmModal(
-        'Restore Task',
-        'Are you sure you want to restore this task? It will be moved back to its original column.',
-        function() {
-            fetch('/task/personal/tasks/' + taskId + '/restore/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    showToast('Task restored', 'success');
-                    var taskEl = document.querySelector('#archivedTasksList [data-task-id="' + taskId + '"]');
-                    if (taskEl) taskEl.remove();
-                    updateArchivedCount(-1);
-                    if (document.querySelectorAll('#archivedTasksList [data-task-id]').length === 0) {
-                        document.getElementById('archivedTasksList').innerHTML = '<div class="text-center py-8 text-gray-600 dark:text-gray-400"><p class="text-sm">No archived tasks</p></div>';
-                    }
-                    // Re-insert task into its column
-                    if (data.task && data.task.column_id) {
-                        var taskHtml = buildTaskCardHtml(data.task);
-                        var columnEl = document.getElementById('column-' + data.task.column_id);
-                        if (columnEl) {
-                            columnEl.insertAdjacentHTML('beforeend', taskHtml);
-                            var noTasksMsg = columnEl.querySelector('.text-center.py-8');
-                            if (noTasksMsg) noTasksMsg.style.display = 'none';
-                            var countEl = document.getElementById('count-col-' + data.task.column_id);
-                            if (countEl) {
-                                countEl.textContent = parseInt(countEl.textContent || 0) + 1;
-                            }
-                        }
-                    }
-                } else {
-                    showToast('Restore failed', 'error');
-                }
-            })
-            .catch(err => {
-                showToast('Failed: ' + err.message, 'error');
-            });
+    if (!confirm('Restore this task?')) return;
+    fetch('/task/personal/tasks/' + taskId + '/restore/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
         }
-    );
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Task restored', 'success');
+            var taskEl = document.querySelector('#archivedTasksList [data-task-id="' + taskId + '"]');
+            if (taskEl) taskEl.remove();
+            updateArchivedCount(-1);
+            if (document.querySelectorAll('#archivedTasksList [data-task-id]').length === 0) {
+                document.getElementById('archivedTasksList').innerHTML = '<div class="text-center py-8 text-gray-600 dark:text-gray-400"><p class="text-sm">No archived tasks</p></div>';
+            }
+            // Re-insert task into its column
+            if (data.task && data.task.column_id) {
+                var taskHtml = buildTaskCardHtml(data.task);
+                var columnEl = document.getElementById('column-' + data.task.column_id);
+                if (columnEl) {
+                    columnEl.insertAdjacentHTML('beforeend', taskHtml);
+                    var noTasksMsg = columnEl.querySelector('.text-center.py-8');
+                    if (noTasksMsg) noTasksMsg.style.display = 'none';
+                    var countEl = document.getElementById('count-col-' + data.task.column_id);
+                    if (countEl) {
+                        countEl.textContent = parseInt(countEl.textContent || 0) + 1;
+                    }
+                }
+            }
+        } else {
+            showToast('Restore failed', 'error');
+        }
+    })
+    .catch(err => {
+        showToast('Failed: ' + err.message, 'error');
+    });
 }
 
 function openDeleteArchivedModal(taskId) {
@@ -1879,8 +1061,10 @@ document.getElementById('confirmDeleteArchivedBtn').addEventListener('click', fu
 });
 
 function archiveTask(taskId) {
+    if (!confirm('Archive this task?')) return;
     var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
     if (!taskEl) return;
+    // Gather task data before removing
     var taskData = {
         id: parseInt(taskId),
         title: taskEl.dataset.title || '',
@@ -1889,59 +1073,54 @@ function archiveTask(taskId) {
         deadline: taskEl.dataset.deadline || '',
         is_completed: taskEl.classList.contains('completed')
     };
-
-    showConfirmModal(
-        'Archive Task',
-        'Are you sure you want to archive this task? It will be moved to your archived tasks.',
-        function() {
-            fetch('/task/personal/tasks/' + taskId + '/archive/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success || data.archived) {
-                    showToast('Task archived', 'success');
-                    taskEl.remove();
-                    var columnEl = taskEl.closest('.personal-column');
-                    if (columnEl) {
-                        var columnId = columnEl.getAttribute('data-column-id');
-                        var countEl = document.getElementById('count-col-' + columnId);
-                        if (countEl) {
-                            var count = parseInt(countEl.textContent) || 0;
-                            countEl.textContent = count - 1;
-                            if (count - 1 === 0) {
-                                var noTasksMsg = columnEl.querySelector('.text-center.py-8');
-                                if (!noTasksMsg) {
-                                    noTasksMsg = document.createElement('div');
-                                    noTasksMsg.className = 'text-center py-8 text-gray-600 dark:text-gray-400';
-                                    noTasksMsg.innerHTML = '<p class="text-sm">No tasks</p>';
-                                    columnEl.appendChild(noTasksMsg);
-                                } else {
-                                    noTasksMsg.style.display = 'block';
-                                }
-                            }
+    fetch('/task/personal/tasks/' + taskId + '/archive/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success || data.archived) {
+            showToast('Task archived', 'success');
+            taskEl.remove();
+            var columnEl = taskEl.closest('.personal-column');
+            if (columnEl) {
+                var columnId = columnEl.getAttribute('data-column-id');
+                var countEl = document.getElementById('count-col-' + columnId);
+                if (countEl) {
+                    var count = parseInt(countEl.textContent) || 0;
+                    countEl.textContent = count - 1;
+                    // Show "No tasks" placeholder if column is empty
+                    if (count - 1 === 0) {
+                        var noTasksMsg = columnEl.querySelector('.text-center.py-8');
+                        if (!noTasksMsg) {
+                            noTasksMsg = document.createElement('div');
+                            noTasksMsg.className = 'text-center py-8 text-gray-600 dark:text-gray-400';
+                            noTasksMsg.innerHTML = '<p class="text-sm">No tasks</p>';
+                            columnEl.appendChild(noTasksMsg);
+                        } else {
+                            noTasksMsg.style.display = 'block';
                         }
                     }
-                    updateArchivedCount(1);
-                    prependArchivedTask(taskData);
-                } else {
-                    showToast('Archive failed', 'error');
                 }
-            })
-            .catch(err => {
-                showToast('Failed: ' + err.message, 'error');
-            });
+            }
+            updateArchivedCount(1);
+            prependArchivedTask(taskData);
+        } else {
+            showToast('Archive failed', 'error');
         }
-    );
+    })
+    .catch(err => {
+        showToast('Failed: ' + err.message, 'error');
+    });
 }
 
 function archiveDetailTask() {
     var taskId = document.getElementById('detailTaskId').value;
     if (!taskId) return;
+    if (!confirm('Archive this task?')) return;
     var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
     var taskData = taskEl ? {
         id: parseInt(taskId),
@@ -1951,55 +1130,49 @@ function archiveDetailTask() {
         deadline: taskEl.dataset.deadline || '',
         is_completed: taskEl.classList.contains('completed')
     } : null;
-
-    showConfirmModal(
-        'Archive Task',
-        'Are you sure you want to archive this task? It will be moved to your archived tasks.',
-        function() {
-            fetch('/task/personal/tasks/' + taskId + '/archive/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success || data.archived) {
-                    showToast('Task archived', 'success');
-                    closeTaskDetailModal();
-                    if (taskEl) taskEl.remove();
-                    var columnEl = taskEl ? taskEl.closest('.personal-column') : null;
-                    if (columnEl) {
-                        var columnId = columnEl.getAttribute('data-column-id');
-                        var countEl = document.getElementById('count-col-' + columnId);
-                        if (countEl) {
-                            var newCount = Math.max(0, (parseInt(countEl.textContent) || 0) - 1);
-                            countEl.textContent = newCount;
-                            if (newCount === 0) {
-                                var noTasksMsg = columnEl.querySelector('.text-center.py-8');
-                                if (!noTasksMsg) {
-                                    noTasksMsg = document.createElement('div');
-                                    noTasksMsg.className = 'text-center py-8 text-gray-600 dark:text-gray-400';
-                                    noTasksMsg.innerHTML = '<p class="text-sm">No tasks</p>';
-                                    columnEl.appendChild(noTasksMsg);
-                                } else {
-                                    noTasksMsg.style.display = 'block';
-                                }
-                            }
+    fetch('/task/personal/tasks/' + taskId + '/archive/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success || data.archived) {
+            showToast('Task archived', 'success');
+            closeTaskDetailModal();
+            if (taskEl) taskEl.remove();
+            var columnEl = taskEl ? taskEl.closest('.personal-column') : null;
+            if (columnEl) {
+                var columnId = columnEl.getAttribute('data-column-id');
+                var countEl = document.getElementById('count-col-' + columnId);
+                if (countEl) {
+                    var newCount = Math.max(0, (parseInt(countEl.textContent) || 0) - 1);
+                    countEl.textContent = newCount;
+                    // Show "No tasks" placeholder if column becomes empty
+                    if (newCount === 0) {
+                        var noTasksMsg = columnEl.querySelector('.text-center.py-8');
+                        if (!noTasksMsg) {
+                            noTasksMsg = document.createElement('div');
+                            noTasksMsg.className = 'text-center py-8 text-gray-600 dark:text-gray-400';
+                            noTasksMsg.innerHTML = '<p class="text-sm">No tasks</p>';
+                            columnEl.appendChild(noTasksMsg);
+                        } else {
+                            noTasksMsg.style.display = 'block';
                         }
                     }
-                    updateArchivedCount(1);
-                    if (taskData) prependArchivedTask(taskData);
-                } else {
-                    showToast('Archive failed', 'error');
                 }
-            })
-            .catch(err => {
-                showToast('Failed: ' + err.message, 'error');
-            });
+            }
+            updateArchivedCount(1);
+            if (taskData) prependArchivedTask(taskData);
+        } else {
+            showToast('Archive failed', 'error');
         }
-    );
+    })
+    .catch(err => {
+        showToast('Failed: ' + err.message, 'error');
+    });
 }
 
 function updateArchivedCount(delta) {
@@ -2031,7 +1204,7 @@ function prependArchivedTask(task) {
         '<span class="text-xs px-1.5 py-0.5 rounded ' + getPriorityBadgeClass(task.priority) + '">' + task.priority.charAt(0).toUpperCase() + task.priority.slice(1) + '</span>' +
         (dateStr ? '<span class="text-xs text-gray-600 dark:text-gray-400"><i class="fas fa-calendar-alt mr-1"></i>' + dateStr + '</span>' : '') +
         '</div></div>' +
-        '<div class="flex items-center gap-2 flex-shrink-0 ml-2">' +
+        '<div class="flex items-center gap-2 flex-shrink-0">' +
         '<button onclick="restoreTask(' + task.id + ')" class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700" title="Restore task">' +
         '<i class="fas fa-undo mr-1"></i>Restore</button>' +
         '<button onclick="openDeleteArchivedModal(' + task.id + ')" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700" title="Delete permanently">' +
@@ -2075,7 +1248,6 @@ document.getElementById('addColumnModal').addEventListener('click',  function(e)
 document.getElementById('editColumnModal').addEventListener('click',  function(e) { if (e.target === this) closeEditColumnModal(); });
 document.getElementById('deleteChecklistModal').addEventListener('click', function(e) { if (e.target === this) closeDeleteChecklistModal(); });
 document.getElementById('deleteArchivedModal').addEventListener('click', function(e) { if (e.target === this) closeDeleteArchivedModal(); });
-document.getElementById('confirmModal').addEventListener('click', function(e) { if (e.target === this) closeConfirmModal(); });
 
 // ── AJAX form submissions ────────────────────────────────────────────────────
 
@@ -2250,14 +1422,11 @@ document.addEventListener('keydown', function(e) {
         closeEditColumnModal();
         closeDeleteChecklistModal();
         closeDeleteArchivedModal();
-        closeConfirmModal();
         closeArchivedTasks();
         document.getElementById('helpModal').classList.remove('show');
     }
     if (e.key === 'n' && !e.target.matches('input, textarea, select')) openAddTaskModal();
     if (e.key === 'r' && !e.target.matches('input, textarea, select')) location.reload();
-    if (e.key === 't' && !e.target.matches('input, textarea, select')) toggleViewMode();
-    if (e.key === 'a' && !e.target.matches('input, textarea, select')) toggleArchivedDrawer();
     if (e.key === 'h' && !e.target.matches('input, textarea, select')) toggleHelp();
 });
 
@@ -2450,5 +1619,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-</script>
-{% endblock %}

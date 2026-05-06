@@ -157,13 +157,13 @@
          display: flex;
      }
 
-    /* FIX: Card action buttons should not overlap the card link */
-    .card-actions {
-        position: relative;
-        z-index: 10;
-    }
-</style>
-{% endblock %}
+/* FIX: Card action buttons should not overlap the card link */
+     .card-actions {
+         position: relative;
+         z-index: 10;
+     }
+ </style>
+ {% endblock %}
 
 {% block main_content %}
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
@@ -199,7 +199,6 @@
                                    name="name"
                                    placeholder="Board name"
                                    class="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-40 transition-all"
-                                   value="My Tasks"
                                    required>
                         </div>
                         <input type="text"
@@ -267,96 +266,89 @@
         <!-- Personal Boards Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
 
-            {% for board in personal_boards %}
-            {# FIX: Wrap card in a relative div so action buttons sit above the link layer #}
+{% for board in personal_boards %}
+             {# FIX: Wrap card in a relative div so action buttons sit above the link layer #}
              <div class="relative" data-board-id="{{ board.id }}">
-                <a href="{% url 'task_management:personal_board_detail' board.id %}"
-                   class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer"
-                   aria-label="Open {{ board.name|escape }} personal board">
+                 <a href="{% url 'task_management:personal_board_detail' board.id %}"
+                    class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer"
+                    aria-label="Open {{ board.name|escape }} personal board">
 
-                    <!-- Gradient top accent bar -->
-                    <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
-                         :style="`background: linear-gradient(90deg, ${boardColors[{{ forloop.counter0 }}]} 0%, ${adjustColor(boardColors[{{ forloop.counter0 }}], 40)} 100%)`">
-                    </div>
-
-                    <div class="pt-4">
-                         <div class="flex items-start justify-between mb-3">
-                             <div class="flex-1 min-w-0">
-                                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors cursor-pointer px-2 py-1 -mx-2 -my-1 rounded"
-                                     data-board-id="{{ board.id }}"
-                                     data-field="name"
-                                     contenteditable="false"
-                                     title="Click to edit">{{ board.name|escape }}</h3>
-                                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 px-2 py-1 -mx-2 -my-1 rounded"
-                                     data-board-id="{{ board.id }}"
-                                     data-field="description"
-                                     contenteditable="false"
-                                     title="Click to edit">{{ board.description|default:"Personal productivity board"|escape }}</p>
-                             </div>
-                             <button onclick="event.stopPropagation(); openEditModal({{ board.id }}, '{{ board.name|escapejs }}', '{{ board.description|escapejs }}')"
-                                     class="flex-shrink-0 ml-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
-                                     title="Edit board"
-                                     aria-label="Edit board {{ board.name|escape }}">
-                                 <i class="fas fa-edit text-xs" aria-hidden="true"></i>
-                                 <span>Edit</span>
-                             </button>
-                         </div>
-
-                        <!-- Stats Row -->
-                        <div class="flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-                            <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                                <i class="fas fa-tasks text-sm"></i>
-                                <span class="text-sm">{{ board.total_tasks|default:0 }}</span>
-                            </div>
-                            <div class="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                                <i class="fas fa-check-circle text-sm"></i>
-                                <span class="text-sm">{{ board.completed_tasks|default:0 }}</span>
-                            </div>
-                            <div class="flex-1"></div>
-                            <!-- Progress ring -->
-                            <div class="flex items-center gap-2">
-                                {% if board.total_tasks and board.total_tasks > 0 %}
-                                    {% widthratio board.completed_tasks|default:0 board.total_tasks 100 as percentage %}
-                                {% else %}
-                                    {% with percentage=0 %}
-                                    {% endwith %}
-                                    {% comment %}fallback{% endcomment %}
-                                {% endif %}
-                                <div class="relative w-8 h-8">
-                                    <svg class="w-8 h-8" viewBox="0 0 36 36">
-                                        <circle cx="18" cy="18" r="16"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="3"
-                                                class="text-gray-200 dark:text-gray-700"></circle>
-                                        <circle cx="18" cy="18" r="16"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="3"
-                                                stroke-dasharray="{% if board.total_tasks and board.total_tasks > 0 %}{% widthratio board.completed_tasks|default:0 board.total_tasks 100 %}, 100{% else %}0, 100{% endif %}"
-                                                class="text-emerald-500 progress-ring-circle"></circle>
-                                    </svg>
-                         <div class="mt-3">
-                             <form method="post" action="{% url 'task_management:personal_board_archive' board.id %}" class="inline" onsubmit="return confirmArchive(event, '{{ board.name|escapejs }}')">
-                                 {% csrf_token %}
-                                 <button type="submit" class="text-xs text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer" title="Archive board">
-                                     <i class="fas fa-archive text-xs" aria-hidden="true"></i>
-                                     <span>Archive</span>
-                                 </button>
-                             </form>
-                         </div>
+                     <!-- Gradient top accent bar -->
+                     <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
+                          :style="`background: linear-gradient(90deg, ${boardColors[{{ forloop.counter0 }}]} 0%, ${adjustColor(boardColors[{{ forloop.counter0 }}], 40)} 100%)`">
                      </div>
-                                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
-                                    {% if board.total_tasks and board.total_tasks > 0 %}{% widthratio board.completed_tasks|default:0 board.total_tasks 100 %}{% else %}0{% endif %}%
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </a>
 
+                     <div class="pt-4">
+                       <div class="flex items-start justify-between mb-3">
+                           <div class="flex-1 min-w-0">
+                               <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors cursor-pointer px-2 py-1 -mx-2 -my-1 rounded"
+                                   data-board-id="{{ board.id }}"
+                                   data-field="name"
+                                   contenteditable="false"
+                                   title="Click to edit">{{ board.name|escape }}</h3>
+                               <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 px-2 py-1 -mx-2 -my-1 rounded"
+                                   data-board-id="{{ board.id }}"
+                                   data-field="description"
+                                   contenteditable="false"
+                                   title="Click to edit">{{ board.description|default:"Personal productivity board"|escape }}</p>
+                           </div>
+                       </div>
 
-            </div>
-            {% endfor %}
+                       <!-- Stats Row -->
+                       <div class="flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                          <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                              <i class="fas fa-tasks text-sm"></i>
+                              <span class="text-sm">{{ board.total_tasks|default:0 }}</span>
+                          </div>
+                          <div class="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                              <i class="fas fa-check-circle text-sm"></i>
+                              <span class="text-sm">{{ board.completed_tasks|default:0 }}</span>
+                          </div>
+                          <div class="flex-1"></div>
+                          <!-- Progress ring -->
+                          <div class="flex items-center gap-2">
+                              <div class="relative w-8 h-8">
+                                  <svg class="w-8 h-8" viewBox="0 0 36 36">
+                                      <circle cx="18" cy="18" r="16"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              stroke-width="3"
+                                              class="text-gray-200 dark:text-gray-700"></circle>
+                                      <circle cx="18" cy="18" r="16"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              stroke-width="3"
+                                              stroke-dasharray="{% if board.total_tasks and board.total_tasks > 0 %}{% widthratio board.completed_tasks|default:0 board.total_tasks 100 %}, 100{% else %}0, 100{% endif %}"
+                                              class="text-emerald-500 progress-ring-circle"></circle>
+                                  </svg>
+                              </div>
+                              <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                  {% if board.total_tasks and board.total_tasks > 0 %}{% widthratio board.completed_tasks|default:0 board.total_tasks 100 %}{% else %}0{% endif %}%
+                              </span>
+                          </div>
+                       </div>
+                   </div>
+               </a>
+
+               {# Action buttons - positioned top-right, outside the link #}
+               <div class="card-actions absolute top-3 right-3 flex items-center gap-1.5">
+                   <button onclick="event.stopPropagation(); openEditModal({{ board.id }}, '{{ board.name|escapejs }}', '{{ board.description|escapejs }}')"
+                           class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
+                           title="Edit board"
+                           aria-label="Edit board {{ board.name|escape }}">
+                       <i class="fas fa-edit text-xs" aria-hidden="true"></i>
+                       <span>Edit</span>
+                   </button>
+                   <form method="post" action="{% url 'task_management:personal_board_archive' board.id %}" class="inline" onsubmit="return confirmArchive(event, '{{ board.name|escapejs }}')">
+                       {% csrf_token %}
+                       <button type="submit" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-red-50 dark:hover:bg-red-900/40 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm text-xs font-medium cursor-pointer" title="Archive board" aria-label="Archive board {{ board.name|escape }}">
+                           <i class="fas fa-archive text-xs" aria-hidden="true"></i>
+                           <span>Archive</span>
+                       </button>
+                   </form>
+               </div>
+             </div>
+             {% endfor %}
         </div>
 
         {% else %}
@@ -393,21 +385,27 @@
                     <i class="fas fa-map text-sm"></i>
                     <span class="font-medium">Roadmaps</span>
                 </a>
+                <a href="{% url 'task_management:personal_board_archived_list' %}"
+                   class="quick-link flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-2 rounded-lg">
+                    <i class="fas fa-archive text-sm"></i>
+                    <span class="font-medium">Archived Boards</span>
+                </a>
             </div>
         </div>
         {% endif %}
     </div>
 
-    <!-- Edit Board Modal — FIX: uses .is-open class instead of conflicting hidden + flex -->
-    <div id="editBoardModal">
-        <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-600">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-semibold text-white">Edit Board</h2>
-                <button onclick="closeEditModal()" class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <form id="editBoardForm" method="post" action="">
+<!-- Edit Board Modal — FIX: uses .is-open class instead of conflicting hidden + flex -->
+     <div id="editBoardModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" aria-describedby="editModalDesc" tabindex="-1">
+         <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-600">
+<div class="flex justify-between items-center mb-6">
+                 <h2 id="editModalTitle" class="text-xl font-semibold text-white">Edit Board</h2>
+                 <button onclick="closeEditModal()" class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white">
+                     <i class="fas fa-times"></i>
+                 </button>
+             </div>
+             <p id="editModalDesc" class="sr-only">Edit your personal board name and description</p>
+             <form id="editBoardForm" method="post" action="">
                 {% csrf_token %}
                 <div class="space-y-4">
                     <div>
@@ -427,20 +425,55 @@
                         <i class="fas fa-save mr-2"></i>Save Changes
                     </button>
                 </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- FIX: Scroll-to-top button — use proper Alpine scroll tracking -->
-    <button x-show="scrolled"
-            x-transition
-            @click="window.scrollTo({top: 0, behavior: 'smooth'})"
-            class="fixed bottom-6 right-6 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all hover:scale-105 z-50"
-            title="Scroll to top">
-        <i class="fas fa-arrow-up"></i>
-    </button>
+</form>
 </div>
-{% endblock %}
+ </div>
+
+ <!-- Archive Modal -->
+ <div id="archiveModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="archiveModalTitle"
+      aria-describedby="archiveModalDesc"
+      tabindex="-1">
+     <div class="bg-gray-800 rounded-xl p-6 w-full max-w-sm mx-4 shadow-2xl border border-gray-600">
+         <div class="flex justify-between items-center mb-4">
+             <h2 id="archiveModalTitle" class="text-xl font-semibold text-white">Confirm Archive</h2>
+             <button onclick="closeArchiveModal()"
+                     type="button"
+                     class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white"
+                     aria-label="Close modal">
+                 <i class="fas fa-times" aria-hidden="true"></i>
+             </button>
+         </div>
+         <p id="archiveModalDesc" class="text-gray-300 mb-6">
+             Are you sure you want to archive this board? It will be moved to the archived list.
+         </p>
+         <div class="flex justify-end gap-3">
+             <button type="button"
+                     onclick="closeArchiveModal()"
+                     class="px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 text-gray-300">
+                 Cancel
+             </button>
+             <button type="button"
+                     id="confirmArchiveBtn"
+                     class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg">
+                 <i class="fas fa-archive mr-2" aria-hidden="true"></i>Archive
+             </button>
+         </div>
+     </div>
+ </div>
+
+ <!-- FIX: Scroll-to-top button -->
+ <button x-show="scrolled"
+         x-transition
+         @click="window.scrollTo({top: 0, behavior: 'smooth'})"
+         class="fixed bottom-6 right-6 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all hover:scale-105 z-50"
+         title="Scroll to top">
+     <i class="fas fa-arrow-up"></i>
+ </button>
+</div>
+ {% endblock %}
 
 {% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js" defer></script>
@@ -547,9 +580,79 @@
         if (e.target === this) closeEditModal();
     });
 
-    // Close modal on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeEditModal();
+// Close modal on Escape key
+     document.addEventListener('keydown', function(e) {
+         if (e.key === 'Escape') {
+             const editModal = document.getElementById('editBoardModal');
+             const archiveModal = document.getElementById('archiveModal');
+             if (archiveModal.classList.contains('is-open')) {
+                 closeArchiveModal();
+             } else if (editModal.classList.contains('is-open')) {
+                 closeEditModal();
+             }
+         }
+     });
+
+    let pendingArchiveForm = null;
+
+    function confirmArchive(event, boardName) {
+        event.preventDefault();
+        pendingArchiveForm = event.target;
+        document.getElementById('archiveModal').classList.add('is-open');
+        document.getElementById('archiveModal').setAttribute('aria-hidden', 'false');
+        return false;
+    }
+
+    function closeArchiveModal() {
+        document.getElementById('archiveModal').classList.remove('is-open');
+        document.getElementById('archiveModal').setAttribute('aria-hidden', 'true');
+        pendingArchiveForm = null;
+    }
+
+    document.getElementById('confirmArchiveBtn')?.addEventListener('click', function() {
+        if (pendingArchiveForm) {
+            const form = pendingArchiveForm;
+            const formData = new FormData(form);
+            const archiveUrl = form.action;
+
+            fetch(archiveUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success || data.archived) {
+                    const match = archiveUrl.match(/\/personal\/(\d+)\/archive\//);
+                    if (match) {
+                        const boardId = match[1];
+                        const card = document.querySelector(`[data-board-id="${boardId}"]`);
+                        if (card) {
+                            card.style.transition = 'opacity 0.3s';
+                            card.style.opacity = '0';
+                            setTimeout(() => card.remove(), 300);
+                        }
+                    }
+                    closeArchiveModal();
+                    showToast('Board archived successfully!', 'success');
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to archive board'));
+                    closeArchiveModal();
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('An error occurred while archiving the board.');
+                closeArchiveModal();
+            });
+        }
+    });
+
+    document.getElementById('archiveModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeArchiveModal();
     });
 
     function showToast(message, type = 'success') {

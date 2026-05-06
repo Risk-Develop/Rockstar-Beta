@@ -8,75 +8,72 @@
 {% block extra_css %}
 <link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
 <style>
-    .empty-gradient-bg {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        position: relative;
-        overflow: hidden;
-    }
-    .empty-gradient-bg::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
-        pointer-events: none;
-    }
+     .empty-gradient-bg {
+         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+         position: relative;
+         overflow: hidden;
+     }
+     .empty-gradient-bg::before {
+         content: '';
+         position: absolute;
+         top: -50%;
+         right: -50%;
+         width: 100%;
+         height: 100%;
+         background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+         pointer-events: none;
+     }
 
-    .board-card {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid transparent;
-        position: relative;
-        overflow: hidden;
-        opacity: 0.85;
-    }
-    .board-card:hover {
-        transform: translateY(-4px) scale(1.01);
-        border-color: rgba(59, 130, 246, 0.3);
-        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5),
-                    0 0 20px -5px rgba(59, 130, 246, 0.2);
-        opacity: 1;
-    }
-    .board-card::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: inherit;
-        padding: 2px;
-        background: linear-gradient(135deg, transparent 0%, rgba(59, 130, 246, 0.3) 100%);
-        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-        -webkit-mask-composite: xor;
-        mask-composite: exclude;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        pointer-events: none;
-    }
-    .board-card:hover::before {
-        opacity: 1;
-    }
-
-    .restore-btn {
-        transition: all 0.2s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    .restore-btn::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
-        transform: translate(-50%, -50%);
-        transition: width 0.6s, height 0.6s;
-    }
-    .restore-btn:active::after {
-        width: 300px;
-        height: 300px;
-    }
+     .board-card-wrapper {
+         transition: opacity 0.3s ease;
+         opacity: 0.85;
+     }
+     .board-card-wrapper:hover {
+         opacity: 1;
+     }
+     .board-card {
+         border: 1px solid transparent;
+         position: relative;
+         overflow: hidden;
+     }
+     .board-card::before {
+         content: '';
+         position: absolute;
+         inset: 0;
+         border-radius: inherit;
+         padding: 2px;
+         background: linear-gradient(135deg, transparent 0%, rgba(59, 130, 246, 0.3) 100%);
+         -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+         -webkit-mask-composite: xor;
+         mask-composite: exclude;
+         opacity: 0;
+         transition: opacity 0.3s ease;
+         pointer-events: none;
+     }
+     .board-card-wrapper:hover .board-card::before {
+         opacity: 1;
+     }
+     .restore-btn {
+         transition: all 0.2s ease;
+         position: relative;
+         overflow: hidden;
+     }
+     .restore-btn::after {
+         content: '';
+         position: absolute;
+         top: 50%;
+         left: 50%;
+         width: 0;
+         height: 0;
+         background: rgba(255, 255, 255, 0.1);
+         border-radius: 50%;
+         transform: translate(-50%, -50%);
+         transition: width 0.6s, height 0.6s;
+     }
+     .restore-btn:active::after {
+         width: 300px;
+         height: 300px;
+     }
 
     .stat-badge {
         transition: all 0.2s ease;
@@ -135,7 +132,7 @@
         display: flex;
     }
 
-    .archived-badge {
+.archived-badge {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
@@ -146,23 +143,8 @@
         font-size: 0.75rem;
          font-weight: 500;
      }
-
-     /* Restore modal styles */
-     #restoreModal {
-         display: none;
-         position: fixed;
-         inset: 0;
-         background: rgba(0, 0, 0, 0.70);
-         backdrop-filter: blur(4px);
-         align-items: center;
-         justify-content: center;
-         z-index: 50;
-     }
-     #restoreModal.is-open {
-         display: flex;
-     }
  </style>
-{% endblock %}
+ {% endblock %}
 
 {% block main_content %}
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
@@ -248,9 +230,9 @@
         <!-- Archived Boards Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
 
-            {% for board in archived_boards %}
-            <div class="relative" data-board-id="{{ board.id }}">
-                <div class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-xl transition-all duration-300 group cursor-default">
+{% for board in archived_boards %}
+             <div class="board-card-wrapper relative" data-board-id="{{ board.id }}">
+                 <div class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-xl transition-all duration-300 group cursor-default">
 
                     <!-- Gradient top accent bar - archived boards use grayscale -->
                     <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
@@ -287,11 +269,6 @@
                             <div class="flex-1"></div>
                             <!-- Progress ring -->
                             <div class="flex items-center gap-2">
-                                {% if board.total_tasks and board.total_tasks > 0 %}
-                                    {% widthratio board.completed_tasks|default:0 board.total_tasks 100 as percentage %}
-                                {% else %}
-                                    {% with percentage=0 %}{% endwith %}
-                                {% endif %}
                                 <div class="relative w-8 h-8">
                                     <svg class="w-8 h-8" viewBox="0 0 36 36">
                                         <circle cx="18" cy="18" r="16"
@@ -468,18 +445,67 @@
          pendingRestoreForm = null;
      }
 
-     document.getElementById('confirmRestoreBtn')?.addEventListener('click', function() {
-         if (pendingRestoreForm) {
-             pendingRestoreForm.submit();
-         }
-     });
+document.getElementById('confirmRestoreBtn')?.addEventListener('click', function() {
+          if (pendingRestoreForm) {
+              const form = pendingRestoreForm;
+              const formData = new FormData(form);
+              const restoreUrl = form.action;
+
+              fetch(restoreUrl, {
+                  method: 'POST',
+                  body: formData,
+                  headers: {
+                      'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                      'X-Requested-With': 'XMLHttpRequest'
+                  }
+              })
+              .then(res => res.json())
+              .then(data => {
+                  if (data.success || data.restored) {
+                      const match = restoreUrl.match(/\/personal\/(\d+)\/restore\//);
+                      if (match) {
+                          const boardId = match[1];
+                          const card = document.querySelector(`[data-board-id="${boardId}"]`);
+                          if (card) {
+                              card.style.transition = 'opacity 0.3s';
+                              card.style.opacity = '0';
+                              setTimeout(() => card.remove(), 300);
+                          }
+                      }
+                      closeRestoreModal();
+                      showToast('Board restored successfully!', 'success');
+                  } else {
+                      alert('Error: ' + (data.error || 'Failed to restore board'));
+                      closeRestoreModal();
+                  }
+              })
+              .catch(err => {
+                  console.error('Error:', err);
+                  alert('An error occurred while restoring the board.');
+                  closeRestoreModal();
+              });
+          }
+      });
 
      document.getElementById('restoreModal')?.addEventListener('click', function(e) {
          if (e.target === this) closeRestoreModal();
      });
 
-     document.addEventListener('keydown', function(e) {
-         if (e.key === 'Escape') closeRestoreModal();
-     });
- </script>
+document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') closeRestoreModal();
+      });
+
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 ${
+            type === 'success' ? 'bg-green-600' : 'bg-red-600'
+        } text-white`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }
+  </script>
 {% endblock %}

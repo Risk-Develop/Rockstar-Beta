@@ -37,7 +37,6 @@ def can_edit_task(view_func):
             current_staff = get_current_staff(request)
             is_owner = request.session.get('is_owner', False)
             
-            # Allow if: owner, task creator, or assigned user
             if not is_owner and current_staff:
                 if task.created_by != current_staff and task.assigned_to != current_staff:
                     messages.warning(request, "You don't have permission to edit this task.")
@@ -57,7 +56,6 @@ def can_delete_task(view_func):
             current_staff = get_current_staff(request)
             is_owner = request.session.get('is_owner', False)
             
-            # Allow if: owner, task creator, or board creator
             if not is_owner and current_staff:
                 if task.created_by != current_staff and task.column.board.created_by != current_staff:
                     messages.warning(request, "You don't have permission to delete this task.")
@@ -128,7 +126,6 @@ def board_create(request):
             board.created_by = get_current_staff(request)
             board.save()
             
-            # Seed default columns
             for col in KanbanColumn.DEFAULT_COLUMNS:
                 KanbanColumn.objects.create(board=board, **col)
             
@@ -202,18 +199,15 @@ def task_create(request, board_id):
             task = form.save(commit=False)
             task.created_by = get_current_staff(request)
             
-            # Check if roadmap_id is provided
             roadmap_id = request.POST.get('roadmap_id')
             if roadmap_id:
                 task.roadmap_id = roadmap_id
             
-            # Set order to be last in column
             max_order = task.column.tasks.order_by('-order').first()
             task.order = (max_order.order + 1) if max_order else 0
             
             task.save()
             
-            # Log audit for task creation
             if task.assigned_to:
                 desc = "Created and assigned to " + str(task.assigned_to)
             else:
@@ -248,8 +242,8 @@ def task_edit(request, task_id):
         if form.is_valid():
             form.save()
             new_data = f"{task.title} - {task.assigned_to}"
-            log_audit(task, 'edited', get_current_staff(request), 
-                f"Updated: {old_data} → {new_data}", request=request)
+            log_audit(task, 'edited', get_current_staff(request),
+                f"Updated: {old_data} -> {new_data}", request=request)
             messages.success(request, f'Task "{task.title}" updated.')
         else:
             messages.error(request, 'Failed to update task.')
@@ -271,7 +265,7 @@ def task_delete(request, task_id):
     board_id = task.column.board.id
     task_title = task.title
     
-    log_audit(task, 'deleted', get_current_staff(request), 
+    log_audit(task, 'deleted', get_current_staff(request),
         f"Deleted task: {task_title}", request=request)
     task.delete()
     messages.success(request, 'Task deleted.')
@@ -281,7 +275,6 @@ def task_delete(request, task_id):
 @require_POST
 @custom_login_required
 def api_update_task_position(request):
-    """API to update task column and order via drag-drop"""
     try:
         data = json.loads(request.body)
         task_id = data.get('task_id')
@@ -295,7 +288,6 @@ def api_update_task_position(request):
         task.order = new_order
         task.save()
         
-        # Log audit for column move
         if old_column_id != column_id:
             new_column = KanbanColumn.objects.get(id=column_id)
             user = get_current_staff(request)
@@ -303,16 +295,13 @@ def api_update_task_position(request):
                 f"Moved from {old_column.name} to {new_column.name}",
                 from_col=old_column, to_col=new_column, request=request)
         
-        # Reorder tasks in the new column
         if old_column_id != column_id:
-            # Tasks in old column - reassign order
             old_column_tasks = Task.objects.filter(column_id=old_column_id).order_by('order')
             for i, t in enumerate(old_column_tasks):
                 if t.order != i:
                     t.order = i
                     t.save()
         
-        # Tasks in new column - reassign order
         new_column_tasks = Task.objects.filter(column_id=column_id).exclude(id=task_id).order_by('order')
         for i, t in enumerate(new_column_tasks):
             new_ord = i if i < new_order else i + 1
@@ -321,7 +310,6 @@ def api_update_task_position(request):
                 t.save()
         
         return JsonResponse({'success': True, 'task_id': task.id})
-    
     except Task.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Task not found'}, status=404)
     except Exception as e:
@@ -331,7 +319,6 @@ def api_update_task_position(request):
 @require_GET
 @custom_login_required
 def api_get_tasks(request, board_id):
-    """API to get all tasks for a board (for HTMX partial updates)"""
     board = get_object_or_404(KanbanBoard, id=board_id)
     columns = board.columns.filter(is_active=True).order_by('order')
     
@@ -343,8 +330,6 @@ def api_get_tasks(request, board_id):
         'all_staff': Staff.objects.filter(status='active')
     })
 
-
-# Roadmap Views
 
 @custom_login_required
 def roadmap_list(request):
@@ -366,17 +351,14 @@ def roadmap_create(request):
             messages.success(request, f'Roadmap "{roadmap.name}" created.')
         else:
             messages.error(request, 'Failed to create roadmap.')
-    
     return redirect('task_management:roadmap_list')
 
 
 @custom_login_required
 def roadmap_detail(request, roadmap_id):
     roadmap = get_object_or_404(Roadmap, id=roadmap_id)
-    # Show tasks from the board (not just tasks with roadmap_id set)
     tasks = Task.objects.filter(column__board=roadmap.board).select_related('column', 'assigned_to')
     all_staff = Staff.objects.filter(status='active')
-    
     return render(request, 'task_management/roadmap_detail.html', {
         'roadmap': roadmap,
         'tasks': tasks,
@@ -398,7 +380,6 @@ def roadmap_task_create(request, roadmap_id):
             
             max_order = task.column.tasks.order_by('-order').first()
             task.order = (max_order.order + 1) if max_order else 0
-            
             task.save()
             
             if task.assigned_to:
@@ -425,34 +406,19 @@ def roadmap_delete(request, roadmap_id):
 
 @custom_login_required
 def timeline_view(request, roadmap_id):
-    """Timeline view using FullCalendar"""
     import logging
     logger = logging.getLogger(__name__)
-    
     roadmap = get_object_or_404(Roadmap, id=roadmap_id)
-    # Get all tasks from the board (not just roadmap tasks)
     tasks = Task.objects.filter(column__board=roadmap.board).select_related('column').all()
-    
     logger.error(f"Timeline view - Tasks count: {tasks.count()}, Roadmap: {roadmap.name}, Board: {roadmap.board.name}")
     
     calendar_events = []
-    
     for task in tasks:
         if task.deadline:
-            event = {
-                'id': task.id,
-                'title': task.title,
-                'start': task.deadline.isoformat(),
-                'className': 'priority-' + task.priority
-            }
+            event = {'id': task.id, 'title': task.title, 'start': task.deadline.isoformat(),'className': 'priority-' + task.priority}
             calendar_events.append(event)
         else:
-            event = {
-                'id': task.id,
-                'title': task.title + ' (No deadline)',
-                'start': roadmap.start_date.isoformat(),
-                'className': 'priority-' + task.priority
-            }
+            event = {'id': task.id, 'title': task.title + ' (No deadline)','start': roadmap.start_date.isoformat(),'className': 'priority-' + task.priority}
             calendar_events.append(event)
     
     return render(request, 'task_management/timeline.html', {
@@ -462,27 +428,21 @@ def timeline_view(request, roadmap_id):
     })
 
 
- # ========== PERSONAL PRODUCTIVITY SYSTEM VIEWS ==========
-
 @custom_login_required
 def personal_board_list(request):
-    """List all personal boards for current user"""
     current_staff = get_current_staff(request)
     if not current_staff and not request.session.get('is_owner'):
         messages.warning(request, "Please log in to access personal boards.")
         return redirect('task_management:board_list')
 
-    # Get non-archived personal boards for user
     from django.db.models import Count, Q
     personal_boards = PersonalBoard.objects.filter(
-        user=current_staff,
-        is_archived=False
+        user=current_staff, is_archived=False
     ).annotate(
         total_tasks=Count('tasks'),
         completed_tasks=Count('tasks', filter=Q(tasks__is_completed=True))
     ) if current_staff else []
 
-    # Compute aggregate totals
     total_tasks_count = sum(board.total_tasks for board in personal_boards)
     completed_tasks_count = sum(board.completed_tasks for board in personal_boards)
 
@@ -495,39 +455,37 @@ def personal_board_list(request):
 
 @custom_login_required
 def personal_board_detail(request, board_id):
-    """View personal kanban board"""
     import json
-
     current_staff = get_current_staff(request)
     board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
 
-    # Redirect archived boards to archived list
     if board.is_archived:
-        messages.info(request, f'Board "{board.name}" is archived. You can restore it from the archived boards list.')
+        messages.info(request, f'Board "{board.name}" is archived. Restore it from the archived boards list.')
         return redirect('task_management:personal_board_archived_list')
 
     columns = board.columns.order_by('order')
-
+    archived_tasks = []
     for column in columns:
-        tasks = column.tasks.order_by('order')
+        tasks = column.tasks.filter(is_archived=False).order_by('order')
         for task in tasks:
             checklist_items = list(task.checklist_items.all())
-            task.checklist_items_json = json.dumps([
-                {'id': item.id, 'text': item.text, 'is_completed': item.is_completed}
-                for item in checklist_items
-            ])
+            task.checklist_items_json = json.dumps([{'id': item.id, 'text': item.text, 'is_completed': item.is_completed} for item in checklist_items])
         column.tasks_list = tasks
 
+    archived_tasks_qs = PersonalTask.objects.filter(board=board, is_archived=True).select_related('column').order_by('-archived_at')
+    for task in archived_tasks_qs:
+        checklist_items = list(task.checklist_items.all())
+        task.checklist_items_json = json.dumps([{'id': item.id, 'text': item.text, 'is_completed': item.is_completed} for item in checklist_items])
+    archived_tasks = list(archived_tasks_qs)
+
     return render(request, 'task_management/personal_board_detail.html', {
-        'board': board,
-        'columns': columns
+        'board': board, 'columns': columns, 'archived_tasks': archived_tasks
     })
 
 
 @custom_login_required
 def personal_board_create(request):
-    """Create a new personal board"""
-    current_staff = get_current_staff(request)
+    current_staff = get_current_employee(request)
     if not current_staff:
         messages.error(request, "You must be logged in to create a personal board.")
         return redirect('task_management:board_list')
@@ -535,119 +493,79 @@ def personal_board_create(request):
     if request.method == 'POST':
         name = request.POST.get('name', 'My Tasks')
         description = request.POST.get('description', '')
-
-        # Check if board already exists for this user
         existing = PersonalBoard.objects.filter(user=current_staff, name=name).first()
         if existing:
             messages.warning(request, f'Board "{name}" already exists.')
             return redirect('task_management:personal_board_detail', board_id=existing.id)
-
-        board = PersonalBoard.objects.create(
-            user=current_staff,
-            name=name,
-            description=description
-        )
-
-        # Create default columns
+        board = PersonalBoard.objects.create(user=current_staff, name=name, description=description)
         for col in PersonalColumn.DEFAULT_COLUMNS:
             PersonalColumn.objects.create(board=board, **col)
-
         messages.success(request, f'Personal board "{board.name}" created!')
-
     return redirect('task_management:personal_board_list')
 
 
 @custom_login_required
 def personal_board_edit(request, board_id):
-    """Edit a personal board's name and description"""
     current_staff = get_current_staff(request)
     board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
-
-    # Prevent editing archived boards
     if board.is_archived:
-        messages.warning(request, "Archived boards cannot be edited. Please restore it first.")
+        messages.warning(request, "Archived boards cannot be edited. Restore it first.")
         return redirect('task_management:personal_board_archived_list')
-
     if request.method == 'POST':
-        name = request.POST.get('name', board.name)
-        description = request.POST.get('description', board.description)
-
-        board.name = name
-        board.description = description
+        board.name = request.POST.get('name', board.name)
+        board.description = request.POST.get('description', board.description)
         board.save()
-
-        messages.success(request, f'Board "{board.name}" updated!')
-
-        # Return JSON for AJAX requests
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            from django.http import JsonResponse
             return JsonResponse({'success': True, 'message': 'Board updated!'})
-
+        messages.success(request, f'Board "{board.name}" updated!')
     return redirect('task_management:personal_board_list')
 
 
 @custom_login_required
 def personal_board_archive(request, board_id):
-    """Archive a personal board"""
     current_staff = get_current_staff(request)
     board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
-
     if request.method == 'POST':
         from django.utils import timezone
         board.is_archived = True
         board.archived_at = timezone.now()
         board.save()
-        messages.success(request, f'Board "{board.name}" has been archived.')
-
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            from django.http import JsonResponse
             return JsonResponse({'success': True, 'archived': True})
-
+        messages.success(request, f'Board "{board.name}" has been archived.')
     return redirect('task_management:personal_board_list')
 
 
 @custom_login_required
 def personal_board_restore(request, board_id):
-    """Restore an archived personal board"""
     current_staff = get_current_staff(request)
     board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
-
     if request.method == 'POST':
         board.is_archived = False
         board.archived_at = None
         board.save()
-        messages.success(request, f'Board "{board.name}" has been restored.')
-
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            from django.http import JsonResponse
             return JsonResponse({'success': True, 'restored': True})
-
-        # Redirect to active boards list
+        messages.success(request, f'Board "{board.name}" has been restored.')
         return redirect('task_management:personal_board_list')
-
     return redirect('task_management:personal_board_archived_list')
 
 
 @custom_login_required
 def personal_board_archived_list(request):
-    """List all archived personal boards for current user"""
     current_staff = get_current_staff(request)
     if not current_staff and not request.session.get('is_owner'):
         messages.warning(request, "Please log in to access archived boards.")
         return redirect('task_management:board_list')
-
     from django.db.models import Count, Q
     archived_boards = PersonalBoard.objects.filter(
-        user=current_staff,
-        is_archived=True
+        user=current_staff, is_archived=True
     ).annotate(
         total_tasks=Count('tasks'),
         completed_tasks=Count('tasks', filter=Q(tasks__is_completed=True))
     ) if current_staff else []
-
     total_tasks_count = sum(board.total_tasks for board in archived_boards)
     completed_tasks_count = sum(board.completed_tasks for board in archived_boards)
-
     return render(request, 'task_management/personal_board_archived.html', {
         'archived_boards': archived_boards,
         'total_tasks_count': total_tasks_count,
@@ -657,10 +575,8 @@ def personal_board_archived_list(request):
 
 @custom_login_required
 def personal_task_create(request, board_id):
-    """Create a personal task"""
     current_staff = get_current_staff(request)
     board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
-    
     if request.method == 'POST':
         title = request.POST.get('title')
         description = request.POST.get('description', '')
@@ -672,39 +588,51 @@ def personal_task_create(request, board_id):
         notes = request.POST.get('notes', '')
         is_recurring = request.POST.get('is_recurring') == 'on'
         recurring_type = request.POST.get('recurring_type')
-        
         if title and column_id:
             column = get_object_or_404(PersonalColumn, id=column_id, board=board)
             max_order = column.tasks.order_by('-order').first()
             order = (max_order.order + 1) if max_order else 0
-            
-            PersonalTask.objects.create(
-                board=board,
-                column=column,
-                title=title,
-                description=description,
-                priority=priority,
-                deadline=deadline,
-                date_start=date_start,
-                date_end=date_end,
-                notes=notes,
-                is_recurring=is_recurring,
-                recurring_type=recurring_type if is_recurring else None,
-                order=order
+            task = PersonalTask.objects.create(
+                board=board, column=column, title=title, description=description,
+                priority=priority, deadline=deadline, date_start=date_start,
+                date_end=date_end, notes=notes, is_recurring=is_recurring,
+                recurring_type=recurring_type if is_recurring else None, order=order
             )
+            # Prepare task data for JSON response
+            task_data = {
+                'id': task.id,
+                'title': task.title,
+                'description': task.description or '',
+                'priority': task.priority,
+                'deadline': task.deadline.isoformat() if task.deadline else '',
+                'date_start': task.date_start.isoformat() if task.date_start else '',
+                'date_end': task.date_end.isoformat() if task.date_end else '',
+                'notes': task.notes or '',
+                'is_recurring': task.is_recurring,
+                'recurring_type': task.recurring_type if task.is_recurring else None,
+                'is_completed': task.is_completed,
+                'column_id': column.id,
+                'checklist_items': []
+            }
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Task "{title}" created!',
+                    'column_id': column.id,
+                    'task': task_data
+                })
             messages.success(request, f'Task "{title}" created!')
         else:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': 'Title and column are required.'}, status=400)
             messages.error(request, 'Title and column are required.')
-    
     return redirect('task_management:personal_board_detail', board_id=board_id)
 
 
 @custom_login_required
 def personal_task_toggle(request, task_id):
-    """Toggle personal task completion"""
     current_staff = get_current_staff(request)
     task = get_object_or_404(PersonalTask, id=task_id, board__user=current_staff)
-    
     task.is_completed = not task.is_completed
     if task.is_completed:
         from django.utils import timezone
@@ -712,45 +640,109 @@ def personal_task_toggle(request, task_id):
     else:
         task.completed_at = None
     task.save()
-    
     if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True, 'completed': task.is_completed})
-    
     return redirect('task_management:personal_board_detail', board_id=task.board.id)
 
 
 @custom_login_required
 def personal_task_delete(request, task_id):
-    """Delete a personal task"""
+    """Hard delete a personal task"""
     current_staff = get_current_staff(request)
     task = get_object_or_404(PersonalTask, id=task_id, board__user=current_staff)
     board_id = task.board.id
+    task_title = task.title
     task.delete()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'message': 'Task deleted permanently.'})
     messages.success(request, 'Task deleted.')
     return redirect('task_management:personal_board_detail', board_id=board_id)
+
+
+@custom_login_required
+def personal_task_archive(request, task_id):
+    """Archive a personal task (soft delete)"""
+    current_staff = get_current_staff(request)
+    task = get_object_or_404(PersonalTask, id=task_id, board__user=current_staff)
+    from django.utils import timezone
+    task.is_archived = True
+    task.archived_at = timezone.now()
+    task.save()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'archived': True})
+    messages.success(request, f'Task "{task.title}" archived.')
+    return redirect('task_management:personal_board_detail', board_id=task.board.id)
+
+
+@custom_login_required
+def personal_task_restore(request, task_id):
+    """Restore an archived personal task"""
+    current_staff = get_current_staff(request)
+    task = get_object_or_404(PersonalTask, id=task_id, board__user=current_staff)
+    task.is_archived = False
+    task.archived_at = None
+    task.save()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        checklist_items = list(task.checklist_items.all())
+        task_data = {
+            'id': task.id,
+            'title': task.title,
+            'description': task.description or '',
+            'priority': task.priority,
+            'deadline': task.deadline.isoformat() if task.deadline else '',
+            'date_start': task.date_start.isoformat() if task.date_start else '',
+            'date_end': task.date_end.isoformat() if task.date_end else '',
+            'notes': task.notes or '',
+            'is_completed': task.is_completed,
+            'is_recurring': task.is_recurring,
+            'recurring_type': task.recurring_type if task.is_recurring else None,
+            'column_id': task.column.id if task.column else None,
+            'checklist_items': [{'id': ci.id, 'text': ci.text, 'is_completed': ci.is_completed} for ci in checklist_items]
+        }
+        return JsonResponse({'success': True, 'restored': True, 'task': task_data})
+    messages.success(request, f'Task "{task.title}" restored.')
+    return redirect('task_management:personal_board_detail', board_id=task.board.id)
+
+
+@custom_login_required
+def personal_task_list_archived(request, board_id):
+    """Return JSON list of archived tasks for a board"""
+    current_staff = get_current_staff(request)
+    board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
+    archived_tasks = PersonalTask.objects.filter(board=board, is_archived=True).select_related('column').order_by('-archived_at')
+    tasks_data = []
+    for task in archived_tasks:
+        checklist_items = list(task.checklist_items.all())
+        tasks_data.append({
+            'id': task.id, 'title': task.title, 'description': task.description,
+            'priority': task.priority, 'deadline': task.deadline.isoformat() if task.deadline else None,
+            'date_start': task.date_start.isoformat() if task.date_start else None,
+            'date_end': task.date_end.isoformat() if task.date_end else None,
+            'notes': task.notes, 'is_completed': task.is_completed,
+            'completed_at': task.completed_at.isoformat() if task.completed_at else None,
+            'archived_at': task.archived_at.isoformat() if task.archived_at else None,
+            'column': {'id': task.column.id, 'name': task.column.name, 'color': task.column.color} if task.column else None,
+            'checklist': [{'id': ci.id, 'text': ci.text, 'is_completed': ci.is_completed} for ci in checklist_items]
+        })
+    return JsonResponse({'success': True, 'tasks': tasks_data})
 
 
 @require_POST
 @custom_login_required
 def personal_task_update_notes(request, task_id):
-    """Update personal task notes"""
     current_staff = get_current_staff(request)
     task = get_object_or_404(PersonalTask, id=task_id, board__user=current_staff)
-    
     notes = request.POST.get('notes', '')
     task.notes = notes
     task.save()
-    
     messages.success(request, 'Notes saved!')
     return redirect('task_management:personal_board_detail', board_id=task.board.id)
 
 
 @custom_login_required
 def personal_task_edit(request, task_id):
-    """Edit personal task details"""
     current_staff = get_current_staff(request)
     task = get_object_or_404(PersonalTask, id=task_id, board__user=current_staff)
-    
     if request.method == 'POST':
         task.title = request.POST.get('title', task.title)
         task.description = request.POST.get('description', task.description)
@@ -760,115 +752,94 @@ def personal_task_edit(request, task_id):
         task.date_end = request.POST.get('date_end') or None
         task.notes = request.POST.get('notes', task.notes)
         task.save()
-        
-        # Check if AJAX request - return JSON
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'success': True, 'message': 'Task updated!'})
-        
-        # Normal form submit
+            checklist_items = list(task.checklist_items.all())
+            return JsonResponse({
+                'success': True,
+                'message': 'Task updated!',
+                'title': task.title,
+                'description': task.description or '',
+                'priority': task.priority,
+                'deadline': task.deadline.isoformat() if task.deadline else '',
+                'date_start': task.date_start.isoformat() if task.date_start else '',
+                'date_end': task.date_end.isoformat() if task.date_end else '',
+                'notes': task.notes or '',
+                'is_completed': task.is_completed,
+                'checklist_items': [{'id': ci.id, 'text': ci.text, 'is_completed': ci.is_completed} for ci in checklist_items]
+            })
         messages.success(request, 'Task updated!')
         return redirect('task_management:personal_board_detail', board_id=task.board.id)
-    
     return redirect('task_management:personal_board_detail', board_id=task.board.id)
 
 
 @custom_login_required
 def personal_task_checklist_add(request, task_id):
-    """Add checklist item to personal task"""
     current_staff = get_current_staff(request)
     task = get_object_or_404(PersonalTask, id=task_id, board__user=current_staff)
-    
     if request.method == 'POST':
         text = request.POST.get('checklist_text')
         if text:
             max_order = task.checklist_items.order_by('-order').first()
             order = (max_order.order + 1) if max_order else 0
-            
-            item = PersonalTaskChecklistItem.objects.create(
-                task=task,
-                text=text,
-                order=order
-            )
-            
-            # Always return JSON for AJAX
+            item = PersonalTaskChecklistItem.objects.create(task=task, text=text, order=order)
             return JsonResponse({'success': True, 'id': item.id, 'text': text, 'is_completed': False})
-    
     return JsonResponse({'success': False, 'error': 'Invalid request'})
 
 
 @require_POST
 @custom_login_required
 def personal_task_checklist_toggle(request, item_id):
-    """Toggle personal task checklist item"""
     item = get_object_or_404(PersonalTaskChecklistItem, id=item_id)
     item.is_completed = not item.is_completed
-    
     if item.is_completed:
         from django.utils import timezone
         item.completed_at = timezone.now().date()
     else:
         item.completed_at = None
     item.save()
-    
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('HX-Request'):
         return JsonResponse({'success': True, 'completed': item.is_completed})
-    
     return redirect('task_management:personal_board_detail', board_id=item.task.board.id)
 
 
 @custom_login_required
 def personal_task_checklist_delete(request, item_id):
-    """Delete checklist item"""
     item = get_object_or_404(PersonalTaskChecklistItem, id=item_id)
     task = item.task
     item.delete()
-    
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True})
-    
     messages.success(request, 'Checklist item deleted.')
     return redirect('task_management:personal_board_detail', board_id=task.board.id)
 
 
 @require_POST
-@require_POST
 @custom_login_required
 def personal_task_checklist_rename(request, item_id):
-    """Rename checklist item"""
     item = get_object_or_404(PersonalTaskChecklistItem, id=item_id)
     new_text = request.POST.get('text', '').strip()
-    
     if not new_text:
         return JsonResponse({'success': False, 'error': 'Text cannot be empty'}, status=400)
-    
     item.text = new_text
     item.save()
-    
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True, 'text': item.text, 'id': item.id})
-    
     return redirect('task_management:personal_board_detail', board_id=item.task.board.id)
 
 
 @require_POST
 @custom_login_required
 def personal_task_checklist_reorder(request, task_id):
-    """Re-order a checklist item within a task"""
     try:
         data = json.loads(request.body)
         item_id = data.get('item_id')
         new_order = data.get('order')
-        
         if item_id is None or new_order is None:
             return JsonResponse({'success': False, 'error': 'Missing parameters'}, status=400)
-        
         task = get_object_or_404(PersonalTask, id=task_id, board__user=get_current_staff(request))
         item = get_object_or_404(PersonalTaskChecklistItem, id=item_id, task=task)
-        
-        # Update to new order
         item.order = new_order
         item.save()
-        
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
@@ -877,155 +848,126 @@ def personal_task_checklist_reorder(request, task_id):
 @require_POST
 @custom_login_required
 def personal_task_update_position(request):
-    """Update personal task position via drag-drop"""
     try:
         data = json.loads(request.body)
         task_id = data.get('task_id')
         column_id = data.get('column_id')
         new_order = data.get('order')
-        
         task = PersonalTask.objects.get(id=task_id)
         task.column_id = column_id
         task.order = new_order
         task.save()
-        
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 
-# ========== PERSONAL COLUMN VIEWS ==========
-
 @custom_login_required
 def personal_column_create(request, board_id):
-    """Create a personal column"""
     current_staff = get_current_staff(request)
     board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
-    
     if request.method == 'POST':
         name = request.POST.get('name')
         color = request.POST.get('color', '#6b7280')
         max_order = board.columns.aggregate(models.Max('order'))['order__max'] or 0
-        
-        PersonalColumn.objects.create(
-            board=board,
-            name=name,
-            color=color,
-            order=max_order + 1
-        )
+        column = PersonalColumn.objects.create(board=board, name=name, color=color, order=max_order + 1)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Column "{name}" created!',
+                'column': {
+                    'id': column.id,
+                    'name': column.name,
+                    'color': column.color,
+                    'order': column.order
+                }
+            })
         messages.success(request, f'Column "{name}" created.')
-    
     return redirect('task_management:personal_board_detail', board_id=board_id)
 
 
 @custom_login_required
 def personal_column_delete(request, column_id):
-    """Delete a personal column (only if no tasks)"""
-    current_staff = get_current_staff(request)
+    current_staff = get_current_employee(request)
     column = get_object_or_404(PersonalColumn, id=column_id, board__user=current_staff)
-    
     if column.tasks.exists():
         messages.error(request, 'Cannot delete column with tasks. Move or delete tasks first.')
     else:
         column_name = column.name
         column.delete()
         messages.success(request, f'Column "{column_name}" deleted.')
-    
     return redirect('task_management:personal_board_detail', board_id=column.board.id)
 
 
 @custom_login_required
 def personal_column_edit(request, column_id):
-    """Edit a personal column name and color"""
     current_staff = get_current_staff(request)
     column = get_object_or_404(PersonalColumn, id=column_id, board__user=current_staff)
-    
     if request.method == 'POST':
         name = request.POST.get('name', column.name)
         color = request.POST.get('color', column.color)
-        # Ensure color has proper format (with #)
         if color and not color.startswith('#'):
             color = '#' + color
         column.name = name
         column.color = color
         column.save()
-        
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         if is_ajax:
             return JsonResponse({'success': True, 'name': column.name, 'color': column.color})
         messages.success(request, f'Column updated.')
-    
     return redirect('task_management:personal_board_detail', board_id=column.board.id)
 
 
 @require_POST
 @custom_login_required
 def personal_column_update_position(request):
-    """Reorder columns via drag-drop"""
     try:
         data = json.loads(request.body)
         column_positions = data.get('positions', [])
-        
         for item in column_positions:
             col_id = item.get('id')
             new_order = item.get('order')
             if col_id is not None:
                 PersonalColumn.objects.filter(id=col_id).update(order=new_order)
-        
         return JsonResponse({'success': True})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 
-# ========== TASK CHECKLIST & COMMENTS VIEWS ==========
-
 @custom_login_required
 def task_checklist_add(request, task_id):
-    """Add a checklist item to a task"""
     current_staff = get_current_staff(request)
     task = get_object_or_404(Task, id=task_id)
-    
     if request.method == 'POST':
         text = request.POST.get('text')
         if text:
             max_order = task.checklist_items.order_by('-order').first()
             order = (max_order.order + 1) if max_order else 0
-            
-            TaskChecklistItem.objects.create(
-                task=task,
-                text=text,
-                order=order
-            )
+            TaskChecklistItem.objects.create(task=task, text=text, order=order)
             messages.success(request, 'Checklist item added.')
         else:
             messages.error(request, 'Text is required.')
-    
     return redirect('task_management:task_detail', task_id=task_id)
 
 
 @require_POST
 @custom_login_required
 def task_checklist_toggle(request, item_id):
-    """Toggle checklist item completion"""
     item = get_object_or_404(TaskChecklistItem, id=item_id)
     item.is_completed = not item.is_completed
-    
     if item.is_completed:
         from django.utils import timezone
         item.completed_at = timezone.now().date()
     else:
         item.completed_at = None
     item.save()
-    
     if request.headers.get('HX-Request'):
         return JsonResponse({'success': True, 'completed': item.is_completed})
-    
     return redirect('task_management:task_detail', task_id=item.task.id)
 
 
 @custom_login_required
 def task_checklist_delete(request, item_id):
-    """Delete a checklist item"""
     item = get_object_or_404(TaskChecklistItem, id=item_id)
     task_id = item.task.id
     item.delete()
@@ -1035,42 +977,29 @@ def task_checklist_delete(request, item_id):
 
 @custom_login_required
 def task_comment_add(request, task_id):
-    """Add a comment or note to a task"""
     current_staff = get_current_staff(request)
     task = get_object_or_404(Task, id=task_id)
-    
     if request.method == 'POST':
         content = request.POST.get('content')
         is_note = request.POST.get('is_note') == 'on'
-        
         if content:
-            TaskComment.objects.create(
-                task=task,
-                author=current_staff,
-                content=content,
-                is_note=is_note
-            )
+            TaskComment.objects.create(task=task, author=current_staff, content=content, is_note=is_note)
             if is_note:
                 messages.success(request, 'Note added.')
             else:
                 messages.success(request, 'Comment added.')
         else:
             messages.error(request, 'Content is required.')
-    
     return redirect('task_management:task_detail', task_id=task_id)
 
 
 @custom_login_required
 def task_comment_delete(request, comment_id):
-    """Delete a comment"""
     current_staff = get_current_staff(request)
     comment = get_object_or_404(TaskComment, id=comment_id)
-    
-    # Only author can delete their own comment
     if comment.author != current_staff and not request.session.get('is_owner'):
         messages.error(request, "You can only delete your own comments.")
         return redirect('task_management:task_detail', task_id=comment.task.id)
-    
     task_id = comment.task.id
     comment.delete()
     messages.success(request, 'Comment deleted.')
