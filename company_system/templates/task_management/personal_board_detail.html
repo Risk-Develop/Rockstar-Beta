@@ -1623,7 +1623,7 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
                   title="Change priority">
             <i class="fas fa-flag"></i>
           </button>
-          <button onclick="event.stopPropagation(); openDeleteTaskModal('{{ task.id }}')" 
+          <button onclick="event.stopPropagation(); openDeleteTaskModal('{{ task.id }}', this)"
                   class="task-action-btn text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                   title="Delete task">
             <i class="fas fa-trash-alt"></i>
@@ -1656,16 +1656,16 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
     </div>
     {% endfor %}
 
-  <!-- Add Column Modal -->
-   <div id="addColumnModal" class="modal-overlay">
+   <!-- Add Column Modal -->
+   <div id="addColumnModal" class="modal-overlay" aria-modal="true" role="dialog" aria-labelledby="addColumnTitle">
    <div class="modal-content sm">
    <div class="modal-header-accent"></div>
    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-     <div class="flex-1">
-       <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-         <i class="fas fa-columns text-purple-500"></i>
-         Add New Column
-       </h2>
+      <div class="flex-1">
+        <h2 id="addColumnTitle" class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <i class="fas fa-columns text-purple-500"></i>
+          Add New Column
+        </h2>
        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Organize your tasks with a custom column</p>
      </div>
      <button onclick="closeAddColumnModal()"
@@ -1781,15 +1781,15 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
   </div>
 
     <!-- Edit Column Modal -->
-    <div id="editColumnModal" class="modal-overlay">
+    <div id="editColumnModal" class="modal-overlay" aria-modal="true" role="dialog" aria-labelledby="editColumnTitle">
    <div class="modal-content sm">
    <div class="modal-header-accent"></div>
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-         <div class="flex-1">
-           <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-             <i class="fas fa-edit text-indigo-500"></i>
-             Edit Column
-           </h2>
+          <div class="flex-1">
+            <h2 id="editColumnTitle" class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <i class="fas fa-edit text-indigo-500"></i>
+              Edit Column
+            </h2>
            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Update column name and color</p>
          </div>
          <button onclick="closeEditColumnModal()" 
@@ -2027,11 +2027,11 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 </div>
 
 <!-- Delete Archived Task Confirmation Modal -->
-<div id="deleteArchivedModal" class="modal-overlay">
+<div id="deleteArchivedModal" class="modal-overlay" aria-modal="true" role="dialog" aria-labelledby="deleteArchivedTitle">
   <div class="modal-content confirm">
     <div class="modal-header-accent"></div>
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+      <h2 id="deleteArchivedTitle" class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
         <i class="fas fa-trash-alt text-red-500"></i>
         Confirm Permanent Delete
       </h2>
@@ -2061,7 +2061,7 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 </div>
 
 <!-- Generic Confirmation Modal (for Archive/Restore) -->
-<div id="confirmModal" class="modal-overlay">
+<div id="confirmModal" class="modal-overlay" aria-modal="true" role="dialog" aria-labelledby="confirmModalTitle">
   <div class="modal-content confirm">
     <div class="modal-header-accent"></div>
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
@@ -2096,7 +2096,7 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 <div id="toast"></div>
 
 <!-- Help Modal -->
-<div id="helpModal" class="modal-overlay">
+<div id="helpModal" class="modal-overlay" aria-modal="true" role="dialog" aria-label="Keyboard Shortcuts">
 <div class="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-300 dark:border-gray-600">
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
 <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Keyboard Shortcuts</h2>
@@ -2139,15 +2139,15 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 </div>
 
   <!-- Add Task Modal -->
-   <div id="addTaskModal" class="modal-overlay">
+    <div id="addTaskModal" class="modal-overlay" aria-modal="true" role="dialog" aria-labelledby="addTaskTitle">
    <div class="modal-content">
   <div class="modal-header-accent"></div>
   <div class="flex justify-between items-start mb-6">
     <div class="flex-1">
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <i class="fas fa-plus-circle text-blue-500"></i>
-        Add Personal Task
-      </h2>
+       <h2 id="addTaskTitle" class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+         <i class="fas fa-plus-circle text-blue-500"></i>
+         Add Personal Task
+       </h2>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Create a new task to boost your productivity</p>
     </div>
     <button onclick="closeAddTaskModal()" 
@@ -2382,12 +2382,12 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
    </div>
 
     <!-- Delete Task Confirmation Modal -->
-    <div id="deleteTaskModal" class="modal-overlay">
-      <div class="modal-content confirm">
+     <div id="deleteTaskModal" class="modal-overlay" aria-modal="true" role="dialog" aria-labelledby="deleteTaskTitle">
+       <div class="modal-content confirm">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-         <h2 class="text-xl font-bold text-gray-900 dark:text-white">
-           <i class="fas fa-trash-alt text-red-500 mr-2"></i>Confirm Delete
-         </h2>
+          <h2 id="deleteTaskTitle" class="text-xl font-bold text-gray-900 dark:text-white">
+            <i class="fas fa-trash-alt text-red-500 mr-2"></i>Confirm Delete
+          </h2>
          <button onclick="closeDeleteTaskModal()" 
                  class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                  aria-label="Close modal">
@@ -2414,15 +2414,15 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
    </div>
 
     <!-- Task Detail Modal -->
-    <div id="taskDetailModal" class="modal-overlay">
-    <div class="modal-content lg">
-   <div class="modal-header-accent"></div>
-  <div class="flex justify-between items-start mb-6">
-    <div class="flex-1">
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <i class="fas fa-tasks text-indigo-500"></i>
-        Task Details
-      </h2>
+     <div id="taskDetailModal" class="modal-overlay" aria-modal="true" role="dialog" aria-labelledby="taskDetailTitle">
+     <div class="modal-content lg">
+    <div class="modal-header-accent"></div>
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+     <div class="flex-1">
+       <h2 id="taskDetailTitle" class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+         <i class="fas fa-tasks text-indigo-500"></i>
+         Task Details
+       </h2>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Update task information and track progress</p>
     </div>
     <button onclick="closeTaskDetailModal()" 
@@ -2661,9 +2661,10 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
                placeholder="Add a new checklist item..."
                class="flex-1 px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                onkeydown="if(event.key==='Enter'){event.preventDefault(); submitChecklist();}">
-        <button type="button" 
+        <button type="button"
+                id="checklistSubmitBtn"
                 onclick="submitChecklist()"
-                class="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                class="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
           <i class="fas fa-plus"></i>
           <span>Add</span>
         </button>
@@ -2718,10 +2719,10 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
   </div>
 
 <!-- Delete Checklist Confirmation Modal -->
-<div id="deleteChecklistModal" class="modal-overlay">
+<div id="deleteChecklistModal" class="modal-overlay" aria-modal="true" role="dialog" aria-labelledby="deleteChecklistTitle">
   <div class="modal-content confirm">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white">Confirm Delete</h2>
+      <h2 id="deleteChecklistTitle" class="text-xl font-bold text-gray-900 dark:text-white">Confirm Delete</h2>
       <button onclick="closeDeleteChecklistModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
         <i class="fas fa-times text-xl"></i>
       </button>
@@ -2801,8 +2802,8 @@ taskChecklists[{{ task.id }}] = {{ task.checklist_items_json|safe }};
 function handleAddTaskFormSubmit(form) {
     var formData = new FormData(form);
     var submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Creating…';
+    var originalBtnText = submitBtn.innerHTML;
+    setButtonLoading(submitBtn, true, originalBtnText);
 
     fetch(form.action, {
         method: 'POST',
@@ -2814,21 +2815,21 @@ function handleAddTaskFormSubmit(form) {
         if (data.success) {
             showToast(data.message || 'Task created!', 'success');
             closeAddTaskModal();
-            
+
             // Reset form fields
             form.reset();
-            
+
             // Reset custom UI components
             initPrioritySelectors(); // reset priority visuals to default (Medium)
             updateDeadlineDisplay('add'); // reset deadline display
             document.getElementById('recurring_options').classList.add('hidden'); // hide recurring options
-            
+
             // Reset character counters
             ['addTitle', 'addDescription', 'addNotes'].forEach(id => {
                 const counter = document.getElementById(id + 'Count');
                 if (counter) counter.textContent = '0';
             });
-            
+
             // Update column count
             var countEl = document.getElementById('count-col-' + data.column_id);
             if (countEl) {
@@ -2854,8 +2855,7 @@ function handleAddTaskFormSubmit(form) {
         showToast('Error: ' + err.message, 'error');
     })
     .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Task';
+        setButtonLoading(submitBtn, false, originalBtnText);
     });
     return false;
 }
@@ -2940,12 +2940,12 @@ function buildTaskCardHtml(task) {
     
     html += '</div>';
     
-    // Archive button
-    html += '<div class="flex items-center gap-1 flex-shrink-0">' +
-        '<button onclick="archiveTask(' + task.id + ')" class="task-quick-action archive-btn p-1.5 rounded-md text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-900/20" ' +
-        'aria-label="Archive task: ' + escapeHtml(task.title) + '" title="Archive task">' +
-        '<i class="fas fa-archive text-sm"></i></button>' +
-        '</div>';
+     // Archive button
+     html += '<div class="flex items-center gap-1 flex-shrink-0">' +
+         '<button onclick="archiveTask(' + task.id + ', this)" class="task-quick-action archive-btn p-1.5 rounded-md text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-900/20" ' +
+         'aria-label="Archive task: ' + escapeHtml(task.title) + '" title="Archive task">' +
+         '<i class="fas fa-archive text-sm"></i></button>' +
+         '</div>';
     
     html += '</div></div>';
     return html;
@@ -2954,8 +2954,8 @@ function buildTaskCardHtml(task) {
 function handleAddColumnFormSubmit(form) {
     var formData = new FormData(form);
     var submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Creating…';
+    var originalBtnText = submitBtn.innerHTML;
+    setButtonLoading(submitBtn, true, originalBtnText);
 
     fetch(form.action, {
         method: 'POST',
@@ -2996,11 +2996,17 @@ function handleAddColumnFormSubmit(form) {
         showToast('Error: ' + err.message, 'error');
     })
     .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Column';
+        setButtonLoading(submitBtn, false, originalBtnText);
     });
     return false;
 }
+
+// Wrapper for add column form with loading state
+const originalHandleAddColumnFormSubmit = handleAddColumnFormSubmit;
+handleAddColumnFormSubmit = function(form) {
+    // No validation for column form currently; just call original
+    return originalHandleAddColumnFormSubmit(form);
+};
 
 function buildColumnHtml(column) {
     var html = '<div class="flex-shrink-0 w-80 min-w-[320px]">';
@@ -3299,11 +3305,15 @@ function deleteColumn(columnId) {
         showToast('Please wait for the drag operation to complete...', 'error');
         return;
     }
-    
+
     showConfirmModal(
         'Delete Column',
         'Are you sure you want to delete this column?',
         function() {
+            var confirmBtn = document.getElementById('confirmModalYes');
+            var originalBtnText = confirmBtn.innerHTML;
+            setButtonLoading(confirmBtn, true, 'Deleting...');
+
             fetch('/task/personal/columns/' + columnId + '/delete/', {
                 method: 'POST',
                 headers: {
@@ -3315,24 +3325,26 @@ function deleteColumn(columnId) {
             .then(data => {
                 if (data.success || data.deleted) {
                     showToast('Column deleted', 'success');
-                    // Remove the entire column wrapper (header + body)
                     var columnBody = document.getElementById('column-' + columnId);
                     if (columnBody) {
                         var columnWrapper = columnBody.closest('.flex-shrink-0');
                         if (columnWrapper) columnWrapper.remove();
                     }
-                    // Also remove column from add task modal select
                     var select = document.querySelector('#addTaskModal select[name="column"]');
                     if (select) {
                         var option = select.querySelector('option[value="' + columnId + '"]');
                         if (option) option.remove();
                     }
+                    closeConfirmModal();
                 } else {
                     showToast(data.error || 'Cannot delete column with tasks. Move or delete tasks first.', 'error');
                 }
             })
             .catch(err => {
                 showToast('Failed: ' + err.message, 'error');
+            })
+            .finally(function() {
+                setButtonLoading(confirmBtn, false, originalBtnText);
             });
         }
     );
@@ -3414,6 +3426,9 @@ return d.innerHTML;
 // ── Inline checklist rename ────────────────────────────────────────────────────
 
 function renameChecklist(itemId, spanEl) {
+    var itemEl = document.getElementById('checklist-item-' + itemId);
+    if (itemEl) itemEl.classList.add('btn-loading');
+
     var newText = spanEl.textContent.trim();
     if (!newText) {
         // Revert to original from cache
@@ -3424,6 +3439,7 @@ function renameChecklist(itemId, spanEl) {
         } else {
             spanEl.textContent = 'Untitled';
         }
+        if (itemEl) itemEl.classList.remove('btn-loading');
         return;
     }
     
@@ -3464,6 +3480,9 @@ function renameChecklist(itemId, spanEl) {
     })
     .catch(function(err) {
         showToast('Failed to rename: ' + err.message, 'error');
+    })
+    .finally(function() {
+        if (itemEl) itemEl.classList.remove('btn-loading');
     });
 }
 
@@ -3510,10 +3529,13 @@ function loadChecklistItems(taskId) {
 function submitChecklist() {
     var taskId = document.getElementById('detailTaskId').value;
     var input  = document.getElementById('checklistInput');
+    var submitBtn = document.getElementById('checklistSubmitBtn');
+    var originalBtnText = submitBtn.innerHTML;
     var text   = (input.value || '').trim();
     if (!text || !taskId) return;
 
     input.disabled = true;
+    setButtonLoading(submitBtn, true, 'Adding...');
 
     fetch('/task/personal/tasks/' + taskId + '/checklist/add/', {
         method: 'POST',
@@ -3576,6 +3598,7 @@ function submitChecklist() {
     })
     .finally(function() {
         input.disabled = false;
+        setButtonLoading(submitBtn, false, originalBtnText);
         input.focus();
     });
 }
@@ -3584,6 +3607,9 @@ function submitChecklist() {
 
 function toggleChecklist(itemId, checkbox) {
     console.log('toggleChecklist called, itemId:', itemId);
+    var itemEl = document.getElementById('checklist-item-' + itemId);
+    if (itemEl) itemEl.classList.add('btn-loading');
+
     fetch('/task/personal/checklist/' + itemId + '/toggle/', {
         method: 'POST',
         headers: {
@@ -3641,23 +3667,27 @@ function toggleChecklist(itemId, checkbox) {
         // Revert checkbox on failure
         if (checkbox) checkbox.checked = !checkbox.checked;
         showToast('Toggle failed', 'error');
+    })
+    .finally(function() {
+        if (itemEl) itemEl.classList.remove('btn-loading');
     });
 }
 
 // ── Save Task (AJAX) ─────────────────────────────────────────────────────────
 
 function saveTask() {
-    var taskId  = document.getElementById('detailTaskId').value;
-    var saveBtn = document.getElementById('saveBtn');
+    var taskId = document.getElementById('detailTaskId').value;
     if (!taskId) return;
 
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving…';
+    var saveBtn = document.getElementById('saveBtn');
+    var originalBtnText = saveBtn.innerHTML;
+    setButtonLoading(saveBtn, true, originalBtnText);
 
     var formData = new FormData();
     formData.append('title',       document.getElementById('detailTitle').value);
     formData.append('description', document.getElementById('detailDescription').value);
-    formData.append('priority',    document.getElementById('detailPriority').value);
+    var priorityRadio = document.querySelector('#updateTaskForm input[name="priority"]:checked');
+    formData.append('priority', priorityRadio ? priorityRadio.value : 'medium');
     formData.append('deadline',    document.getElementById('detailDeadline').value);
     formData.append('deadline_time', document.getElementById('detailDeadlineTime').value);
     formData.append('date_start',  document.getElementById('detailDateStart').value);
@@ -3670,70 +3700,83 @@ function saveTask() {
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData
     })
-    .then(function(r) {
-        if (!r.ok) throw new Error('Server error ' + r.status);
-        return r.json();
-    })
-    .then(function(data) {
-        if (data.success) {
-            showToast('Task saved successfully', 'success');
-            // Update the task card in the kanban view
-            var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
-             if (taskEl) {
-                 // Rebuild task card using updated data
-                 var updatedTask = {
-                     id: taskId,
-                     title: data.title || '',
-                     description: data.description || '',
-                     priority: data.priority || 'medium',
-                     deadline: data.deadline || '',
-                     deadline_time: data.deadline_time || '',
-                     date_start: data.date_start || '',
-                     date_end: data.date_end || '',
-                     notes: data.notes || '',
-                     is_recurring: data.is_recurring || false,
-                     recurring_type: data.recurring_type || '',
-                     checklist_items: data.checklist_items || [],
-                     is_completed: data.is_completed || false
-                 };
-                 var newHtml = buildTaskCardHtml(updatedTask);
-                 var tempDiv = document.createElement('div');
-                 tempDiv.innerHTML = newHtml;
-                 var newTaskEl = tempDiv.firstElementChild;
-                 taskEl.replaceWith(newTaskEl);
-                 // Update global checklist store
-                 taskChecklists[taskId] = updatedTask.checklist_items;
-                 // Refresh Sortable on the column
-                 var columnEl = newTaskEl.parentElement;
-                 var sortable = Sortable.get(columnEl);
-                 if (sortable) sortable.refresh();
-             }
-             
-             // Close modal after successful save
-             closeTaskDetailModal();
-             
-             // Refresh timeline if currently viewing it
-             if (isTimelineView && window.personalCalendar) {
-                 renderTimeline();
-             }
-         } else {
-             showToast(data.error || 'Save failed', 'error');
-         }
-     })
-     .catch(function(err) {
-         showToast('Failed to save: ' + err.message, 'error');
-     })
-     .finally(function() {
-         saveBtn.disabled = false;
-         saveBtn.textContent = 'Save Changes';
-     });
- }
+      .then(function(r) {
+          if (!r.ok) throw new Error('Server error ' + r.status);
+          return r.json();
+      })
+      .then(function(data) {
+          if (data.success) {
+              showToast('Task saved successfully', 'success');
+              // Update the task card in the kanban view
+              var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+               if (taskEl) {
+                  // Rebuild task card using updated data
+                  var updatedTask = {
+                      id: taskId,
+                      title: data.title || '',
+                      description: data.description || '',
+                      priority: data.priority || 'medium',
+                      deadline: data.deadline || '',
+                      deadline_time: data.deadline_time || '',
+                      date_start: data.date_start || '',
+                      date_end: data.date_end || '',
+                      notes: data.notes || '',
+                      is_recurring: data.is_recurring || false,
+                      recurring_type: data.recurring_type || '',
+                      checklist_items: data.checklist_items || [],
+                      is_completed: data.is_completed || false
+                  };
+                  var newHtml = buildTaskCardHtml(updatedTask);
+                  var tempDiv = document.createElement('div');
+                  tempDiv.innerHTML = newHtml;
+                  var newTaskEl = tempDiv.firstElementChild;
+                  taskEl.replaceWith(newTaskEl);
+                  // Update global checklist store
+                  taskChecklists[taskId] = updatedTask.checklist_items;
+                   // Safely refresh Sortable to sync DOM changes
+                   var columnEl = newTaskEl.parentElement;
+                   if (window.Sortable && columnEl) {
+                       try {
+                           var sortable = Sortable.get(columnEl);
+                           if (sortable && typeof sortable.refresh === 'function') {
+                               sortable.refresh();
+                           }
+                       } catch (e) {
+                           console.warn('Sortable refresh failed:', e);
+                       }
+                   }
+              }
+              
+              // Close modal after successful save
+              closeTaskDetailModal();
+              
+              // Refresh timeline if currently viewing it
+              if (isTimelineView && window.personalCalendar) {
+                  renderTimeline();
+              }
+          } else {
+              showToast(data.error || 'Save failed', 'error');
+          }
+      })
+      .catch(function(err) {
+          showToast('Failed to save: ' + err.message, 'error');
+      })
+      .finally(function() {
+          setButtonLoading(saveBtn, false, originalBtnText);
+      });
+  }
 
 // ── Other task actions ───────────────────────────────────────────────────────
 
 function toggleTask(taskId) {
     var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
     var checkboxBtn = taskEl ? taskEl.querySelector('button[onclick*="toggleTask"]') : null;
+
+    // Show loading state
+    if (checkboxBtn) {
+        checkboxBtn.disabled = true;
+        checkboxBtn.classList.add('btn-loading');
+    }
 
     fetch('/task/personal/tasks/' + taskId + '/toggle/', {
         method: 'POST',
@@ -3750,23 +3793,18 @@ function toggleTask(taskId) {
             var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
             if (!taskEl) return;
 
-            // Check both success and is_completed, or just use is_completed if success is undefined
             var isCompleted = data.completed;
 
-            // Toggle completed class
             if (isCompleted) {
                 taskEl.classList.add('completed');
-                // Remove priority class when completed (it shows green border)
                 taskEl.classList.remove('priority-low', 'priority-medium', 'priority-high', 'priority-urgent');
             } else {
                 taskEl.classList.remove('completed');
-                // Re-add priority class based on data-priority attribute
                 var priority = taskEl.dataset.priority || 'medium';
                 taskEl.classList.remove('priority-low', 'priority-medium', 'priority-high', 'priority-urgent');
                 taskEl.classList.add('priority-' + priority);
             }
 
-            // Update checkbox button
             var checkboxBtn = taskEl.querySelector('button[onclick*="toggleTask"]');
             if (checkboxBtn) {
                 checkboxBtn.innerHTML = isCompleted ? '<i class="fas fa-check text-xs text-white"></i>' : '';
@@ -3795,9 +3833,15 @@ function toggleTask(taskId) {
             showToast('Failed to update task: ' + (data.message || 'Unknown error'), 'error');
         }
     })
-    .catch(function(err) {
+    .catch(err => {
         console.error('Toggle error:', err);
-        showToast('Failed to update task: ' + err.message, 'error');
+        showToast('Failed to update task status', 'error');
+    })
+    .finally(function() {
+        if (checkboxBtn) {
+            checkboxBtn.disabled = false;
+            checkboxBtn.classList.remove('btn-loading');
+        }
     });
 }
 
@@ -3811,13 +3855,19 @@ function cyclePriority(taskId) {
     const currentIndex = priorityOrder.indexOf(current);
     const nextPriority = priorityOrder[(currentIndex + 1) % priorityOrder.length];
 
-    // Update UI
+    // Find the priority button to show loading
+    var priorityBtn = taskEl.querySelector('.task-action-btn[title="Change priority"]');
+    if (priorityBtn) {
+        priorityBtn.disabled = true;
+        priorityBtn.classList.add('btn-loading');
+    }
+
+    // Update UI immediately for responsiveness
     taskEl.dataset.priority = nextPriority;
     const badge = taskEl.querySelector('.priority-badge');
     if (badge) {
         badge.className = 'priority-badge priority-' + nextPriority;
         badge.innerHTML = '<span class="indicator"></span>' + nextPriority.charAt(0).toUpperCase() + nextPriority.slice(1);
-        // Add pulse animation
         badge.classList.add('updated');
         setTimeout(() => badge.classList.remove('updated'), 300);
     }
@@ -3843,8 +3893,16 @@ function cyclePriority(taskId) {
         showToast('Failed: ' + err.message, 'error');
         // Revert on error
         taskEl.dataset.priority = current;
-        badge.className = 'priority-badge priority-' + current;
-        badge.innerHTML = '<span class="indicator"></span>' + current.charAt(0).toUpperCase() + current.slice(1);
+        if (badge) {
+            badge.className = 'priority-badge priority-' + current;
+            badge.innerHTML = '<span class="indicator"></span>' + current.charAt(0).toUpperCase() + current.slice(1);
+        }
+    })
+    .finally(function() {
+        if (priorityBtn) {
+            priorityBtn.disabled = false;
+            priorityBtn.classList.remove('btn-loading');
+        }
     });
 }
 
@@ -3866,7 +3924,14 @@ function closeConfirmModal() {
 }
 
 // ── Delete Task Modal ────────────────────────────────────────────────────────
-function openDeleteTaskModal(taskId) {
+var pendingDeleteTriggerBtn = null; // Track which button triggered delete
+
+function openDeleteTaskModal(taskId, triggerBtn) {
+    pendingDeleteTriggerBtn = triggerBtn || null;
+    if (pendingDeleteTriggerBtn) {
+        pendingDeleteTriggerBtn.disabled = true;
+        pendingDeleteTriggerBtn.classList.add('btn-loading');
+    }
     document.getElementById('deleteTaskId').value = taskId;
     document.getElementById('deleteTaskModal').classList.add('show');
 }
@@ -3877,7 +3942,16 @@ function closeDeleteTaskModal() {
 
 function confirmDeleteTask() {
     const taskId = document.getElementById('deleteTaskId').value;
+    const deleteBtn = document.getElementById('confirmDeleteTaskBtn');
+    var originalBtnText = deleteBtn ? deleteBtn.innerHTML : '';
+
     closeDeleteTaskModal();
+
+    // Show loading state
+    if (deleteBtn) {
+        setButtonLoading(deleteBtn, true, 'Deleting...');
+    }
+
     fetch('/task/personal/tasks/' + taskId + '/delete/', {
         method: 'POST',
         headers: {
@@ -3891,17 +3965,25 @@ function confirmDeleteTask() {
     })
     .then(data => {
         showToast('Task deleted successfully', 'success');
-        // Animate removal
         const taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
         if (taskEl) {
             taskEl.classList.add('removing');
             setTimeout(() => taskEl.remove(), 300);
         }
-        // Update column count
         updateColumnCounts();
     })
     .catch(err => {
         showToast('Failed to delete: ' + err.message, 'error');
+    })
+    .finally(function() {
+        if (deleteBtn) {
+            setButtonLoading(deleteBtn, false, originalBtnText);
+        }
+        if (pendingDeleteTriggerBtn) {
+            pendingDeleteTriggerBtn.disabled = false;
+            pendingDeleteTriggerBtn.classList.remove('btn-loading');
+            pendingDeleteTriggerBtn = null;
+        }
     });
 }
 
@@ -4100,6 +4182,10 @@ function restoreTask(taskId) {
         'Restore Task',
         'Are you sure you want to restore this task? It will be moved back to its original column.',
         function() {
+            var confirmBtn = document.getElementById('confirmModalYes');
+            var originalBtnText = confirmBtn.innerHTML;
+            setButtonLoading(confirmBtn, true, 'Restoring...');
+
             fetch('/task/personal/tasks/' + taskId + '/restore/', {
                 method: 'POST',
                 headers: {
@@ -4137,110 +4223,10 @@ function restoreTask(taskId) {
             })
             .catch(err => {
                 showToast('Failed: ' + err.message, 'error');
-            });
-        }
-    );
-}
-
-function openDeleteArchivedModal(taskId) {
-    pendingDeleteArchivedId = taskId;
-    document.getElementById('deleteArchivedModal').classList.add('show');
-}
-
-function closeDeleteArchivedModal() {
-    document.getElementById('deleteArchivedModal').classList.remove('show');
-    pendingDeleteArchivedId = null;
-}
-
-// Confirm delete button
-document.getElementById('confirmDeleteArchivedBtn').addEventListener('click', function() {
-    if (!pendingDeleteArchivedId) return;
-    fetch('/task/personal/tasks/' + pendingDeleteArchivedId + '/delete/', {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            showToast('Task deleted permanently', 'success');
-            var taskEl = document.querySelector('#archivedTasksList [data-task-id="' + pendingDeleteArchivedId + '"]');
-            if (taskEl) taskEl.remove();
-            updateArchivedCount(-1);
-            if (document.querySelectorAll('#archivedTasksList [data-task-id]').length === 0) {
-                document.getElementById('archivedTasksList').innerHTML = '<div class="text-center py-8 text-gray-600 dark:text-gray-400"><p class="text-sm">No archived tasks</p></div>';
-            }
-            closeDeleteArchivedModal();
-        } else {
-            showToast('Delete failed', 'error');
-        }
-    })
-    .catch(err => {
-        showToast('Failed: ' + err.message, 'error');
-    });
-});
-
-function archiveTask(taskId) {
-    var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
-    if (!taskEl) return;
-    var taskData = {
-        id: parseInt(taskId),
-        title: taskEl.dataset.title || '',
-        description: taskEl.dataset.description || '',
-        priority: taskEl.dataset.priority || 'medium',
-        deadline: taskEl.dataset.deadline || '',
-        deadline_time: taskEl.dataset.deadline_time || '',
-        is_completed: taskEl.classList.contains('completed')
-    };
-
-    showConfirmModal(
-        'Archive Task',
-        'Are you sure you want to archive this task? It will be moved to your archived tasks.',
-        function() {
-            fetch('/task/personal/tasks/' + taskId + '/archive/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
             })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success || data.archived) {
-                    showToast('Task archived', 'success');
-                    // Animate removal
-                    taskEl.classList.add('removing');
-                    setTimeout(() => taskEl.remove(), 300);
-                    var columnEl = taskEl.closest('.personal-column');
-                    if (columnEl) {
-                        var columnId = columnEl.getAttribute('data-column-id');
-                        var countEl = document.getElementById('count-col-' + columnId);
-                        if (countEl) {
-                            var count = parseInt(countEl.textContent) || 0;
-                            countEl.textContent = count - 1;
-                            if (count - 1 === 0) {
-                                var noTasksMsg = columnEl.querySelector('.text-center.py-8');
-                                if (!noTasksMsg) {
-                                    noTasksMsg = document.createElement('div');
-                                    noTasksMsg.className = 'text-center py-8 text-gray-600 dark:text-gray-400';
-                                    noTasksMsg.innerHTML = '<p class="text-sm">No tasks</p>';
-                                    columnEl.appendChild(noTasksMsg);
-                                } else {
-                                    noTasksMsg.style.display = 'block';
-                                }
-                            }
-                        }
-                    }
-                    updateArchivedCount(1);
-                    prependArchivedTask(taskData);
-                } else {
-                    showToast('Archive failed', 'error');
-                }
-            })
-            .catch(err => {
-                showToast('Failed: ' + err.message, 'error');
+            .finally(function() {
+                setButtonLoading(confirmBtn, false, originalBtnText);
+                closeConfirmModal();
             });
         }
     );
@@ -4264,6 +4250,10 @@ function archiveDetailTask() {
         'Archive Task',
         'Are you sure you want to archive this task? It will be moved to your archived tasks.',
         function() {
+            var confirmBtn = document.getElementById('confirmModalYes');
+            var originalBtnText = confirmBtn.innerHTML;
+            setButtonLoading(confirmBtn, true, 'Archiving...');
+
             fetch('/task/personal/tasks/' + taskId + '/archive/', {
                 method: 'POST',
                 headers: {
@@ -4305,6 +4295,10 @@ function archiveDetailTask() {
             })
             .catch(err => {
                 showToast('Failed: ' + err.message, 'error');
+            })
+            .finally(function() {
+                setButtonLoading(confirmBtn, false, originalBtnText);
+                closeConfirmModal();
             });
         }
     );
@@ -4417,6 +4411,10 @@ function closeDeleteArchivedModal() {
 }
 
 function deleteArchivedTask(taskId) {
+    var confirmBtn = document.getElementById('confirmDeleteArchivedBtn');
+    var originalBtnText = confirmBtn.innerHTML;
+    setButtonLoading(confirmBtn, true, 'Deleting...');
+
     fetch('/task/personal/tasks/' + taskId + '/delete/', {
         method: 'POST',
         headers: {
@@ -4441,13 +4439,20 @@ function deleteArchivedTask(taskId) {
     })
     .catch(err => {
         showToast('Failed: ' + err.message, 'error');
+    })
+    .finally(function() {
+        setButtonLoading(confirmBtn, false, originalBtnText);
     });
 }
 
 // Delete confirmation button
 document.getElementById('confirmDeleteChecklistBtn').addEventListener('click', function() {
     if (!pendingDeleteChecklistId) return;
-    
+
+    var confirmBtn = this;
+    var originalBtnText = confirmBtn.innerHTML;
+    setButtonLoading(confirmBtn, true, 'Deleting...');
+
     fetch('/task/personal/checklist/' + pendingDeleteChecklistId + '/delete/', {
         method: 'POST',
         headers: {
@@ -4460,43 +4465,46 @@ document.getElementById('confirmDeleteChecklistBtn').addEventListener('click', f
         if (data.success) {
             var itemEl = document.getElementById('checklist-item-' + pendingDeleteChecklistId);
             if (itemEl) itemEl.remove();
-            
+
             var taskId = document.getElementById('detailTaskId').value;
             if (taskChecklists[taskId]) {
                 taskChecklists[taskId] = taskChecklists[taskId].filter(function(i) {
                     return i.id !== pendingDeleteChecklistId;
                 });
             }
-            
+
              var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
              if (taskEl) {
                  var checklist = JSON.parse(taskEl.dataset.checklist || '[]');
                  checklist = checklist.filter(function(i) { return i.id !== pendingDeleteChecklistId; });
                  taskEl.dataset.checklist = JSON.stringify(checklist);
              }
-             
-             // Sync with ChecklistManager if active
-             if (window.checklistManager && checklistManager.currentTaskId == taskId) {
-                 checklistManager.items = { list: taskChecklists[taskId] };
-                 checklistManager.render();
-                 checklistManager.updateProgress();
+
+              // Sync with ChecklistManager if active
+              if (window.checklistManager && checklistManager.currentTaskId == taskId) {
+                  checklistManager.items = { list: taskChecklists[taskId] };
+                  checklistManager.render();
+                  checklistManager.updateProgress();
+              }
+
+              var container = document.getElementById('checklistItems');
+             if (container && container.querySelectorAll('.flex.items-center').length === 0) {
+                 container.innerHTML = '<p class="text-gray-500 text-sm py-2">No checklist items yet.</p>';
              }
-             
-             var container = document.getElementById('checklistItems');
-            if (container && container.querySelectorAll('.flex.items-center').length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-sm py-2">No checklist items yet.</p>';
-            }
-            
-            closeDeleteChecklistModal();
-            showToast('Item deleted', 'success');
-        } else {
-            showToast('Delete failed', 'error');
-        }
-    })
-    .catch(function(err) {
-        showToast('Failed to delete: ' + err.message, 'error');
-    });
-});
+
+             closeDeleteChecklistModal();
+             showToast('Item deleted', 'success');
+         } else {
+             showToast('Delete failed', 'error');
+         }
+     })
+     .catch(function(err) {
+         showToast('Failed to delete: ' + err.message, 'error');
+     })
+      .finally(function() {
+          setButtonLoading(confirmBtn, false, originalBtnText);
+      });
+ });
 
 // Confirm delete archived task
 document.getElementById('confirmDeleteArchivedBtn').addEventListener('click', function() {
@@ -4574,7 +4582,11 @@ document.getElementById('editColumnForm').addEventListener('submit', function(e)
     var columnId = document.getElementById('editColumnId').value;
     var name = document.getElementById('editColumnName').value;
     var color = document.getElementById('editColumnColor').value;
-    
+    var submitBtn = document.getElementById('editColumnSubmitBtn');
+    var originalBtnText = submitBtn.innerHTML;
+
+    setButtonLoading(submitBtn, true, 'Saving...');
+
     fetch('/task/personal/columns/' + columnId + '/edit/', {
         method: 'POST',
         headers: {
@@ -4610,6 +4622,9 @@ document.getElementById('editColumnForm').addEventListener('submit', function(e)
     .catch(function(err) {
         console.error('Edit error:', err);
         showToast('Update failed: ' + err.message, 'error');
+    })
+    .finally(function() {
+        setButtonLoading(submitBtn, false, originalBtnText);
     });
 });
 
@@ -4938,24 +4953,18 @@ handleAddTaskFormSubmit = function(form) {
         showToast('Please fill in all required fields', 'error');
         return false;
     }
-    
-    const submitBtn = document.getElementById('addTaskSubmitBtn');
-    setButtonLoading(submitBtn, true, 'Creating Task...');
-    
+
     return originalHandleAddTaskFormSubmit(form);
 };
 
-// Override saveTask to include validation and loading
+// Override saveTask to include validation
 window.originalSaveTask = window.originalSaveTask || saveTask;
 saveTask = function() {
     if (!validateForm('updateTaskForm')) {
         showToast('Please fill in all required fields', 'error');
         return;
     }
-    
-    const saveBtn = document.getElementById('saveBtn');
-    setButtonLoading(saveBtn, true, 'Saving...');
-    
+
     if (typeof window.originalSaveTask === 'function') {
         window.originalSaveTask();
     }
