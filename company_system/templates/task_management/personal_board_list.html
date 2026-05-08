@@ -166,30 +166,38 @@
          z-index: 10;
      }
 
-      /* Drag handle styles */
-      .drag-handle {
-          cursor: grab;
-          transition: all 0.2s ease;
-          width: 24px;
-          height: 24px;
-          padding: 0;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          color: #9ca3af;
-      }
-      .drag-handle:hover {
-          color: #3b82f6;
-          transform: scale(1.15);
-      }
-      .drag-handle:active {
-          cursor: grabbing;
-      }
-      .drag-handle svg {
-          width: 14px;
-          height: 14px;
-          pointer-events: none;
-      }
+       /* Drag handle styles */
+       .drag-handle {
+           cursor: grab;
+           transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease, box-shadow 0.2s ease;
+           width: 24px;
+           height: 24px;
+           padding: 0;
+           display: inline-flex;
+           align-items: center;
+           justify-content: center;
+           color: #9ca3af;
+           border-radius: 6px;
+       }
+       .drag-handle:hover {
+           color: #3b82f6;
+           transform: scale(1.15);
+           box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+       }
+       .drag-handle.magnetic-active {
+           transform: scale(1.25);
+           color: #3b82f6;
+           box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
+       }
+       .drag-handle:active {
+           cursor: grabbing;
+           transform: scale(1.1);
+       }
+       .drag-handle svg {
+           width: 14px;
+           height: 14px;
+           pointer-events: none;
+       }
      .sortable-ghost {
          opacity: 0.4;
          border: 2px dashed #3b82f6;
@@ -245,16 +253,100 @@
       .animate-bounce-slow {
           animation: bounce-slow 2s ease-in-out infinite;
       }
-      .animate-bounce-medium {
-          animation: bounce-medium 2.5s ease-in-out infinite;
-          animation-delay: 0.5s;
-      }
-  </style>
+       .animate-bounce-medium {
+           animation: bounce-medium 2.5s ease-in-out infinite;
+           animation-delay: 0.5s;
+       }
+
+       /* ========== MICRO-INTERACTIONS ========== */
+
+       /* Ripple Effect */
+       .ripple {
+           position: relative;
+          /* overflow: hidden; */
+       }
+       .ripple::after {
+           content: '';
+           position: absolute;
+           top: 50%;
+           left: 50%;
+           width: 0;
+           height: 0;
+           background: rgba(255, 255, 255, 0.3);
+           border-radius: 50%;
+           transform: translate(-50%, -50%);
+           opacity: 0;
+       }
+       .ripple.animate::after {
+           animation: ripple-effect 0.6s ease-out;
+       }
+       @keyframes ripple-effect {
+           0% { width: 0; height: 0; opacity: 0.5; }
+           100% { width: 400px; height: 400px; opacity: 0; }
+       }
+
+       /* Magnetic Drag Handle */
+       .drag-handle {
+           transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease, box-shadow 0.2s ease;
+           border-radius: 6px;
+       }
+       .drag-handle:hover {
+           box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+       }
+       .drag-handle.magnetic-active {
+           transform: scale(1.25);
+           color: #3b82f6;
+           box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
+       }
+
+       /* Card Flip Animation */
+       .flip-card {
+           /*perspective: 1000px;*/
+       }
+       .flip-animate {
+           animation: cardFlip 0.5s ease-in-out;
+           transform-style: preserve-3d;
+       }
+       @keyframes cardFlip {
+           0% { transform: rotateY(0deg); }
+           50% { transform: rotateY(90deg); }
+           100% { transform: rotateY(0deg); }
+       }
+
+       /* Task Preview Tooltip */
+       .task-preview-tooltip {
+           opacity: 0;
+           transform: translateY(8px);
+           transition: opacity 0.2s ease, transform 0.2s ease;
+           pointer-events: none;
+       }
+       .task-preview-tooltip.show {
+           opacity: 1;
+           transform: translateY(0);
+           pointer-events: auto;
+       }
+       .mini-kanban-column {
+           min-height: 60px;
+           max-height: 200px;
+           overflow-y: auto;
+       }
+       .mini-task-item {
+           transition: all 0.15s ease;
+       }
+       .mini-task-item:hover {
+           transform: translateX(4px);
+       }
+       .mini-task-item.completed {
+           opacity: 0.6;
+           text-decoration: line-through;
+       }
+   </style>
  {% endblock %}
 
 {% block main_content %}
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
-     x-data="personalBoardsData()">
+ <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
+      x-data="personalBoardsData()"
+      data-archive-url-pattern="{% url 'task_management:personal_board_archive' 0 %}">
 
     <div class="max-w-6xl mx-auto p-4 md:p-6 lg:p-8">
 
@@ -355,7 +447,7 @@
 
           {% for board in personal_boards %}
               {# FIX: Wrap card in a relative div so action buttons sit above the link layer #}
-               <div class="relative" data-board-id="{{ board.id }}" x-show="expanded || {{ forloop.counter0 }} < 3">
+               <div class="relative flip-card" data-board-id="{{ board.id }}" data-preview-url="{% url 'task_management:personal_tasks_preview_api' board.id %}" x-show="expanded || {{ forloop.counter0 }} < 3">
                   <a href="{% url 'task_management:personal_board_detail' board.id %}"
                      class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer"
                      aria-label="Open {{ board.name|escape }} personal board">
@@ -814,55 +906,65 @@
              expanded: false,
              mobileStatsOpen: {},
 
-            init() {
-                const handler = () => { this.scrolled = window.scrollY > 300; };
-                window.addEventListener('scroll', handler, { passive: true });
-                this.$cleanup = () => window.removeEventListener('scroll', handler);
+        init() {
+            const handler = () => { this.scrolled = window.scrollY > 300; };
+            window.addEventListener('scroll', handler, { passive: true });
+            this.$cleanup = () => window.removeEventListener('scroll', handler);
 
-                // Initialize Sortable for drag-and-drop reordering
-                const grid = document.querySelector('.grid');
-                if (grid && typeof Sortable !== 'undefined') {
-                    new Sortable(grid, {
-                        handle: '.drag-handle',
-                        animation: 150,
-                        ghostClass: 'sortable-ghost',
-                        dragClass: 'sortable-drag',
-                        easing: 'cubic-bezier(1, 0, 0, 1)',
-                        onEnd: (evt) => {
-                            this.updateBoardOrder();
-                        }
-                    });
-                }
-
-                // Event delegation for archived drawer buttons
-                const archivedContainer = document.getElementById('archived-boards-container');
-                if (archivedContainer) {
-                    archivedContainer.addEventListener('click', (e) => {
-                        const restoreBtn = e.target.closest('.restore-btn');
-                        if (restoreBtn) {
-                            const card = restoreBtn.closest('[data-board-id]');
-                            const boardId = card.dataset.boardId;
-                            this.restoreBoard(boardId);
-                        }
-                        const deleteBtn = e.target.closest('.delete-btn');
-                        if (deleteBtn) {
-                            const card = deleteBtn.closest('[data-board-id]');
-                            const boardId = card.dataset.boardId;
-                            const boardName = card.dataset.boardName;
-                            this.deleteBoard(boardId, boardName);
-                        }
-                    });
-                }
-
-                // Keyboard shortcuts: N or Ctrl+B to focus create board input
-                document.addEventListener('keydown', (e) => {
-                    // Ignore if user is typing in an input/textarea
-                    const tag = e.target.tagName.toLowerCase();
-                    if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) {
-                        return;
+            // Initialize Sortable for drag-and-drop reordering
+            const grid = document.querySelector('.grid');
+            if (grid && typeof Sortable !== 'undefined') {
+                new Sortable(grid, {
+                    handle: '.drag-handle',
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    dragClass: 'sortable-drag',
+                    easing: 'cubic-bezier(1, 0, 0, 1)',
+                    onEnd: (evt) => {
+                        this.updateBoardOrder();
                     }
-                    // N key alone
-                    if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey) {
+                });
+            }
+
+            // Event delegation for archived drawer buttons
+            const archivedContainer = document.getElementById('archived-boards-container');
+            if (archivedContainer) {
+                archivedContainer.addEventListener('click', (e) => {
+                    const restoreBtn = e.target.closest('.restore-btn');
+                    if (restoreBtn) {
+                        const card = restoreBtn.closest('[data-board-id]');
+                        const boardId = card.dataset.boardId;
+                        this.restoreBoard(boardId);
+                    }
+                    const deleteBtn = e.target.closest('.delete-btn');
+                    if (deleteBtn) {
+                        const card = deleteBtn.closest('[data-board-id]');
+                        const boardId = card.dataset.boardId;
+                        const boardName = card.dataset.boardName;
+                        this.deleteBoard(boardId, boardName);
+                    }
+                });
+            }
+
+            // Keyboard shortcuts: N or Ctrl+B to focus create board input
+            document.addEventListener('keydown', (e) => {
+                // Ignore if user is typing in an input/textarea
+                const tag = e.target.tagName.toLowerCase();
+                if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) {
+                    return;
+                }
+                // N key alone
+                if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    const form = document.querySelector('form[action="{% url 'task_management:personal_board_create' %}"]');
+                    if (form) {
+                        const input = form.querySelector('input[name="name"]');
+                        if (input) input.focus();
+                    }
+                }
+                // Ctrl+B or Cmd+B
+                if (e.ctrlKey || e.metaKey) {
+                    if (e.key === 'b' || e.key === 'B') {
                         e.preventDefault();
                         const form = document.querySelector('form[action="{% url 'task_management:personal_board_create' %}"]');
                         if (form) {
@@ -870,21 +972,153 @@
                             if (input) input.focus();
                         }
                     }
-                    // Ctrl+B or Cmd+B
-                    if (e.ctrlKey || e.metaKey) {
-                        if (e.key === 'b' || e.key === 'B') {
-                            e.preventDefault();
-                            const form = document.querySelector('form[action="{% url 'task_management:personal_board_create' %}"]');
-                            if (form) {
-                                const input = form.querySelector('input[name="name"]');
-                                if (input) input.focus();
+                }
+            });
+
+            // Initialize micro-interactions
+            this.initRippleEffect();
+            this.initMagneticDragHandle();
+            this.initCardFlip();
+            this.initTaskPreview();
+
+            // Store reference globally
+            window.PersonalBoardsData = this;
+        },
+
+            // ========== MICRO-INTERACTIONS ==========
+            initRippleEffect() {
+                const selectors = ['button', '.create-btn', '.stat-badge', '.quick-link', '.card-actions button', '[onclick*="openEditModal"]', '[onclick*="confirmArchive"]'];
+                const elements = new Set();
+                selectors.forEach(sel => { document.querySelectorAll(sel).forEach(el => elements.add(el)); });
+                elements.forEach(el => {
+                    if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+                    el.classList.add('ripple');
+                    el.addEventListener('click', function(e) {
+                        if (this.classList.contains('animate')) return;
+                        if (this.disabled) return;
+                        const rect = this.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        const ripple = document.createElement('span');
+                        ripple.style.cssText = `position: absolute; left: ${x}px; top: ${y}px; width: 0; height: 0; background: rgba(255,255,255,0.4); border-radius: 50%; transform: translate(-50%,-50%); pointer-events: none; z-index: 0;`;
+                        this.classList.add('animate');
+                        this.appendChild(ripple);
+                        ripple.animate([{ width: '0px', height: '0px', opacity: 0.6 }, { width: '400px', height: '400px', opacity: 0 }], { duration: 600, easing: 'ease-out' });
+                        setTimeout(() => { ripple.remove(); this.classList.remove('animate'); }, 600);
+                    });
+                });
+            },
+
+            initMagneticDragHandle() {
+                const handles = document.querySelectorAll('.drag-handle');
+                handles.forEach(handle => {
+                    handle.addEventListener('mousemove', (e) => {
+                        const rect = handle.getBoundingClientRect();
+                        const centerX = rect.left + rect.width/2;
+                        const centerY = rect.top + rect.height/2;
+                        const deltaX = (e.clientX - centerX) * 0.25;
+                        const deltaY = (e.clientY - centerY) * 0.25;
+                        handle.classList.add('magnetic-active');
+                        handle.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.25)`;
+                    });
+                    handle.addEventListener('mouseleave', () => {
+                        handle.classList.remove('magnetic-active');
+                        handle.style.transform = '';
+                    });
+                });
+            },
+
+            initCardFlip() {
+                const originalOpen = window.openEditModal;
+                window.openEditModal = function(boardId, name, description) {
+                    const card = document.querySelector(`[data-board-id="${boardId}"]`);
+                    if (card) {
+                        card.classList.add('flip-animate');
+                        setTimeout(() => {
+                            originalOpen(boardId, name, description);
+                            setTimeout(() => card.classList.remove('flip-animate'), 500);
+                        }, 250);
+                    } else {
+                        originalOpen(boardId, name, description);
+                    }
+                };
+            },
+
+            initTaskPreview() {
+                const cards = document.querySelectorAll('[data-board-id]');
+                cards.forEach(card => {
+                    const boardId = card.dataset.boardId;
+                    const trigger = card.querySelector('.board-card');
+                    if (!trigger) return;
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'task-preview-tooltip absolute ml-2 top-4 z-30 w-72 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden';
+                    tooltip.innerHTML = `
+                        <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Tasks</h4>
+                                <span class="text-xs text-gray-500 dark:text-gray-400">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="mini-kanban-column p-2 space-y-1"><div class="text-center text-gray-400 text-xs py-4">Loading tasks...</div></div>
+                    `;
+                    card.appendChild(tooltip);
+                    let fetched = false;
+                    const show = () => tooltip.classList.add('show');
+                    const hide = () => tooltip.classList.remove('show');
+
+                    trigger.addEventListener('mouseenter', async () => {
+                        if (fetched && tooltip.classList.contains('show')) return;
+                        if (!fetched) {
+                            try {
+                                const previewUrl = card.dataset.previewUrl;
+                                if (!previewUrl) { fetched = true; return; }
+                                const response = await fetch(previewUrl);
+                                const data = await response.json();
+                                if (data.tasks && data.tasks.length > 0) {
+                                    const colorMap = { 'urgent': '#dc2626', 'high': '#ef4444', 'medium': '#eab308', 'low': '#3b82f6' };
+                                    tooltip.innerHTML = `
+                                        <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                                            <div class="flex items-center justify-between">
+                                                <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Tasks</h4>
+                                                <span class="text-xs text-gray-500 dark:text-gray-400">${data.tasks.length} total</span>
+                                            </div>
+                                        </div>
+                                        <div class="mini-kanban-column p-2 space-y-1 max-h-48 overflow-y-auto">
+                                            ${data.tasks.map(task => {
+                                                const color = colorMap[task.priority] || '#6b7280';
+                                                const priorityLabel = task.priority.charAt(0).toUpperCase();
+                                                return `<div class="mini-task-item flex items-center gap-2 px-2 py-1.5 rounded text-sm ${task.is_completed ? 'completed' : 'text-gray-700 dark:text-gray-200'}" style="border-left: 3px solid ${color}">
+                                                    <input type="checkbox" ${task.is_completed ? 'checked' : ''} disabled class="w-3.5 h-3.5 accent-green-500">
+                                                    <span class="flex-1 truncate">${this.escapeHtml(task.title)}</span>
+                                                    <span class="flex-shrink-0 px-1.5 py-0.5 rounded text-xs font-medium text-white" style="background-color: ${color}">${priorityLabel}</span>
+                                                </div>`;
+                                            }).join('')}
+                                        </div>
+                                        <div class="p-2 border-t border-gray-100 dark:border-gray-700 text-center bg-gray-50 dark:bg-gray-900">
+                                            <a href="/task/personal/${boardId}/" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">Open Board →</a>
+                                        </div>
+                                    `;
+                                } else {
+                                    tooltip.innerHTML = `<div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">No tasks yet</div>`;
+                                }
+                                fetched = true;
+                            } catch (err) {
+                                console.error('Error fetching tasks preview:', err);
+                                tooltip.innerHTML = `<div class="p-4 text-center text-red-500 text-sm">Failed to load</div>`;
                             }
                         }
-                    }
-                });
+                        show();
+                    });
 
-                // Store reference globally
-                window.PersonalBoardsData = this;
+                    trigger.addEventListener('mouseleave', () => {
+                        setTimeout(() => { if (!tooltip.matches(':hover')) hide(); }, 100);
+                    });
+
+                    tooltip.addEventListener('mouseenter', show);
+                    tooltip.addEventListener('mouseleave', hide);
+                    trigger.addEventListener('focus', show);
+                    trigger.addEventListener('blur', hide);
+                });
             },
 
             boardColors: [
@@ -1068,11 +1302,20 @@
                 this.closeConfirmModal();
             },
 
-            // Helper: Get CSRF token
-            getCsrfToken() {
-                const token = document.querySelector('[name=csrfmiddlewaretoken]');
-                return token ? token.value : '';
-            },
+             // Helper: Get archive URL for a board
+             getArchiveUrl(boardId) {
+                 const pattern = document.querySelector('[x-data="personalBoardsData()"]')?.dataset.archiveUrlPattern;
+                 if (pattern) {
+                     return pattern.replace('0', boardId);
+                 }
+                 return `/task/personal/${boardId}/archive/`;
+             },
+
+             // Helper: Get CSRF token from cookie or DOM
+             getCsrfToken() {
+                 const token = document.querySelector('[name=csrfmiddlewaretoken]');
+                 return token ? token.value : '';
+             },
 
             // Restore board - uses custom modal
             restoreBoard(boardId) {
@@ -1159,89 +1402,95 @@
                 const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
                 const dashArray = totalTasks > 0 ? `${progressPercent}, 100` : '0, 100';
 
-                 card.innerHTML = `
-                     <a href="/task/personal/${boardId}/" class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer" aria-label="Open ${escapedName} personal board">
-                         <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style="background: linear-gradient(90deg, ${color} 0%, ${adjustedColor} 100%)"></div>
-                         <div class="pt-4">
-                             <div class="flex items-start mb-3">
-                                 {# Drag handle - top-left inside card #}
-                                 <button draggable="false"
-                                         class="drag-handle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 transition-all shadow-sm text-xs font-medium cursor-grab me-3 flex-shrink-0"
-                                         title="Drag to reorder"
-                                         aria-label="Drag to reorder ${escapedName}">
-                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                         <circle cx="12" cy="6" r="2"></circle>
-                                         <circle cx="12" cy="12" r="2"></circle>
-                                         <circle cx="12" cy="18" r="2"></circle>
-                                     </svg>
-                                 </button>
-                                 <div class="flex-1 min-w-0">
-                                     <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors cursor-pointer px-2 py-1 -mx-2 -my-1 rounded"
+                  card.innerHTML = `
+                      <a href="/task/personal/${boardId}/" class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer" aria-label="Open ${escapedName} personal board">
+                          <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style="background: linear-gradient(90deg, ${color} 0%, ${adjustedColor} 100%)"></div>
+                          <div class="pt-4">
+                              <div class="flex items-start mb-3">
+                                  {# Drag handle - top-left inside card #}
+                                  <button draggable="false"
+                                          class="drag-handle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 transition-all shadow-sm text-xs font-medium cursor-grab me-3 flex-shrink-0"
+                                          title="Drag to reorder"
+                                          aria-label="Drag to reorder ${escapedName}">
+                                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                          <circle cx="12" cy="6" r="2"></circle>
+                                          <circle cx="12" cy="12" r="2"></circle>
+                                          <circle cx="12" cy="18" r="2"></circle>
+                                      </svg>
+                                  </button>
+                                  <div class="flex-1 min-w-0">
+                                      <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors cursor-pointer px-2 py-1 -mx-2 -my-1 rounded"
+                                          data-board-id="${boardId}"
+                                          data-field="name"
+                                          contenteditable="false"
+                                          title="Click to edit">${escapedName}</h3>
+                                      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 px-2 py-1 -mx-2 -my-1 rounded"
                                          data-board-id="${boardId}"
-                                         data-field="name"
+                                         data-field="description"
                                          contenteditable="false"
-                                         title="Click to edit">${escapedName}</h3>
-                                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 px-2 py-1 -mx-2 -my-1 rounded"
-                                        data-board-id="${boardId}"
-                                        data-field="description"
-                                        contenteditable="false"
-                                        title="Click to edit">${escapedDesc}</p>
-                                 </div>
-                             </div>
-                             <div class="flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-                                 <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                                     <i class="fas fa-tasks text-sm"></i>
-                                     <span class="text-sm">${totalTasks}</span>
-                                 </div>
-                                 <div class="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                                     <i class="fas fa-check-circle text-sm"></i>
-                                     <span class="text-sm">${completedTasks}</span>
-                                 </div>
-                                 <div class="flex-1"></div>
-                                 <div class="flex items-center gap-2">
-                                     <div class="relative w-8 h-8">
-                                         <svg class="w-8 h-8" viewBox="0 0 36 36">
-                                             <circle cx="18" cy="18" r="16"
-                                                     fill="none"
-                                                     stroke="currentColor"
-                                                     stroke-width="3"
-                                                     class="text-gray-200 dark:text-gray-700"></circle>
-                                             <circle cx="18" cy="18" r="16"
-                                                     fill="none"
-                                                     stroke="currentColor"
-                                                     stroke-width="3"
-                                                     stroke-dasharray="${dashArray}"
-                                                     class="text-emerald-500 progress-ring-circle"></circle>
-                                         </svg>
-                                     </div>
-                                     <span class="text-xs font-medium text-gray-600 dark:text-gray-400">${progressPercent}%</span>
-                                 </div>
-                             </div>
-                         </div>
-                     </a>
-                     <div class="card-actions absolute top-3 right-3 flex items-center gap-1.5">
-                         <button onclick="openEditModal(${boardId}, '${escapedNameJs}', '${escapedDescJs}')"
-                                 class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
-                                 title="Edit board"
-                                 aria-label="Edit board ${escapedName}">
-                             <i class="fas fa-edit text-xs" aria-hidden="true"></i>
-                             <span>Edit</span>
-                         </button>
-                         <form method="post" action="/task/personal/${boardId}/archive/" class="inline" onsubmit="return confirmArchive(event, '${escapedNameJs}')">
-                             <input type="hidden" name="csrfmiddlewaretoken" value="${this.getCsrfToken()}">
-                             <button type="submit"
-                                     class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-red-50 dark:hover:bg-red-900/40 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
-                                     title="Archive board"
-                                     aria-label="Archive board ${escapedName}">
-                                 <i class="fas fa-archive text-xs" aria-hidden="true"></i>
-                                 <span>Archive</span>
-                             </button>
-                         </form>
-                     </div>
-                 `;
+                                         title="Click to edit">${escapedDesc}</p>
+                                  </div>
+                              </div>
+                              <div class="flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                                  <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                                      <i class="fas fa-tasks text-sm"></i>
+                                      <span class="text-sm">${totalTasks}</span>
+                                  </div>
+                                  <div class="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                                      <i class="fas fa-check-circle text-sm"></i>
+                                      <span class="text-sm">${completedTasks}</span>
+                                  </div>
+                                  <div class="flex-1"></div>
+                                  <div class="flex items-center gap-2">
+                                      <div class="relative w-8 h-8">
+                                          <svg class="w-8 h-8" viewBox="0 0 36 36">
+                                              <circle cx="18" cy="18" r="16"
+                                                      fill="none"
+                                                      stroke="currentColor"
+                                                      stroke-width="3"
+                                                      class="text-gray-200 dark:text-gray-700"></circle>
+                                              <circle cx="18" cy="18" r="16"
+                                                      fill="none"
+                                                      stroke="currentColor"
+                                                      stroke-width="3"
+                                                      stroke-dasharray="${dashArray}"
+                                                      class="text-emerald-500 progress-ring-circle"></circle>
+                                          </svg>
+                                      </div>
+                                      <span class="text-xs font-medium text-gray-600 dark:text-gray-400">${progressPercent}%</span>
+                                  </div>
+                              </div>
+                           </div>
+                       </a>
+                       <div class="card-actions absolute top-3 right-3 flex items-center gap-1.5">
+                           <button onclick="openEditModal(${boardId}, '${escapedNameJs}', '${escapedDescJs}')"
+                                   class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
+                                   title="Edit board"
+                                   aria-label="Edit board ${escapedName}">
+                               <i class="fas fa-edit text-xs" aria-hidden="true"></i>
+                               <span>Edit</span>
+                           </button>
+                           <form method="post" action="" class="inline" onsubmit="return confirmArchive(event, '${escapedNameJs}')">
+                               <input type="hidden" name="csrfmiddlewaretoken" value="${this.getCsrfToken()}">
+                               <button type="submit"
+                                       class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-red-50 dark:hover:bg-red-900/40 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
+                                       title="Archive board"
+                                       aria-label="Archive board ${escapedName}">
+                                   <i class="fas fa-archive text-xs" aria-hidden="true"></i>
+                                   <span>Archive</span>
+                               </button>
+                           </form>
+                       </div>
+                   `;
 
                 // Prepend to grid (newest first)
                 grid.insertBefore(card, grid.firstChild);
+
+                // Set form action dynamically using boardId
+                const newCardForm = card.querySelector('form');
+                if (newCardForm) {
+                    newCardForm.action = this.getArchiveUrl(boardId);
+                }
 
                 // Update board count stat
                 const boardsCountEl = document.querySelector('.stat-badge .text-lg');
@@ -1365,12 +1614,12 @@
         document.getElementById('editBoardForm').action = editUrl;
         document.getElementById('editBoardName').value = name;
         document.getElementById('editBoardDescription').value = description || '';
-        modal.classList.add('is-open');
-        modal.setAttribute('aria-hidden', 'false');
-        document.getElementById('editBoardName').focus();
-    }
+         modal.classList.add('is-open');
+         modal.setAttribute('aria-hidden', 'false');
+         document.getElementById('editBoardName').focus();
+     }
 
-    function closeEditModal() {
+     function closeEditModal() {
         document.getElementById('editBoardModal').classList.remove('is-open');
     }
 

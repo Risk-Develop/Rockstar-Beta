@@ -730,9 +730,32 @@ def personal_board_archived_api(request):
         completed_tasks=Count('tasks', filter=Q(tasks__is_completed=True))
     ).order_by('-updated_at').values(
         'id', 'name', 'description', 'total_tasks', 'completed_tasks'
-    )
+     )
 
     return JsonResponse({'boards': list(archived_boards)})
+
+
+@custom_login_required
+def personal_tasks_preview_api(request, board_id):
+    """API endpoint to get preview of board tasks for hover tooltip"""
+    current_staff = get_current_staff(request)
+    board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
+
+    # Fetch first 5 non-archived tasks ordered by column then order
+    tasks = board.tasks.filter(is_archived=False)\
+        .select_related('column')\
+        .order_by('column__order', 'order')[:5]
+
+    tasks_data = [
+        {
+            'title': task.title,
+            'is_completed': task.is_completed,
+            'priority': task.priority,
+        }
+        for task in tasks
+    ]
+
+    return JsonResponse({'tasks': tasks_data})
 
 
 @custom_login_required
@@ -806,7 +829,7 @@ def personal_task_create(request, board_id):
                 priority=priority, deadline=deadline, deadline_time=deadline_time,
                 date_start=date_start, date_end=date_end, notes=notes, is_recurring=is_recurring,
                 recurring_type=recurring_type if is_recurring else None, order=order
-            )
+    )
             # Prepare task data for JSON response
             checklist_items = list(task.checklist_items.all())
             task_data = {
