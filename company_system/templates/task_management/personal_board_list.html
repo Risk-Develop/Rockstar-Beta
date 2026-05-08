@@ -162,6 +162,40 @@
          position: relative;
          z-index: 10;
      }
+
+      /* Drag handle styles */
+      .drag-handle {
+          cursor: grab;
+          transition: all 0.2s ease;
+          width: 24px;
+          height: 24px;
+          padding: 0;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: #9ca3af;
+      }
+      .drag-handle:hover {
+          color: #3b82f6;
+          transform: scale(1.15);
+      }
+      .drag-handle:active {
+          cursor: grabbing;
+      }
+      .drag-handle svg {
+          width: 14px;
+          height: 14px;
+          pointer-events: none;
+      }
+     .sortable-ghost {
+         opacity: 0.4;
+         border: 2px dashed #3b82f6;
+     }
+     .sortable-drag {
+         cursor: grabbing;
+         transform: rotate(2deg);
+         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+     }
  </style>
  {% endblock %}
 
@@ -278,21 +312,32 @@
                           :style="`background: linear-gradient(90deg, ${boardColors[{{ forloop.counter0 }}]} 0%, ${adjustColor(boardColors[{{ forloop.counter0 }}], 40)} 100%)`">
                      </div>
 
-                     <div class="pt-4">
-                       <div class="flex items-start justify-between mb-3">
-                           <div class="flex-1 min-w-0">
-                               <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors cursor-pointer px-2 py-1 -mx-2 -my-1 rounded"
-                                   data-board-id="{{ board.id }}"
-                                   data-field="name"
-                                   contenteditable="false"
-                                   title="Click to edit">{{ board.name|escape }}</h3>
-                               <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 px-2 py-1 -mx-2 -my-1 rounded"
-                                   data-board-id="{{ board.id }}"
-                                   data-field="description"
-                                   contenteditable="false"
-                                   title="Click to edit">{{ board.description|default:"Personal productivity board"|escape }}</p>
-                           </div>
-                       </div>
+                      <div class="pt-4">
+                        <div class="flex items-start mb-3">
+                            {# Drag handle - positioned top-left inside the card #}
+                            <button draggable="false"
+                                    class="drag-handle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 transition-all shadow-sm text-xs font-medium cursor-grab me-3 flex-shrink-0"
+                                    title="Drag to reorder"
+                                    aria-label="Drag to reorder {{ board.name|escape }}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <circle cx="12" cy="6" r="2"></circle>
+                                    <circle cx="12" cy="12" r="2"></circle>
+                                    <circle cx="12" cy="18" r="2"></circle>
+                                </svg>
+                            </button>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors cursor-pointer px-2 py-1 -mx-2 -my-1 rounded"
+                                    data-board-id="{{ board.id }}"
+                                    data-field="name"
+                                    contenteditable="false"
+                                    title="Click to edit">{{ board.name|escape }}</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 px-2 py-1 -mx-2 -my-1 rounded"
+                                    data-board-id="{{ board.id }}"
+                                    data-field="description"
+                                    contenteditable="false"
+                                    title="Click to edit">{{ board.description|default:"Personal productivity board"|escape }}</p>
+                            </div>
+                        </div>
 
                        <!-- Stats Row -->
                        <div class="flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-700">
@@ -330,23 +375,23 @@
                    </div>
                </a>
 
-               {# Action buttons - positioned top-right, outside the link #}
-               <div class="card-actions absolute top-3 right-3 flex items-center gap-1.5">
-                   <button onclick="event.stopPropagation(); openEditModal({{ board.id }}, '{{ board.name|escapejs }}', '{{ board.description|escapejs }}')"
-                           class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
-                           title="Edit board"
-                           aria-label="Edit board {{ board.name|escape }}">
-                       <i class="fas fa-edit text-xs" aria-hidden="true"></i>
-                       <span>Edit</span>
-                   </button>
-                   <form method="post" action="{% url 'task_management:personal_board_archive' board.id %}" class="inline" onsubmit="return confirmArchive(event, '{{ board.name|escapejs }}')">
-                       {% csrf_token %}
-                       <button type="submit" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-red-50 dark:hover:bg-red-900/40 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm text-xs font-medium cursor-pointer" title="Archive board" aria-label="Archive board {{ board.name|escape }}">
-                           <i class="fas fa-archive text-xs" aria-hidden="true"></i>
-                           <span>Archive</span>
-                       </button>
-                   </form>
-               </div>
+                 {# Action buttons - positioned top-right, outside the link #}
+                 <div class="card-actions absolute top-3 right-3 flex items-center gap-1.5">
+                     <button onclick="event.stopPropagation(); openEditModal({{ board.id }}, '{{ board.name|escapejs }}', '{{ board.description|escapejs }}')"
+                             class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
+                             title="Edit board"
+                             aria-label="Edit board {{ board.name|escape }}">
+                         <i class="fas fa-edit text-xs" aria-hidden="true"></i>
+                         <span>Edit</span>
+                     </button>
+                     <form method="post" action="{% url 'task_management:personal_board_archive' board.id %}" class="inline" onsubmit="return confirmArchive(event, '{{ board.name|escapejs }}')">
+                         {% csrf_token %}
+                         <button type="submit" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-red-50 dark:hover:bg-red-900/40 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm text-xs font-medium cursor-pointer" title="Archive board" aria-label="Archive board {{ board.name|escape }}">
+                             <i class="fas fa-archive text-xs" aria-hidden="true"></i>
+                             <span>Archive</span>
+                         </button>
+                     </form>
+                 </div>
              </div>
              {% endfor %}
         </div>
@@ -585,6 +630,21 @@
                 window.addEventListener('scroll', handler, { passive: true });
                 this.$cleanup = () => window.removeEventListener('scroll', handler);
 
+                // Initialize Sortable for drag-and-drop reordering
+                const grid = document.querySelector('.grid');
+                if (grid && typeof Sortable !== 'undefined') {
+                    new Sortable(grid, {
+                        handle: '.drag-handle',
+                        animation: 150,
+                        ghostClass: 'sortable-ghost',
+                        dragClass: 'sortable-drag',
+                        easing: 'cubic-bezier(1, 0, 0, 1)',
+                        onEnd: (evt) => {
+                            this.updateBoardOrder();
+                        }
+                    });
+                }
+
                 // Event delegation for archived drawer buttons
                 const archivedContainer = document.getElementById('archived-boards-container');
                 if (archivedContainer) {
@@ -733,6 +793,37 @@
                     .replace(/\u2029/g, '\\u2029');
             },
 
+            // Persist board order after drag-and-drop
+            async updateBoardOrder() {
+                const grid = document.querySelector('.grid');
+                if (!grid) return;
+
+                const cards = grid.querySelectorAll('.relative[data-board-id]');
+                const orderedIds = Array.from(cards).map(card => card.dataset.boardId);
+
+                try {
+                    const response = await fetch("{% url 'task_management:personal_board_reorder' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.getCsrfToken(),
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ order: orderedIds })
+                    });
+
+                    const data = await response.json();
+                    if (!data.success) {
+                        console.error('Failed to update board order:', data.error);
+                        showToast('Failed to save order', 'error');
+                        // Optionally: reload to restore original order
+                    }
+                } catch (err) {
+                    console.error('Error updating board order:', err);
+                    showToast('Error saving order', 'error');
+                }
+            },
+
             // Confirm modal methods
             openConfirmModal(config, callback) {
                 this.confirmModalConfig = { ...this.confirmModalConfig, ...config };
@@ -788,21 +879,28 @@
                                 }
                             }
                         );
-                        const data = await response.json();
-                        if (data.success || data.restored) {
-                            // Remove from drawer
-                            const card = document.querySelector(`#archived-boards-container [data-board-id="${boardId}"]`);
-                            if (card) {
-                                card.style.transition = 'opacity 0.3s';
-                                card.style.opacity = '0';
-                                setTimeout(() => card.remove(), 300);
-                            }
-                            // Add back to main grid
-                            this.addBoardToGrid(boardId, card);
-                            showToast('Board restored successfully!', 'success');
-                        } else {
-                            alert('Error: ' + (data.error || 'Failed to restore board'));
-                        }
+                         const data = await response.json();
+                         if (data.success || data.restored) {
+                             // Remove from drawer
+                             const card = document.querySelector(`#archived-boards-container [data-board-id="${boardId}"]`);
+                             if (card) {
+                                 card.style.transition = 'opacity 0.3s';
+                                 card.style.opacity = '0';
+                                 setTimeout(() => card.remove(), 300);
+                             }
+                             // Check if grid exists (if no boards previously, grid is not rendered)
+                             const grid = document.querySelector('.grid');
+                             if (!grid) {
+                                 // No grid present - reload to render the restored board
+                                 window.location.reload();
+                                 return;
+                             }
+                             // Add back to main grid
+                             this.addBoardToGrid(boardId, card);
+                             showToast('Board restored successfully!', 'success');
+                         } else {
+                             alert('Error: ' + (data.error || 'Failed to restore board'));
+                         }
                     } catch (err) {
                         console.error('Error:', err);
                         alert('An error occurred while restoring the board.');
@@ -843,75 +941,86 @@
                 const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
                 const dashArray = totalTasks > 0 ? `${progressPercent}, 100` : '0, 100';
 
-                card.innerHTML = `
-                    <a href="/task/personal/${boardId}/" class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer" aria-label="Open ${escapedName} personal board">
-                        <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style="background: linear-gradient(90deg, ${color} 0%, ${adjustedColor} 100%)"></div>
-                        <div class="pt-4">
-                            <div class="flex items-start justify-between mb-3">
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors cursor-pointer px-2 py-1 -mx-2 -my-1 rounded"
+                 card.innerHTML = `
+                     <a href="/task/personal/${boardId}/" class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer" aria-label="Open ${escapedName} personal board">
+                         <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style="background: linear-gradient(90deg, ${color} 0%, ${adjustedColor} 100%)"></div>
+                         <div class="pt-4">
+                             <div class="flex items-start mb-3">
+                                 {# Drag handle - top-left inside card #}
+                                 <button draggable="false"
+                                         class="drag-handle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 transition-all shadow-sm text-xs font-medium cursor-grab me-3 flex-shrink-0"
+                                         title="Drag to reorder"
+                                         aria-label="Drag to reorder ${escapedName}">
+                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                         <circle cx="12" cy="6" r="2"></circle>
+                                         <circle cx="12" cy="12" r="2"></circle>
+                                         <circle cx="12" cy="18" r="2"></circle>
+                                     </svg>
+                                 </button>
+                                 <div class="flex-1 min-w-0">
+                                     <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors cursor-pointer px-2 py-1 -mx-2 -my-1 rounded"
+                                         data-board-id="${boardId}"
+                                         data-field="name"
+                                         contenteditable="false"
+                                         title="Click to edit">${escapedName}</h3>
+                                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 px-2 py-1 -mx-2 -my-1 rounded"
                                         data-board-id="${boardId}"
-                                        data-field="name"
+                                        data-field="description"
                                         contenteditable="false"
-                                        title="Click to edit">${escapedName}</h3>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 px-2 py-1 -mx-2 -my-1 rounded"
-                                       data-board-id="${boardId}"
-                                       data-field="description"
-                                       contenteditable="false"
-                                       title="Click to edit">${escapedDesc}</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-700">
-                                <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                                    <i class="fas fa-tasks text-sm"></i>
-                                    <span class="text-sm">${totalTasks}</span>
-                                </div>
-                                <div class="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                                    <i class="fas fa-check-circle text-sm"></i>
-                                    <span class="text-sm">${completedTasks}</span>
-                                </div>
-                                <div class="flex-1"></div>
-                                <div class="flex items-center gap-2">
-                                    <div class="relative w-8 h-8">
-                                        <svg class="w-8 h-8" viewBox="0 0 36 36">
-                                            <circle cx="18" cy="18" r="16"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    stroke-width="3"
-                                                    class="text-gray-200 dark:text-gray-700"></circle>
-                                            <circle cx="18" cy="18" r="16"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    stroke-width="3"
-                                                    stroke-dasharray="${dashArray}"
-                                                    class="text-emerald-500 progress-ring-circle"></circle>
-                                        </svg>
-                                    </div>
-                                    <span class="text-xs font-medium text-gray-600 dark:text-gray-400">${progressPercent}%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                    <div class="card-actions absolute top-3 right-3 flex items-center gap-1.5">
-                        <button onclick="openEditModal(${boardId}, '${escapedNameJs}', '${escapedDescJs}')"
-                                class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
-                                title="Edit board"
-                                aria-label="Edit board ${escapedName}">
-                            <i class="fas fa-edit text-xs" aria-hidden="true"></i>
-                            <span>Edit</span>
-                        </button>
-                        <form method="post" action="/task/personal/${boardId}/archive/" class="inline" onsubmit="return confirmArchive(event, '${escapedNameJs}')">
-                            <input type="hidden" name="csrfmiddlewaretoken" value="${this.getCsrfToken()}">
-                            <button type="submit"
-                                    class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-red-50 dark:hover:bg-red-900/40 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
-                                    title="Archive board"
-                                    aria-label="Archive board ${escapedName}">
-                                <i class="fas fa-archive text-xs" aria-hidden="true"></i>
-                                <span>Archive</span>
-                            </button>
-                        </form>
-                    </div>
-                `;
+                                        title="Click to edit">${escapedDesc}</p>
+                                 </div>
+                             </div>
+                             <div class="flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                                 <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                                     <i class="fas fa-tasks text-sm"></i>
+                                     <span class="text-sm">${totalTasks}</span>
+                                 </div>
+                                 <div class="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                                     <i class="fas fa-check-circle text-sm"></i>
+                                     <span class="text-sm">${completedTasks}</span>
+                                 </div>
+                                 <div class="flex-1"></div>
+                                 <div class="flex items-center gap-2">
+                                     <div class="relative w-8 h-8">
+                                         <svg class="w-8 h-8" viewBox="0 0 36 36">
+                                             <circle cx="18" cy="18" r="16"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     stroke-width="3"
+                                                     class="text-gray-200 dark:text-gray-700"></circle>
+                                             <circle cx="18" cy="18" r="16"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     stroke-width="3"
+                                                     stroke-dasharray="${dashArray}"
+                                                     class="text-emerald-500 progress-ring-circle"></circle>
+                                         </svg>
+                                     </div>
+                                     <span class="text-xs font-medium text-gray-600 dark:text-gray-400">${progressPercent}%</span>
+                                 </div>
+                             </div>
+                         </div>
+                     </a>
+                     <div class="card-actions absolute top-3 right-3 flex items-center gap-1.5">
+                         <button onclick="openEditModal(${boardId}, '${escapedNameJs}', '${escapedDescJs}')"
+                                 class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
+                                 title="Edit board"
+                                 aria-label="Edit board ${escapedName}">
+                             <i class="fas fa-edit text-xs" aria-hidden="true"></i>
+                             <span>Edit</span>
+                         </button>
+                         <form method="post" action="/task/personal/${boardId}/archive/" class="inline" onsubmit="return confirmArchive(event, '${escapedNameJs}')">
+                             <input type="hidden" name="csrfmiddlewaretoken" value="${this.getCsrfToken()}">
+                             <button type="submit"
+                                     class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-red-50 dark:hover:bg-red-900/40 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
+                                     title="Archive board"
+                                     aria-label="Archive board ${escapedName}">
+                                 <i class="fas fa-archive text-xs" aria-hidden="true"></i>
+                                 <span>Archive</span>
+                             </button>
+                         </form>
+                     </div>
+                 `;
 
                 // Prepend to grid (newest first)
                 grid.insertBefore(card, grid.firstChild);

@@ -189,6 +189,7 @@ class PersonalBoard(models.Model):
     description = models.TextField(blank=True)
     is_archived = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True)
+    order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -196,7 +197,7 @@ class PersonalBoard(models.Model):
         return f"{self.user.first_name}'s Personal Board - {self.name}"
 
     class Meta:
-        ordering = ['-updated_at']
+        ordering = ['order', '-updated_at']
         unique_together = ['user', 'name']
 
 

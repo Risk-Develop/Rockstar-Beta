@@ -599,7 +599,13 @@ def personal_board_create(request):
         if existing:
             messages.warning(request, f'Board "{name}" already exists.')
             return redirect('task_management:personal_board_detail', board_id=existing.id)
-        board = PersonalBoard.objects.create(user=current_staff, name=name, description=description)
+        # Determine order: append after the current highest order
+        max_order = PersonalBoard.objects.filter(user=current_staff).aggregate(
+            max_order=models.Max('order')
+        )['max_order'] or 0
+        board = PersonalBoard.objects.create(
+            user=current_staff, name=name, description=description, order=max_order + 1
+        )
         for col in PersonalColumn.DEFAULT_COLUMNS:
             PersonalColumn.objects.create(board=board, **col)
         messages.success(request, f'Personal board "{board.name}" created!')
@@ -707,6 +713,39 @@ def personal_board_delete_permanent(request, board_id):
         return JsonResponse({'success': True, 'deleted': True})
     messages.success(request, f'Board "{board.name}" has been permanently deleted.')
     return redirect('task_management:personal_board_archived_list')
+
+
+@custom_login_required
+@require_POST
+def personal_board_reorder(request):
+    """Update the ordering of personal boards via AJAX"""
+    import json
+    current_staff = get_current_staff(request)
+
+    try:
+        data = json.loads(request.body)
+        ordered_ids = data.get('order', [])
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+
+    if not isinstance(ordered_ids, list):
+        return JsonResponse({'success': False, 'error': 'Order must be a list of board IDs'}, status=400)
+
+    # Owners can reorder any board; staff only their own
+    if current_staff is None:
+        boards = PersonalBoard.objects.filter(id__in=ordered_ids)
+    else:
+        boards = PersonalBoard.objects.filter(id__in=ordered_ids, user=current_staff)
+
+    board_dict = {str(board.id): board for board in boards}
+
+    for index, board_id in enumerate(ordered_ids):
+        board = board_dict.get(str(board_id))
+        if board:
+            board.order = index
+            board.save(update_fields=['order'])
+
+    return JsonResponse({'success': True})
 
 
 @custom_login_required
