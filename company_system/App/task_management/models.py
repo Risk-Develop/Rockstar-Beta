@@ -177,9 +177,30 @@ class AuditLog(models.Model):
         return f"{self.task.title} - {self.action} by {self.performed_by}"
 
 
- # ========== PERSONAL PRODUCTIVITY SYSTEM ==========
 class PersonalBoard(models.Model):
     """Private board for personal tasks - separate from company kanban"""
+
+    # Tag choices for categorization
+    TAG_WORK = 'work'
+    TAG_PERSONAL = 'personal'
+    TAG_HEALTH = 'health'
+    TAG_FINANCE = 'finance'
+    TAG_LEARNING = 'learning'
+    TAG_HOME = 'home'
+    TAG_HOBBY = 'hobby'
+    TAG_OTHER = 'other'
+
+    TAG_CHOICES = [
+        (TAG_WORK, 'Work Projects'),
+        (TAG_PERSONAL, 'Personal Growth'),
+        (TAG_HEALTH, 'Health & Fitness'),
+        (TAG_FINANCE, 'Finance & Money'),
+        (TAG_LEARNING, 'Learning & Skills'),
+        (TAG_HOME, 'Home & Family'),
+        (TAG_HOBBY, 'Hobbies & Fun'),
+        (TAG_OTHER, 'Other'),
+    ]
+
     user = models.ForeignKey(
         Staff,
         on_delete=models.CASCADE,
@@ -187,6 +208,12 @@ class PersonalBoard(models.Model):
     )
     name = models.CharField(max_length=100, default="My Tasks")
     description = models.TextField(blank=True)
+    tag = models.CharField(
+        max_length=20,
+        choices=TAG_CHOICES,
+        blank=True,
+        null=True
+    )
     is_archived = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True)
     order = models.PositiveIntegerField(default=0)

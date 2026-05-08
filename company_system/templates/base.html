@@ -434,14 +434,24 @@ fetch('{% url "extend_session" %}', {
     {% endif %}
 </script>
 
-<!-- Floating Help Button - fixed position outside main content -->
-<div class="fixed bottom-6 right-6 z-40">
-    <button onclick="toggleHelp()" 
-        class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-white shadow-xl flex items-center justify-center transition hover:scale-110"
-        title="Keyboard Shortcuts">
-        <i class="fas fa-keyboard text-xl"></i>
-    </button>
-</div>
+ <!-- Floating Help Button - fixed position outside main content -->
+ <div class="fixed bottom-6 right-6 z-40">
+     <button onclick="toggleHelp()"
+         class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-white shadow-xl flex items-center justify-center transition hover:scale-110"
+         title="Keyboard Shortcuts">
+         <span class="material-icons text-xl">keyboard</span>
+     </button>
+ </div>
+
+ <script>
+ // Keyboard shortcut help modal toggle
+ function toggleHelp() {
+     const modal = document.getElementById('keyboard-shortcuts-modal');
+     if (modal) {
+         modal.classList.toggle('hidden');
+     }
+ }
+ </script>
 
 </body>
 </html>

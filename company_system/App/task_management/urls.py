@@ -34,6 +34,7 @@ urlpatterns = [
 
     # Personal Productivity URLs
     path('personal/', views.personal_board_list, name='personal_board_list'),
+    path('personal/help/', views.help_index, name='help_index'),
     path('personal/create/', views.personal_board_create, name='personal_board_create'),
     path('personal/<int:board_id>/', views.personal_board_detail, name='personal_board_detail'),
     path('personal/<int:board_id>/edit/', views.personal_board_edit, name='personal_board_edit'),

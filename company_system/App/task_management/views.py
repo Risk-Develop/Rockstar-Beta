@@ -1,5 +1,6 @@
 import logging
 import json
+import os
 from datetime import date, timedelta
 from django.db import models
 
@@ -10,6 +11,8 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+from django.utils.html import format_html, linebreaks
 from functools import wraps
 
 from .models import KanbanBoard, KanbanColumn, Task, Roadmap, AuditLog, PersonalBoard, PersonalColumn, PersonalTask, PersonalTaskChecklistItem, TaskChecklistItem, TaskComment
@@ -555,6 +558,36 @@ def personal_board_list(request):
         'personal_boards': personal_boards,
         'total_tasks_count': total_tasks_count,
         'completed_tasks_count': completed_tasks_count,
+    })
+
+
+@custom_login_required
+def help_index(request):
+    """Display user guide documentation"""
+    from django.http import Http404
+    
+    # Path to the documentation file
+    doc_path = os.path.join(settings.BASE_DIR, 'company_system', 'docs', 'USER_GUIDE.md')
+    
+    try:
+        with open(doc_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except FileNotFoundError:
+        raise Http404("User guide not found.")
+    except Exception as e:
+        logger.error(f"Error reading USER_GUIDE.md: {e}")
+        content = "# Error\n\nUnable to load user guide. Please contact the administrator."
+    
+    # Convert markdown to HTML if markdown library available
+    try:
+        import markdown
+        html_content = markdown.markdown(content)
+    except ImportError:
+        # Fallback: convert newlines to <br> for basic formatting
+        html_content = linebreaks(content)
+    
+    return render(request, 'task_management/help_index.html', {
+        'guide_content': format_html(html_content),
     })
 
 
