@@ -1,5 +1,6 @@
 import logging
 import json
+from datetime import date, timedelta
 from django.db import models
 
 logger = logging.getLogger(__name__)
@@ -118,6 +119,97 @@ def _enrich_personal_task_checklist(task):
     completed = sum(1 for i in items if i.is_completed)
     task.checklist_items_count = total
     task.checklist_completion_percentage = int((completed / total) * 100) if total else 0
+
+
+def add_months(d, months):
+    """Add months to a date, handling month-end overflow correctly."""
+    year = d.year + (d.month - 1 + months) // 12
+    month = (d.month - 1 + months) % 12 + 1
+    day = d.day
+    try:
+        return date(year, month, day)
+    except ValueError:
+        # Use last day of month if day exceeds month length
+        if month == 12:
+            next_month = date(year + 1, 1, 1)
+        else:
+            next_month = date(year, month + 1, 1)
+        last_day = (next_month - timedelta(days=1)).day
+        return date(year, month, last_day)
+
+
+def calculate_next_occurrence(task):
+    """Calculate the next occurrence dates for a recurring task."""
+    next_deadline = task.deadline
+    next_deadline_time = task.deadline_time
+    next_date_start = task.date_start
+    next_date_end = task.date_end
+
+    if task.recurring_type == 'daily':
+        delta = timedelta(days=1)
+        if next_deadline:
+            next_deadline = next_deadline + delta
+        if next_date_start:
+            next_date_start = next_date_start + delta
+        if next_date_end:
+            next_date_end = next_date_end + delta
+
+    elif task.recurring_type == 'weekly':
+        delta = timedelta(weeks=1)
+        if next_deadline:
+            next_deadline = next_deadline + delta
+        if next_date_start:
+            next_date_start = next_date_start + delta
+        if next_date_end:
+            next_date_end = next_date_end + delta
+
+    elif task.recurring_type == 'monthly':
+        if next_deadline:
+            next_deadline = add_months(next_deadline, 1)
+        if next_date_start:
+            next_date_start = add_months(next_date_start, 1)
+        if next_date_end:
+            next_date_end = add_months(next_date_end, 1)
+
+    return next_deadline, next_deadline_time, next_date_start, next_date_end
+
+
+def create_recurring_task_instance(task, next_dates):
+    """Create the next instance of a recurring task."""
+    next_deadline, next_deadline_time, next_date_start, next_date_end = next_dates
+    
+    # Calculate order (append to end of column)
+    max_order = PersonalTask.objects.filter(column=task.column).order_by('-order').first()
+    next_order = (max_order.order + 1) if max_order else 0
+
+    # Create new task
+    new_task = PersonalTask.objects.create(
+        board=task.board,
+        column=task.column,
+        title=task.title,
+        description=task.description,
+        priority=task.priority,
+        deadline=next_deadline,
+        deadline_time=next_deadline_time,
+        date_start=next_date_start,
+        date_end=next_date_end,
+        notes=task.notes,
+        is_recurring=True,
+        recurring_type=task.recurring_type,
+        order=next_order
+    )
+
+    # Copy checklist items (reset completion)
+    checklist_items = list(task.checklist_items.all())
+    for item in checklist_items:
+        PersonalTaskChecklistItem.objects.create(
+            task=new_task,
+            text=item.text,
+            order=item.order,
+            is_completed=False
+        )
+
+    return new_task
 
 
 
@@ -646,15 +738,50 @@ def personal_task_create(request, board_id):
 def personal_task_toggle(request, task_id):
     current_staff = get_current_staff(request)
     task = get_object_or_404(PersonalTask, id=task_id, board__user=current_staff)
+    
+    was_completed = task.is_completed
     task.is_completed = not task.is_completed
+    
     if task.is_completed:
         from django.utils import timezone
         task.completed_at = timezone.now().date()
     else:
         task.completed_at = None
+    
     task.save()
+    
+    # Handle recurring task: create next instance when completing
+    new_task_data = None
+    if task.is_recurring and not was_completed:  # Only when marking complete
+        next_dates = calculate_next_occurrence(task)
+        new_task = create_recurring_task_instance(task, next_dates)
+        
+        # Enrich new task for JSON response
+        _enrich_personal_task_checklist(new_task)
+        new_task_data = {
+            'id': new_task.id,
+            'title': new_task.title,
+            'description': new_task.description or '',
+            'priority': new_task.priority,
+            'deadline': new_task.deadline.isoformat() if new_task.deadline else '',
+            'deadline_time': new_task.deadline_time.isoformat() if new_task.deadline_time else '',
+            'date_start': new_task.date_start.isoformat() if new_task.date_start else '',
+            'date_end': new_task.date_end.isoformat() if new_task.date_end else '',
+            'notes': new_task.notes or '',
+            'is_completed': False,
+            'is_recurring': True,
+            'recurring_type': new_task.recurring_type,
+            'column_id': new_task.column.id,
+            'checklist_items': [{'id': ci.id, 'text': ci.text, 'is_completed': ci.is_completed} for ci in new_task.checklist_items.all()]
+        }
+    
     if request.headers.get('HX-Request') or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'success': True, 'completed': task.is_completed})
+        response_data = {'success': True, 'completed': task.is_completed}
+        if new_task_data:
+            response_data['new_task'] = new_task_data
+            response_data['message'] = f'Task completed! Next instance created for {task.recurring_type} recurrence.'
+        return JsonResponse(response_data)
+    
     return redirect('task_management:personal_board_detail', board_id=task.board.id)
 
 
@@ -773,6 +900,15 @@ def personal_task_edit(request, task_id):
         task.date_start = raw_date_start or None
         task.date_end = raw_date_end or None
         task.notes = request.POST.get('notes', task.notes)
+
+        # Handle recurrence
+        is_recurring = request.POST.get('is_recurring') == 'on'
+        task.is_recurring = is_recurring
+        if is_recurring:
+            task.recurring_type = request.POST.get('recurring_type')
+        else:
+            task.recurring_type = None
+
         task.save()
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             checklist_items = list(task.checklist_items.all())
@@ -788,6 +924,8 @@ def personal_task_edit(request, task_id):
                 'date_end': raw_date_end or '',
                 'notes': task.notes or '',
                 'is_completed': task.is_completed,
+                'is_recurring': task.is_recurring,
+                'recurring_type': task.recurring_type if task.is_recurring else None,
                 'checklist_items': [{'id': ci.id, 'text': ci.text, 'is_completed': ci.is_completed} for ci in checklist_items]
             })
         messages.success(request, 'Task updated!')

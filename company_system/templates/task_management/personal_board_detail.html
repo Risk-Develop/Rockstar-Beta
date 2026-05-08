@@ -457,17 +457,7 @@ html.dark .personal-column.sortable-ghost {
     background: #1e3a5f;
 }
 
-/* Column drag ghost */
-.personal-column.sortable-ghost {
-    opacity: 0.7;
-    border: 2px dashed #9ca3af;
-    background: #f3f4f6;
-}
-html.dark .personal-column.sortable-ghost {
-    border-color: #6b7280;
-    background: #1f2937;
-    }
-}
+
 
 /* Checklist item drag ghost */
 .chosen-checklist-item {
@@ -638,96 +628,7 @@ html.dark .modal-overlay {
   visibility: visible;
 }
 
-/* Base modal content - responsive default */
-.modal-content {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 24px;
-  width: 95%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  margin: 1rem auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-html.dark .modal-content {
-  background: #1f2937;
-  border: 1px solid #374151;
-}
 
-/* Responsive sizing variants */
-@media (min-width: 480px) {
-  .modal-content {
-    width: 90%;
-    padding: 20px;
-  }
-}
-
-@media (min-width: 640px) {
-  .modal-content {
-    max-width: 560px;
-    padding: 24px;
-  }
-}
-
-@media (min-width: 768px) {
-  .modal-content {
-    max-width: 640px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .modal-content {
-    max-width: 700px;
-    width: 80%;
-  }
-}
-
-@media (min-width: 1280px) {
-  .modal-content {
-    max-width: 800px;
-  }
-}
-
-/* Size modifiers for specific use cases */
-.modal-content.sm {
-  max-width: 400px;
-}
-@media (min-width: 640px) {
-  .modal-content.sm {
-    max-width: 480px;
-  }
-}
-
-.modal-content.lg {
-  max-width: 700px;
-}
-@media (min-width: 1024px) {
-  .modal-content.lg {
-    max-width: 900px;
-  }
-}
-
-.modal-content.xl {
-  max-width: 800px;
-}
-@media (min-width: 1024px) {
-  .modal-content.xl {
-    max-width: 1000px;
-    width: 90%;
-  }
-}
-
-/* Small confirmation dialogs (delete confirmations) */
-.modal-content.confirm {
-  max-width: 360px;
-}
-@media (min-width: 640px) {
-  .modal-content.confirm {
-    max-width: 400px;
-  }
-}
 
 /* Toast notification */
 #toast {
@@ -1517,9 +1418,11 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
      data-deadline_time="{% if task.deadline_time %}{{ task.deadline_time|time:'H:i' }}{% endif %}"
      data-date-start="{{ task.date_start|date:'Y-m-d' }}"
      data-date-end="{{ task.date_end|date:'Y-m-d' }}"
-     data-notes="{{ task.notes|default:''|escape }}"
-     data-checklist="{{ task.checklist_items_json|escape }}"
-     draggable="true"
+      data-notes="{{ task.notes|default:''|escape }}"
+      data-checklist="{{ task.checklist_items_json|escape }}"
+      data-is-recurring="{{ task.is_recurring|lower }}"
+      data-recurring-type="{{ task.recurring_type|default:'' }}"
+      draggable="true"
      tabindex="0"
      role="article"
      aria-label="Task: {{ task.title }}{% if task.is_completed %}, completed{% endif %}">
@@ -1699,8 +1602,9 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
                  maxlength="50"
                  class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                  placeholder="e.g., In Progress, Review, Done"
-                 oninput="updateCharCount('addColumnName', 'addColNameCount')">
-          <div class="char-count">
+                  oninput="updateCharCount('addColumnName', 'addColNameCount')">
+                <div class="error-message text-red-500 text-sm mt-1" id="addColumnNameError" style="display: none"></div>
+            <div class="char-count">
             <span id="addColNameCount">0</span>/50 characters
           </div>
         </div>
@@ -1716,32 +1620,32 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
              <button type="button"
                      class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                      style="background: #3b82f6;"
-                     onclick="document.getElementById('addColumnColor').value='#3b82f6'; updateColorPresetSelection(this)">
+                      onclick="document.getElementById('addColumnColor').value='#3b82f6'; updateColorPresetSelection(this); updateColorHex('add')">
              </button>
              <button type="button"
                      class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                      style="background: #10b981;"
-                     onclick="document.getElementById('addColumnColor').value='#10b981'; updateColorPresetSelection(this)">
+                      onclick="document.getElementById('addColumnColor').value='#10b981'; updateColorPresetSelection(this); updateColorHex('add')">
              </button>
              <button type="button"
                      class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                      style="background: #f59e0b;"
-                     onclick="document.getElementById('addColumnColor').value='#f59e0b'; updateColorPresetSelection(this)">
+                      onclick="document.getElementById('addColumnColor').value='#f59e0b'; updateColorPresetSelection(this); updateColorHex('add')">
              </button>
              <button type="button"
                      class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                      style="background: #ef4444;"
-                     onclick="document.getElementById('addColumnColor').value='#ef4444'; updateColorPresetSelection(this)">
+                      onclick="document.getElementById('addColumnColor').value='#ef4444'; updateColorPresetSelection(this); updateColorHex('add')">
              </button>
              <button type="button"
                      class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                      style="background: #8b5cf6;"
-                     onclick="document.getElementById('addColumnColor').value='#8b5cf6'; updateColorPresetSelection(this)">
+                      onclick="document.getElementById('addColumnColor').value='#8b5cf6'; updateColorPresetSelection(this); updateColorHex('add')">
              </button>
              <button type="button"
                      class="color-preset w-8 h-8 flex-shrink-0 rounded-full border-2 border-transparent hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                      style="background: #ec4899;"
-                     onclick="document.getElementById('addColumnColor').value='#ec4899'; updateColorPresetSelection(this)">
+                      onclick="document.getElementById('addColumnColor').value='#ec4899'; updateColorPresetSelection(this); updateColorHex('add')">
              </button>
            </div>
 
@@ -1823,8 +1727,9 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
                       maxlength="50"
                       class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Column name"
-                      oninput="updateCharCount('editColumnName', 'editColNameCount')">
-               <div class="char-count">
+                       oninput="updateCharCount('editColumnName', 'editColNameCount')">
+                <div class="error-message text-red-500 text-sm mt-1" id="editColumnNameError" style="display: none"></div>
+                <div class="char-count">
                  <span id="editColNameCount">0</span>/50 characters
                </div>
              </div>
@@ -2077,9 +1982,11 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
     </div>
     <div class="space-y-4">
       <p id="confirmModalMessage" class="text-gray-600 dark:text-gray-300">Are you sure?</p>
-      <div class="mt-6 flex gap-3">
-        <button id="confirmModalYes" 
-                class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center justify-center gap-2">
+        <div class="mt-6 flex gap-3">
+          <button id="confirmModalYes" 
+                  type="button"
+                  onclick="if(pendingConfirmCallback) { pendingConfirmCallback(); }"
+                  class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors flex items-center justify-center gap-2">
           <i class="fas fa-check"></i>Yes
         </button>
         <button type="button" 
@@ -2179,8 +2086,9 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
                   maxlength="200"
                   class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Task title"
-                  oninput="updateCharCount('addTitle', 'addTitleCount')">
-           <div class="char-count">
+                   oninput="updateCharCount('addTitle', 'addTitleCount')">
+            <div class="error-message text-red-500 text-sm mt-1" id="addTitleError" style="display: none"></div>
+            <div class="char-count">
              <span id="addTitleCount">0</span>/200 characters
            </div>
          </div>
@@ -2212,10 +2120,11 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
             {% for column in columns %}
             <option value="{{ column.id }}" {% if forloop.first %}selected{% endif %}>
               {{ column.name }}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
+             </option>
+             {% endfor %}
+           </select>
+           <div class="error-message text-red-500 text-sm mt-1" id="addColumnError" style="display: none"></div>
+         </div>
       </div>
     </section>
 
@@ -2325,11 +2234,11 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
         </label>
       </div>
 
-      <div id="recurring_options" class="hidden space-y-3 pl-7">
-        <div class="quick-tip">
-          <i class="fas fa-lightbulb"></i>
-          <span>Tasks will automatically create new instances when completed</span>
-        </div>
+       <div id="recurring_options" class="hidden space-y-3 pl-7">
+         <div class="quick-tip">
+           <i class="fas fa-lightbulb"></i>
+           <span>When completed, a new instance will be created with dates advanced automatically.</span>
+         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Repeat</label>
           <select name="recurring_type" 
@@ -2456,8 +2365,9 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
                   maxlength="200"
                   class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Task title"
-                  oninput="updateCharCount('detailTitle', 'detailTitleCount')">
-           <div class="char-count">
+                   oninput="updateCharCount('detailTitle', 'detailTitleCount')">
+            <div class="error-message text-red-500 text-sm mt-1" id="detailTitleError" style="display: none"></div>
+            <div class="char-count">
              <span id="detailTitleCount">0</span>/200 characters
            </div>
          </div>
@@ -2485,9 +2395,10 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
                   class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer">
             {% for column in columns %}
             <option value="{{ column.id }}">{{ column.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
+             {% endfor %}
+           </select>
+           <div class="error-message text-red-500 text-sm mt-1" id="detailColumnError" style="display: none"></div>
+         </div>
       </div>
     </section>
 
@@ -2597,11 +2508,11 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
         </label>
       </div>
 
-      <div id="detailRecurringOptions" class="hidden space-y-3 pl-7">
-        <div class="quick-tip">
-          <i class="fas fa-lightbulb"></i>
-          <span>Tasks will automatically create new instances when completed</span>
-        </div>
+       <div id="detailRecurringOptions" class="hidden space-y-3 pl-7">
+         <div class="quick-tip">
+           <i class="fas fa-lightbulb"></i>
+           <span>When completed, a new instance will be created with dates advanced automatically.</span>
+         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Repeat</label>
           <select name="recurring_type" 
@@ -2748,36 +2659,35 @@ var pendingDeleteChecklistId = null;
 var pendingDeleteArchivedId = null;
 var pendingColumnDeletes = new Set(); // Track columns with pending drag operations
 
-// ── Utility Functions ──────────────────────────────────────────────────────────
+// Django-rendered URL configuration - immutable after page load
+const URL_CONFIG = {
+    TASK_CREATE: "{% url 'task_management:personal_task_create' board.id %}",
+    TASK_EDIT: (id) => `/task/personal/tasks/${id}/edit/`,
+    TASK_DELETE: (id) => `/task/personal/tasks/${id}/delete/`,
+    TASK_TOGGLE: (id) => `/task/personal/tasks/${id}/toggle/`,
+    TASK_ARCHIVE: (id) => `/task/personal/tasks/${id}/archive/`,
+    TASK_RESTORE: (id) => `/task/personal/tasks/${id}/restore/`,
+    TASK_SET_PRIORITY: (id) => `/task/personal/tasks/${id}/set_priority/`,
+    COLUMN_CREATE: "{% url 'task_management:personal_column_create' board.id %}",
+    COLUMN_EDIT: (id) => `/task/personal/columns/${id}/edit/`,
+    COLUMN_DELETE: (id) => `/task/personal/columns/${id}/delete/`,
+    COLUMN_REORDER: "/task/personal/api/update-column-position/",
+    TASK_REORDER: "/task/personal/api/update-position/",
+    CHECKLIST_ADD: (taskId) => `/task/personal/tasks/${taskId}/checklist/add/`,
+    CHECKLIST_TOGGLE: (id) => `/task/personal/checklist/${id}/toggle/`,
+    CHECKLIST_RENAME: (id) => `/task/personal/checklist/${id}/rename/`,
+    CHECKLIST_DELETE: (id) => `/task/personal/checklist/${id}/delete/`,
+    CHECKLIST_REORDER: (taskId) => `/task/personal/tasks/${taskId}/checklist/reorder/`,
+};
 
-function escapeHtml(str) {
-    var d = document.createElement('div');
-    d.appendChild(document.createTextNode(str));
-    return d.innerHTML;
-}
-
-// Character counter for form fields
-function updateCharCount(inputId, counterId) {
-    var input = document.getElementById(inputId);
-    var counter = document.getElementById(counterId);
-    if (input && counter) {
-        counter.textContent = input.value.length;
+// CSRF token utility - single source of truth
+function getCSRFToken() {
+    const cookie = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+    if (cookie) {
+        return decodeURIComponent(cookie.split('=')[1]);
     }
-}
-
-function getCookie(name) {
-    var cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute('content') : null;
 }
 
 function showToast(message, type) {
@@ -2796,6 +2706,22 @@ var taskChecklists = {};
 taskChecklists[{{ task.id }}] = {{ task.checklist_items_json|safe }};
 {% endfor %}
 {% endfor %}
+
+// Escape HTML to prevent XSS
+function escapeHtml(str) {
+    var d = document.createElement('div');
+    d.appendChild(document.createTextNode(str));
+    return d.innerHTML;
+}
+
+// Character counter for form fields
+function updateCharCount(inputId, counterId) {
+    var input = document.getElementById(inputId);
+    var counter = document.getElementById(counterId);
+    if (input && counter) {
+        counter.textContent = input.value.length;
+    }
+}
 
 // ── AJAX Form Submissions ────────────────────────────────────────────────────────
 
@@ -2879,9 +2805,11 @@ function buildTaskCardHtml(task) {
         ' data-deadline_time="' + (task.deadline_time || '') + '"' +
         ' data-date-start="' + (task.date_start || '') + '"' +
         ' data-date-end="' + (task.date_end || '') + '"' +
-        ' data-notes="' + escapeHtml(task.notes || '') + '"' +
-        ' ' + checklistAttr +
-        '" draggable="true" tabindex="0" role="article"' +
+         ' data-notes="' + escapeHtml(task.notes || '') + '"' +
+         ' ' + checklistAttr +
+         '" data-is-recurring="' + (task.is_recurring ? 'true' : 'false') + '"' +
+         ' data-recurring-type="' + escapeHtml(task.recurring_type || '') + '"' +
+         ' draggable="true" tabindex="0" role="article"' +
         ' aria-label="Task: ' + escapeHtml(task.title) + (task.is_completed ? ', completed' : '') + '">';
     
     html += '<div class="flex items-start gap-3">';
@@ -2915,13 +2843,33 @@ function buildTaskCardHtml(task) {
             '<i class="fas fa-calendar-alt"></i>' + dateStr + timeStr + '</span>';
     }
     
-    if (task.is_recurring) {
-        html += '<span class="task-meta-item" title="Recurring ' + task.recurring_type.charAt(0).toUpperCase() + task.recurring_type.slice(1) + '">' +
-            '<i class="fas fa-redo"></i>' + task.recurring_type.charAt(0).toUpperCase() + task.recurring_type.slice(1) + '</span>';
-    }
-    html += '</div>';
-    
-    // Date range
+     if (task.is_recurring) {
+         html += '<span class="task-meta-item" title="Recurring ' + task.recurring_type.charAt(0).toUpperCase() + task.recurring_type.slice(1) + '">' +
+             '<i class="fas fa-redo"></i>' + task.recurring_type.charAt(0).toUpperCase() + task.recurring_type.slice(1) + '</span>';
+     }
+     // Blocked status
+     if (task.is_blocked || (task.blocked_by && task.blocked_by.length > 0)) {
+         var blockedBy = task.blocked_by || [];
+         html += '<span class="task-meta-item text-red-600 dark:text-red-400" title="Blocked by: ' + escapeHtml(blockedBy.join(', ')) + '">' +
+             '<i class="fas fa-exclamation-triangle"></i> Blocked' +
+             '</span>';
+     }
+     // Dependencies
+     var depCount = task.dependency_count || (task.dependencies ? task.dependencies.length : 0);
+     if (depCount > 0) {
+         html += '<span class="task-meta-item text-blue-600 dark:text-blue-400" title="Waiting on ' + depCount + ' dependency(ies)">' +
+             '<i class="fas fa-link"></i> ' + depCount + ' dep' +
+             '</span>';
+     }
+     // Blocking others
+     if (task.is_blocking) {
+         html += '<span class="task-meta-item text-amber-600 dark:text-amber-400" title="Blocking other tasks">' +
+             '<i class="fas fa-chain-broken"></i> Blocking' +
+             '</span>';
+     }
+     html += '</div>';
+     
+     // Date range
     if (task.date_start && task.date_end) {
         html += '<div class="mt-1.5">' +
             '<span class="date-range"><i class="fas fa-calendar-week"></i>' +
@@ -2930,24 +2878,45 @@ function buildTaskCardHtml(task) {
             '</span></div>';
     }
     
-    // Notes preview
-    if (task.notes) {
-        html += '<div class="notes-preview mt-2">' +
-            '<i class="fas fa-sticky-note"></i>' +
-            '<span title="' + escapeHtml(task.notes) + '">' + escapeHtml(task.notes.substring(0, 80)) + '</span>' +
-            '</div>';
-    }
-    
-    html += '</div>';
-    
-     // Archive button
-     html += '<div class="flex items-center gap-1 flex-shrink-0">' +
-         '<button onclick="archiveTask(' + task.id + ', this)" class="task-quick-action archive-btn p-1.5 rounded-md text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-900/20" ' +
-         'aria-label="Archive task: ' + escapeHtml(task.title) + '" title="Archive task">' +
-         '<i class="fas fa-archive text-sm"></i></button>' +
+     // Notes preview
+     if (task.notes) {
+         html += '<div class="notes-preview mt-2">' +
+             '<i class="fas fa-sticky-note"></i>' +
+             '<span title="' + escapeHtml(task.notes) + '">' + escapeHtml(task.notes.substring(0, 80)) + '</span>' +
+             '</div>';
+     }
+
+     // Inline Task Actions Row (edit, cycle priority, delete)
+     html += '<div class="task-actions">' +
+         '<button onclick="event.stopPropagation(); openTaskDetail(' + task.id + ')"' +
+         ' class="task-action-btn text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"' +
+         ' title="Edit task">' +
+         '<i class="fas fa-edit"></i></button>' +
+         '<button onclick="event.stopPropagation(); cyclePriority(' + task.id + ')"' +
+         ' class="task-action-btn text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"' +
+         ' title="Change priority">' +
+         '<i class="fas fa-flag"></i></button>' +
+         '<button onclick="event.stopPropagation(); openDeleteTaskModal(' + task.id + ', this)"' +
+         ' class="task-action-btn text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"' +
+         ' title="Delete task">' +
+         '<i class="fas fa-trash-alt"></i></button>' +
          '</div>';
-    
-    html += '</div></div>';
+
+     html += '</div>';
+
+      // Desktop hover quick actions (view details, archive)
+      html += '<div class="flex items-center gap-1 flex-shrink-0">' +
+          '<button onclick="event.stopPropagation(); openTaskDetail(' + task.id + ')"' +
+          ' class="task-quick-action p-1.5 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20"' +
+          ' aria-label="View task details: ' + escapeHtml(task.title) + '" title="View details">' +
+          '<i class="fas fa-eye text-sm"></i></button>' +
+          '<button onclick="archiveTask(' + task.id + ', this)"' +
+          ' class="task-quick-action archive-btn p-1.5 rounded-md text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-900/20"' +
+          ' aria-label="Archive task: ' + escapeHtml(task.title) + '" title="Archive task">' +
+          '<i class="fas fa-archive text-sm"></i></button>' +
+          '</div>';
+
+     html += '</div></div>';
     return html;
 }
 
@@ -3181,16 +3150,6 @@ function renderTimeline() {
     
 
 
-// ── Toast ────────────────────────────────────────────────────────────────────
-
-function showToast(message, type) {
-var t = document.getElementById('toast');
-t.textContent = message;
-t.className = 'show ' + (type || 'success');
-clearTimeout(window._toastTimer);
-window._toastTimer = setTimeout(function() { t.className = ''; }, 3000);
-}
-
 // ── Modal helpers ────────────────────────────────────────────────────────────
 
 function openAddTaskModal(columnId) {
@@ -3314,10 +3273,10 @@ function deleteColumn(columnId) {
             var originalBtnText = confirmBtn.innerHTML;
             setButtonLoading(confirmBtn, true, 'Deleting...');
 
-            fetch('/task/personal/columns/' + columnId + '/delete/', {
+            fetch(URL_CONFIG.COLUMN_DELETE(columnId), {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-CSRFToken': getCSRFToken(),
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
@@ -3378,11 +3337,18 @@ function openTaskDetail(taskId) {
     // Update deadline display
     updateDeadlineDisplay('edit');
 
-     document.getElementById('detailDateStart').value   = taskEl.dataset.dateStart   || '';
-     document.getElementById('detailDateEnd').value     = taskEl.dataset.dateEnd     || '';
-     document.getElementById('detailNotes').value       = taskEl.dataset.notes       || '';
+      document.getElementById('detailDateStart').value   = taskEl.dataset.dateStart   || '';
+      document.getElementById('detailDateEnd').value     = taskEl.dataset.dateEnd     || '';
+      document.getElementById('detailNotes').value       = taskEl.dataset.notes       || '';
 
-     // Update character counters for detail modal
+      // Set recurrence fields
+      var isRecurring = taskEl.dataset.isRecurring === 'true';
+      document.getElementById('detailIsRecurring').checked = isRecurring;
+      document.getElementById('detailRecurringType').value = taskEl.dataset.recurringType || '';
+      // Show/hide recurring options based on checked state
+      toggleRecurringOptions('edit');
+
+      // Update character counters for detail modal
      updateCharCount('detailTitle', 'detailTitleCount');
      updateCharCount('detailDescription', 'detailDescriptionCount');
      updateCharCount('detailNotes', 'detailNotesCount');
@@ -3391,9 +3357,6 @@ function openTaskDetail(taskId) {
 
     // Load checklist (initializes ChecklistManager internally)
     loadChecklistItems(taskId);
-
-    // Initialize UI enhancements
-    // initCharacterCountersForDetail();  // Removed - function not defined
     initPrioritySelectors();
 
      // Show modal
@@ -3417,12 +3380,6 @@ function renderChecklistItem(item) {
     return html;
 }
 
-function escapeHtml(str) {
-var d = document.createElement('div');
-d.appendChild(document.createTextNode(str));
-return d.innerHTML;
-}
-
 // ── Inline checklist rename ────────────────────────────────────────────────────
 
 function renameChecklist(itemId, spanEl) {
@@ -3443,10 +3400,10 @@ function renameChecklist(itemId, spanEl) {
         return;
     }
     
-    fetch('/task/personal/checklist/' + itemId + '/rename/', {
+    fetch(URL_CONFIG.CHECKLIST_RENAME(itemId), {
         method: 'POST',
         headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
+            'X-CSRFToken': getCSRFToken(),
             'X-Requested-With': 'XMLHttpRequest',
             'Content-Type': 'application/x-www-form-urlencoded'
         },
@@ -3537,13 +3494,13 @@ function submitChecklist() {
     input.disabled = true;
     setButtonLoading(submitBtn, true, 'Adding...');
 
-    fetch('/task/personal/tasks/' + taskId + '/checklist/add/', {
+    fetch(URL_CONFIG.CHECKLIST_ADD(taskId), {
         method: 'POST',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
             'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: 'checklist_text=' + encodeURIComponent(text) + '&csrfmiddlewaretoken=' + getCookie('csrftoken')
+        body: 'checklist_text=' + encodeURIComponent(text) + '&csrfmiddlewaretoken=' + getCSRFToken()
     })
     .then(function(r) {
         if (!r.ok) throw new Error('Server error ' + r.status);
@@ -3552,12 +3509,7 @@ function submitChecklist() {
     .then(function(data) {
         if (!data.id) throw new Error('Server did not return item id');
 
-        var container = document.getElementById('checklistItems');
-        var noItems = container.querySelector('p');
-        if (noItems) noItems.remove();
-
         var newItem = { id: data.id, text: data.text || text, is_completed: false };
-        container.insertAdjacentHTML('beforeend', renderChecklistItem(newItem));
 
         // Update taskChecklists[taskId] array
         if (!taskChecklists[taskId]) {
@@ -3582,13 +3534,8 @@ function submitChecklist() {
             taskEl.setAttribute('data-checklist', JSON.stringify(checklist));
         }
 
-        // Sync with ChecklistManager if active
-        if (window.checklistManager && checklistManager.currentTaskId == taskId) {
-            // Add to manager's list and re-render
-            checklistManager.items.list.push(newItem);
-            checklistManager.render();
-            checklistManager.updateProgress();
-        }
+        // Re-render checklist UI via single source of truth
+        loadChecklistItems(taskId);
 
         input.value = '';
         showToast('Checklist item added', 'success');
@@ -3610,10 +3557,10 @@ function toggleChecklist(itemId, checkbox) {
     var itemEl = document.getElementById('checklist-item-' + itemId);
     if (itemEl) itemEl.classList.add('btn-loading');
 
-    fetch('/task/personal/checklist/' + itemId + '/toggle/', {
+    fetch(URL_CONFIG.CHECKLIST_TOGGLE(itemId), {
         method: 'POST',
         headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
+            'X-CSRFToken': getCSRFToken(),
             'X-Requested-With': 'XMLHttpRequest',
             'Content-Type': 'application/json'
         }
@@ -3675,27 +3622,30 @@ function toggleChecklist(itemId, checkbox) {
 
 // ── Save Task (AJAX) ─────────────────────────────────────────────────────────
 
-function saveTask() {
-    var taskId = document.getElementById('detailTaskId').value;
-    if (!taskId) return;
+ function saveTask() {
+     var taskId = document.getElementById('detailTaskId').value;
+     if (!taskId) return;
 
-    var saveBtn = document.getElementById('saveBtn');
-    var originalBtnText = saveBtn.innerHTML;
-    setButtonLoading(saveBtn, true, originalBtnText);
+     var saveBtn = document.getElementById('saveBtn');
+     var originalBtnText = saveBtn.innerHTML;
+     setButtonLoading(saveBtn, true, originalBtnText);
 
-    var formData = new FormData();
-    formData.append('title',       document.getElementById('detailTitle').value);
-    formData.append('description', document.getElementById('detailDescription').value);
-    var priorityRadio = document.querySelector('#updateTaskForm input[name="priority"]:checked');
-    formData.append('priority', priorityRadio ? priorityRadio.value : 'medium');
-    formData.append('deadline',    document.getElementById('detailDeadline').value);
-    formData.append('deadline_time', document.getElementById('detailDeadlineTime').value);
-    formData.append('date_start',  document.getElementById('detailDateStart').value);
-    formData.append('date_end',    document.getElementById('detailDateEnd').value);
-    formData.append('notes',       document.getElementById('detailNotes').value);
-    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+     var formData = new FormData();
+     formData.append('title',       document.getElementById('detailTitle').value);
+     formData.append('description', document.getElementById('detailDescription').value);
+     var priorityRadio = document.querySelector('#updateTaskForm input[name="priority"]:checked');
+     formData.append('priority', priorityRadio ? priorityRadio.value : 'medium');
+     formData.append('deadline',    document.getElementById('detailDeadline').value);
+     formData.append('deadline_time', document.getElementById('detailDeadlineTime').value);
+     formData.append('date_start',  document.getElementById('detailDateStart').value);
+     formData.append('date_end',    document.getElementById('detailDateEnd').value);
+     formData.append('notes',       document.getElementById('detailNotes').value);
+     // Include recurrence fields
+     formData.append('is_recurring', document.getElementById('detailIsRecurring').checked ? 'on' : '');
+     formData.append('recurring_type', document.getElementById('detailRecurringType').value);
+     formData.append('csrfmiddlewaretoken', getCSRFToken());
 
-    fetch('/task/personal/tasks/' + taskId + '/edit/', {
+    fetch(URL_CONFIG.TASK_EDIT(taskId), {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData
@@ -3778,61 +3728,85 @@ function toggleTask(taskId) {
         checkboxBtn.classList.add('btn-loading');
     }
 
-    fetch('/task/personal/tasks/' + taskId + '/toggle/', {
+    fetch(URL_CONFIG.TASK_TOGGLE(taskId), {
         method: 'POST',
         headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
+            'X-CSRFToken': getCSRFToken(),
             'X-Requested-With': 'XMLHttpRequest',
             'Content-Type': 'application/json'
         }
     })
     .then(function(r) { return r.json(); })
-    .then(function(data) {
-        console.log('Toggle response:', data);
-        if (data.success !== false) {
-            var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
-            if (!taskEl) return;
+     .then(function(data) {
+         console.log('Toggle response:', data);
+         if (data.success !== false) {
+             var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+             if (!taskEl) return;
 
-            var isCompleted = data.completed;
+             var isCompleted = data.completed;
 
-            if (isCompleted) {
-                taskEl.classList.add('completed');
-                taskEl.classList.remove('priority-low', 'priority-medium', 'priority-high', 'priority-urgent');
-            } else {
-                taskEl.classList.remove('completed');
-                var priority = taskEl.dataset.priority || 'medium';
-                taskEl.classList.remove('priority-low', 'priority-medium', 'priority-high', 'priority-urgent');
-                taskEl.classList.add('priority-' + priority);
-            }
+             if (isCompleted) {
+                 taskEl.classList.add('completed');
+                 taskEl.classList.remove('priority-low', 'priority-medium', 'priority-high', 'priority-urgent');
+                 
+                 // Handle recurring task: add new instance to column
+                 if (data.new_task) {
+                     var newTaskHtml = buildTaskCardHtml(data.new_task);
+                     var columnEl = taskEl.closest('.personal-column');
+                     if (columnEl) {
+                         columnEl.insertAdjacentHTML('beforeend', newTaskHtml);
+                         // Update column count
+                         var columnId = columnEl.getAttribute('data-column-id');
+                         var countEl = document.getElementById('count-col-' + columnId);
+                         if (countEl) {
+                             countEl.textContent = parseInt(countEl.textContent || 0) + 1;
+                         }
+                         // Hide "No tasks" placeholder if present
+                         var noTasksMsg = columnEl.querySelector('.text-center.py-8');
+                         if (noTasksMsg) noTasksMsg.style.display = 'none';
+                         // Add to checklist cache
+                         taskChecklists[data.new_task.id] = data.new_task.checklist_items || [];
+                     }
+                 }
+             } else {
+                 taskEl.classList.remove('completed');
+                 var priority = taskEl.dataset.priority || 'medium';
+                 taskEl.classList.remove('priority-low', 'priority-medium', 'priority-high', 'priority-urgent');
+                 taskEl.classList.add('priority-' + priority);
+             }
 
-            var checkboxBtn = taskEl.querySelector('button[onclick*="toggleTask"]');
-            if (checkboxBtn) {
-                checkboxBtn.innerHTML = isCompleted ? '<i class="fas fa-check text-xs text-white"></i>' : '';
-                checkboxBtn.classList.toggle('checked', isCompleted);
-            }
+             var checkboxBtn = taskEl.querySelector('button[onclick*="toggleTask"]');
+             if (checkboxBtn) {
+                 checkboxBtn.innerHTML = isCompleted ? '<i class="fas fa-check text-xs text-white"></i>' : '';
+                 checkboxBtn.classList.toggle('checked', isCompleted);
+             }
 
-            // Update task title styling
-            var titleEl = taskEl.querySelector('h4.task-title');
-            if (titleEl) {
-                if (isCompleted) {
-                    titleEl.classList.add('text-gray-500');
-                    titleEl.classList.remove('text-gray-800');
-                } else {
-                    titleEl.classList.remove('text-gray-500');
-                    titleEl.classList.add('text-gray-800');
-                }
-            }
+             // Update task title styling
+             var titleEl = taskEl.querySelector('h4.task-title');
+             if (titleEl) {
+                 if (isCompleted) {
+                     titleEl.classList.add('text-gray-500');
+                     titleEl.classList.remove('text-gray-800');
+                 } else {
+                     titleEl.classList.remove('text-gray-500');
+                     titleEl.classList.add('text-gray-800');
+                 }
+             }
 
-            // Refresh timeline if showing
-            if (isTimelineView && window.personalCalendar) {
-                renderTimeline();
-            }
+             // Refresh timeline if showing
+             if (isTimelineView && window.personalCalendar) {
+                 renderTimeline();
+             }
 
-            showToast(isCompleted ? 'Task completed!' : 'Task marked incomplete', 'success');
-        } else {
-            showToast('Failed to update task: ' + (data.message || 'Unknown error'), 'error');
-        }
-    })
+             var message = isCompleted ? 'Task completed!' : 'Task marked incomplete';
+             if (data.message) {
+                 message = data.message;  // Use server message (includes recurrence notice)
+             }
+             showToast(message, 'success');
+         } else {
+             showToast('Failed to update task: ' + (data.message || 'Unknown error'), 'error');
+         }
+     })
     .catch(err => {
         console.error('Toggle error:', err);
         showToast('Failed to update task status', 'error');
@@ -3873,10 +3847,10 @@ function cyclePriority(taskId) {
     }
 
     // Send update to server
-    fetch('/task/personal/tasks/' + taskId + '/set_priority/', {
+    fetch(URL_CONFIG.TASK_SET_PRIORITY(taskId), {
         method: 'POST',
         headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
+            'X-CSRFToken': getCSRFToken(),
             'X-Requested-With': 'XMLHttpRequest',
             'Content-Type': 'application/x-www-form-urlencoded'
         },
@@ -3938,6 +3912,12 @@ function openDeleteTaskModal(taskId, triggerBtn) {
 
 function closeDeleteTaskModal() {
     document.getElementById('deleteTaskModal').classList.remove('show');
+    // Re-enable the trigger button if cancellation
+    if (pendingDeleteTriggerBtn) {
+        pendingDeleteTriggerBtn.disabled = false;
+        pendingDeleteTriggerBtn.classList.remove('btn-loading');
+        pendingDeleteTriggerBtn = null;
+    }
 }
 
 function confirmDeleteTask() {
@@ -3952,10 +3932,10 @@ function confirmDeleteTask() {
         setButtonLoading(deleteBtn, true, 'Deleting...');
     }
 
-    fetch('/task/personal/tasks/' + taskId + '/delete/', {
+    fetch(URL_CONFIG.TASK_DELETE(taskId), {
         method: 'POST',
         headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
+            'X-CSRFToken': getCSRFToken(),
             'X-Requested-With': 'XMLHttpRequest',
         }
     })
@@ -4186,10 +4166,10 @@ function restoreTask(taskId) {
             var originalBtnText = confirmBtn.innerHTML;
             setButtonLoading(confirmBtn, true, 'Restoring...');
 
-            fetch('/task/personal/tasks/' + taskId + '/restore/', {
+            fetch(URL_CONFIG.TASK_RESTORE(taskId), {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-CSRFToken': getCSRFToken(),
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
@@ -4254,10 +4234,10 @@ function archiveDetailTask() {
             var originalBtnText = confirmBtn.innerHTML;
             setButtonLoading(confirmBtn, true, 'Archiving...');
 
-            fetch('/task/personal/tasks/' + taskId + '/archive/', {
+            fetch(URL_CONFIG.TASK_ARCHIVE(taskId), {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-CSRFToken': getCSRFToken(),
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
@@ -4266,6 +4246,77 @@ function archiveDetailTask() {
                 if (data.success || data.archived) {
                     showToast('Task archived', 'success');
                     closeTaskDetailModal();
+                    if (taskEl) taskEl.remove();
+                    var columnEl = taskEl ? taskEl.closest('.personal-column') : null;
+                    if (columnEl) {
+                        var columnId = columnEl.getAttribute('data-column-id');
+                        var countEl = document.getElementById('count-col-' + columnId);
+                        if (countEl) {
+                            var newCount = Math.max(0, (parseInt(countEl.textContent) || 0) - 1);
+                            countEl.textContent = newCount;
+                            if (newCount === 0) {
+                                var noTasksMsg = columnEl.querySelector('.text-center.py-8');
+                                if (!noTasksMsg) {
+                                    noTasksMsg = document.createElement('div');
+                                    noTasksMsg.className = 'text-center py-8 text-gray-600 dark:text-gray-400';
+                                    noTasksMsg.innerHTML = '<p class="text-sm">No tasks</p>';
+                                    columnEl.appendChild(noTasksMsg);
+                                } else {
+                                    noTasksMsg.style.display = 'block';
+                                }
+                            }
+                        }
+                    }
+                    updateArchivedCount(1);
+                    if (taskData) prependArchivedTask(taskData);
+                } else {
+                    showToast('Archive failed', 'error');
+                }
+            })
+            .catch(err => {
+                showToast('Failed: ' + err.message, 'error');
+            })
+            .finally(function() {
+                setButtonLoading(confirmBtn, false, originalBtnText);
+                closeConfirmModal();
+            });
+        }
+    );
+}
+
+// Quick-action archive from task card (without closing modal)
+function archiveTask(taskId, btnElement) {
+    var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+    if (!taskEl) return;
+    var taskData = {
+        id: parseInt(taskId),
+        title: taskEl.dataset.title || '',
+        description: taskEl.dataset.description || '',
+        priority: taskEl.dataset.priority || 'medium',
+        deadline: taskEl.dataset.deadline || '',
+        deadline_time: taskEl.dataset.deadline_time || '',
+        is_completed: taskEl.classList.contains('completed')
+    };
+
+    showConfirmModal(
+        'Archive Task',
+        'Are you sure you want to archive this task? It will be moved to your archived tasks.',
+        function() {
+            var confirmBtn = document.getElementById('confirmModalYes');
+            var originalBtnText = confirmBtn.innerHTML;
+            setButtonLoading(confirmBtn, true, 'Archiving...');
+
+            fetch(URL_CONFIG.TASK_ARCHIVE(taskId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success || data.archived) {
+                    showToast('Task archived', 'success');
                     if (taskEl) taskEl.remove();
                     var columnEl = taskEl ? taskEl.closest('.personal-column') : null;
                     if (columnEl) {
@@ -4415,10 +4466,10 @@ function deleteArchivedTask(taskId) {
     var originalBtnText = confirmBtn.innerHTML;
     setButtonLoading(confirmBtn, true, 'Deleting...');
 
-    fetch('/task/personal/tasks/' + taskId + '/delete/', {
+    fetch(URL_CONFIG.TASK_DELETE(taskId), {
         method: 'POST',
         headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
+            'X-CSRFToken': getCSRFToken(),
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
@@ -4453,10 +4504,10 @@ document.getElementById('confirmDeleteChecklistBtn').addEventListener('click', f
     var originalBtnText = confirmBtn.innerHTML;
     setButtonLoading(confirmBtn, true, 'Deleting...');
 
-    fetch('/task/personal/checklist/' + pendingDeleteChecklistId + '/delete/', {
+    fetch(URL_CONFIG.CHECKLIST_DELETE(pendingDeleteChecklistId), {
         method: 'POST',
         headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
+            'X-CSRFToken': getCSRFToken(),
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
@@ -4488,7 +4539,7 @@ document.getElementById('confirmDeleteChecklistBtn').addEventListener('click', f
               }
 
               var container = document.getElementById('checklistItems');
-             if (container && container.querySelectorAll('.flex.items-center').length === 0) {
+              if (container && container.querySelectorAll('.checklist-item').length === 0) {
                  container.innerHTML = '<p class="text-gray-500 text-sm py-2">No checklist items yet.</p>';
              }
 
@@ -4534,11 +4585,11 @@ function initChecklistSortable() {
             }
             
             // Persist order to server
-            fetch('/task/personal/tasks/' + taskId + '/checklist/reorder/', {
+            fetch(URL_CONFIG.CHECKLIST_REORDER(taskId), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-CSRFToken': getCSRFToken(),
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({
@@ -4587,11 +4638,11 @@ document.getElementById('editColumnForm').addEventListener('submit', function(e)
 
     setButtonLoading(submitBtn, true, 'Saving...');
 
-    fetch('/task/personal/columns/' + columnId + '/edit/', {
+    fetch(URL_CONFIG.COLUMN_EDIT(columnId), {
         method: 'POST',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': getCookie('csrftoken'),
+            'X-CSRFToken': getCSRFToken(),
             'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: 'name=' + encodeURIComponent(name) + '&color=' + encodeURIComponent(color)
@@ -4679,11 +4730,11 @@ function initColumnSortable(columnEl) {
                     }
                 }
 
-                fetch('/task/personal/api/update-position/', {
+                fetch(URL_CONFIG.TASK_REORDER, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken'),
+                        'X-CSRFToken': getCSRFToken(),
                         'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify({
@@ -4765,11 +4816,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (orderInput) orderInput.value = index;
                 });
 
-                fetch('/task/personal/api/update-column-position/', {
+                fetch(URL_CONFIG.COLUMN_REORDER, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken'),
+                        'X-CSRFToken': getCSRFToken(),
                         'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify({
@@ -4896,6 +4947,86 @@ function toggleRecurringOptions(mode) {
         }, 200);
     }
 }
+
+// Simple Checklist Manager for bulk operations (fallback when no external manager)
+window.checklistManager = {
+    currentTaskId: null,
+    items: { list: [] },
+    init: function(taskId, data) {
+        this.currentTaskId = taskId;
+        this.items = data;
+        this.render();
+        this.updateProgress();
+    },
+    render: function() {
+        var container = document.getElementById('checklistItems');
+        if (!container) return;
+        var items = taskChecklists[this.currentTaskId] || [];
+        container.innerHTML = items.map(renderChecklistItem).join('');
+    },
+    updateProgress: function() {
+        var taskId = this.currentTaskId;
+        var items = taskChecklists[taskId] || [];
+        var completed = items.filter(function(i) { return i.is_completed; }).length;
+        var total = items.length;
+        var progressText = document.getElementById('checklistProgressText');
+        if (progressText) progressText.textContent = completed + '/' + total + ' completed';
+        var progressFill = document.getElementById('checklistProgressFill');
+        if (progressFill) {
+            var percent = total > 0 ? (completed / total * 100) : 0;
+            progressFill.style.width = percent + '%';
+        }
+    },
+    checkAll: function() {
+        var taskId = this.currentTaskId;
+        var items = taskChecklists[taskId] || [];
+        items.forEach(function(item) {
+            if (!item.is_completed) {
+                toggleChecklist(item.id, null);
+            }
+        });
+    },
+    uncheckAll: function() {
+        var taskId = this.currentTaskId;
+        var items = taskChecklists[taskId] || [];
+        items.forEach(function(item) {
+            if (item.is_completed) {
+                toggleChecklist(item.id, null);
+            }
+        });
+    },
+    deleteCompleted: function() {
+        var taskId = this.currentTaskId;
+        var items = taskChecklists[taskId] || [];
+        var completedIds = items.filter(function(i) { return i.is_completed; }).map(function(i) { return i.id; });
+        if (completedIds.length === 0) {
+            showToast('No completed items to delete', 'error');
+            return;
+        }
+        if (!confirm('Delete ' + completedIds.length + ' completed item(s)? This cannot be undone.')) return;
+        // Delete each completed item
+        completedIds.forEach(function(id) {
+            fetch(URL_CONFIG.CHECKLIST_DELETE(id), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) {
+                    var el = document.getElementById('checklist-item-' + id);
+                    if (el) el.remove();
+                }
+            }).catch(function(err) {
+                showToast('Failed to delete item ' + id, 'error');
+            });
+        });
+        // Optimistically update local state
+        taskChecklists[taskId] = items.filter(function(i) { return !i.is_completed; });
+        this.render();
+        this.updateProgress();
+    }
+};
 
 // Form validation
 function validateField(field) {
