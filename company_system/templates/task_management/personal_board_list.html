@@ -382,52 +382,118 @@
                 </a>
                 <a href="{% url 'task_management:roadmap_list' %}"
                    class="quick-link flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-2 rounded-lg">
-                    <i class="fas fa-map text-sm"></i>
-                    <span class="font-medium">Roadmaps</span>
-                </a>
-                <a href="{% url 'task_management:personal_board_archived_list' %}"
-                   class="quick-link flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-2 rounded-lg">
-                    <i class="fas fa-archive text-sm"></i>
-                    <span class="font-medium">Archived Boards</span>
-                </a>
+                     <i class="fas fa-map text-sm"></i>
+                     <span class="font-medium">Roadmaps</span>
+                 </a>
+                 <button @click="openArchivedDrawer()"
+                         class="quick-link flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-2 rounded-lg">
+                     <i class="fas fa-archive text-sm"></i>
+                     <span class="font-medium">Archived Boards</span>
+                 </button>
             </div>
         </div>
         {% endif %}
     </div>
 
-<!-- Edit Board Modal — FIX: uses .is-open class instead of conflicting hidden + flex -->
+    <!-- Archived Boards Drawer -->
+    <div x-show="archivedDrawerOpen"
+         x-transition:enter="transform transition ease-in-out duration-300"
+         x-transition:enter-start="translate-x-full"
+         x-transition:enter-end="translate-x-0"
+         x-transition:leave="transform transition ease-in-out duration-300"
+         x-transition:leave-start="translate-x-0"
+         x-transition:leave-end="translate-x-full"
+         class="fixed top-0 right-0 h-full w-96 max-w-full bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700 z-50 flex flex-col"
+         @click.away="closeArchivedDrawer()">
+
+        <!-- Drawer Header -->
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                        <i class="fas fa-archive text-gray-600 dark:text-gray-400"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">
+                        Archived Boards
+                    </h2>
+                </div>
+                <button @click="closeArchivedDrawer()"
+                        class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                        aria-label="Close archived boards drawer">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Drawer Content -->
+        <div class="flex-1 overflow-y-auto p-6">
+            <div id="archived-boards-container" class="space-y-4">
+                <!-- Loading state will be inserted by JS -->
+            </div>
+        </div>
+
+        <!-- Drawer Footer -->
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+            <button @click="closeArchivedDrawer()"
+                    class="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Backdrop overlay when drawer is open -->
+    <div x-show="archivedDrawerOpen"
+         x-transition:enter="transition-opacity ease-linear duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition-opacity ease-linear duration-300"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black/50 z-40"
+         @click="closeArchivedDrawer()">
+    </div>
+
+     <!-- Scroll to top button (existing) -->
+     <button x-show="scrolled"
+             x-transition
+             @click="window.scrollTo({top: 0, behavior: 'smooth'})"
+             class="fixed bottom-6 right-6 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all hover:scale-105 z-50"
+             title="Scroll to top">
+         <i class="fas fa-arrow-up"></i>
+     </button>
+     <!-- Edit Board Modal -->
      <div id="editBoardModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" aria-describedby="editModalDesc" tabindex="-1">
          <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-600">
-<div class="flex justify-between items-center mb-6">
+             <div class="flex justify-between items-center mb-6">
                  <h2 id="editModalTitle" class="text-xl font-semibold text-white">Edit Board</h2>
-                 <button onclick="closeEditModal()" class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white">
-                     <i class="fas fa-times"></i>
+                 <button onclick="closeEditModal()" class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white" aria-label="Close modal">
+                     <i class="fas fa-times" aria-hidden="true"></i>
                  </button>
              </div>
              <p id="editModalDesc" class="sr-only">Edit your personal board name and description</p>
              <form id="editBoardForm" method="post" action="">
-                {% csrf_token %}
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Board Name</label>
-                        <input type="text" name="name" id="editBoardName" required
-                               class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-200">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Description (optional)</label>
-                        <textarea name="description" id="editBoardDescription" rows="3"
-                                  class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-200"></textarea>
-                    </div>
-                </div>
-                <div class="flex justify-end gap-3 mt-6">
-                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 text-gray-300">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg">
-                        <i class="fas fa-save mr-2"></i>Save Changes
-                    </button>
-                </div>
-</form>
-</div>
- </div>
+                 {% csrf_token %}
+                 <div class="space-y-4">
+                     <div>
+                         <label class="block text-sm font-medium text-gray-300 mb-2">Board Name</label>
+                         <input type="text" name="name" id="editBoardName" required
+                                class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-200">
+                     </div>
+                     <div>
+                         <label class="block text-sm font-medium text-gray-300 mb-2">Description (optional)</label>
+                         <textarea name="description" id="editBoardDescription" rows="3"
+                                   class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-200"></textarea>
+                     </div>
+                 </div>
+                 <div class="flex justify-end gap-3 mt-6">
+                     <button type="button" onclick="closeEditModal()" class="px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 text-gray-300">Cancel</button>
+                     <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg">
+                         <i class="fas fa-save mr-2"></i>Save Changes
+                     </button>
+                 </div>
+             </form>
+         </div>
+     </div>
 
  <!-- Archive Modal -->
  <div id="archiveModal"
@@ -464,15 +530,7 @@
      </div>
  </div>
 
- <!-- FIX: Scroll-to-top button -->
- <button x-show="scrolled"
-         x-transition
-         @click="window.scrollTo({top: 0, behavior: 'smooth'})"
-         class="fixed bottom-6 right-6 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all hover:scale-105 z-50"
-         title="Scroll to top">
-     <i class="fas fa-arrow-up"></i>
- </button>
-</div>
+  </div>
  {% endblock %}
 
 {% block extra_scripts %}
@@ -481,13 +539,33 @@
 <script>
     function personalBoardsData() {
         return {
-            // FIX: scrolled is reactive state tracked via window scroll event
             scrolled: false,
+            archivedDrawerOpen: false,
 
             init() {
                 const handler = () => { this.scrolled = window.scrollY > 300; };
                 window.addEventListener('scroll', handler, { passive: true });
                 this.$cleanup = () => window.removeEventListener('scroll', handler);
+
+                // Event delegation for archived drawer buttons
+                const archivedContainer = document.getElementById('archived-boards-container');
+                if (archivedContainer) {
+                    archivedContainer.addEventListener('click', (e) => {
+                        const restoreBtn = e.target.closest('.restore-btn');
+                        if (restoreBtn) {
+                            const card = restoreBtn.closest('[data-board-id]');
+                            const boardId = card.dataset.boardId;
+                            this.restoreBoard(boardId);
+                        }
+                        const deleteBtn = e.target.closest('.delete-btn');
+                        if (deleteBtn) {
+                            const card = deleteBtn.closest('[data-board-id]');
+                            const boardId = card.dataset.boardId;
+                            const boardName = card.dataset.boardName;
+                            this.deleteBoard(boardId, boardName);
+                        }
+                    });
+                }
             },
 
             boardColors: [
@@ -506,6 +584,168 @@
                     (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
                     (B < 255 ? B < 1 ? 0 : B : 255)
                 ).toString(16).slice(1);
+            },
+
+            async openArchivedDrawer() {
+                this.archivedDrawerOpen = true;
+                await this.fetchArchivedBoards();
+            },
+
+            closeArchivedDrawer() {
+                this.archivedDrawerOpen = false;
+            },
+
+            async fetchArchivedBoards() {
+                const container = document.getElementById('archived-boards-container');
+
+                try {
+                    const response = await fetch("{% url 'task_management:personal_board_archived_api' %}");
+                    const data = await response.json();
+
+                    if (data.boards && data.boards.length > 0) {
+                        container.innerHTML = data.boards.map((board) => `
+                            <div class="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md transition-all"
+                                 data-board-id="${board.id}"
+                                 data-board-name="${this.escapeHtml(board.name)}">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-md font-semibold text-gray-800 dark:text-gray-200 truncate mb-1">
+                                            ${this.escapeHtml(board.name)}
+                                        </h3>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+                                            ${board.description ? this.escapeHtml(board.description) : 'No description'}
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 ml-2 flex-shrink-0">
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">
+                                            ${board.total_tasks || 0} tasks
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-green-600 dark:text-green-400">
+                                            <i class="fas fa-check-circle mr-1"></i>
+                                            ${board.completed_tasks || 0} done
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button type="button"
+                                                class="restore-btn px-2.5 py-1.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                                                title="Restore board">
+                                            <i class="fas fa-undo mr-1"></i>Restore
+                                        </button>
+                                        <button type="button"
+                                                class="delete-btn px-2.5 py-1.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                                                title="Delete permanently">
+                                            <i class="fas fa-trash mr-1"></i>Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        container.innerHTML = `
+                            <div class="text-center py-12">
+                                <div class="mx-auto w-12 h-12 mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                                    <i class="fas fa-archive text-gray-400"></i>
+                                </div>
+                                <p class="text-gray-500 dark:text-gray-400">No archived boards</p>
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    console.error('Error fetching archived boards:', error);
+                    container.innerHTML = `
+                        <div class="text-center py-12">
+                            <p class="text-red-500 dark:text-red-400">Failed to load archived boards</p>
+                            <button @click="fetchArchivedBoards()"
+                                    class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                Retry
+                            </button>
+                        </div>
+                    `;
+                }
+            },
+
+            escapeHtml(unsafe) {
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            },
+
+            escapeJs(unsafe) {
+                return this.escapeHtml(unsafe);
+            },
+
+            // Event handlers for drawer actions
+            restoreBoard(boardId) {
+                if (!confirm('Restore this board?')) return;
+
+                fetch(`{% url 'task_management:personal_board_restore' 0 %}`.replace('0', boardId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': this.getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success || data.restored) {
+                        const card = document.querySelector(`#archived-boards-container [data-board-id="${boardId}"]`);
+                        if (card) {
+                            card.style.transition = 'opacity 0.3s';
+                            card.style.opacity = '0';
+                            setTimeout(() => card.remove(), 300);
+                        }
+                        showToast('Board restored successfully!', 'success');
+                    } else {
+                        alert('Error: ' + (data.error || 'Failed to restore board'));
+                    }
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('An error occurred while restoring the board.');
+                });
+            },
+
+            deleteBoard(boardId, boardName) {
+                if (!confirm(`Permanently delete "${boardName}"? This cannot be undone.`)) return;
+
+                fetch(`{% url 'task_management:personal_board_delete_permanent' 0 %}`.replace('0', boardId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': this.getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.deleted) {
+                        const card = document.querySelector(`#archived-boards-container [data-board-id="${boardId}"]`);
+                        if (card) {
+                            card.style.transition = 'opacity 0.3s';
+                            card.style.opacity = '0';
+                            setTimeout(() => card.remove(), 300);
+                        }
+                        showToast('Board deleted permanently!', 'success');
+                    } else {
+                        alert('Error: ' + (data.error || 'Failed to delete board'));
+                    }
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('An error occurred while deleting the board.');
+                });
+            },
+
+            getCsrfToken() {
+                const token = document.querySelector('[name=csrfmiddlewaretoken]');
+                return token ? token.value : '';
             }
         };
     }

@@ -676,6 +676,40 @@ def personal_board_archived_list(request):
 
 
 @custom_login_required
+@require_GET
+def personal_board_archived_api(request):
+    """API endpoint to get archived boards as JSON for drawer"""
+    current_staff = get_current_staff(request)
+    if not current_staff and not request.session.get('is_owner'):
+        return JsonResponse({'error': 'Not authenticated'}, status=401)
+
+    from django.db.models import Count, Q
+    archived_boards = PersonalBoard.objects.filter(
+        user=current_staff, is_archived=True
+    ).annotate(
+        total_tasks=Count('tasks'),
+        completed_tasks=Count('tasks', filter=Q(tasks__is_completed=True))
+    ).order_by('-updated_at').values(
+        'id', 'name', 'description', 'total_tasks', 'completed_tasks'
+    )
+
+    return JsonResponse({'boards': list(archived_boards)})
+
+
+@custom_login_required
+@require_POST
+def personal_board_delete_permanent(request, board_id):
+    """Permanently delete an archived board"""
+    current_staff = get_current_staff(request)
+    board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff, is_archived=True)
+    board.delete()
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'deleted': True})
+    messages.success(request, f'Board "{board.name}" has been permanently deleted.')
+    return redirect('task_management:personal_board_archived_list')
+
+
+@custom_login_required
 def personal_task_create(request, board_id):
     current_staff = get_current_staff(request)
     board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
