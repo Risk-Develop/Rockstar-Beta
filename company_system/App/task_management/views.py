@@ -543,16 +543,36 @@ def personal_board_list(request):
         messages.warning(request, "Please log in to access personal boards.")
         return redirect('task_management:board_list')
 
-    from django.db.models import Count, Q
-    personal_boards = PersonalBoard.objects.filter(
+    from django.db.models import Count, Q, Prefetch
+    personal_boards_qs = PersonalBoard.objects.filter(
         user=current_staff, is_archived=False
-    ).annotate(
-        total_tasks=Count('tasks'),
-        completed_tasks=Count('tasks', filter=Q(tasks__is_completed=True))
-    ) if current_staff else []
+    ).prefetch_related('columns') if current_staff else []
 
-    total_tasks_count = sum(board.total_tasks for board in personal_boards)
-    completed_tasks_count = sum(board.completed_tasks for board in personal_boards)
+    total_tasks_count = 0
+    completed_tasks_count = 0
+
+    # Annotate manually
+    for board in personal_boards_qs:
+        total = board.tasks.count()
+        completed = board.tasks.filter(is_completed=True).count()
+        high_pending = board.tasks.filter(is_completed=False, is_archived=False, priority='high').count()
+        medium_pending = board.tasks.filter(is_completed=False, is_archived=False, priority='medium').count()
+        low_pending = board.tasks.filter(is_completed=False, is_archived=False, priority='low').count()
+
+        board.total_tasks = total
+        board.completed_tasks = completed
+        board.high_priority_tasks = high_pending
+        board.medium_priority_tasks = medium_pending
+        board.low_priority_tasks = low_pending
+
+        total_tasks_count += total
+        completed_tasks_count += completed
+
+        # Find To Do column (first column by order)
+        columns = sorted(board.columns.all(), key=lambda c: c.order)
+        board.to_do_column_id = columns[0].id if columns else None
+
+    personal_boards = list(personal_boards_qs)
 
     return render(request, 'task_management/personal_board_list.html', {
         'personal_boards': personal_boards,
@@ -723,16 +743,31 @@ def personal_board_archived_api(request):
         return JsonResponse({'error': 'Not authenticated'}, status=401)
 
     from django.db.models import Count, Q
-    archived_boards = PersonalBoard.objects.filter(
+    archived_boards_qs = PersonalBoard.objects.filter(
         user=current_staff, is_archived=True
     ).annotate(
         total_tasks=Count('tasks'),
         completed_tasks=Count('tasks', filter=Q(tasks__is_completed=True))
-    ).order_by('-updated_at').values(
-        'id', 'name', 'description', 'total_tasks', 'completed_tasks'
-     )
+    ).order_by('-updated_at')
 
-    return JsonResponse({'boards': list(archived_boards)})
+    # Prefetch columns to find first column
+    archived_boards_qs = archived_boards_qs.prefetch_related('columns')
+
+    boards_list = []
+    for board in archived_boards_qs:
+        columns = sorted(board.columns.all(), key=lambda c: c.order)
+        to_do_column_id = columns[0].id if columns else None
+        boards_list.append({
+            'id': board.id,
+            'name': board.name,
+            'description': board.description or '',
+            'total_tasks': board.total_tasks,
+            'completed_tasks': board.completed_tasks,
+            'to_do_column_id': to_do_column_id,
+            'tag': board.tag,  # Add tag for border color
+        })
+
+    return JsonResponse({'boards': boards_list})
 
 
 @custom_login_required
@@ -741,16 +776,17 @@ def personal_tasks_preview_api(request, board_id):
     current_staff = get_current_staff(request)
     board = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
 
-    # Fetch first 5 non-archived tasks ordered by column then order
-    tasks = board.tasks.filter(is_archived=False)\
+    # Fetch first 3 pending (incomplete) non-archived tasks ordered by column then order
+    tasks = board.tasks.filter(is_archived=False, is_completed=False)\
         .select_related('column')\
-        .order_by('column__order', 'order')[:5]
+        .order_by('column__order', 'order')[:3]
 
     tasks_data = [
         {
             'title': task.title,
             'is_completed': task.is_completed,
             'priority': task.priority,
+            'deadline': task.deadline.isoformat() if task.deadline else None,
         }
         for task in tasks
     ]
@@ -829,7 +865,7 @@ def personal_task_create(request, board_id):
                 priority=priority, deadline=deadline, deadline_time=deadline_time,
                 date_start=date_start, date_end=date_end, notes=notes, is_recurring=is_recurring,
                 recurring_type=recurring_type if is_recurring else None, order=order
-    )
+            )
             # Prepare task data for JSON response
             checklist_items = list(task.checklist_items.all())
             task_data = {
