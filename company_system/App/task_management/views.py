@@ -100,11 +100,6 @@ def get_client_ip(request):
 def get_current_staff(request):
     """Get current staff from session or return None"""
     emp_num = request.session.get('employee_number')
-    is_owner = request.session.get('is_owner', False)
-    
-    if is_owner or emp_num == 'OWNER':
-        return None
-    
     if emp_num:
         try:
             return Staff.objects.get(employee_number=emp_num)
@@ -894,11 +889,28 @@ def personal_board_duplicate(request, board_id):
 
     # Return JSON for AJAX or redirect
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Compute to_do_column_id and counts for the new board
+        columns = sorted(duplicate.columns.all(), key=lambda c: c.order)
+        to_do_column_id = columns[0].id if columns else None
+        total_tasks = duplicate.tasks.count()
+        completed_tasks = duplicate.tasks.filter(is_completed=True).count()
+        high_pending = duplicate.tasks.filter(is_completed=False, priority='high').count()
+        medium_pending = duplicate.tasks.filter(is_completed=False, priority='medium').count()
+        low_pending = duplicate.tasks.filter(is_completed=False, priority='low').count()
         return JsonResponse({
             'success': True,
-            'board_id': duplicate.id,
-            'board_name': duplicate.name,
-            'message': f'Board "{duplicate.name}" created!'
+            'board': {
+                'id': duplicate.id,
+                'name': duplicate.name,
+                'description': duplicate.description or '',
+                'tag': duplicate.tag,
+                'to_do_column_id': to_do_column_id,
+                'total_tasks': total_tasks,
+                'completed_tasks': completed_tasks,
+                'high_priority_tasks': high_pending,
+                'medium_priority_tasks': medium_pending,
+                'low_priority_tasks': low_pending,
+            }
         })
     messages.success(request, f'Board "{duplicate.name}" created!')
     return redirect('task_management:personal_board_list')
