@@ -1186,11 +1186,12 @@
     </div>
 
     <!-- Scroll to top button -->
-    <button x-show="scrolled"
-            x-transition
-            @click="window.scrollTo({top: 0, behavior: 'smooth'})"
-            class="fixed bottom-6 right-6 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all hover:scale-105 z-50"
-            title="Scroll to top">
+     <button x-show="scrolled"
+             data-ripple-bound="true"
+             x-transition
+             @click="window.scrollTo({top: 0, behavior: 'smooth'})"
+             class="fixed bottom-6 right-6 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all hover:scale-105 z-50"
+             title="Scroll to top">
         <i class="fas fa-arrow-up"></i>
     </button>
      <!-- Edit Board Modal -->
