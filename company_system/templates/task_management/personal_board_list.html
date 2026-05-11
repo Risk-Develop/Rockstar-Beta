@@ -401,11 +401,28 @@
        .mini-task-item:hover {
            transform: translateX(4px);
        }
-       .mini-task-item.completed {
-           opacity: 0.6;
-           text-decoration: line-through;
-       }
-   </style>
+        .mini-task-item.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        /* Reorder Mode Styles */
+        .grid.reorder-mode .relative[data-board-id] {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+            border-radius: 0.75rem;
+            cursor: move;
+        }
+        .grid.reorder-mode .relative[data-board-id]:focus {
+            outline: 3px solid #2563eb;
+            outline-offset: 3px;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+        }
+        .grid.reorder-mode .drag-handle {
+            opacity: 1 !important;
+            color: #3b82f6 !important;
+        }
+    </style>
  {% endblock %}
 
 {% block main_content %}
@@ -454,15 +471,20 @@
                     </p>
                 </div>
 
-                  <!-- Create Board Button (opens modal) -->
-                  <div class="flex-shrink-0">
-						<button @click="openCreateModal()"
-                                class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
-                                title="Create new personal board">
-							<i class="fas fa-plus"></i>
-							<span>Create Board</span>
-						</button>
-           </div>
+                   <!-- Create Board Button (opens modal) -->
+                   <div class="flex-shrink-0 flex items-center gap-2">
+                       <button @click="openCreateModal()"
+                               class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                               title="Create new personal board (N)">
+                           <i class="fas fa-plus"></i>
+                           <span>Create Board</span>
+                       </button>
+                       <button onclick="toggleHelp()"
+                               class="px-3 py-1.5 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-400 dark:hover:bg-gray-500"
+                               title="Show keyboard shortcuts (H)">
+                           <i class="fas fa-question mr-1"></i>Help
+                       </button>
+                   </div>
        </div>
 
     <!-- Unified Create Board Modal -->
@@ -696,11 +718,20 @@
                     </div>
 
                     <!-- Personal Boards Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                     {% for board in personal_boards %}
-                         {# FIX: Wrap card in a relative div so action buttons sit above the link layer #}
-                          <div class="relative flip-card" data-board-id="{{ board.id }}" data-preview-url="{% url 'task_management:personal_tasks_preview_api' board.id %}" data-detail-url="{% url 'task_management:personal_board_detail' board.id %}" data-board-tag="{{ board.tag|default:'' }}" x-show="expanded || {{ forloop.counter0 }} < 3" x-cloak>
+                    <div id="boards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" :class="{ 'reorder-mode': reorderMode }">
+                      {% for board in personal_boards %}
+                          {# FIX: Wrap card in a relative div so action buttons sit above the link layer #}
+                           <div class="relative flip-card"
+                                data-board-id="{{ board.id }}"
+                                data-preview-url="{% url 'task_management:personal_tasks_preview_api' board.id %}"
+                                data-detail-url="{% url 'task_management:personal_board_detail' board.id %}"
+                                data-board-tag="{{ board.tag|default:'' }}"
+                                x-show="expanded || {{ forloop.counter0 }} < 3"
+                                x-cloak
+                                :tabindex="reorderMode ? 0 : -1"
+                                @focus="focusedBoardId = {{ board.id }}">
                             <a href="{% url 'task_management:personal_board_detail' board.id %}"
+                               draggable="false"
                                class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-2 shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer"
                                :style="`border-color: ${getBoardBorderColor('{{ board.tag|default:'' }}')}`"
                                aria-label="Open {{ board.name|escape }} personal board">
@@ -714,6 +745,7 @@
                                     <div class="flex items-start mb-3">
                                         {# Drag handle - positioned top-left inside the card #}
                                         <button draggable="false"
+                                                @click.stop
                                                 class="drag-handle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 transition-all shadow-sm text-xs font-medium cursor-grab me-3 flex-shrink-0"
                                                 title="Drag to reorder"
                                                 aria-label="Drag to reorder {{ board.name|escape }}">
@@ -1192,10 +1224,52 @@
                      </button>
                  </div>
              </form>
-          </div>
-      </div>
+           </div>
+       </div>
 
-</div>
+    <!-- Help Modal - Keyboard Shortcuts -->
+    <div id="helpModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;" onclick="if(event.target === this) toggleHelp()">
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div class="relative bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-300 dark:border-gray-600">
+            <div class="flex justify-between items-start mb-4">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Keyboard Shortcuts</h2>
+                <button onclick="toggleHelp()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between items-center py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded">
+                    <span class="text-gray-700 dark:text-gray-300">Create new board</span>
+                    <kbd class="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs font-mono">N</kbd>
+                </div>
+                <div class="flex justify-between items-center py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded">
+                    <span class="text-gray-700 dark:text-gray-300">Toggle reorder mode</span>
+                    <kbd class="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs font-mono">R</kbd>
+                </div>
+                <div class="flex justify-between items-center py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded">
+                    <span class="text-gray-700 dark:text-gray-300">Open archived boards</span>
+                    <kbd class="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs font-mono">A</kbd>
+                </div>
+                <div class="flex justify-between items-center py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded">
+                    <span class="text-gray-700 dark:text-gray-300">Close modal/drawer</span>
+                    <kbd class="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs font-mono">Esc</kbd>
+                </div>
+                <div class="flex justify-between items-center py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded">
+                    <span class="text-gray-700 dark:text-gray-300">Navigate boards (reorder mode)</span>
+                    <kbd class="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs font-mono">↑ ↓</kbd>
+                </div>
+                <div class="flex justify-between items-center py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded">
+                    <span class="text-gray-700 dark:text-gray-300">Move board in reorder mode</span>
+                    <kbd class="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs font-mono">Enter</kbd>
+                </div>
+            </div>
+            <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded text-xs text-gray-600 dark:text-gray-400">
+                <i class="fas fa-info-circle mr-1"></i>Press <kbd class="px-1 py-0.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs">R</kbd> to toggle reorder mode, then use arrow keys to navigate and <kbd class="px-1 py-0.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs">Enter</kbd> to move a board.
+            </div>
+        </div>
+    </div>
+
+ </div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -1216,14 +1290,17 @@
                    buttonClass: 'bg-red-600 hover:bg-red-500 text-white focus:ring-red-500',
                    buttonIconClass: 'fa-trash-alt'
                },
-                 confirmModalCallback: null,
-                 expanded: false,
-                 mobileStatsOpen: {},
-                 quickAddOpen: null,
-                 createModalOpen: false,
-                 selectedTemplate: null,
-                 createFormName: '',
-                 createFormDesc: '',
+                  confirmModalCallback: null,
+                  expanded: false,
+                  mobileStatsOpen: {},
+                  quickAddOpen: null,
+                  createModalOpen: false,
+                  selectedTemplate: null,
+                  createFormName: '',
+                  createFormDesc: '',
+                   // Reorder mode
+                   reorderMode: false,
+                   focusedBoardIndex: 0,
 
                  // Predefined board templates
                  boardTemplates: [
@@ -1329,20 +1406,20 @@
             window.addEventListener('scroll', handler, { passive: true });
             this.$cleanup = () => window.removeEventListener('scroll', handler);
 
-            // Initialize Sortable for drag-and-drop reordering
-            const grid = document.querySelector('.grid');
-            if (grid && typeof Sortable !== 'undefined') {
-                new Sortable(grid, {
-                    handle: '.drag-handle',
-                    animation: 150,
-                    ghostClass: 'sortable-ghost',
-                    dragClass: 'sortable-drag',
-                    easing: 'cubic-bezier(1, 0, 0, 1)',
-                    onEnd: (evt) => {
-                        this.updateBoardOrder();
-                    }
-                });
-            }
+             // Initialize Sortable for drag-and-drop reordering
+             const grid = document.querySelector('#boards-grid');
+             if (grid && typeof Sortable !== 'undefined') {
+                 new Sortable(grid, {
+                     handle: '.drag-handle',
+                     animation: 150,
+                     ghostClass: 'sortable-ghost',
+                     dragClass: 'sortable-drag',
+                     easing: 'cubic-bezier(1, 0, 0, 1)',
+                     onEnd: (evt) => {
+                         this.updateBoardOrder();
+                     }
+                 });
+             }
 
             // Event delegation for archived drawer buttons
             const archivedContainer = document.getElementById('archived-boards-container');
@@ -1364,37 +1441,88 @@
                 });
             }
 
-            // Keyboard shortcuts: N or Ctrl+B to open create modal
+            // Keyboard shortcuts
             document.addEventListener('keydown', (e) => {
-                // Ignore if user is typing in an input/textarea
+                // Ignore if user is typing in an input/textarea/select
                 const tag = e.target.tagName.toLowerCase();
-                if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) {
+                if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) {
                     return;
                 }
-                 // N key alone
-                 if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey) {
+
+                 // Reorder mode shortcuts (priority)
+                  if (this.reorderMode) {
+                      if (e.key === 'Escape') {
+                          e.preventDefault();
+                          this.toggleReorderMode();
+                          return;
+                      }
+                      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          const active = document.activeElement;
+                          const boardEl = active.closest('.relative[data-board-id]');
+                          if (boardEl) {
+                              const dir = e.key === 'ArrowDown' ? 1 : -1;
+                              this.moveBoard(boardEl, dir);
+                          }
+                      }
+                      if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const active = document.activeElement;
+                          const boardEl = active.closest('.relative[data-board-id]');
+                          if (boardEl) {
+                              this.moveBoard(boardEl, 1);
+                          }
+                      }
+                      return;
+                  }
+
+                // N — Create board
+                if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    if (!this.createModalOpen) {
+                        this.openCreateModal();
+                    } else {
+                        const nameInput = document.getElementById('create_board_name_input');
+                        if (nameInput) nameInput.focus();
+                    }
+                }
+                // Ctrl/Cmd+B — also create board
+                if (e.ctrlKey || e.metaKey) {
+                    if (e.key === 'b' || e.key === 'B') {
+                        e.preventDefault();
+                        if (!this.createModalOpen) {
+                            this.openCreateModal();
+                        } else {
+                            const nameInput = document.getElementById('create_board_name_input');
+                            if (nameInput) nameInput.focus();
+                        }
+                    }
+                }
+                // R — Toggle reorder mode
+                if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    this.toggleReorderMode();
+                }
+                // A — Open archived drawer
+                if ((e.key === 'a' || e.key === 'A') && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    this.openArchivedDrawer();
+                }
+                 // Esc — Close any open modal/drawer
+                 if (e.key === 'Escape') {
                      e.preventDefault();
-                     if (!this.createModalOpen) {
-                         this.openCreateModal();
-                     } else {
-                         // Focus name input in modal
-                         const nameInput = document.getElementById('create_board_name_input');
-                         if (nameInput) nameInput.focus();
+                     if (this.createModalOpen) this.closeCreateModal();
+                     if (this.archivedDrawerOpen) this.closeArchivedDrawer();
+                     if (this.confirmModalOpen) this.closeConfirmModal();
+                     // Close edit modal (global function)
+                     if (typeof closeEditModal === 'function') closeEditModal();
+                     // Close help modal if open
+                     const helpModal = document.getElementById('helpModal');
+                     if (helpModal && helpModal.style.display === 'flex') {
+                         helpModal.style.display = 'none';
                      }
                  }
-                 // Ctrl+B or Cmd+B
-                 if (e.ctrlKey || e.metaKey) {
-                     if (e.key === 'b' || e.key === 'B') {
-                         e.preventDefault();
-                         if (!this.createModalOpen) {
-                             this.openCreateModal();
-                         } else {
-                             const nameInput = document.getElementById('create_board_name_input');
-                             if (nameInput) nameInput.focus();
-                         }
-                     }
-                 }
-             });
+            });
 
             // Initialize micro-interactions
             this.initRippleEffect();
@@ -1632,21 +1760,60 @@
                  return colorMap[tag] || '#9ca3af';
             },
 
-             adjustColor(hex, percent) {
-                 const num = parseInt(hex.replace('#', ''), 16),
-                       amt = Math.round(2.55 * percent),
-                       R = (num >> 16) + amt,
-                       G = (num >> 8 & 0x00FF) + amt,
-                       B = (num & 0x0000FF) + amt;
-                 return '#' + (0x1000000 +
-                     (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-                     (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-                     (B < 255 ? B < 1 ? 0 : B : 255)
-                 ).toString(16).slice(1);
-             },
+              adjustColor(hex, percent) {
+                  const num = parseInt(hex.replace('#', ''), 16),
+                        amt = Math.round(2.55 * percent),
+                        R = (num >> 16) + amt,
+                        G = (num >> 8 & 0x00FF) + amt,
+                        B = (num & 0x0000FF) + amt;
+                  return '#' + (0x1000000 +
+                      (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                      (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                      (B < 255 ? B < 1 ? 0 : B : 255)
+                  ).toString(16).slice(1);
+              },
+
+               // Reorder mode
+               toggleReorderMode() {
+                   this.reorderMode = !this.reorderMode;
+                   const grid = document.querySelector('#boards-grid');
+                   const cards = grid ? grid.querySelectorAll('.relative[data-board-id]') : [];
+
+                  if (this.reorderMode) {
+                      // Make cards focusable, add visual indicator
+                      cards.forEach(card => card.setAttribute('tabindex', '0'));
+                      if (cards.length) cards[0].focus();
+                      if (grid) grid.classList.add('reorder-mode');
+                  } else {
+                      cards.forEach(card => card.setAttribute('tabindex', '-1'));
+                      if (grid) grid.classList.remove('reorder-mode');
+                  }
+              },
+
+              moveBoard(boardEl, direction) {
+                  const grid = boardEl.parentNode;
+                  if (direction === 1) {
+                      // Move down: swap with next sibling
+                      const next = boardEl.nextElementSibling;
+                      if (next) grid.insertBefore(next, boardEl);
+                  } else {
+                      // Move up: swap with previous sibling
+                      const prev = boardEl.previousElementSibling;
+                      if (prev) grid.insertBefore(boardEl, prev);
+                  }
+                  // Persist new order
+                  this.updateBoardOrder();
+                  // Keep focus on moved board
+                  boardEl.focus();
+              },
 
             // Create Board Modal methods
             openCreateModal() {
+                // Close help modal if open
+                const helpModal = document.getElementById('helpModal');
+                if (helpModal && helpModal.style.display === 'flex') {
+                    helpModal.style.display = 'none';
+                }
                 this.createModalOpen = true;
                 this.selectedTemplate = null;
                 this.createFormName = '';
@@ -1719,11 +1886,11 @@
                              }
                          );
                           const data = await response.json();
-                          if (data.success) {
-                              // Add new board to grid without page reload
-                              const board = data.board;
-                              const grid = document.querySelector('.grid');
-                              if (grid) {
+                           if (data.success) {
+                               // Add new board to grid without page reload
+                               const board = data.board;
+                               const grid = document.querySelector('#boards-grid');
+                               if (grid) {
                                   let cardHtml;
                                   try {
                                       cardHtml = buildBoardCard(board);
@@ -1882,7 +2049,7 @@
 
             // Persist board order after drag-and-drop
             async updateBoardOrder() {
-                const grid = document.querySelector('.grid');
+                const grid = document.querySelector('#boards-grid');
                 if (!grid) return;
 
                 const cards = grid.querySelectorAll('.relative[data-board-id]');
@@ -1984,13 +2151,13 @@
                                  card.style.opacity = '0';
                                  setTimeout(() => card.remove(), 300);
                              }
-                             // Check if grid exists (if no boards previously, grid is not rendered)
-                             const grid = document.querySelector('.grid');
-                             if (!grid) {
-                                 // No grid present - reload to render the restored board
-                                 window.location.reload();
-                                 return;
-                             }
+                              // Check if grid exists (if no boards previously, grid is not rendered)
+                              const grid = document.querySelector('#boards-grid');
+                              if (!grid) {
+                                  // No grid present - reload to render the restored board
+                                  window.location.reload();
+                                  return;
+                              }
                              // Add back to main grid
                              this.addBoardToGrid(boardId, card);
                              showToast('Board restored successfully!', 'success');
@@ -2013,12 +2180,12 @@
                 const completedTasks = parseInt(sourceCard.dataset.boardCompletedTasks) || 0;
                 const toDoColumnId = sourceCard.dataset.boardToDoColumnId || '';
 
-                // Find the main board grid
-                const grid = document.querySelector('.grid');
-                if (!grid) {
-                    console.warn('Board grid not found');
-                    return;
-                }
+                 // Find the main board grid
+                 const grid = document.querySelector('#boards-grid');
+                 if (!grid) {
+                     console.warn('Board grid not found');
+                     return;
+                 }
 
                  // Get tag from source card (for border color)
                  const boardTag = sourceCard.dataset.boardTag || '';
@@ -2042,18 +2209,19 @@
                  const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
                 const dashArray = totalTasks > 0 ? `${progressPercent}, 100` : '0, 100';
 
-                 card.innerHTML = `
-                     <a href="${detailUrl}" class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-2 transition-all duration-300 group cursor-pointer"
-                        :style="'border-color: ' + getBoardBorderColor('${boardTag}')"
-                        aria-label="Open ${escapedName} personal board">
+                  card.innerHTML = `
+                      <a href="${detailUrl}" draggable="false" class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-2 transition-all duration-300 group cursor-pointer"
+                         :style="'border-color: ' + getBoardBorderColor('${boardTag}')"
+                         aria-label="Open ${escapedName} personal board">
                        <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style="background: linear-gradient(90deg, ${color} 0%, ${adjustedColor} 100%)"></div>
                        <div class="pt-4">
                            <div class="flex items-start mb-3">
                                <!-- Drag handle - top-left inside card -->
-                               <button draggable="false"
-                                       class="drag-handle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 transition-all shadow-sm text-xs font-medium cursor-grab me-3 flex-shrink-0"
-                                       title="Drag to reorder"
-                                       aria-label="Drag to reorder ${escapedName}">
+                                <button draggable="false"
+                                        @click.stop
+                                        class="drag-handle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 transition-all shadow-sm text-xs font-medium cursor-grab me-3 flex-shrink-0"
+                                        title="Drag to reorder"
+                                        aria-label="Drag to reorder ${escapedName}">
                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                        <circle cx="12" cy="6" r="2"></circle>
                                        <circle cx="12" cy="12" r="2"></circle>
@@ -2583,9 +2751,9 @@
                     window.PersonalBoardsData.createFormName = '';
                     window.PersonalBoardsData.createFormDesc = '';
 
-                    // Check if grid exists (if no boards previously, grid is not rendered)
-                    const grid = document.querySelector('.grid');
-                    const emptyState = document.querySelector('.empty-state-enhanced');
+                     // Check if grid exists (if no boards previously, grid is not rendered)
+                     const grid = document.querySelector('#boards-grid');
+                     const emptyState = document.querySelector('.empty-state-enhanced');
 
                     if (!grid) {
                         // First board — reload page to render grid + stats
@@ -2667,13 +2835,17 @@
          const tagLabel = board.tag ? window.PersonalBoardsData.getTagLabel(board.tag) : '';
          const tagClass = board.tag ? window.PersonalBoardsData.getTagBadgeClass(board.tag) : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
 
-        return `
-            <div class="relative flip-card" data-board-id="${board.id}" data-preview-url="${previewUrl}" data-detail-url="${detailUrl}" data-board-tag="${board.tag || ''}">
-                <a href="${detailUrl}" class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-2 shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer" style="border-color: ${color}" aria-label="Open ${escapedName} personal board">
+                 return `
+             <div class="relative flip-card" data-board-id="${board.id}" data-preview-url="${previewUrl}" data-detail-url="${detailUrl}" data-board-tag="${board.tag || ''}">
+                 <a href="${detailUrl}" draggable="false" class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-2 shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer" style="border-color: ${color}" aria-label="Open ${escapedName} personal board">
                     <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style="background: linear-gradient(90deg, ${color} 0%, ${adjustedColor} 100%)"></div>
                     <div class="pt-4">
                         <div class="flex items-start mb-3">
-                            <button draggable="false" class="drag-handle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 transition-all shadow-sm text-xs font-medium cursor-grab me-3 flex-shrink-0" title="Drag to reorder" aria-label="Drag to reorder ${escapedName}">
+                                <button draggable="false"
+                                        @click.stop
+                                        class="drag-handle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 transition-all shadow-sm text-xs font-medium cursor-grab me-3 flex-shrink-0"
+                                        title="Drag to reorder"
+                                        aria-label="Drag to reorder ${escapedName}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="6" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="18" r="2"></circle></svg>
                             </button>
                             <div class="flex-1 min-w-0">
@@ -2715,7 +2887,7 @@
                 <div class="card-actions absolute top-3 right-3 flex items-center gap-1.5">
                     <button @click.prevent="openQuickAdd(${board.id})" class="quick-add-toggle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-green-50 dark:hover:bg-green-900/40 text-gray-500 hover:text-green-600 dark:hover:text-green-400 border border-gray-200 dark:border-gray-600 hover:border-green-300 dark:hover:border-green-500 transition-all shadow-sm text-xs font-medium cursor-pointer" title="Quick add task" aria-label="Quick add task to ${escapedName}"><i class="fas fa-plus"></i></button>
                     <button @click.prevent="duplicateBoard(${board.id}, '${escapedNameJs}')" class="flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-purple-50 dark:hover:bg-purple-900/40 text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 border border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 transition-all shadow-sm text-xs font-medium cursor-pointer" title="Duplicate board" aria-label="Duplicate board ${escapedName}"><i class="fas fa-copy"></i></button>
-                    <button onclick="event.stopPropagation(); openEditModal(${board.id}, '${escapedNameJs}', '')" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer" title="Edit board" aria-label="Edit board ${escapedName}"><i class="fas fa-edit text-xs" aria-hidden="true"></i><span>Edit</span></button>
+                    <button onclick="event.stopPropagation(); openEditModal(${board.id}, '${escapedNameJs}', '${escapedDescJs}')" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer" title="Edit board" aria-label="Edit board ${escapedName}"><i class="fas fa-edit text-xs" aria-hidden="true"></i><span>Edit</span></button>
                     <form method="post" action="${archiveUrl}" class="inline" onsubmit="return confirmArchive(event, '${escapedNameJs}')">
                         <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
                         <button type="submit" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-red-50 dark:hover:bg-red-900/40 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm text-xs font-medium cursor-pointer" title="Archive board" aria-label="Archive board ${escapedName}"><i class="fas fa-archive text-xs" aria-hidden="true"></i><span>Archive</span></button>
@@ -2745,7 +2917,24 @@
         `;
     }
 
-    function showToast(message, type = 'success') {
+     function toggleHelp() {
+         const modal = document.getElementById('helpModal');
+         if (!modal) return;
+         const isOpen = modal.style.display === 'flex';
+         if (isOpen) {
+             modal.style.display = 'none';
+         } else {
+             // Close other modals/drawers via Alpine state
+             if (window.PersonalBoardsData) {
+                 window.PersonalBoardsData.createModalOpen = false;
+                 window.PersonalBoardsData.confirmModalOpen = false;
+                 window.PersonalBoardsData.archivedDrawerOpen = false;
+             }
+             modal.style.display = 'flex';
+         }
+     }
+
+     function showToast(message, type = 'success') {
         const toast = document.createElement('div');
         toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 ${
             type === 'success' ? 'bg-green-600' : 'bg-red-600'
