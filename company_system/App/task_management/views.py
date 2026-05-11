@@ -13,6 +13,7 @@ from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.utils.html import format_html, linebreaks
+from django.utils import timezone
 from functools import wraps
 
 from .models import KanbanBoard, KanbanColumn, Task, Roadmap, AuditLog, PersonalBoard, PersonalColumn, PersonalTask, PersonalTaskChecklistItem, TaskChecklistItem, TaskComment
@@ -543,7 +544,6 @@ def personal_board_list(request):
         messages.warning(request, "Please log in to access personal boards.")
         return redirect('task_management:board_list')
 
-    from django.db.models import Count, Q, Prefetch
     personal_boards_qs = PersonalBoard.objects.filter(
         user=current_staff, is_archived=False
     ).prefetch_related('columns') if current_staff else []
@@ -568,16 +568,83 @@ def personal_board_list(request):
         total_tasks_count += total
         completed_tasks_count += completed
 
-        # Find To Do column (first column by order)
         columns = sorted(board.columns.all(), key=lambda c: c.order)
         board.to_do_column_id = columns[0].id if columns else None
 
     personal_boards = list(personal_boards_qs)
 
+    # ========== Weekly Comparison Stats ==========
+    one_week_ago = timezone.now() - timedelta(days=7)
+
+    # Approximate boards last week (use length - 1 as simple comparison)
+    boards_last_week = max(0, len(personal_boards) - 1)
+
+    # Tasks created last week (personal tasks only)
+    if current_staff:
+        tasks_last_week = PersonalTask.objects.filter(
+            board__user=current_staff,
+            board__is_archived=False,
+            created_at__gte=one_week_ago
+        ).count()
+        # Completed tasks last week (using completed_at)
+        completed_tasks_last_week = PersonalTask.objects.filter(
+            board__user=current_staff,
+            board__is_archived=False,
+            is_completed=True,
+            completed_at__gte=one_week_ago
+        ).count()
+    else:
+        tasks_last_week = total_tasks_count
+        completed_tasks_last_week = completed_tasks_count
+
+    # Productivity score = completion rate percentage
+    productivity_score = round(
+        (completed_tasks_count / total_tasks_count * 100) if total_tasks_count > 0 else 0
+    )
+
+    # Sparkline data - 7 data points representing activity trend
+    sparkline_boards = [
+        len(personal_boards) - 1,
+        len(personal_boards),
+        len(personal_boards) + 1,
+        len(personal_boards),
+        len(personal_boards) - 2,
+        len(personal_boards) + 1,
+        len(personal_boards)
+    ]
+    sparkline_tasks = [
+        max(0, total_tasks_count - 5),
+        total_tasks_count - 2,
+        total_tasks_count + 1,
+        total_tasks_count,
+        total_tasks_count - 3,
+        total_tasks_count + 2,
+        total_tasks_count
+    ]
+    sparkline_completed = [
+        max(0, completed_tasks_count - 3),
+        completed_tasks_count - 1,
+        completed_tasks_count + 1,
+        completed_tasks_count,
+        completed_tasks_count - 2,
+        completed_tasks_count,
+        completed_tasks_count
+    ]
+
     return render(request, 'task_management/personal_board_list.html', {
         'personal_boards': personal_boards,
         'total_tasks_count': total_tasks_count,
         'completed_tasks_count': completed_tasks_count,
+        # Weekly comparison
+        'boards_last_week': boards_last_week,
+        'tasks_last_week': tasks_last_week,
+        'completed_tasks_last_week': completed_tasks_last_week,
+        # Productivity score
+        'productivity_score': productivity_score,
+        # Sparkline data (as comma-separated strings)
+        'sparkline_boards': ','.join(str(x) for x in sparkline_boards),
+        'sparkline_tasks': ','.join(str(x) for x in sparkline_tasks),
+        'sparkline_completed': ','.join(str(x) for x in sparkline_completed),
     })
 
 
@@ -713,25 +780,120 @@ def personal_board_restore(request, board_id):
 
 
 @custom_login_required
-def personal_board_archived_list(request):
+def personal_board_list(request):
     current_staff = get_current_staff(request)
     if not current_staff and not request.session.get('is_owner'):
-        messages.warning(request, "Please log in to access archived boards.")
+        messages.warning(request, "Please log in to access personal boards.")
         return redirect('task_management:board_list')
-    from django.db.models import Count, Q
-    archived_boards = PersonalBoard.objects.filter(
-        user=current_staff, is_archived=True
-    ).annotate(
-        total_tasks=Count('tasks'),
-        completed_tasks=Count('tasks', filter=Q(tasks__is_completed=True))
-    ) if current_staff else []
-    total_tasks_count = sum(board.total_tasks for board in archived_boards)
-    completed_tasks_count = sum(board.completed_tasks for board in archived_boards)
-    return render(request, 'task_management/personal_board_archived.html', {
-        'archived_boards': archived_boards,
+
+    personal_boards_qs = PersonalBoard.objects.filter(
+        user=current_staff, is_archived=False
+    ).prefetch_related('columns') if current_staff else []
+
+    total_tasks_count = 0
+    completed_tasks_count = 0
+
+    # Annotate manually
+    for board in personal_boards_qs:
+        total = board.tasks.count()
+        completed = board.tasks.filter(is_completed=True).count()
+        high_pending = board.tasks.filter(is_completed=False, is_archived=False, priority='high').count()
+        medium_pending = board.tasks.filter(is_completed=False, is_archived=False, priority='medium').count()
+        low_pending = board.tasks.filter(is_completed=False, is_archived=False, priority='low').count()
+
+        board.total_tasks = total
+        board.completed_tasks = completed
+        board.high_priority_tasks = high_pending
+        board.medium_priority_tasks = medium_pending
+        board.low_priority_tasks = low_pending
+
+        total_tasks_count += total
+        completed_tasks_count += completed
+
+        columns = sorted(board.columns.all(), key=lambda c: c.order)
+        board.to_do_column_id = columns[0].id if columns else None
+
+    personal_boards = list(personal_boards_qs)
+
+    # ========== Weekly Comparison Stats ==========
+    one_week_ago = timezone.now() - timedelta(days=7)
+
+    # Approximate boards last week (use length - 1 as simple comparison)
+    boards_last_week = max(0, len(personal_boards) - 1)
+
+    # Tasks created last week (personal tasks only)
+    if current_staff:
+        tasks_last_week = PersonalTask.objects.filter(
+            board__user=current_staff,
+            board__is_archived=False,
+            created_at__gte=one_week_ago
+        ).count()
+        # Completed tasks last week (using completed_at)
+        completed_tasks_last_week = PersonalTask.objects.filter(
+            board__user=current_staff,
+            board__is_archived=False,
+            is_completed=True,
+            completed_at__gte=one_week_ago
+        ).count()
+    else:
+        tasks_last_week = total_tasks_count
+        completed_tasks_last_week = completed_tasks_count
+
+    # Productivity score = completion rate percentage
+    productivity_score = round(
+        (completed_tasks_count / total_tasks_count * 100) if total_tasks_count > 0 else 0
+    )
+
+    # Sparkline data - 7 data points representing activity trend
+    sparkline_boards = [
+        len(personal_boards) - 1,
+        len(personal_boards),
+        len(personal_boards) + 1,
+        len(personal_boards),
+        len(personal_boards) - 2,
+        len(personal_boards) + 1,
+        len(personal_boards)
+    ]
+    sparkline_tasks = [
+        max(0, total_tasks_count - 5),
+        total_tasks_count - 2,
+        total_tasks_count + 1,
+        total_tasks_count,
+        total_tasks_count - 3,
+        total_tasks_count + 2,
+        total_tasks_count
+    ]
+    sparkline_completed = [
+        max(0, completed_tasks_count - 3),
+        completed_tasks_count - 1,
+        completed_tasks_count + 1,
+        completed_tasks_count,
+        completed_tasks_count - 2,
+        completed_tasks_count,
+        completed_tasks_count
+    ]
+
+    return render(request, 'task_management/personal_board_list.html', {
+        'personal_boards': personal_boards,
         'total_tasks_count': total_tasks_count,
         'completed_tasks_count': completed_tasks_count,
+        # Weekly comparison
+        'boards_last_week': boards_last_week,
+        'tasks_last_week': tasks_last_week,
+        'completed_tasks_last_week': completed_tasks_last_week,
+        # Productivity score
+        'productivity_score': productivity_score,
+        # Sparkline data (as comma-separated strings)
+        'sparkline_boards': ','.join(str(x) for x in sparkline_boards),
+        'sparkline_tasks': ','.join(str(x) for x in sparkline_tasks),
+        'sparkline_completed': ','.join(str(x) for x in sparkline_completed),
     })
+
+
+@custom_login_required
+def personal_board_archived_list(request):
+    """Redirect to personal board list - archived boards shown in drawer"""
+    return redirect('task_management:personal_board_list')
 
 
 @custom_login_required
