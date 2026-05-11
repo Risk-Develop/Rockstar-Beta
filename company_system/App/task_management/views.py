@@ -1036,7 +1036,7 @@ def personal_board_archived_list(request):
 @custom_login_required
 @require_GET
 def personal_board_archived_api(request):
-    """API endpoint to get archived boards as JSON for drawer"""
+    """API endpoint to get archived boards as JSON for drawer with optional filtering"""
     current_staff = get_current_staff(request)
     if not current_staff and not request.session.get('is_owner'):
         return JsonResponse({'error': 'Not authenticated'}, status=401)
@@ -1048,6 +1048,30 @@ def personal_board_archived_api(request):
         total_tasks=Count('tasks'),
         completed_tasks=Count('tasks', filter=Q(tasks__is_completed=True))
     ).order_by('-updated_at')
+
+    # Apply filters from request
+    search_query = request.GET.get('search', '').strip()
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+
+    if search_query:
+        archived_boards_qs = archived_boards_qs.filter(name__icontains=search_query)
+
+    if date_from:
+        try:
+            from datetime import datetime
+            date_from_dt = datetime.strptime(date_from, '%Y-%m-%d').date()
+            archived_boards_qs = archived_boards_qs.filter(archived_at__date__gte=date_from_dt)
+        except ValueError:
+            pass
+
+    if date_to:
+        try:
+            from datetime import datetime
+            date_to_dt = datetime.strptime(date_to, '%Y-%m-%d').date()
+            archived_boards_qs = archived_boards_qs.filter(archived_at__date__lte=date_to_dt)
+        except ValueError:
+            pass
 
     # Prefetch columns to find first column
     archived_boards_qs = archived_boards_qs.prefetch_related('columns')
@@ -1063,10 +1087,122 @@ def personal_board_archived_api(request):
             'total_tasks': board.total_tasks,
             'completed_tasks': board.completed_tasks,
             'to_do_column_id': to_do_column_id,
-            'tag': board.tag,  # Add tag for border color
+            'tag': board.tag,
+            'archived_at': board.archived_at.isoformat() if board.archived_at else None,
         })
 
     return JsonResponse({'boards': boards_list})
+
+
+@custom_login_required
+@require_POST
+def personal_board_bulk_restore(request):
+    """Bulk restore multiple archived boards"""
+    current_staff = get_current_staff(request)
+    if not current_staff and not request.session.get('is_owner'):
+        return JsonResponse({'error': 'Not authenticated'}, status=401)
+
+    try:
+        data = json.loads(request.body)
+        board_ids = data.get('board_ids', [])
+        if not isinstance(board_ids, list):
+            return JsonResponse({'error': 'Invalid board_ids format'}, status=400)
+
+        restored_count = 0
+        for board_id in board_ids:
+            try:
+                board = PersonalBoard.objects.get(id=board_id, user=current_staff, is_archived=True)
+                board.is_archived = False
+                board.archived_at = None
+                board.save()
+                restored_count += 1
+            except PersonalBoard.DoesNotExist:
+                continue
+
+        return JsonResponse({
+            'success': True,
+            'restored_count': restored_count,
+            'message': f'Restored {restored_count} board(s) successfully.'
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        logger.error(f'Bulk restore error: {e}')
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@custom_login_required
+@require_POST
+def personal_board_bulk_delete(request):
+    """Bulk permanently delete multiple archived boards"""
+    current_staff = get_current_staff(request)
+    if not current_staff and not request.session.get('is_owner'):
+        return JsonResponse({'error': 'Not authenticated'}, status=401)
+
+    try:
+        data = json.loads(request.body)
+        board_ids = data.get('board_ids', [])
+        if not isinstance(board_ids, list):
+            return JsonResponse({'error': 'Invalid board_ids format'}, status=400)
+
+        deleted_count = 0
+        for board_id in board_ids:
+            try:
+                board = PersonalBoard.objects.get(id=board_id, user=current_staff, is_archived=True)
+                board.delete()
+                deleted_count += 1
+            except PersonalBoard.DoesNotExist:
+                continue
+
+        return JsonResponse({
+            'success': True,
+            'deleted_count': deleted_count,
+            'message': f'Deleted {deleted_count} board(s) permanently.'
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        logger.error(f'Bulk delete error: {e}')
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@custom_login_required
+@require_POST
+def personal_board_auto_purge(request):
+    """Auto-purge archived boards older than specified number of days"""
+    current_staff = get_current_staff(request)
+    if not current_staff and not request.session.get('is_owner'):
+        return JsonResponse({'error': 'Not authenticated'}, status=401)
+
+    try:
+        data = json.loads(request.body) if request.content_type == 'application/json' else request.POST
+        days = data.get('days', 30)
+        try:
+            days = int(days)
+        except (ValueError, TypeError):
+            days = 30
+
+        if days < 1:
+            return JsonResponse({'error': 'Days must be a positive integer'}, status=400)
+
+        cutoff_date = timezone.now() - timedelta(days=days)
+        old_boards = PersonalBoard.objects.filter(
+            user=current_staff,
+            is_archived=True,
+            archived_at__lt=cutoff_date
+        )
+
+        deleted_count = old_boards.count()
+        old_boards.delete()
+
+        return JsonResponse({
+            'success': True,
+            'deleted_count': deleted_count,
+            'message': f'Purged {deleted_count} board(s) older than {days} days.'
+        })
+    except Exception as e:
+        logger.error(f'Auto-purge error: {e}')
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 @custom_login_required

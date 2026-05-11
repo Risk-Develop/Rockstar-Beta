@@ -1063,52 +1063,225 @@
         {% endif %}
     </div>
 
-    <!-- Archived Boards Drawer -->
-    <div x-show="archivedDrawerOpen"
-         x-transition:enter="transform transition ease-in-out duration-300"
-         x-transition:enter-start="translate-x-full"
-         x-transition:enter-end="translate-x-0"
-         x-transition:leave="transform transition ease-in-out duration-300"
-         x-transition:leave-start="translate-x-0"
-         x-transition:leave-end="translate-x-full"
-         class="fixed top-0 right-0 h-full w-96 max-w-full bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700 z-50 flex flex-col"
-         style="display: none;"
-         @click.away="closeArchivedDrawer()">
+     <!-- Archived Boards Drawer -->
+     <div x-show="archivedDrawerOpen"
+          x-transition:enter="transform transition ease-in-out duration-300"
+          x-transition:enter-start="translate-x-full"
+          x-transition:enter-end="translate-x-0"
+          x-transition:leave="transform transition ease-in-out duration-300"
+          x-transition:leave-start="translate-x-0"
+          x-transition:leave-end="translate-x-full"
+          class="fixed top-0 right-0 h-full w-full sm:w-96 max-w-full bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700 z-50 flex flex-col"
+          style="display: none;"
+          @click.away="closeArchivedDrawer()">
 
-        <!-- Drawer Header -->
-        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                        <i class="fas fa-archive text-gray-600 dark:text-gray-400"></i>
-                    </div>
-                    <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">
-                        Archived Boards
-                    </h2>
-                </div>
-                <button @click="closeArchivedDrawer()"
-                        class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                        aria-label="Close archived boards drawer">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        </div>
+         <!-- Drawer Header with Filters -->
+         <div class="p-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
+             <!-- Top row: Title + Close -->
+             <div class="flex items-center justify-between">
+                 <div class="flex items-center gap-2">
+                     <div class="p-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                         <i class="fas fa-archive text-gray-600 dark:text-gray-400 text-sm"></i>
+                     </div>
+                     <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                         Archived Boards
+                     </h2>
+                     <span class="text-xs text-gray-500 dark:text-gray-400"
+                           x-text="'(' + filteredArchivedBoards.length + ')'"></span>
+                 </div>
+                 <button @click="closeArchivedDrawer()"
+                         class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                         aria-label="Close archived boards drawer">
+                     <i class="fas fa-times"></i>
+                 </button>
+             </div>
 
-        <!-- Drawer Content -->
-        <div class="flex-1 overflow-y-auto p-6">
-            <div id="archived-boards-container" class="space-y-4">
-                <!-- Loading state will be inserted by JS -->
-            </div>
-        </div>
+             <!-- Filter Controls -->
+             <div class="space-y-2">
+                 <!-- Search -->
+                 <div class="relative">
+                     <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                     <input type="text"
+                            x-model="archivedFilterName"
+                            @input.debounce.300ms="applyArchivedFilters()"
+                            placeholder="Search by name..."
+                            class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                 </div>
 
-        <!-- Drawer Footer -->
-        <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-            <button @click="closeArchivedDrawer()"
-                    class="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors">
-                Close
-            </button>
-        </div>
-    </div>
+                 <!-- Date range row -->
+                 <div class="flex gap-2">
+                     <input type="date"
+                            x-model="archivedFilterDateFrom"
+                            @change="applyArchivedFilters()"
+                            class="flex-1 px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                     <input type="date"
+                            x-model="archivedFilterDateTo"
+                            @change="applyArchivedFilters()"
+                            class="flex-1 px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                     <button @click="clearArchivedFilters"
+                             class="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
+                             title="Clear filters">
+                         <i class="fas fa-times"></i>
+                     </button>
+                 </div>
+             </div>
+
+             <!-- Bulk Actions Bar (shown when any selected) -->
+             <div x-show="selectedArchivedBoardIds.length > 0"
+                  x-transition
+                  class="flex items-center justify-between bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-2">
+                 <span class="text-xs font-medium text-blue-800 dark:text-blue-200"
+                       x-text="selectedArchivedBoardIds.length + ' selected'"></span>
+                 <div class="flex items-center gap-1">
+                     <button @click="bulkRestoreSelected"
+                             class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded transition-colors flex items-center gap-1">
+                         <i class="fas fa-undo text-[10px]"></i>
+                         <span>Restore</span>
+                     </button>
+                     <button @click="bulkDeleteSelected"
+                             class="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors flex items-center gap-1">
+                         <i class="fas fa-trash text-[10px]"></i>
+                         <span>Delete</span>
+                     </button>
+                     <button @click="clearSelection"
+                             class="px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors">
+                         Clear
+                     </button>
+                 </div>
+             </div>
+
+             <!-- Auto-Purge Quick Action -->
+             <div class="flex items-center justify-between text-xs">
+                 <span class="text-gray-500 dark:text-gray-400">
+                     <i class="fas fa-clock mr-1"></i>
+                     Auto-purge boards older than
+                 </span>
+                 <div class="flex items-center gap-1">
+                     <select x-model="autoPurgeDays"
+                             class="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                         <option value="7">7 days</option>
+                         <option value="30" selected>30 days</option>
+                         <option value="90">90 days</option>
+                         <option value="365">1 year</option>
+                     </select>
+                     <button @click="autoPurge"
+                             :disabled="isPurging"
+                             class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                             title="Purge old archived boards">
+                         <i class="fas" :class="isPurging ? 'fa-spinner fa-spin' : 'fa-broom'"></i>
+                         <span x-text="isPurging ? 'Purging...' : 'Purge'"></span>
+                     </button>
+                 </div>
+             </div>
+         </div>
+
+         <!-- Drawer Content -->
+         <div class="flex-1 overflow-y-auto p-4">
+             <!-- Select All -->
+             <div x-show="filteredArchivedBoards.length > 0"
+                  class="flex items-center gap-2 px-3 py-2 mb-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
+                 <input type="checkbox"
+                        id="select-all-archived"
+                        class="archived-select-all w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 cursor-pointer">
+                 <label for="select-all-archived"
+                        class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                     Select All
+                 </label>
+             </div>
+
+             <div id="archived-boards-container" class="space-y-3">
+                 <!-- Board cards with checkboxes will be rendered here -->
+             </div>
+         </div>
+
+         <!-- Drawer Footer -->
+         <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+             <button @click="closeArchivedDrawer()"
+                     class="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors">
+                 Close
+             </button>
+         </div>
+     </div>
+
+     <!-- Preview Modal -->
+     <div id="previewModal"
+          x-show="showPreview"
+          x-transition:enter="transition ease-out duration-300"
+          x-transition:enter-start="opacity-0"
+          x-transition:enter-end="opacity-100"
+          x-transition:leave="transition ease-in duration-200"
+          x-transition:leave-start="opacity-100"
+          x-transition:leave-end="opacity-0"
+          class="fixed inset-0 z-50 flex items-center justify-center p-4"
+          @click.self="closePreview()"
+          role="dialog"
+          aria-modal="true"
+          style="display: none;"
+          tabindex="-1">
+         <div class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
+         <div class="relative bg-gray-800 rounded-2xl p-6 w-full max-w-lg mx-4 shadow-2xl border border-gray-700/50 max-h-[90vh] overflow-y-auto"
+              @click.stop>
+             <!-- Close button -->
+             <button @click="closePreview()"
+                     class="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                     aria-label="Close preview">
+                 <i class="fas fa-times"></i>
+             </button>
+
+             <!-- Preview content -->
+             <template x-if="previewBoard">
+                 <div class="space-y-4">
+                     <!-- Header -->
+                     <div class="flex items-start gap-3">
+                         <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl"
+                              :style="`background-color: ${getTagColor(previewBoard.tag)}20; color: ${getTagColor(previewBoard.tag)}`">
+                             <i :class="getTagIcon(previewBoard.tag)"></i>
+                         </div>
+                         <div class="flex-1 min-w-0">
+                             <h3 class="text-lg font-bold text-white truncate" x-text="previewBoard.name"></h3>
+                             <p class="text-sm text-gray-400 line-clamp-2" x-text="previewBoard.description || 'No description'"></p>
+                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-2"
+                                   :class="getTagBadgeClass(previewBoard.tag)"
+                                   x-text="getTagLabel(previewBoard.tag)"></span>
+                         </div>
+                     </div>
+
+                     <!-- Stats -->
+                     <div class="grid grid-cols-2 gap-3 p-3 bg-gray-700/30 rounded-lg border border-gray-700">
+                         <div class="text-center">
+                             <div class="text-xl font-bold text-gray-100" x-text="previewBoard.total_tasks || 0"></div>
+                             <div class="text-xs text-gray-400">Total Tasks</div>
+                         </div>
+                         <div class="text-center">
+                             <div class="text-xl font-bold text-green-400" x-text="previewBoard.completed_tasks || 0"></div>
+                             <div class="text-xs text-gray-400">Completed</div>
+                         </div>
+                     </div>
+
+                     <!-- Archived date -->
+                     <div class="flex items-center gap-2 text-xs text-gray-500">
+                         <i class="fas fa-archive"></i>
+                         <span>Archived: </span>
+                         <span x-text="previewBoard.archived_at ? new Date(previewBoard.archived_at).toLocaleString() : 'Unknown'"></span>
+                     </div>
+
+                     <!-- Actions -->
+                     <div class="flex gap-2 pt-2 border-t border-gray-700">
+                         <button @click="restoreBoardFromPreview()"
+                                 class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                             <i class="fas fa-undo"></i>
+                             <span>Restore Board</span>
+                         </button>
+                         <button @click="deleteBoardFromPreview()"
+                                 class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                                 title="Delete permanently">
+                             <i class="fas fa-trash"></i>
+                         </button>
+                     </div>
+                 </div>
+             </template>
+         </div>
+     </div>
 
     <!-- Backdrop overlay when drawer is open -->
     <div x-show="archivedDrawerOpen"
@@ -1277,31 +1450,40 @@
 <script src="{% static 'js/Sortable.min.js' %}"></script>
 <script>
        function personalBoardsData() {
-           return {
-               scrolled: false,
-               archivedDrawerOpen: false,
-               confirmModalOpen: false,
-               confirmModalConfig: {
-                   title: '',
-                   message: '',
-                   type: 'danger',
-                   confirmText: 'Confirm',
-                   iconBgClass: 'bg-red-500/20',
-                   iconClass: 'fa-exclamation-triangle text-red-500',
-                   buttonClass: 'bg-red-600 hover:bg-red-500 text-white focus:ring-red-500',
-                   buttonIconClass: 'fa-trash-alt'
-               },
-                  confirmModalCallback: null,
-                  expanded: false,
-                  mobileStatsOpen: {},
-                  quickAddOpen: null,
-                  createModalOpen: false,
-                  selectedTemplate: null,
-                  createFormName: '',
-                  createFormDesc: '',
-                   // Reorder mode
-                   reorderMode: false,
-                   focusedBoardIndex: 0,
+            return {
+                scrolled: false,
+                archivedDrawerOpen: false,
+                archivedBoards: [],           // Full list from API
+                selectedArchivedBoardIds: [], // Selected for bulk ops
+                archivedFilterName: '',
+                archivedFilterDateFrom: '',
+                archivedFilterDateTo: '',
+                autoPurgeDays: 30,
+                isPurging: false,
+                previewBoard: null,
+                showPreview: false,
+                confirmModalOpen: false,
+                confirmModalConfig: {
+                    title: '',
+                    message: '',
+                    type: 'danger',
+                    confirmText: 'Confirm',
+                    iconBgClass: 'bg-red-500/20',
+                    iconClass: 'fa-exclamation-triangle text-red-500',
+                    buttonClass: 'bg-red-600 hover:bg-red-500 text-white focus:ring-red-500',
+                    buttonIconClass: 'fa-trash-alt'
+                },
+                confirmModalCallback: null,
+                expanded: false,
+                mobileStatsOpen: {},
+                quickAddOpen: null,
+                createModalOpen: false,
+                selectedTemplate: null,
+                createFormName: '',
+                createFormDesc: '',
+                // Reorder mode
+                reorderMode: false,
+                focusedBoardIndex: 0,
 
                  // Predefined board templates
                  boardTemplates: [
@@ -1440,6 +1622,22 @@
                         this.deleteBoard(boardId, boardName);
                     }
                 });
+
+                // Event delegation for checkboxes
+                archivedContainer.addEventListener('change', (e) => {
+                    if (e.target.classList.contains('archived-board-checkbox')) {
+                        const boardId = parseInt(e.target.value);
+                        this.toggleBoardSelection(boardId);
+                    }
+                });
+            }
+
+            // Select all checkbox handler
+            const selectAll = document.getElementById('select-all-archived');
+            if (selectAll) {
+                selectAll.addEventListener('change', (e) => {
+                    this.toggleSelectAll();
+                });
             }
 
             // Keyboard shortcuts
@@ -1509,20 +1707,21 @@
                     e.preventDefault();
                     this.openArchivedDrawer();
                 }
-                 // Esc — Close any open modal/drawer
-                 if (e.key === 'Escape') {
-                     e.preventDefault();
-                     if (this.createModalOpen) this.closeCreateModal();
-                     if (this.archivedDrawerOpen) this.closeArchivedDrawer();
-                     if (this.confirmModalOpen) this.closeConfirmModal();
-                     // Close edit modal (global function)
-                     if (typeof closeEditModal === 'function') closeEditModal();
-                     // Close help modal if open
-                     const helpModal = document.getElementById('helpModal');
-                     if (helpModal && helpModal.style.display === 'flex') {
-                         helpModal.style.display = 'none';
-                     }
-                 }
+                  // Esc — Close any open modal/drawer
+                  if (e.key === 'Escape') {
+                      e.preventDefault();
+                      if (this.createModalOpen) this.closeCreateModal();
+                      if (this.archivedDrawerOpen) this.closeArchivedDrawer();
+                      if (this.confirmModalOpen) this.closeConfirmModal();
+                      if (this.showPreview) this.closePreview();
+                      // Close edit modal (global function)
+                      if (typeof closeEditModal === 'function') closeEditModal();
+                      // Close help modal if open
+                      const helpModal = document.getElementById('helpModal');
+                      if (helpModal && helpModal.style.display === 'flex') {
+                          helpModal.style.display = 'none';
+                      }
+                  }
             });
 
             // Initialize micro-interactions
@@ -1535,14 +1734,40 @@
              window.PersonalBoardsData = this;
          },
 
-         // ========== Stats Dashboard Computed ==========
-         get statsTotalBoards() { return this.statsData.boards; },
-         get statsTotalTasks() { return this.statsData.tasks; },
-         get statsCompletedTasks() { return this.statsData.completed; },
-         get statsAvgTasks() {
-             return this.statsData.boards > 0 ? Math.round(this.statsData.tasks / this.statsData.boards * 10) / 10 : 0;
-         },
-         get statsProductivityScore() { return this.statsData.productivity; },
+          // ========== Stats Dashboard Computed ==========
+          get statsTotalBoards() { return this.statsData.boards; },
+          get statsTotalTasks() { return this.statsData.tasks; },
+          get statsCompletedTasks() { return this.statsData.completed; },
+          get statsAvgTasks() {
+              return this.statsData.boards > 0 ? Math.round(this.statsData.tasks / this.statsData.boards * 10) / 10 : 0;
+          },
+          get statsProductivityScore() { return this.statsData.productivity; },
+
+          // ========== Archive Management Computed ==========
+          get filteredArchivedBoards() {
+              return this.archivedBoards.filter(board => {
+                  // Name filter
+                  if (this.archivedFilterName && !board.name.toLowerCase().includes(this.archivedFilterName.toLowerCase())) {
+                      return false;
+                  }
+                  // Date from filter
+                  if (this.archivedFilterDateFrom && board.archived_at) {
+                      const boardDate = new Date(board.archived_at).toISOString().split('T')[0];
+                      if (boardDate < this.archivedFilterDateFrom) return false;
+                  }
+                  // Date to filter
+                  if (this.archivedFilterDateTo && board.archived_at) {
+                      const boardDate = new Date(board.archived_at).toISOString().split('T')[0];
+                      if (boardDate > this.archivedFilterDateTo) return false;
+                  }
+                  return true;
+              });
+          },
+
+          areAllFilteredSelected() {
+              if (this.filteredArchivedBoards.length === 0) return false;
+              return this.filteredArchivedBoards.every(board => this.selectedArchivedBoardIds.includes(board.id));
+          },
 
          getTrendData(type) {
              const current = this.statsData[type];
@@ -1863,6 +2088,32 @@
                 return labels[tag] || 'Other';
             },
 
+            getTagColor(tag) {
+                const colors = {
+                    'work': '#3b82f6',
+                    'personal': '#8b5cf6',
+                    'health': '#10b981',
+                    'finance': '#f59e0b',
+                    'learning': '#ec4899',
+                    'home': '#f97316',
+                    'hobby': '#06b6d4'
+                };
+                return colors[tag] || '#9ca3af';
+            },
+
+            getTagIcon(tag) {
+                const icons = {
+                    'work': 'fas fa-briefcase',
+                    'personal': 'fas fa-user',
+                    'health': 'fas fa-heartbeat',
+                    'finance': 'fas fa-chart-line',
+                    'learning': 'fas fa-graduation-cap',
+                    'home': 'fas fa-home',
+                    'hobby': 'fas fa-gamepad'
+                };
+                return icons[tag] || 'fas fa-clipboard';
+            },
+
              // Duplicate board
              async duplicateBoard(boardId, boardName) {
                  this.openConfirmModal({
@@ -1940,8 +2191,12 @@
                  });
              },
 
-             async openArchivedDrawer() {
+            async openArchivedDrawer() {
                 this.archivedDrawerOpen = true;
+                this.selectedArchivedBoardIds = [];
+                this.archivedFilterName = '';
+                this.archivedFilterDateFrom = '';
+                this.archivedFilterDateTo = '';
                 await this.fetchArchivedBoards();
             },
 
@@ -1949,67 +2204,40 @@
                 this.archivedDrawerOpen = false;
             },
 
+            async applyArchivedFilters() {
+                await this.fetchArchivedBoards();
+            },
+
+            clearArchivedFilters() {
+                this.archivedFilterName = '';
+                this.archivedFilterDateFrom = '';
+                this.archivedFilterDateTo = '';
+                this.fetchArchivedBoards();
+            },
+
             async fetchArchivedBoards() {
                 const container = document.getElementById('archived-boards-container');
                 try {
-                    const response = await fetch("{% url 'task_management:personal_board_archived_api' %}");
+                    const params = new URLSearchParams();
+                    if (this.archivedFilterName) params.append('search', this.archivedFilterName);
+                    if (this.archivedFilterDateFrom) params.append('date_from', this.archivedFilterDateFrom);
+                    if (this.archivedFilterDateTo) params.append('date_to', this.archivedFilterDateTo);
+                    const url = `{% url 'task_management:personal_board_archived_api' %}?${params.toString()}`;
+
+                    const response = await fetch(url);
                     const data = await response.json();
 
                     if (data.boards && data.boards.length > 0) {
-                         container.innerHTML = data.boards.map((board) => `
-                             <div class="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md transition-all"
-                                  data-board-id="${board.id}"
-                                  data-board-name="${this.escapeHtml(board.name)}"
-                                  data-board-description="${this.escapeHtml(board.description || '')}"
-                                  data-board-total-tasks="${board.total_tasks || 0}"
-                                  data-board-completed-tasks="${board.completed_tasks || 0}"
-                                  data-board-to-do-column-id="${board.to_do_column_id || ''}"
-                                  data-board-tag="${board.tag || ''}">
-                                <div class="flex items-start justify-between mb-3">
-                                    <div class="flex-1 min-w-0">
-                                        <h3 class="text-md font-semibold text-gray-800 dark:text-gray-200 truncate mb-1">
-                                            ${this.escapeHtml(board.name)}
-                                        </h3>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                                            ${board.description ? this.escapeHtml(board.description) : 'No description'}
-                                        </p>
-                                    </div>
-                                    <div class="flex items-center gap-1.5 ml-2 flex-shrink-0">
-                                        <span class="text-xs text-gray-500 dark:text-gray-400">
-                                            ${board.total_tasks || 0} tasks
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-green-600 dark:text-green-400">
-                                            <i class="fas fa-check-circle mr-1"></i>
-                                            ${board.completed_tasks || 0} done
-                                        </span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <button type="button"
-                                                class="restore-btn px-2.5 py-1.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
-                                                title="Restore board">
-                                            <i class="fas fa-undo mr-1"></i>Restore
-                                        </button>
-                                        <button type="button"
-                                                class="delete-btn px-2.5 py-1.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                                                title="Delete permanently">
-                                            <i class="fas fa-trash mr-1"></i>Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('');
+                        this.archivedBoards = data.boards;
+                        this.renderArchivedBoards();
                     } else {
+                        this.archivedBoards = [];
                         container.innerHTML = `
                             <div class="text-center py-12">
                                 <div class="mx-auto w-12 h-12 mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                                     <i class="fas fa-archive text-gray-400"></i>
                                 </div>
-                                <p class="text-gray-500 dark:text-gray-400">No archived boards</p>
+                                <p class="text-gray-500 dark:text-gray-400">No archived boards match your filters</p>
                             </div>
                         `;
                     }
@@ -2026,6 +2254,341 @@
                     `;
                 }
             },
+
+            renderArchivedBoards() {
+                const container = document.getElementById('archived-boards-container');
+                if (!container) return;
+
+                if (this.filteredArchivedBoards.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12">
+                            <div class="mx-auto w-12 h-12 mb-4 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                                <i class="fas fa-filter text-gray-400"></i>
+                            </div>
+                            <p class="text-gray-500 dark:text-gray-400">No boards match current filters</p>
+                        </div>
+                    `;
+                    // Update select all checkbox state
+                    const selectAll = document.getElementById('select-all-archived');
+                    if (selectAll) selectAll.checked = false;
+                    return;
+                }
+
+                container.innerHTML = this.filteredArchivedBoards.map((board) => {
+                    const isChecked = this.selectedArchivedBoardIds.includes(board.id);
+                    return `
+                    <div class="bg-white dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600 shadow-sm hover:shadow-md transition-all"
+                         data-board-id="${board.id}"
+                         data-board-name="${this.escapeHtml(board.name)}"
+                         data-board-description="${this.escapeHtml(board.description || '')}"
+                         data-board-total-tasks="${board.total_tasks || 0}"
+                         data-board-completed-tasks="${board.completed_tasks || 0}"
+                         data-board-to-do-column-id="${board.to_do_column_id || ''}"
+                         data-board-tag="${board.tag || ''}"
+                         data-archived-at="${board.archived_at || ''}"
+                         onclick="if (!event.target.closest('button, input')) { window.PersonalBoardsData.openPreview(${board.id}); }">
+                        <div class="flex items-start gap-2">
+                            <!-- Checkbox -->
+                            <input type="checkbox"
+                                   value="${board.id}"
+                                   ${isChecked ? 'checked' : ''}
+                                   onclick="event.stopPropagation()"
+                                   class="archived-board-checkbox mt-1 w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 cursor-pointer">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between mb-2">
+                                    <div class="flex-1 min-w-0">
+                                        <h3 class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate mb-1">
+                                            ${this.escapeHtml(board.name)}
+                                        </h3>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                                            ${board.description ? this.escapeHtml(board.description) : 'No description'}
+                                        </p>
+                                    </div>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400 ml-2 flex-shrink-0">
+                                        ${board.total_tasks || 0} tasks
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-green-600 dark:text-green-400">
+                                            <i class="fas fa-check-circle mr-1"></i>
+                                            ${board.completed_tasks || 0} done
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button type="button"
+                                                class="restore-btn px-2 py-1 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                                                title="Restore board">
+                                            <i class="fas fa-undo"></i> Restore
+                                        </button>
+                                        <button type="button"
+                                                class="delete-btn px-2 py-1 rounded text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                                                title="Delete permanently">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                     </div>
+                 `;
+                }).join('');
+
+                // Update select all checkbox state after render
+                this.$nextTick(() => {
+                    const selectAll = document.getElementById('select-all-archived');
+                    if (selectAll) {
+                        selectAll.checked = this.areAllFilteredSelected();
+                        // Indeterminate state
+                        const selectedCount = this.selectedArchivedBoardIds.filter(id => 
+                            this.filteredArchivedBoards.some(b => b.id === id)
+                        ).length;
+                        if (selectedCount > 0 && selectedCount < this.filteredArchivedBoards.length) {
+                            selectAll.indeterminate = true;
+                        } else {
+                            selectAll.indeterminate = false;
+                        }
+                    }
+                });
+            },
+
+            toggleSelectAll() {
+                const allIds = this.filteredArchivedBoards.map(b => b.id);
+                const currentlyAllSelected = this.areAllFilteredSelected();
+                if (currentlyAllSelected) {
+                    // Deselect all in current filter view
+                    this.selectedArchivedBoardIds = this.selectedArchivedBoardIds.filter(id => !allIds.includes(id));
+                } else {
+                    // Add all filtered (avoid duplicates)
+                    allIds.forEach(id => {
+                        if (!this.selectedArchivedBoardIds.includes(id)) {
+                            this.selectedArchivedBoardIds.push(id);
+                        }
+                    });
+                }
+                this.syncCheckboxes();
+                this.updateSelectAllState();
+            },
+
+            toggleBoardSelection(boardId) {
+                const index = this.selectedArchivedBoardIds.indexOf(boardId);
+                if (index > -1) {
+                    this.selectedArchivedBoardIds.splice(index, 1);
+                } else {
+                    this.selectedArchivedBoardIds.push(boardId);
+                }
+                this.updateSelectAllState();
+            },
+
+            updateSelectAllState() {
+                this.$nextTick(() => {
+                    const selectAll = document.getElementById('select-all-archived');
+                    if (selectAll) {
+                        const filtered = this.filteredArchivedBoards;
+                        if (filtered.length === 0) {
+                            selectAll.checked = false;
+                            selectAll.indeterminate = false;
+                            return;
+                        }
+                        const selectedInFilter = filtered.filter(b => this.selectedArchivedBoardIds.includes(b.id)).length;
+                        selectAll.checked = selectedInFilter === filtered.length;
+                        selectAll.indeterminate = selectedInFilter > 0 && selectedInFilter < filtered.length;
+                    }
+                });
+            },
+
+            syncCheckboxes() {
+                const container = document.getElementById('archived-boards-container');
+                if (!container) return;
+                container.querySelectorAll('.archived-board-checkbox').forEach(cb => {
+                    cb.checked = this.selectedArchivedBoardIds.includes(parseInt(cb.value));
+                });
+            },
+
+            clearSelection() {
+                this.selectedArchivedBoardIds = [];
+                this.syncCheckboxes();
+                this.updateSelectAllState();
+            },
+
+            async bulkRestoreSelected() {
+                if (this.selectedArchivedBoardIds.length === 0) return;
+
+                const confirmed = confirm(`Restore ${this.selectedArchivedBoardIds.length} selected board(s)?`);
+                if (!confirmed) return;
+
+                try {
+                    const response = await fetch("{% url 'task_management:personal_board_bulk_restore' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.getCsrfToken(),
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ board_ids: this.selectedArchivedBoardIds })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        showToast(data.message || `Restored ${this.selectedArchivedBoardIds.length} board(s)`, 'success');
+                        this.selectedArchivedBoardIds = [];
+                        await this.fetchArchivedBoards();
+                        // Reload page to show restored boards in main grid
+                        setTimeout(() => location.reload(), 800);
+                    } else {
+                        alert('Error: ' + (data.error || 'Bulk restore failed'));
+                    }
+                } catch (err) {
+                    console.error('Bulk restore error:', err);
+                    alert('An error occurred during bulk restore.');
+                }
+            },
+
+            async bulkDeleteSelected() {
+                if (this.selectedArchivedBoardIds.length === 0) return;
+
+                const confirmed = confirm(`Permanently delete ${this.selectedArchivedBoardIds.length} selected board(s)? This cannot be undone.`);
+                if (!confirmed) return;
+
+                try {
+                    const response = await fetch("{% url 'task_management:personal_board_bulk_delete' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.getCsrfToken(),
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ board_ids: this.selectedArchivedBoardIds })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        showToast(data.message || `Deleted ${this.selectedArchivedBoardIds.length} board(s)`, 'success');
+                        this.selectedArchivedBoardIds = [];
+                        await this.fetchArchivedBoards();
+                    } else {
+                        alert('Error: ' + (data.error || 'Bulk delete failed'));
+                    }
+                } catch (err) {
+                    console.error('Bulk delete error:', err);
+                    alert('An error occurred during bulk delete.');
+                }
+            },
+
+            async autoPurge() {
+                const days = parseInt(this.autoPurgeDays) || 30;
+                const confirmed = confirm(`Purge all archived boards older than ${days} days? This cannot be undone.`);
+                if (!confirmed) return;
+
+                this.isPurging = true;
+                try {
+                    const response = await fetch("{% url 'task_management:personal_board_auto_purge' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': this.getCsrfToken(),
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ days: days })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        showToast(data.message || `Purged ${data.deleted_count || 0} old board(s)`, 'success');
+                        await this.fetchArchivedBoards();
+                    } else {
+                        alert('Error: ' + (data.error || 'Auto-purge failed'));
+                    }
+                } catch (err) {
+                    console.error('Auto-purge error:', err);
+                    alert('An error occurred during auto-purge.');
+                } finally {
+                    this.isPurging = false;
+                }
+            },
+
+            // Preview methods
+            openPreview(boardId) {
+                const board = this.archivedBoards.find(b => b.id === boardId);
+                if (board) {
+                    this.previewBoard = board;
+                    this.showPreview = true;
+                }
+            },
+
+            closePreview() {
+                this.showPreview = false;
+                this.previewBoard = null;
+            },
+
+            restoreBoardFromPreview() {
+                if (this.previewBoard) {
+                    const boardId = this.previewBoard.id;
+                    this.closePreview();
+                    this.restoreBoard(boardId);
+                }
+            },
+
+            deleteBoardFromPreview() {
+                if (this.previewBoard) {
+                    const boardId = this.previewBoard.id;
+                    const boardName = this.previewBoard.name;
+                    this.closePreview();
+                    this.deleteBoard(boardId, boardName);
+                }
+            },
+
+            // Helper methods
+            getTagColor(tag) {
+                const colorMap = {
+                    'work': '#3b82f6',
+                    'personal': '#8b5cf6',
+                    'health': '#10b981',
+                    'finance': '#f59e0b',
+                    'learning': '#ec4899',
+                    'home': '#f97316',
+                    'hobby': '#06b6d4'
+                };
+                return colorMap[tag] || '#9ca3af';
+            },
+
+            getTagIcon(tag) {
+                const iconMap = {
+                    'work': 'fas fa-briefcase',
+                    'personal': 'fas fa-user',
+                    'health': 'fas fa-heartbeat',
+                    'finance': 'fas fa-chart-line',
+                    'learning': 'fas fa-graduation-cap',
+                    'home': 'fas fa-home',
+                    'hobby': 'fas fa-gamepad'
+                };
+                return iconMap[tag] || 'fas fa-clipboard';
+            },
+
+            getTagBadgeClass(tag) {
+                const classMap = {
+                    'work': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                    'personal': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+                    'health': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+                    'finance': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+                    'learning': 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
+                    'home': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+                    'hobby': 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300'
+                };
+                return classMap[tag] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+            },
+
+            getTagLabel(tag) {
+                const labelMap = {
+                    'work': 'Work',
+                    'personal': 'Personal',
+                    'health': 'Health',
+                    'finance': 'Finance',
+                    'learning': 'Learning',
+                    'home': 'Home',
+                    'hobby': 'Hobby'
+                };
+                return labelMap[tag] || 'Other';
+            },
+
 
             escapeHtml(unsafe) {
                 return unsafe
@@ -2122,6 +2685,14 @@
 
             // Restore board - uses custom modal
             restoreBoard(boardId) {
+                // Remove from selection if present
+                const idx = this.selectedArchivedBoardIds.indexOf(boardId);
+                if (idx > -1) this.selectedArchivedBoardIds.splice(idx, 1);
+
+                // Find board data before operation
+                const board = this.archivedBoards.find(b => b.id === boardId);
+                if (!board) return;
+
                 this.openConfirmModal({
                     title: 'Restore Board',
                     message: 'Are you sure you want to restore this board? It will be moved back to your main dashboard.',
@@ -2145,22 +2716,23 @@
                         );
                          const data = await response.json();
                          if (data.success || data.restored) {
-                             // Remove from drawer
-                             const card = document.querySelector(`#archived-boards-container [data-board-id="${boardId}"]`);
-                             if (card) {
-                                 card.style.transition = 'opacity 0.3s';
-                                 card.style.opacity = '0';
-                                 setTimeout(() => card.remove(), 300);
-                             }
-                              // Check if grid exists (if no boards previously, grid is not rendered)
-                              const grid = document.querySelector('#boards-grid');
-                              if (!grid) {
-                                  // No grid present - reload to render the restored board
-                                  window.location.reload();
-                                  return;
-                              }
-                             // Add back to main grid
-                             this.addBoardToGrid(boardId, card);
+                             // Create a mock element with dataset attributes for addBoardToGrid
+                             const mockEl = document.createElement('div');
+                             mockEl.dataset.boardId = board.id;
+                             mockEl.dataset.boardName = board.name;
+                             mockEl.dataset.boardDescription = board.description || '';
+                             mockEl.dataset.boardTotalTasks = board.total_tasks || 0;
+                             mockEl.dataset.boardCompletedTasks = board.completed_tasks || 0;
+                             mockEl.dataset.boardToDoColumnId = board.to_do_column_id || '';
+                             mockEl.dataset.boardTag = board.tag || '';
+
+                             // Add to main grid
+                             this.addBoardToGrid(boardId, mockEl);
+
+                             // Remove from local archived boards array and refresh drawer
+                             this.archivedBoards = this.archivedBoards.filter(b => b.id !== boardId);
+                             this.renderArchivedBoards();
+
                              showToast('Board restored successfully!', 'success');
                          } else {
                              alert('Error: ' + (data.error || 'Failed to restore board'));
@@ -2170,6 +2742,146 @@
                         alert('An error occurred while restoring the board.');
                     }
                 });
+            },
+
+            // Add restored board to main grid from data object
+            addBoardToGridFromData(board) {
+                // Find the main board grid
+                const grid = document.querySelector('#boards-grid');
+                if (!grid) {
+                    // No grid yet - reload page
+                    window.location.reload();
+                    return;
+                }
+
+                const color = this.getBoardBorderColor(board.tag || '');
+                const adjustedColor = this.adjustColor(color, 40);
+                const escapedName = this.escapeHtml(board.name);
+                const escapedDesc = board.description ? this.escapeHtml(board.description) : 'Personal productivity board';
+                const escapedNameJs = this.escapeJs(board.name);
+                const escapedDescJs = this.escapeJs(board.description || '');
+                const detailUrl = "{% url 'task_management:personal_board_detail' 0 %}".replace('0', board.id);
+                const totalTasks = board.total_tasks || 0;
+                const completedTasks = board.completed_tasks || 0;
+                const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                const dashArray = totalTasks > 0 ? `${progressPercent}, 100` : '0, 100';
+
+                const card = document.createElement('div');
+                card.className = 'relative flip-card';
+                card.dataset.boardId = board.id;
+                card.dataset.previewUrl = "{% url 'task_management:personal_tasks_preview_api' 0 %}".replace('0', board.id);
+                card.dataset.detailUrl = detailUrl;
+                card.dataset.boardTag = board.tag || '';
+
+                card.innerHTML = `
+                    <a href="${detailUrl}" draggable="false" class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-2 transition-all duration-300 group cursor-pointer"
+                       :style="'border-color: ' + getBoardBorderColor('${board.tag || ''}')"
+                       aria-label="Open ${escapedName} personal board">
+                        <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style="background: linear-gradient(90deg, ${color} 0%, ${adjustedColor} 100%)"></div>
+                        <div class="pt-4">
+                            <div class="flex items-start mb-3">
+                                <button draggable="false"
+                                        @click.stop
+                                        class="drag-handle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 transition-all shadow-sm text-xs font-medium cursor-grab me-3 flex-shrink-0"
+                                        title="Drag to reorder"
+                                        aria-label="Drag to reorder ${escapedName}">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <circle cx="12" cy="6" r="2"></circle>
+                                        <circle cx="12" cy="12" r="2"></circle>
+                                        <circle cx="12" cy="18" r="2"></circle>
+                                    </svg>
+                                </button>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors cursor-pointer px-2 py-1 -mx-2 -my-1 rounded"
+                                        data-board-id="${board.id}"
+                                        data-field="name"
+                                        contenteditable="false"
+                                        title="Click to edit">${escapedName}</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 px-2 py-1 -mx-2 -my-1 rounded"
+                                        data-board-id="${board.id}"
+                                        data-field="description"
+                                        contenteditable="false"
+                                        title="Click to edit">${escapedDesc}</p>
+                                    ${board.tag ? `
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-2
+                                              ${this.getTagBadgeClass(board.tag)}">
+                                        ${this.getTagLabel(board.tag)}
+                                    </span>` : ''}
+                                </div>
+                            </div>
+
+                            <div class="hidden md:flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-700">
+                                <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+                                    <i class="fas fa-tasks text-sm"></i>
+                                    <span class="text-sm">${totalTasks}</span>
+                                </div>
+                                <div class="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                                    <i class="fas fa-check-circle text-sm"></i>
+                                    <span class="text-sm">${completedTasks}</span>
+                                </div>
+                                <div class="flex-1"></div>
+                                <div class="flex items-center gap-2">
+                                    <div class="relative w-8 h-8">
+                                        <svg class="w-8 h-8" viewBox="0 0 36 36">
+                                            <circle cx="18" cy="18" r="16"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="3"
+                                                    class="text-gray-200 dark:text-gray-700"></circle>
+                                            <circle cx="18" cy="18" r="16"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="3"
+                                                    stroke-dasharray="${dashArray}"
+                                                    class="text-emerald-500 progress-ring-circle"></circle>
+                                        </svg>
+                                    </div>
+                                    <span class="text-xs font-medium text-gray-600 dark:text-gray-400">${progressPercent}%</span>
+                                </div>
+                             </div>
+                        </div>
+                    </a>
+                    ${this.renderCardActions(boardId, escapedNameJs, escapedDescJs, boardTag, toDoColumnId)}
+                `;
+
+                // Insert card at the beginning of the grid
+                grid.insertBefore(card, grid.firstChild);
+
+                // Re-init ripple and magnetic for the new card's buttons
+                this.initRippleEffect();
+                this.initMagneticDragHandle();
+            },
+
+            // Render card action buttons for board card (shared)
+            renderCardActions(boardId, escapedNameJs, escapedDescJs, boardTag, toDoColumnId) {
+                return `
+                <div class="card-actions absolute top-3 right-3 flex items-center gap-1.5">
+                    <button @click.prevent="openQuickAdd(${boardId})"
+                            class="quick-add-toggle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-green-50 dark:hover:bg-green-900/40 text-gray-500 hover:text-green-600 dark:hover:text-green-400 border border-gray-200 dark:border-gray-600 hover:border-green-300 dark:hover:border-green-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
+                            title="Quick add task"
+                            aria-label="Quick add task to ${escapedNameJs}">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); openEditModal(${boardId}, '${escapedNameJs}', '${escapedDescJs}')"
+                            class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
+                            title="Edit board"
+                            aria-label="Edit board ${escapedNameJs}">
+                        <i class="fas fa-edit text-xs" aria-hidden="true"></i>
+                        <span>Edit</span>
+                    </button>
+                    <form method="post" action="${this.getArchiveUrl(boardId)}" class="inline" onsubmit="return confirmArchive(event, '${escapedNameJs}')">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="${this.getCsrfToken()}">
+                        <input type="hidden" name="column" value="${toDoColumnId}">
+                        <button type="submit"
+                                class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-red-50 dark:hover:bg-red-900/40 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
+                                title="Archive board"
+                                aria-label="Archive board ${escapedNameJs}">
+                            <i class="fas fa-archive text-xs" aria-hidden="true"></i>
+                            <span>Archive</span>
+                        </button>
+                    </form>
+                </div>
+                `;
             },
 
             // Add restored board to main grid
@@ -2365,6 +3077,10 @@
 
             // Delete board permanently - uses custom modal
             deleteBoard(boardId, boardName) {
+                // Remove from selection if present
+                const idx = this.selectedArchivedBoardIds.indexOf(boardId);
+                if (idx > -1) this.selectedArchivedBoardIds.splice(idx, 1);
+
                 this.openConfirmModal({
                     title: 'Delete Permanently',
                     message: `Are you sure you want to permanently delete "${boardName}"? This action cannot be undone and all associated tasks will be lost.`,
