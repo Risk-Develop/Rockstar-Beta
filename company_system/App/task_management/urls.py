@@ -40,6 +40,7 @@ urlpatterns = [
     path('personal/<int:board_id>/edit/', views.personal_board_edit, name='personal_board_edit'),
     path('personal/<int:board_id>/archive/', views.personal_board_archive, name='personal_board_archive'),
     path('personal/<int:board_id>/restore/', views.personal_board_restore, name='personal_board_restore'),
+    path('personal/<int:board_id>/duplicate/', views.personal_board_duplicate, name='personal_board_duplicate'),
     path('personal/<int:board_id>/delete/', views.personal_board_delete_permanent, name='personal_board_delete_permanent'),
      path('personal/archived/', views.personal_board_archived_list, name='personal_board_archived_list'),
      path('personal/archived/api/', views.personal_board_archived_api, name='personal_board_archived_api'),

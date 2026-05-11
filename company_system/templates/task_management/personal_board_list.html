@@ -454,34 +454,143 @@
                     </p>
                 </div>
 
-                 <!-- Create Board Form -->
-                 <div class="flex-shrink-0">
-                     <form method="post"
-                           action="{% url 'task_management:personal_board_create' %}"
-                           class="flex flex-col sm:flex-row gap-2">
-                         {% csrf_token %}
-                         <div class="input-group">
-                             <input type="text"
-                                    name="name"
-                                    placeholder="Board name"
-                                    class="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-40 transition-all"
-                                    required>
-                         </div>
-                         <input type="text"
-                                name="description"
-                                placeholder="Description (optional)"
-                                class="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-48 transition-all">
-                         <button type="submit"
-                                 class="create-btn px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg">
-                             <i class="fas fa-plus"></i>
-                             <span>Create Board</span>
-                         </button>
-                     </form>
-                 </div>
-                 <button onclick="toggleHelp()" class="px-3 py-1.5 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-400 dark:hover:bg-gray-500">
-                   <i class="fas fa-question mr-1"></i>Help
-                 </button>
+                  <!-- Create Board Button (opens modal) -->
+                  <div class="flex-shrink-0">
+						<button @click="openCreateModal()"
+                                class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                                title="Create new personal board">
+							<i class="fas fa-plus"></i>
+							<span>Create Board</span>
+						</button>
+           </div>
+       </div>
+
+    <!-- Unified Create Board Modal -->
+    <div id="createBoardModal"
+         x-show="createModalOpen"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4"
+         @click.self="closeCreateModal()"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="createModalTitle"
+         style="display: none;"
+         tabindex="-1">
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+        <div class="relative bg-gray-800 rounded-2xl p-6 w-full max-w-2xl mx-4 shadow-2xl border border-gray-700/50 max-h-[90vh] overflow-y-auto"
+             @click.stop>
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 id="createModalTitle" class="text-xl font-semibold text-white">Create New Board</h2>
+                    <p class="text-sm text-gray-400 mt-1">Choose a template (optional) and customize your board.</p>
+                </div>
+                <button @click="closeCreateModal()"
+                        class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                        aria-label="Close modal">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
+
+            <!-- Template Selection Grid -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-300 mb-3">Select a Template</label>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <template x-for="template in boardTemplates" :key="template.id">
+                        <div @click="selectTemplate(template)"
+                             class="cursor-pointer rounded-xl border-2 p-3 transition-all"
+                             :class="selectedTemplate?.id === template.id
+                                 ? 'border-blue-500 bg-blue-900/30 ring-2 ring-blue-500/50'
+                                 : 'border-gray-600 bg-gray-700/50 hover:border-gray-500'">
+                            <div class="flex flex-col items-center text-center gap-2">
+                                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
+                                     :style="`background-color: ${template.color}20; color: ${template.color}`">
+                                    <i :class="template.icon"></i>
+                                </div>
+                                <h4 class="text-sm font-medium text-gray-100 truncate w-full"
+                                    x-text="template.name"></h4>
+                                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                                      :class="getTagBadgeClass(template.tag)"
+                                      x-text="getTagLabel(template.tag)"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <button type="button"
+                        @click="clearSelection()"
+                        class="mt-2 text-xs text-gray-400 hover:text-gray-300 transition-colors underline">
+                    Clear template selection
+                </button>
+            </div>
+
+            <hr class="border-gray-700 mb-4">
+
+            <!-- Creation Form -->
+            <form method="post"
+                  action="{% url 'task_management:personal_board_create' %}"
+                  class="space-y-4">
+                {% csrf_token %}
+                <input type="hidden" name="tag" :value="selectedTemplate?.tag || ''">
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Board Name</label>
+                    <input type="text"
+                           name="name"
+                           id="create_board_name_input"
+                           placeholder="Enter board name"
+                           class="w-full px-4 py-2.5 border border-gray-600 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400 transition-all"
+                           required
+                           x-model="createFormName">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-2">Description (optional)</label>
+                    <textarea name="description"
+                              id="create_board_desc_input"
+                              rows="2"
+                              placeholder="What's this board for?"
+                              class="w-full px-4 py-2.5 border border-gray-600 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400 transition-all resize-none"
+                              x-model="createFormDesc"></textarea>
+                </div>
+
+                <!-- Selected template preview -->
+                <div x-show="selectedTemplate"
+                     x-transition
+                     class="flex items-center gap-3 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+                    <div class="w-8 h-8 rounded flex items-center justify-center"
+                         :style="`background-color: ${selectedTemplate.color}20; color: ${selectedTemplate.color}`">
+                        <i :class="selectedTemplate.icon" class="text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium text-gray-200" x-text="selectedTemplate.name"></div>
+                        <div class="text-xs text-gray-400 truncate" x-text="selectedTemplate.description"></div>
+                    </div>
+                    <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                          :class="getTagBadgeClass(selectedTemplate.tag)"
+                          x-text="getTagLabel(selectedTemplate.tag)"></span>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button"
+                            @click="closeCreateModal()"
+                            class="px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 text-gray-300 hover:text-white font-medium transition-all">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        <span>Create Board</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
         </div>
 
         {% if personal_boards %}
@@ -729,31 +838,37 @@
                             </div>
 
                             {# Action buttons - positioned top-right, outside the link #}
-                            <div class="card-actions absolute top-3 right-3 flex items-center gap-1.5">
-                                <button @click.prevent="openQuickAdd({{ board.id }})"
-                                        class="quick-add-toggle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-green-50 dark:hover:bg-green-900/40 text-gray-500 hover:text-green-600 dark:hover:text-green-400 border border-gray-200 dark:border-gray-600 hover:border-green-300 dark:hover:border-green-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
-                                        title="Quick add task"
-                                        aria-label="Quick add task to {{ board.name|escape }}">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                                <button onclick="event.stopPropagation(); openEditModal({{ board.id }}, '{{ board.name|escapejs }}', '{{ board.description|escapejs }}')"
-                                        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
-                                        title="Edit board"
-                                        aria-label="Edit board {{ board.name|escape }}">
-                                    <i class="fas fa-edit text-xs" aria-hidden="true"></i>
-                                    <span>Edit</span>
-                                </button>
-                                <form method="post" action="{% url 'task_management:personal_board_archive' board.id %}" class="inline" onsubmit="return confirmArchive(event, '{{ board.name|escapejs }}')">
-                                    {% csrf_token %}
-                                    <button type="submit"
-                                            class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-red-50 dark:hover:bg-red-900/40 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
-                                            title="Archive board"
-                                            aria-label="Archive board {{ board.name|escape }}">
-                                        <i class="fas fa-archive text-xs" aria-hidden="true"></i>
-                                        <span>Archive</span>
-                                    </button>
-                                </form>
-                            </div>
+                             <div class="card-actions absolute top-3 right-3 flex items-center gap-1.5">
+                                 <button @click.prevent="openQuickAdd({{ board.id }})"
+                                         class="quick-add-toggle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-green-50 dark:hover:bg-green-900/40 text-gray-500 hover:text-green-600 dark:hover:text-green-400 border border-gray-200 dark:border-gray-600 hover:border-green-300 dark:hover:border-green-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
+                                         title="Quick add task"
+                                         aria-label="Quick add task to {{ board.name|escape }}">
+                                     <i class="fas fa-plus"></i>
+                                 </button>
+                                 <button @click.prevent="duplicateBoard({{ board.id }}, '{{ board.name|escapejs }}')"
+                                         class="flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-purple-50 dark:hover:bg-purple-900/40 text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 border border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
+                                         title="Duplicate board"
+                                         aria-label="Duplicate board {{ board.name|escape }}">
+                                     <i class="fas fa-copy"></i>
+                                 </button>
+                                 <button onclick="event.stopPropagation(); openEditModal({{ board.id }}, '{{ board.name|escapejs }}', '{{ board.description|escapejs }}')"
+                                         class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
+                                         title="Edit board"
+                                         aria-label="Edit board {{ board.name|escape }}">
+                                     <i class="fas fa-edit text-xs" aria-hidden="true"></i>
+                                     <span>Edit</span>
+                                 </button>
+                                 <form method="post" action="{% url 'task_management:personal_board_archive' board.id %}" class="inline" onsubmit="return confirmArchive(event, '{{ board.name|escapejs }}')">
+                                     {% csrf_token %}
+                                     <button type="submit"
+                                             class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-red-50 dark:hover:bg-red-900/40 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
+                                             title="Archive board"
+                                             aria-label="Archive board {{ board.name|escape }}">
+                                         <i class="fas fa-archive text-xs" aria-hidden="true"></i>
+                                         <span>Archive</span>
+                                     </button>
+                                 </form>
+                             </div>
 
                              {# Quick Add Task Inline Form (expands) #}
                              <div x-show="quickAddOpen === {{ board.id }}" x-transition class="absolute top-6 right-3 z-20 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-3"
@@ -781,13 +896,13 @@
                                             <i class="fas fa-plus text-[10px]"></i>Add
                                         </button>
                                     </div>
-                                </form>
-                            </div>
+</form>
+                             </div>
+                         </div>
+                     {% endfor %}
                         </div>
-                        {% endfor %}
-                    </div>
 
-          {# Show More/Less button (when >3 boards) #}
+                    {# Show More/Less button (when >3 boards) #}
           <div class="mt-6 text-center" x-show="statsTotalBoards > 3">
               <button @click="expanded = !expanded"
                       class="px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-400 transition-colors text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm font-medium"
@@ -1101,12 +1216,101 @@
                    buttonClass: 'bg-red-600 hover:bg-red-500 text-white focus:ring-red-500',
                    buttonIconClass: 'fa-trash-alt'
                },
-                confirmModalCallback: null,
-                expanded: false,
-                mobileStatsOpen: {},
-                quickAddOpen: null,
+                 confirmModalCallback: null,
+                 expanded: false,
+                 mobileStatsOpen: {},
+                 quickAddOpen: null,
+                 createModalOpen: false,
+                 selectedTemplate: null,
+                 createFormName: '',
+                 createFormDesc: '',
 
-                // Stats data from Django template
+                 // Predefined board templates
+                 boardTemplates: [
+                     {
+                         id: 'goals',
+                         name: 'Goals',
+                         description: 'Track your long-term and short-term goals with milestones and progress tracking.',
+                         tag: 'work',
+                         icon: 'fas fa-bullseye',
+                         color: '#3b82f6',
+                         columnCount: 5
+                     },
+                     {
+                         id: 'habits',
+                         name: 'Habits',
+                         description: 'Build daily habits and track your consistency over time.',
+                         tag: 'personal',
+                         icon: 'fas fa-repeat',
+                         color: '#8b5cf6',
+                         columnCount: 4
+                     },
+                     {
+                         id: 'backlog',
+                         name: 'Backlog',
+                         description: 'Capture ideas, tasks, and things to process later without losing them.',
+                         tag: 'work',
+                         icon: 'fas fa-inbox',
+                         color: '#6b7280',
+                         columnCount: 3
+                     },
+                     {
+                         id: 'daily',
+                         name: 'Daily Tasks',
+                         description: 'Manage your daily to-do list with urgent, normal, and low priority tasks.',
+                         tag: 'personal',
+                         icon: 'fas fa-calendar-day',
+                         color: '#10b981',
+                         columnCount: 4
+                     },
+                     {
+                         id: 'learning',
+                         name: 'Learning',
+                         description: 'Track courses to take, books to read, and skills to develop.',
+                         tag: 'learning',
+                         icon: 'fas fa-graduation-cap',
+                         color: '#ec4899',
+                         columnCount: 5
+                     },
+                     {
+                         id: 'health',
+                         name: 'Health & Fitness',
+                         description: 'Monitor workouts, nutrition, and health metrics in one place.',
+                         tag: 'health',
+                         icon: 'fas fa-heartbeat',
+                         color: '#10b981',
+                         columnCount: 4
+                     },
+                     {
+                         id: 'finance',
+                         name: 'Finance',
+                         description: 'Track budgets, bills, savings goals, and investments.',
+                         tag: 'finance',
+                         icon: 'fas fa-chart-line',
+                         color: '#f59e0b',
+                         columnCount: 5
+                     },
+                     {
+                         id: 'home',
+                         name: 'Home Projects',
+                         description: 'Manage home improvement tasks, repairs, and family activities.',
+                         tag: 'home',
+                         icon: 'fas fa-home',
+                         color: '#f97316',
+                         columnCount: 5
+                     },
+                     {
+                         id: 'hobby',
+                         name: 'Hobbies',
+                         description: 'Organize your hobby projects, creative work, and fun activities.',
+                         tag: 'hobby',
+                         icon: 'fas fa-gamepad',
+                         color: '#06b6d4',
+                         columnCount: 4
+                     }
+                 ],
+
+                 // Stats data from Django template
                 statsData: {
                     boards: {{ personal_boards|length }},
                     boardsLastWeek: {{ boards_last_week }},
@@ -1160,7 +1364,7 @@
                 });
             }
 
-            // Keyboard shortcuts: N or Ctrl+B to focus create board input
+            // Keyboard shortcuts: N or Ctrl+B to open create modal
             document.addEventListener('keydown', (e) => {
                 // Ignore if user is typing in an input/textarea
                 const tag = e.target.tagName.toLowerCase();
@@ -1170,24 +1374,27 @@
                  // N key alone
                  if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey) {
                      e.preventDefault();
-                     const form = document.querySelector(`form[action="{% url 'task_management:personal_board_create' %}"]`);
-                     if (form) {
-                         const input = form.querySelector('input[name="name"]');
-                         if (input) input.focus();
+                     if (!this.createModalOpen) {
+                         this.openCreateModal();
+                     } else {
+                         // Focus name input in modal
+                         const nameInput = document.getElementById('create_board_name_input');
+                         if (nameInput) nameInput.focus();
                      }
                  }
                  // Ctrl+B or Cmd+B
                  if (e.ctrlKey || e.metaKey) {
                      if (e.key === 'b' || e.key === 'B') {
                          e.preventDefault();
-                         const form = document.querySelector(`form[action="{% url 'task_management:personal_board_create' %}"]`);
-                         if (form) {
-                             const input = form.querySelector('input[name="name"]');
-                             if (input) input.focus();
+                         if (!this.createModalOpen) {
+                             this.openCreateModal();
+                         } else {
+                             const nameInput = document.getElementById('create_board_name_input');
+                             if (nameInput) nameInput.focus();
                          }
                      }
                  }
-            });
+             });
 
             // Initialize micro-interactions
             this.initRippleEffect();
@@ -1425,20 +1632,107 @@
                  return colorMap[tag] || '#9ca3af';
             },
 
-            adjustColor(hex, percent) {
-                const num = parseInt(hex.replace('#', ''), 16),
-                      amt = Math.round(2.55 * percent),
-                      R = (num >> 16) + amt,
-                      G = (num >> 8 & 0x00FF) + amt,
-                      B = (num & 0x0000FF) + amt;
-                return '#' + (0x1000000 +
-                    (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-                    (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-                    (B < 255 ? B < 1 ? 0 : B : 255)
-                ).toString(16).slice(1);
+             adjustColor(hex, percent) {
+                 const num = parseInt(hex.replace('#', ''), 16),
+                       amt = Math.round(2.55 * percent),
+                       R = (num >> 16) + amt,
+                       G = (num >> 8 & 0x00FF) + amt,
+                       B = (num & 0x0000FF) + amt;
+                 return '#' + (0x1000000 +
+                     (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                     (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                     (B < 255 ? B < 1 ? 0 : B : 255)
+                 ).toString(16).slice(1);
+             },
+
+            // Create Board Modal methods
+            openCreateModal() {
+                this.createModalOpen = true;
+                this.selectedTemplate = null;
+                this.createFormName = '';
+                this.createFormDesc = '';
             },
 
-            async openArchivedDrawer() {
+            closeCreateModal() {
+                this.createModalOpen = false;
+            },
+
+            selectTemplate(template) {
+                this.selectedTemplate = template;
+                this.createFormName = template.name;
+                this.createFormDesc = template.description || '';
+            },
+
+            clearSelection() {
+                this.selectedTemplate = null;
+                this.createFormName = '';
+                this.createFormDesc = '';
+            },
+
+            getTagBadgeClass(tag) {
+                const classes = {
+                    'work': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+                    'personal': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+                    'health': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+                    'finance': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+                    'learning': 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
+                    'home': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+                    'hobby': 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300'
+                };
+                return classes[tag] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+            },
+
+            getTagLabel(tag) {
+                const labels = {
+                    'work': 'Work',
+                    'personal': 'Personal',
+                    'health': 'Health',
+                    'finance': 'Finance',
+                    'learning': 'Learning',
+                    'home': 'Home',
+                    'hobby': 'Hobby'
+                };
+                return labels[tag] || 'Other';
+            },
+
+             // Duplicate board
+             async duplicateBoard(boardId, boardName) {
+                 this.openConfirmModal({
+                     title: 'Duplicate Board',
+                     message: `Create an exact copy of "${boardName}"? All tasks, columns, and settings will be duplicated.`,
+                     type: 'info',
+                     confirmText: 'Duplicate',
+                     iconBgClass: 'bg-blue-500/20',
+                     iconClass: 'fa-copy text-blue-500',
+                     buttonClass: 'bg-blue-600 hover:bg-blue-500 text-white focus:ring-blue-500',
+                     buttonIconClass: 'fa-copy'
+                 }, async () => {
+                     try {
+                         const response = await fetch(
+                             `{% url 'task_management:personal_board_duplicate' 0 %}`.replace('0', boardId),
+                             {
+                                 method: 'POST',
+                                 headers: {
+                                     'X-CSRFToken': this.getCsrfToken(),
+                                     'X-Requested-With': 'XMLHttpRequest'
+                                 }
+                             }
+                         );
+                         const data = await response.json();
+                         if (data.success) {
+                             // Reload the page to show the new board
+                             window.location.reload();
+                         } else {
+                             alert('Error: ' + (data.error || 'Failed to duplicate board'));
+                         }
+                     } catch (err) {
+                         console.error('Error:', err);
+                         alert('An error occurred while duplicating the board.');
+                     }
+                 });
+             },
+
+             async openArchivedDrawer() {
                 this.archivedDrawerOpen = true;
                 await this.fetchArchivedBoards();
             },
@@ -2196,6 +2490,200 @@
         }
     });
 
+    // Create Board Form — AJAX submission
+    (function() {
+        const form = document.querySelector('#createBoardModal form');
+        if (!form) return;
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalHTML = submitBtn.innerHTML;
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i>Creating...';
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                let responseText;
+                try {
+                    responseText = await response.text();
+                } catch (e) {
+                    responseText = '(could not read response)';
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}\n${responseText.substring(0, 200)}`);
+                }
+
+                const data = JSON.parse(responseText);
+
+                if (data.success) {
+                    const board = data.board;
+
+                    // Close modal and reset form immediately
+                    window.PersonalBoardsData.closeCreateModal();
+                    form.reset();
+                    window.PersonalBoardsData.selectedTemplate = null;
+                    window.PersonalBoardsData.createFormName = '';
+                    window.PersonalBoardsData.createFormDesc = '';
+
+                    // Check if grid exists (if no boards previously, grid is not rendered)
+                    const grid = document.querySelector('.grid');
+                    const emptyState = document.querySelector('.empty-state-enhanced');
+
+                    if (!grid) {
+                        // First board — reload page to render grid + stats
+                        window.location.reload();
+                        return;
+                    }
+
+                    // Remove empty state if still present (safety)
+                    if (emptyState) emptyState.remove();
+
+                    // Build card HTML and prepend to grid
+                    const cardHtml = buildBoardCard(board);
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = cardHtml;
+                    const newCard = tempDiv.firstElementChild;
+                    grid.insertBefore(newCard, grid.firstChild);
+
+                    // Initialize micro-interactions for new card
+                    window.PersonalBoardsData.initRippleEffect();
+                    window.PersonalBoardsData.initMagneticDragHandle();
+                    window.PersonalBoardsData.initTaskPreview();
+
+                    // Refresh Sortable to recognize new draggable item
+                    if (typeof Sortable !== 'undefined') {
+                        const grid = document.querySelector('.grid');
+                        const sortable = Sortable.get(grid);
+                        if (sortable) sortable.refresh();
+                    }
+
+                    // Update stats (reactive)
+                    window.PersonalBoardsData.statsData.boards += 1;
+                    // tasks and completed remain unchanged (new empty board)
+
+                    showToast('Board created successfully!', 'success');
+                } else {
+                    alert(data.error || 'Failed to create board');
+                }
+            } catch (err) {
+                console.error('Error creating board:', err);
+                let errorMsg = 'An error occurred while creating the board.';
+                if (err.message) errorMsg += '\n\nDetails: ' + err.message;
+                alert(errorMsg);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHTML;
+            }
+        });
+    })();
+
+    // Helper: build a board card HTML string (used in AJAX create & restore)
+    function buildBoardCard(board) {
+        const escapedName = window.PersonalBoardsData.escapeHtml(board.name);
+        const escapedDesc = window.PersonalBoardsData.escapeHtml(board.description || 'Personal productivity board');
+        const escapedNameJs = window.PersonalBoardsData.escapeJs(board.name);
+        const progressPercent = 0;
+        const dashArray = '0, 100';
+        const detailUrl = "{% url 'task_management:personal_board_detail' 0 %}".replace('0', board.id);
+        const previewUrl = "{% url 'task_management:personal_tasks_preview_api' 0 %}".replace('0', board.id);
+        const archiveUrl = window.PersonalBoardsData.getArchiveUrl(board.id);
+        const csrfToken = window.PersonalBoardsData.getCsrfToken();
+        const color = window.PersonalBoardsData.getBoardBorderColor(board.tag || '');
+        const adjustedColor = window.PersonalBoardsData.adjustColor(color, 40);
+        const tagLabel = board.tag ? window.PersonalBoardsData.getTagLabel(board.tag) : '';
+        const tagClass = board.tag ? window.PersonalBoardsData.getTagBadgeClass(board.tag) : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+
+        return `
+            <div class="relative flip-card" data-board-id="${board.id}" data-preview-url="${previewUrl}" data-detail-url="${detailUrl}" data-board-tag="${board.tag || ''}">
+                <a href="${detailUrl}" class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-2 shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer" style="border-color: ${color}" aria-label="Open ${escapedName} personal board">
+                    <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style="background: linear-gradient(90deg, ${color} 0%, ${adjustedColor} 100%)"></div>
+                    <div class="pt-4">
+                        <div class="flex items-start mb-3">
+                            <button draggable="false" class="drag-handle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 transition-all shadow-sm text-xs font-medium cursor-grab me-3 flex-shrink-0" title="Drag to reorder" aria-label="Drag to reorder ${escapedName}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="6" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="18" r="2"></circle></svg>
+                            </button>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors cursor-pointer px-2 py-1 -mx-2 -my-1 rounded" data-board-id="${board.id}" data-field="name" contenteditable="false" title="Click to edit">${escapedName}</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 px-2 py-1 -mx-2 -my-1 rounded" data-board-id="${board.id}" data-field="description" contenteditable="false" title="Click to edit">${escapedDesc}</p>
+                                ${board.tag ? `
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-2 ${tagClass}">
+                                    ${tagLabel}
+                                </span>` : ''}
+                            </div>
+                        </div>
+                        <div class="hidden md:flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-700" data-board-id="${board.id}">
+                            <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400"><i class="fas fa-tasks text-sm"></i><span class="text-sm">0</span></div>
+                            <div class="flex items-center gap-1.5 text-green-600 dark:text-green-400"><i class="fas fa-check-circle text-sm"></i><span class="text-sm">0</span></div>
+                            <div class="flex-1"></div>
+                            <div class="flex items-center gap-2" data-priority-badges></div>
+                            <div class="flex items-center gap-2">
+                                <div class="relative w-8 h-8">
+                                    <svg class="w-8 h-8" viewBox="0 0 36 36">
+                                        <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" stroke-width="3" class="text-gray-200 dark:text-gray-700"></circle>
+                                        <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="${dashArray}" class="text-emerald-500 progress-ring-circle"></circle>
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                <button class="md:hidden absolute top-3 right-14 p-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 transition-all shadow-sm text-xs" @click="mobileStatsOpen[${board.id}] = !mobileStatsOpen[${board.id}]" :aria-expanded="mobileStatsOpen[${board.id}]" aria-label="Toggle stats for ${escapedName}">
+                    <i class="fas fa-info-circle"></i>
+                </button>
+                <div x-show="mobileStatsOpen[${board.id}]" x-transition class="md:hidden absolute right-0 top-10 z-10 w-40 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 p-3" @click.away="mobileStatsOpen[${board.id}] = false" x-cloak>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-sm"><span class="text-gray-600 dark:text-gray-300">Tasks</span><span class="font-medium text-gray-900 dark:text-gray-100">0</span></div>
+                        <div class="flex items-center justify-between text-sm"><span class="text-green-600 dark:text-green-400">Done</span><span class="font-medium text-green-600 dark:text-green-400">0</span></div>
+                        <div class="flex items-center justify-between text-sm pt-2 border-t border-gray-100 dark:border-gray-600"><span class="text-gray-600 dark:text-gray-300">Progress</span><span class="font-medium text-gray-900 dark:text-gray-100">0%</span></div>
+                    </div>
+                </div>
+                <div class="card-actions absolute top-3 right-3 flex items-center gap-1.5">
+                    <button @click.prevent="openQuickAdd(${board.id})" class="quick-add-toggle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-green-50 dark:hover:bg-green-900/40 text-gray-500 hover:text-green-600 dark:hover:text-green-400 border border-gray-200 dark:border-gray-600 hover:border-green-300 dark:hover:border-green-500 transition-all shadow-sm text-xs font-medium cursor-pointer" title="Quick add task" aria-label="Quick add task to ${escapedName}"><i class="fas fa-plus"></i></button>
+                    <button @click.prevent="duplicateBoard(${board.id}, '${escapedNameJs}')" class="flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-purple-50 dark:hover:bg-purple-900/40 text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 border border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 transition-all shadow-sm text-xs font-medium cursor-pointer" title="Duplicate board" aria-label="Duplicate board ${escapedName}"><i class="fas fa-copy"></i></button>
+                    <button onclick="event.stopPropagation(); openEditModal(${board.id}, '${escapedNameJs}', '')" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer" title="Edit board" aria-label="Edit board ${escapedName}"><i class="fas fa-edit text-xs" aria-hidden="true"></i><span>Edit</span></button>
+                    <form method="post" action="${archiveUrl}" class="inline" onsubmit="return confirmArchive(event, '${escapedNameJs}')">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                        <button type="submit" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-red-50 dark:hover:bg-red-900/40 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm text-xs font-medium cursor-pointer" title="Archive board" aria-label="Archive board ${escapedName}"><i class="fas fa-archive text-xs" aria-hidden="true"></i><span>Archive</span></button>
+                    </form>
+                </div>
+                <div x-show="quickAddOpen === ${board.id}" x-transition class="absolute top-6 right-3 z-20 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-3" @click.away="quickAddOpen = null" x-cloak>
+                    <form @submit.prevent="submitQuickAdd(${board.id})" class="space-y-2 quick-add-form">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                        <input type="text" name="title" placeholder="Task title" required class="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 quick-add-form-input">
+                        <div class="flex gap-2">
+                            <select name="priority" class="flex-1 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                            <input type="date" name="deadline" class="flex-1 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        </div>
+                        <input type="hidden" name="column" value="${board.to_do_column_id || ''}">
+                        <div class="flex justify-end gap-2">
+                            <button type="button" @click="quickAddOpen = null" class="px-2.5 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">Cancel</button>
+                            <button type="submit" class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex items-center gap-1"><i class="fas fa-plus text-[10px]"></i>Add</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+    }
+
     function showToast(message, type = 'success') {
         const toast = document.createElement('div');
         toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 ${
@@ -2208,5 +2696,6 @@
             setTimeout(() => toast.remove(), 300);
         }, 2000);
     }
+
 </script>
 {% endblock %}

@@ -707,28 +707,62 @@ def personal_board_detail(request, board_id):
 
 @custom_login_required
 def personal_board_create(request):
-    current_staff = get_current_employee(request)
+    current_staff = get_current_staff(request)
     if not current_staff:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'You must be logged in with a valid staff account to create a personal board.'}, status=403)
         messages.error(request, "You must be logged in to create a personal board.")
         return redirect('task_management:board_list')
 
     if request.method == 'POST':
-        name = request.POST.get('name', 'My Tasks')
-        description = request.POST.get('description', '')
-        existing = PersonalBoard.objects.filter(user=current_staff, name=name).first()
-        if existing:
-            messages.warning(request, f'Board "{name}" already exists.')
-            return redirect('task_management:personal_board_detail', board_id=existing.id)
-        # Determine order: append after the current highest order
-        max_order = PersonalBoard.objects.filter(user=current_staff).aggregate(
-            max_order=models.Max('order')
-        )['max_order'] or 0
-        board = PersonalBoard.objects.create(
-            user=current_staff, name=name, description=description, order=max_order + 1
-        )
-        for col in PersonalColumn.DEFAULT_COLUMNS:
-            PersonalColumn.objects.create(board=board, **col)
-        messages.success(request, f'Personal board "{board.name}" created!')
+        try:
+            name = request.POST.get('name', 'My Tasks')
+            description = request.POST.get('description', '')
+            tag = request.POST.get('tag', None)
+            existing = PersonalBoard.objects.filter(user=current_staff, name=name).first()
+            if existing:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': f'Board "{name}" already exists.'})
+                messages.warning(request, f'Board "{name}" already exists.')
+                return redirect('task_management:personal_board_detail', board_id=existing.id)
+            # Determine order: append after the current highest order
+            max_order = PersonalBoard.objects.filter(user=current_staff).aggregate(
+                max_order=models.Max('order')
+            )['max_order'] or 0
+            board = PersonalBoard.objects.create(
+                user=current_staff, name=name, description=description, tag=tag, order=max_order + 1
+            )
+            for col in PersonalColumn.DEFAULT_COLUMNS:
+                PersonalColumn.objects.create(board=board, **col)
+
+            # AJAX response
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                try:
+                    to_do_column_id = board.columns.filter(name='To Do').first().id if board.columns.filter(name='To Do').exists() else None
+                except Exception:
+                    to_do_column_id = None
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Personal board "{board.name}" created!',
+                    'board': {
+                        'id': board.id,
+                        'name': board.name,
+                        'description': board.description or '',
+                        'tag': board.tag or '',
+                        'total_tasks': 0,
+                        'completed_tasks': 0,
+                        'high_priority_tasks': 0,
+                        'medium_priority_tasks': 0,
+                        'low_priority_tasks': 0,
+                        'to_do_column_id': to_do_column_id
+                    }
+                })
+
+            messages.success(request, f'Personal board "{board.name}" created!')
+        except Exception as e:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': str(e)}, status=500)
+            raise
     return redirect('task_management:personal_board_list')
 
 
@@ -777,6 +811,97 @@ def personal_board_restore(request, board_id):
         messages.success(request, f'Board "{board.name}" has been restored.')
         return redirect('task_management:personal_board_list')
     return redirect('task_management:personal_board_archived_list')
+
+
+@custom_login_required
+def personal_board_duplicate(request, board_id):
+    """Duplicate a personal board including all its columns and tasks"""
+    current_staff = get_current_staff(request)
+    original = get_object_or_404(PersonalBoard, id=board_id, user=current_staff)
+
+    # Generate unique name
+    base_name = original.name
+    duplicate_name = f"Copy of {base_name}"
+    counter = 1
+    while PersonalBoard.objects.filter(user=current_staff, name=duplicate_name).exists():
+        counter += 1
+        duplicate_name = f"Copy of {base_name} ({counter})"
+
+    # Determine order: append after highest order
+    max_order = PersonalBoard.objects.filter(user=current_staff).aggregate(
+        max_order=models.Max('order')
+    )['max_order'] or 0
+
+    # Create duplicate board
+    duplicate = PersonalBoard.objects.create(
+        user=current_staff,
+        name=duplicate_name,
+        description=original.description,
+        tag=original.tag,
+        order=max_order + 1
+    )
+
+    # Copy columns
+    column_map = {}  # original_id -> new_column
+    for col in original.columns.all().order_by('order'):
+        new_col = PersonalColumn.objects.create(
+            board=duplicate,
+            name=col.name,
+            order=col.order,
+            color=col.color
+        )
+        column_map[col.id] = new_col
+
+    # Copy tasks (prefetch checklist items to copy them too)
+    task_map = {}  # original_task_id -> new_task
+    original_tasks = original.tasks.all().select_related('column').prefetch_related('checklist_items')
+    for task in original_tasks:
+        new_column = column_map.get(task.column_id)
+        if new_column:
+            new_task = PersonalTask.objects.create(
+                board=duplicate,
+                column=new_column,
+                title=task.title,
+                description=task.description,
+                order=task.order,
+                priority=task.priority,
+                deadline=task.deadline,
+                deadline_time=task.deadline_time,
+                date_start=task.date_start,
+                date_end=task.date_end,
+                is_completed=task.is_completed,
+                is_archived=task.is_archived,
+                notes=task.notes,
+                is_recurring=task.is_recurring,
+                recurring_type=task.recurring_type,
+                recurring_interval=task.recurring_interval,
+                recurring_weekday=task.recurring_weekday,
+                recurring_month_day=task.recurring_month_day,
+                recurring_end_date=task.recurring_end_date,
+                last_recurring_generated=task.last_recurring_generated
+            )
+            task_map[task.id] = new_task
+
+            # Copy checklist items
+            for item in task.checklist_items.all():
+                PersonalTaskChecklistItem.objects.create(
+                    task=new_task,
+                    text=item.text,
+                    is_completed=item.is_completed,
+                    order=item.order,
+                    completed_at=item.completed_at
+                )
+
+    # Return JSON for AJAX or redirect
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'board_id': duplicate.id,
+            'board_name': duplicate.name,
+            'message': f'Board "{duplicate.name}" created!'
+        })
+    messages.success(request, f'Board "{duplicate.name}" created!')
+    return redirect('task_management:personal_board_list')
 
 
 @custom_login_required
