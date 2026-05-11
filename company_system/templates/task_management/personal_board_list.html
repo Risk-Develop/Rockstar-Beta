@@ -6,7 +6,7 @@
 {% block page_title %}My Personal Tasks{% endblock %}
 
 {% block extra_css %}
-<link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" onerror="this.onerror=null;this.href='{% static 'js/flowbite.min.css' %}'" />
 <style>
     .empty-gradient-bg {
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
@@ -358,26 +358,12 @@
        .ripple.animate::after {
            animation: ripple-effect 0.6s ease-out;
        }
-       @keyframes ripple-effect {
-           0% { width: 0; height: 0; opacity: 0.5; }
-           100% { width: 400px; height: 400px; opacity: 0; }
-       }
+        @keyframes ripple-effect {
+            0% { width: 0; height: 0; opacity: 0.5; }
+            100% { width: 400px; height: 400px; opacity: 0; }
+        }
 
-       /* Magnetic Drag Handle */
-       .drag-handle {
-           transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease, box-shadow 0.2s ease;
-           border-radius: 6px;
-       }
-       .drag-handle:hover {
-           box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-       }
-       .drag-handle.magnetic-active {
-           transform: scale(1.25);
-           color: #3b82f6;
-           box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
-       }
-
-       /* Card Flip Animation */
+        /* Card Flip Animation */
        .flip-card {
            /*perspective: 1000px;*/
        }
@@ -604,7 +590,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                      {% for board in personal_boards %}
                          {# FIX: Wrap card in a relative div so action buttons sit above the link layer #}
-                         <div class="relative flip-card" data-board-id="{{ board.id }}" data-preview-url="{% url 'task_management:personal_tasks_preview_api' board.id %}" x-show="expanded || {{ forloop.counter0 }} < 3" x-cloak>
+                          <div class="relative flip-card" data-board-id="{{ board.id }}" data-preview-url="{% url 'task_management:personal_tasks_preview_api' board.id %}" data-detail-url="{% url 'task_management:personal_board_detail' board.id %}" data-board-tag="{{ board.tag|default:'' }}" x-show="expanded || {{ forloop.counter0 }} < 3" x-cloak>
                             <a href="{% url 'task_management:personal_board_detail' board.id %}"
                                class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-2 shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer"
                                :style="`border-color: ${getBoardBorderColor('{{ board.tag|default:'' }}')}`"
@@ -801,15 +787,13 @@
                         {% endfor %}
                     </div>
 
-         {# Show More/Less button (when >4 boards) #}
-          {% if personal_boards|length > 3 %}
-          <div class="mt-6 text-center">
+          {# Show More/Less button (when >3 boards) #}
+          <div class="mt-6 text-center" x-show="statsTotalBoards > 3">
               <button @click="expanded = !expanded"
                       class="px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-400 transition-colors text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm font-medium"
-                      x-text="expanded ? 'Show Less' : 'Show More (' + ({{ personal_boards|length }} - 3) + ' more)'">
+                      x-text="expanded ? 'Show Less' : 'Show More (' + (statsTotalBoards - 3) + ' more)'">
               </button>
           </div>
-          {% endif %}
 
          {% else %}
          <!-- Enhanced Empty State -->
@@ -818,19 +802,19 @@
              <div class="absolute inset-0 bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-gray-900 transition-colors duration-500"></div>
 
              <!-- Floating decorative blobs -->
-             <div class="absolute top-20 left-10 w-32 h-32 rounded-full bg-blue-200/30 dark:bg-blue-500/10 animate-float-1"></div>
-             <div class="absolute bottom-32 right-20 w-24 h-24 rounded-full bg-blue-300/20 dark:bg-blue-400/10 animate-float-2"></div>
-             <div class="absolute top-1/2 left-1/4 w-16 h-16 rounded-full bg-blue-100/40 dark:bg-blue-600/5 animate-float-3"></div>
+              <div class="absolute top-20 left-10 w-32 h-32 rounded-full bg-blue-200/30 dark:bg-blue-500/10 animate-float-1 pointer-events-none"></div>
+              <div class="absolute bottom-32 right-20 w-24 h-24 rounded-full bg-blue-300/20 dark:bg-blue-400/10 animate-float-2 pointer-events-none"></div>
+              <div class="absolute top-1/2 left-1/4 w-16 h-16 rounded-full bg-blue-100/40 dark:bg-blue-600/5 animate-float-3 pointer-events-none"></div>
 
              <!-- Main content -->
              <div class="relative z-10 p-8 md:p-12 text-center">
                  <!-- Animated illustration -->
                  <div class="mx-auto w-24 h-24 mb-6 relative">
                      <!-- Pulsing glow ring -->
-                     <div class="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400/30 to-blue-500/30 dark:from-blue-500/20 dark:to-blue-600/20 blur-lg animate-pulse-slow"></div>
+                      <div class="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400/30 to-blue-500/30 dark:from-blue-500/20 dark:to-blue-600/20 blur-lg animate-pulse-slow pointer-events-none"></div>
 
                      <!-- Main icon container -->
-                     <div class="absolute inset-0 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 shadow-lg animate-float-3">
+                       <div class="absolute inset-0 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 shadow-lg animate-float-3 pointer-events-none" style="animation-delay: -2s">
                          <div class="w-full h-full flex items-center justify-center">
                              <svg class="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -839,12 +823,12 @@
                      </div>
 
                      <!-- Floating checkmark badge -->
-                     <div class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 dark:from-green-500 dark:to-emerald-600 flex items-center justify-center shadow-lg animate-bounce-slow">
+                      <div class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 dark:from-green-500 dark:to-emerald-600 flex items-center justify-center shadow-lg animate-bounce-slow pointer-events-none">
                          <i class="fas fa-check text-white text-sm"></i>
                      </div>
 
                      <!-- Floating plus badge -->
-                     <div class="absolute -bottom-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600 flex items-center justify-center shadow-md animate-bounce-medium" style="animation-delay: 0.5s">
+                      <div class="absolute -bottom-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600 flex items-center justify-center shadow-md animate-bounce-medium pointer-events-none" style="animation-delay: 0.5s">
                          <i class="fas fa-plus text-white text-xs"></i>
                      </div>
                  </div>
@@ -1088,7 +1072,7 @@
                  </div>
                  <div class="flex justify-end gap-3 mt-6">
                      <button type="button" onclick="closeEditModal()" class="px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 text-gray-300">Cancel</button>
-                     <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg">
+                      <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
                          <i class="fas fa-save mr-2"></i>Save Changes
                      </button>
                  </div>
@@ -1375,31 +1359,31 @@
                                 const data = await response.json();
                                 if (data.tasks && data.tasks.length > 0) {
                                     const colorMap = { 'urgent': '#dc2626', 'high': '#ef4444', 'medium': '#eab308', 'low': '#3b82f6' };
-                                    tooltip.innerHTML = `
-                                     <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                                         <div class="flex items-center justify-between">
-                                             <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Tasks</h4>
-                                             <span class="text-xs text-gray-500 dark:text-gray-400">${data.tasks.length} total</span>
-                                         </div>
-                                     </div>
-                                     <div class="mini-kanban-column p-2 space-y-1 max-h-48 overflow-y-auto">
+                                     tooltip.innerHTML = `
+                                      <div class="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                                          <div class="flex items-center justify-between">
+                                              <h4 class="text-sm font-semibold text-gray-800 dark:text-gray-200">Tasks</h4>
+                                              <span class="text-xs text-gray-500 dark:text-gray-400">${data.tasks.length} total</span>
+                                          </div>
+                                      </div>
+                                      <div class="mini-kanban-column p-2 space-y-1 max-h-48 overflow-y-auto">
 
-                                            ${data.tasks.map(task => {
-                                                const color = colorMap[task.priority] || '#6b7280';
-                                                const priorityLabel = task.priority.charAt(0).toUpperCase();
-                                                const dueDate = task.deadline ? new Date(task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null;
-                                                return `<div class="mini-task-item flex items-center gap-2 px-2 py-1.5 rounded text-sm ${task.is_completed ? 'completed' : 'text-gray-700 dark:text-gray-200'}" style="border-left: 3px solid ${color}">
-                                                    <input type="checkbox" ${task.is_completed ? 'checked' : ''} disabled class="w-3.5 h-3.5 accent-green-500">
-                                                    <span class="flex-1 truncate">${this.escapeHtml(task.title)}</span>
-                                                    ${dueDate ? `<span class="flex-shrink-0 px-1.5 py-0.5 rounded text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700">${dueDate}</span>` : ''}
-                                                    <span class="flex-shrink-0 px-1.5 py-0.5 rounded text-xs font-medium text-white" style="background-color: ${color}">${priorityLabel}</span>
-                                                </div>`;
-                                            }).join('')}
-                                        </div>
-                                        <div class="p-2 border-t border-gray-100 dark:border-gray-700 text-center bg-gray-50 dark:bg-gray-900">
-                                            <a href="/task/personal/${boardId}/" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">Open Board →</a>
-                                        </div>
-                                    `;
+                                             ${data.tasks.map(task => {
+                                                 const color = colorMap[task.priority] || '#6b7280';
+                                                 const priorityLabel = task.priority.charAt(0).toUpperCase();
+                                                 const dueDate = task.deadline ? new Date(task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null;
+                                                 return `<div class="mini-task-item flex items-center gap-2 px-2 py-1.5 rounded text-sm ${task.is_completed ? 'completed' : 'text-gray-700 dark:text-gray-200'}" style="border-left: 3px solid ${color}">
+                                                     <input type="checkbox" ${task.is_completed ? 'checked' : ''} disabled class="w-3.5 h-3.5 accent-green-500">
+                                                     <span class="flex-1 truncate">${this.escapeHtml(task.title)}</span>
+                                                     ${dueDate ? `<span class="flex-shrink-0 px-1.5 py-0.5 rounded text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700">${dueDate}</span>` : ''}
+                                                     <span class="flex-shrink-0 px-1.5 py-0.5 rounded text-xs font-medium text-white" style="background-color: ${color}">${priorityLabel}</span>
+                                                 </div>`;
+                                             }).join('')}
+                                         </div>
+                                  <div class="p-2 border-t border-gray-100 dark:border-gray-700 text-center bg-gray-50 dark:bg-gray-900">
+                                      <a href="${card.dataset.detailUrl}" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">Open Board →</a>
+                                  </div>
+                                     `;
                                 } else {
                                     tooltip.innerHTML = `<div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">No tasks yet</div>`;
                                 }
@@ -1702,28 +1686,32 @@
                     return;
                 }
 
-                // Get tag from source card (for border color)
-                const boardTag = sourceCard.dataset.boardTag || '';
+                 // Get tag from source card (for border color)
+                 const boardTag = sourceCard.dataset.boardTag || '';
 
-                // Build card HTML
+                 // Compute colors for gradient
+                 const color = this.getBoardBorderColor(boardTag);
+                 const adjustedColor = this.adjustColor(color, 40);
                 const card = document.createElement('div');
                 card.className = 'relative flip-card';
                 card.dataset.boardId = boardId;
-                card.dataset.previewUrl = "{% url 'task_management:personal_tasks_preview_api' 0 %}".replace('0', boardId);
-                card.dataset.boardTag = boardTag;
+                 card.dataset.previewUrl = "{% url 'task_management:personal_tasks_preview_api' 0 %}".replace('0', boardId);
+                 card.dataset.detailUrl = "{% url 'task_management:personal_board_detail' 0 %}".replace('0', boardId);
+                 card.dataset.boardTag = boardTag;
 
                 const escapedName = this.escapeHtml(name);
                 const escapedDesc = description ? this.escapeHtml(description) : 'Personal productivity board';
                 const escapedNameJs = this.escapeJs(name);
-                const escapedDescJs = this.escapeJs(description);
+                 const escapedDescJs = this.escapeJs(description);
 
-                const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                 const detailUrl = "{% url 'task_management:personal_board_detail' 0 %}".replace('0', boardId);
+                 const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
                 const dashArray = totalTasks > 0 ? `${progressPercent}, 100` : '0, 100';
 
-                card.innerHTML = `
-                    <a href="/task/personal/${boardId}/" class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-2 transition-all duration-300 group cursor-pointer"
-                       :style="'border-color: ' + getBoardBorderColor('${boardTag}')"
-                       aria-label="Open ${escapedName} personal board">
+                 card.innerHTML = `
+                     <a href="${detailUrl}" class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-2 transition-all duration-300 group cursor-pointer"
+                        :style="'border-color: ' + getBoardBorderColor('${boardTag}')"
+                        aria-label="Open ${escapedName} personal board">
                        <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style="background: linear-gradient(90deg, ${color} 0%, ${adjustedColor} 100%)"></div>
                        <div class="pt-4">
                            <div class="flex items-start mb-3">
@@ -1801,7 +1789,7 @@
                             <i class="fas fa-edit text-xs" aria-hidden="true"></i>
                             <span>Edit</span>
                         </button>
-                         <form method="post" action="/task/personal/${boardId}/archive/" class="inline" onsubmit="return confirmArchive(event, '${escapedNameJs}')">
+                          <form method="post" action="${this.getArchiveUrl(boardId)}" class="inline" onsubmit="return confirmArchive(event, '${escapedNameJs}')">
                              <input type="hidden" name="csrfmiddlewaretoken" value="${this.getCsrfToken()}">
                              <button type="submit"
                                      class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-red-50 dark:hover:bg-red-900/40 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
@@ -1852,17 +1840,14 @@
                  this.initMagneticDragHandle();
                  this.initTaskPreview();
 
-                 // Set form action dynamically using boardId
-                 const newCardForm = card.querySelector('form');
-                 if (newCardForm) {
-                     newCardForm.action = this.getArchiveUrl(boardId);
-                 }
+                  // Set form action dynamically using boardId
+                  const newCardForm = card.querySelector('form');
+                  if (newCardForm) {
+                      newCardForm.action = this.getArchiveUrl(boardId);
+                  }
 
-                // Update board count stat
-                const boardsCountEl = document.querySelector('.stat-badge .text-lg');
-                if (boardsCountEl) {
-                    boardsCountEl.textContent = currentBoards + 1;
-                }
+                 // Update board count stat (reactive)
+                 this.statsData.boards++;
 
                 // Close drawer after a short delay
                 setTimeout(() => {
@@ -1894,15 +1879,15 @@
                             }
                         );
                         const data = await response.json();
-                        if (data.deleted) {
-                            const card = document.querySelector(`#archived-boards-container [data-board-id="${boardId}"]`);
-                            if (card) {
-                                card.style.transition = 'opacity 0.3s';
-                                card.style.opacity = '0';
-                                setTimeout(() => card.remove(), 300);
-                            }
-                            showToast('Board deleted permanently!', 'success');
-                        } else {
+                         if (data.deleted) {
+                             const card = document.querySelector(`#archived-boards-container [data-board-id="${boardId}"]`);
+                             if (card) {
+                                 card.style.transition = 'opacity 0.3s';
+                                 card.style.opacity = '0';
+                                 setTimeout(() => card.remove(), 300);
+                             }
+                             showToast('Board deleted permanently!', 'success');
+                         } else {
                             alert('Error: ' + (data.error || 'Failed to delete board'));
                         }
                     } catch (err) {
@@ -2052,9 +2037,9 @@
                                          </div>`;
                                      }).join('')}
                                  </div>
-                                 <div class="p-2 border-t border-gray-100 dark:border-gray-700 text-center bg-gray-50 dark:bg-gray-900">
-                                     <a href="/task/personal/${boardId}/" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">Open Board →</a>
-                                 </div>
+                                   <div class="p-2 border-t border-gray-100 dark:border-gray-700 text-center bg-gray-50 dark:bg-gray-900">
+                                       <a href="${card.dataset.detailUrl}" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">Open Board →</a>
+                                   </div>
                              `;
                          } else {
                              tooltip.innerHTML = `<div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">No pending tasks</div>`;
@@ -2102,18 +2087,19 @@
                 });
                 const data = await response.json();
                 if (data.success || data.archived) {
-                    const match = form.action.match(/\/personal\/(\d+)\/archive\//);
-                    if (match) {
-                        const boardId = match[1];
-                        const card = document.querySelector(`[data-board-id="${boardId}"]`);
-                        if (card) {
-                            card.style.transition = 'opacity 0.3s';
-                            card.style.opacity = '0';
-                            setTimeout(() => card.remove(), 300);
-                        }
-                    }
-                    window.PersonalBoardsData.closeConfirmModal();
-                    showToast('Board archived successfully!', 'success');
+                     const match = form.action.match(/\/personal\/(\d+)\/archive\//);
+                     if (match) {
+                         const boardId = match[1];
+                         const card = document.querySelector(`[data-board-id="${boardId}"]`);
+                         if (card) {
+                             card.style.transition = 'opacity 0.3s';
+                             card.style.opacity = '0';
+                             setTimeout(() => card.remove(), 300);
+                         }
+                     }
+                     window.PersonalBoardsData.statsData.boards--;
+                     window.PersonalBoardsData.closeConfirmModal();
+                     showToast('Board archived successfully!', 'success');
                 } else {
                     alert('Error: ' + (data.error || 'Failed to archive board'));
                     window.PersonalBoardsData.closeConfirmModal();
