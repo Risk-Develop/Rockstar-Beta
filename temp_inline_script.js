@@ -1,1489 +1,4 @@
-{% extends 'task_management/base.html' %}
-{% load static %}
-{% load hr_extras %}
 
-{% block title %}My Personal Tasks{% endblock %}
-{% block page_title %}My Personal Tasks{% endblock %}
-
-{% block extra_css %}
-<link href="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.css" rel="stylesheet" onerror="this.onerror=null;this.href='{% static 'js/flowbite.min.css' %}'" />
-<style>
-    .empty-gradient-bg {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        position: relative;
-        overflow: hidden;
-    }
-    .empty-gradient-bg::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
-        pointer-events: none;
-    }
-
-    .board-card {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-    }
-    .board-card:hover {
-        transform: translateY(-4px) scale(1.01);
-        border-color: rgba(59, 130, 246, 0.3);
-        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5),
-                    0 0 20px -5px rgba(59, 130, 246, 0.2);
-    }
-    .board-card::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: inherit;
-        padding: 2px;
-        background: linear-gradient(135deg, transparent 0%, rgba(59, 130, 246, 0.3) 100%);
-        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-        -webkit-mask-composite: xor;
-        mask-composite: exclude;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        pointer-events: none;
-    }
-    .board-card:hover::before {
-        opacity: 1;
-    }
-
-    .create-btn {
-        transition: all 0.2s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    .create-btn::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
-        transform: translate(-50%, -50%);
-        transition: width 0.6s, height 0.6s;
-    }
-    .create-btn:active::after {
-        width: 300px;
-        height: 300px;
-    }
-
-    @keyframes progress-fill {
-        from { stroke-dashoffset: 100; }
-    }
-    .progress-ring-circle {
-        animation: progress-fill 1.5s ease-out forwards;
-        transform: rotate(-90deg);
-        transform-origin: 50% 50%;
-    }
-
-    /* Stats Dashboard - Sparklines & Gauges */
-    .sparkline {
-        width: 60px;
-        height: 24px;
-        overflow: visible;
-    }
-    .sparkline-line {
-        fill: none;
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-    }
-    .sparkline-area {
-        opacity: 0.15;
-    }
-    .trend-arrow {
-        font-size: 12px;
-        font-weight: bold;
-    }
-    .trend-up { color: #10b981; }
-    .trend-down { color: #ef4444; }
-    .trend-neutral { color: #9ca3af; }
-
-    .productivity-gauge {
-        position: relative;
-        width: 100px;
-        height: 100px;
-    }
-    .gauge-bg, .gauge-fill {
-        width: 100%;
-        height: 100%;
-    }
-    .gauge-bg {
-        transform: rotate(-90deg);
-    }
-    .gauge-fill {
-        transform: rotate(-90deg);
-        transition: stroke-dashoffset 1s ease-out;
-    }
-    .gauge-text {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 18px;
-        font-weight: 700;
-    }
-    .gauge-label {
-        font-size: 10px;
-        color: #9ca3af;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .stat-item {
-        transition: all 0.2s ease;
-    }
-    .stat-item:hover {
-        transform: translateY(-2px);
-    }
-
-    .trend-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 2px;
-        font-size: 11px;
-        padding: 2px 6px;
-        border-radius: 9999px;
-        font-weight: 600;
-    }
-    .trend-badge.up {
-        background: rgba(16, 185, 129, 0.1);
-        color: #10b981;
-    }
-    .trend-badge.down {
-        background: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
-    }
-    .trend-badge.neutral {
-        background: rgba(156, 163, 175, 0.1);
-        color: #9ca3af;
-    }
-
-    .quick-link {
-        transition: all 0.2s ease;
-    }
-    .quick-link:hover {
-        transform: translateX(4px);
-    }
-    .quick-link:hover i {
-        transform: scale(1.1);
-    }
-    .quick-link i {
-        transition: transform 0.2s ease;
-    }
-    .quick-link:hover i {
-        transform: scale(1.1);
-    }
-
-    .input-group input {
-        transition: all 0.2s ease;
-    }
-    .input-group input:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    html.dark .stat-text {
-        color: #9ca3af;
-    }
-    html.dark .board-card {
-        background: linear-gradient(145deg, #1f2937 0%, #111827 100%);
-    }
-
-    .line-clamp-2 {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    /* Hide Alpine[x-cloak] elements until compiled */
-    [x-cloak] { display: none !important; }
-
-    /* FIX: Modal overlay — use flex via Alpine, not Tailwind class conflict */
-    #editBoardModal {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.70);
-        backdrop-filter: blur(4px);
-        align-items: center;
-        justify-content: center;
-        z-index: 50;
-    }
-     #editBoardModal.is-open {
-         display: flex;
-     }
-
-     /* Archive modal styles */
-     #archiveModal {
-         display: none;
-         position: fixed;
-         inset: 0;
-         background: rgba(0, 0, 0, 0.70);
-         backdrop-filter: blur(4px);
-         align-items: center;
-         justify-content: center;
-         z-index: 50;
-     }
-     #archiveModal.is-open {
-         display: flex;
-     }
-
-/* FIX: Card action buttons should not overlap the card link */
-     .card-actions {
-         position: relative;
-         z-index: 10;
-     }
-
-       /* Drag handle styles */
-       .drag-handle {
-           cursor: grab;
-           transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease, box-shadow 0.2s ease;
-           width: 24px;
-           height: 24px;
-           padding: 0;
-           display: inline-flex;
-           align-items: center;
-           justify-content: center;
-           color: #9ca3af;
-           border-radius: 6px;
-       }
-       .drag-handle:hover {
-           color: #3b82f6;
-           transform: scale(1.15);
-           box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-       }
-       .drag-handle.magnetic-active {
-           transform: scale(1.25);
-           color: #3b82f6;
-           box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
-       }
-       .drag-handle:active {
-           cursor: grabbing;
-           transform: scale(1.1);
-       }
-       .drag-handle svg {
-           width: 14px;
-           height: 14px;
-           pointer-events: none;
-       }
-     .sortable-ghost {
-         opacity: 0.4;
-         border: 2px dashed #3b82f6;
-     }
-      .sortable-drag {
-          cursor: grabbing;
-          transform: rotate(2deg);
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-      }
-
-      /* Empty State Animations */
-      @keyframes float-1 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          25% { transform: translate(10px, -15px) rotate(5deg); }
-          50% { transform: translate(-5px, 10px) rotate(-3deg); }
-          75% { transform: translate(-10px, -5px) rotate(4deg); }
-      }
-      @keyframes float-2 {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(15px, 10px) scale(1.05); }
-          66% { transform: translate(-10px, -8px) scale(0.95); }
-      }
-      @keyframes float-3 {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-20px); }
-      }
-      @keyframes pulse-slow {
-          0%, 100% { opacity: 0.6; transform: scale(1); }
-          50% { opacity: 0.3; transform: scale(1.1); }
-      }
-      @keyframes bounce-slow {
-          0%, 100% { transform: translateY(0) scale(1); }
-          50% { transform: translateY(-8px) scale(1.1); }
-      }
-      @keyframes bounce-medium {
-          0%, 100% { transform: translateY(0) scale(1); }
-          50% { transform: translateY(-6px) scale(1.05); }
-      }
-
-      .animate-float-1 {
-          animation: float-1 8s ease-in-out infinite;
-      }
-      .animate-float-2 {
-          animation: float-2 10s ease-in-out infinite;
-          animation-delay: 1s;
-      }
-      .animate-float-3 {
-          animation: float-3 6s ease-in-out infinite;
-      }
-      .animate-pulse-slow {
-          animation: pulse-slow 4s ease-in-out infinite;
-      }
-      .animate-bounce-slow {
-          animation: bounce-slow 2s ease-in-out infinite;
-      }
-       .animate-bounce-medium {
-           animation: bounce-medium 2.5s ease-in-out infinite;
-           animation-delay: 0.5s;
-       }
-
-       /* ========== MICRO-INTERACTIONS ========== */
-
-       /* Ripple Effect */
-       .ripple {
-           position: relative;
-          /* overflow: hidden; */
-       }
-       .ripple::after {
-           content: '';
-           position: absolute;
-           top: 50%;
-           left: 50%;
-           width: 0;
-           height: 0;
-           background: rgba(255, 255, 255, 0.3);
-           border-radius: 50%;
-           transform: translate(-50%, -50%);
-           opacity: 0;
-       }
-       .ripple.animate::after {
-           animation: ripple-effect 0.6s ease-out;
-       }
-        @keyframes ripple-effect {
-            0% { width: 0; height: 0; opacity: 0.5; }
-            100% { width: 400px; height: 400px; opacity: 0; }
-        }
-
-        /* Card Flip Animation */
-       .flip-card {
-           /*perspective: 1000px;*/
-       }
-       .flip-animate {
-           animation: cardFlip 0.5s ease-in-out;
-           transform-style: preserve-3d;
-       }
-       @keyframes cardFlip {
-           0% { transform: rotateY(0deg); }
-           50% { transform: rotateY(90deg); }
-           100% { transform: rotateY(0deg); }
-       }
-
-       /* Task Preview Tooltip */
-       .task-preview-tooltip {
-           opacity: 0;
-           transform: translateY(8px);
-           transition: opacity 0.2s ease, transform 0.2s ease;
-           pointer-events: none;
-           top: 25vh;
-       }
-       .task-preview-tooltip.show {
-           opacity: 1;
-           transform: translateY(0);
-           pointer-events: auto;
-       }
-       .mini-kanban-column {
-           min-height: 60px;
-           max-height: 200px;
-           overflow-y: auto;
-       }
-       .mini-task-item {
-           transition: all 0.15s ease;
-       }
-       .mini-task-item:hover {
-           transform: translateX(4px);
-       }
-        .mini-task-item.completed {
-            opacity: 0.6;
-            text-decoration: line-through;
-        }
-
-        /* Reorder Mode Styles */
-        .grid.reorder-mode .relative[data-board-id] {
-            outline: 2px solid #3b82f6;
-            outline-offset: 2px;
-            border-radius: 0.75rem;
-            cursor: move;
-        }
-        .grid.reorder-mode .relative[data-board-id]:focus {
-            outline: 3px solid #2563eb;
-            outline-offset: 3px;
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
-        }
-        .grid.reorder-mode .drag-handle {
-            opacity: 1 !important;
-            color: #3b82f6 !important;
-        }
-    </style>
- {% endblock %}
-
-{% block main_content %}
-       <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
-       x-data="personalBoardsData()"
-       data-archive-url-pattern="{% url 'task_management:personal_board_archive' 0 %}">
-
-     <div class="max-w-6xl mx-auto p-4 md:p-6 lg:p-8">
-
-         <!-- Hidden SVG Gradients for Sparklines and Gauge -->
-         <svg width="0" height="0" class="absolute">
-             <defs>
-                 <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                     <stop offset="0%" stop-color="#6366f1"/>
-                     <stop offset="100%" stop-color="#8b5cf6"/>
-                 </linearGradient>
-                 <linearGradient id="sparkGradientBlue" x1="0%" y1="0%" x2="100%" y2="0%">
-                     <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.4"/>
-                     <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.05"/>
-                 </linearGradient>
-                 <linearGradient id="sparkGradientGreen" x1="0%" y1="0%" x2="100%" y2="0%">
-                     <stop offset="0%" stop-color="#10b981" stop-opacity="0.4"/>
-                     <stop offset="100%" stop-color="#10b981" stop-opacity="0.05"/>
-                 </linearGradient>
-                 <linearGradient id="sparkGradientEmerald" x1="0%" y1="0%" x2="100%" y2="0%">
-                     <stop offset="0%" stop-color="#10b981" stop-opacity="0.4"/>
-                     <stop offset="100%" stop-color="#10b981" stop-opacity="0.05"/>
-                 </linearGradient>
-             </defs>
-         </svg>
-
-        <!-- Header Section -->
-        <div class="mb-8">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div class="space-y-1">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                            <i class="fas fa-clipboard-list text-blue-600 dark:text-blue-400"></i>
-                        </div>
-                        <h1 class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100">
-                            My Personal Tasks
-                        </h1>
-                    </div>
-                    <p class="text-gray-500 dark:text-gray-400 pl-11">
-                        Track your personal goals, habits, and daily tasks
-                    </p>
-                </div>
-
-                   <!-- Create Board Button (opens modal) -->
-                   <div class="flex-shrink-0 flex items-center gap-2">
-                       <button @click="openCreateModal()"
-                               class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
-                               title="Create new personal board (N)">
-                           <i class="fas fa-plus"></i>
-                           <span>Create Board</span>
-                       </button>
-                       <button onclick="toggleHelp()"
-                               class="px-3 py-1.5 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded hover:bg-gray-400 dark:hover:bg-gray-500"
-                               title="Show keyboard shortcuts (H)">
-                           <i class="fas fa-question mr-1"></i>Help
-                       </button>
-                   </div>
-       </div>
-
-    <!-- Unified Create Board Modal -->
-    <div id="createBoardModal"
-         x-show="createModalOpen"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 scale-95"
-         x-transition:enter-end="opacity-100 scale-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100 scale-100"
-         x-transition:leave-end="opacity-0 scale-95"
-         class="fixed inset-0 z-50 flex items-center justify-center p-4"
-         @click.self="closeCreateModal()"
-         role="dialog"
-         aria-modal="true"
-         aria-labelledby="createModalTitle"
-         style="display: none;"
-         tabindex="-1">
-        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
-
-        <div class="relative bg-gray-800 rounded-2xl p-6 w-full max-w-2xl mx-4 shadow-2xl border border-gray-700/50 max-h-[90vh] overflow-y-auto"
-             @click.stop>
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h2 id="createModalTitle" class="text-xl font-semibold text-white">Create New Board</h2>
-                    <p class="text-sm text-gray-400 mt-1">Choose a template (optional) and customize your board.</p>
-                </div>
-                <button @click="closeCreateModal()"
-                        class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
-                        aria-label="Close modal">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <!-- Template Selection Grid -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-300 mb-3">Select a Template</label>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <template x-for="template in boardTemplates" :key="template.id">
-                        <div @click="selectTemplate(template)"
-                             class="cursor-pointer rounded-xl border-2 p-3 transition-all"
-                             :class="selectedTemplate?.id === template.id
-                                 ? 'border-blue-500 bg-blue-900/30 ring-2 ring-blue-500/50'
-                                 : 'border-gray-600 bg-gray-700/50 hover:border-gray-500'">
-                            <div class="flex flex-col items-center text-center gap-2">
-                                <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                                     :style="`background-color: ${template.color}20; color: ${template.color}`">
-                                    <i :class="template.icon"></i>
-                                </div>
-                                <h4 class="text-sm font-medium text-gray-100 truncate w-full"
-                                    x-text="template.name"></h4>
-                                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
-                                      :class="getTagBadgeClass(template.tag)"
-                                      x-text="getTagLabel(template.tag)"></span>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-                <button type="button"
-                        @click="clearSelection()"
-                        class="mt-2 text-xs text-gray-400 hover:text-gray-300 transition-colors underline">
-                    Clear template selection
-                </button>
-            </div>
-
-            <hr class="border-gray-700 mb-4">
-
-            <!-- Creation Form -->
-            <form method="post"
-                  action="{% url 'task_management:personal_board_create' %}"
-                  class="space-y-4">
-                {% csrf_token %}
-                <input type="hidden" name="tag" :value="selectedTemplate?.tag || ''">
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Board Name</label>
-                    <input type="text"
-                           name="name"
-                           id="create_board_name_input"
-                           placeholder="Enter board name"
-                           class="w-full px-4 py-2.5 border border-gray-600 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400 transition-all"
-                           required
-                           x-model="createFormName">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-2">Description (optional)</label>
-                    <textarea name="description"
-                              id="create_board_desc_input"
-                              rows="2"
-                              placeholder="What's this board for?"
-                              class="w-full px-4 py-2.5 border border-gray-600 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-100 placeholder-gray-400 transition-all resize-none"
-                              x-model="createFormDesc"></textarea>
-                </div>
-
-                <!-- Selected template preview -->
-                <div x-show="selectedTemplate"
-                     x-transition
-                     class="flex items-center gap-3 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
-                    <div class="w-8 h-8 rounded flex items-center justify-center"
-                         :style="`background-color: ${selectedTemplate.color}20; color: ${selectedTemplate.color}`">
-                        <i :class="selectedTemplate.icon" class="text-sm"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="text-sm font-medium text-gray-200" x-text="selectedTemplate.name"></div>
-                        <div class="text-xs text-gray-400 truncate" x-text="selectedTemplate.description"></div>
-                    </div>
-                    <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
-                          :class="getTagBadgeClass(selectedTemplate.tag)"
-                          x-text="getTagLabel(selectedTemplate.tag)"></span>
-                </div>
-
-                <div class="flex justify-end gap-3 pt-2">
-                    <button type="button"
-                            @click="closeCreateModal()"
-                            class="px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 text-gray-300 hover:text-white font-medium transition-all">
-                        Cancel
-                    </button>
-                    <button type="submit"
-                            class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2">
-                        <i class="fas fa-plus"></i>
-                        <span>Create Board</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-        </div>
-
-        {% if personal_boards %}
-                    <!-- Enhanced Stats Dashboard -->
-                    <div class="mb-6">
-                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                            
-                            <!-- Stat: Boards Count with Sparkline -->
-                            <div class="stat-item bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md">
-                                <div class="flex items-start justify-between mb-2">
-                                    <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                                        <i class="fas fa-layer-group text-blue-600 dark:text-blue-400"></i>
-                                    </div>
-                                    <span class="trend-badge" :class="getTrendClass('boards')">
-                                        <i class="fas" :class="getTrendArrow('boards')"></i>
-                                        <span x-text="getTrendPercent('boards')"></span>%
-                                    </span>
-                                </div>
-                                <div class="text-2xl font-bold text-gray-800 dark:text-gray-200" x-text="statsTotalBoards"></div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">Boards</div>
-                                    <!-- Mini Sparkline -->
-                                    <div class="mt-2">
-                                        <svg class="sparkline" viewBox="0 0 50 20" preserveAspectRatio="none">
-                                            <polygon class="sparkline-area" fill="url(#sparkGradientBlue)" :points="getAreaPath(statsData.sparkBoards)"/>
-                                            <polyline class="sparkline-line" stroke="#3b82f6" :points="getScaledPath(statsData.sparkBoards)"/>
-                                        </svg>
-                                    </div>
-                            </div>
-
-                            <!-- Stat: Total Tasks with Sparkline -->
-                            <div class="stat-item bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md">
-                                <div class="flex items-start justify-between mb-2">
-                                    <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                                        <i class="fas fa-tasks text-green-600 dark:text-green-400"></i>
-                                    </div>
-                                    <span class="trend-badge" :class="getTrendClass('tasks')">
-                                        <i class="fas" :class="getTrendArrow('tasks')"></i>
-                                        <span x-text="getTrendPercent('tasks')"></span>%
-                                    </span>
-                                </div>
-                                <div class="text-2xl font-bold text-gray-800 dark:text-gray-200" x-text="statsTotalTasks"></div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">Total Tasks</div>
-                                <div class="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                                    Avg: <span x-text="statsAvgTasks + ' per board'"></span>
-                                </div>
-                                <!-- Mini Sparkline -->
-                                <div class="mt-2">
-                                    <svg class="sparkline" viewBox="0 0 50 20" preserveAspectRatio="none">
-                                        <polygon class="sparkline-area" fill="url(#sparkGradientGreen)" :points="getAreaPath(statsData.sparkTasks)"/>
-                                        <polyline class="sparkline-line" stroke="#10b981" :points="getScaledPath(statsData.sparkTasks)"/>
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <!-- Stat: Completed Tasks with Sparkline -->
-                            <div class="stat-item bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md">
-                                <div class="flex items-start justify-between mb-2">
-                                    <div class="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-                                        <i class="fas fa-check-circle text-emerald-600 dark:text-emerald-400"></i>
-                                    </div>
-                                    <span class="trend-badge" :class="getTrendClass('completed')">
-                                        <i class="fas" :class="getTrendArrow('completed')"></i>
-                                        <span x-text="getTrendPercent('completed')"></span>%
-                                    </span>
-                                </div>
-                                <div class="text-2xl font-bold text-gray-800 dark:text-gray-200" x-text="statsCompletedTasks"></div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">Completed</div>
-                                <!-- Mini Sparkline -->
-                                <div class="mt-2">
-                                    <svg class="sparkline" viewBox="0 0 50 20" preserveAspectRatio="none">
-                                        <polygon class="sparkline-area" fill="url(#sparkGradientEmerald)" :points="getAreaPath(statsData.sparkCompleted)"/>
-                                        <polyline class="sparkline-line" stroke="#10b981" :points="getScaledPath(statsData.sparkCompleted)"/>
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <!-- Stat: Productivity Score - Circular Gauge -->
-                            <div class="stat-item bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md flex items-center justify-center">
-                                <div class="text-center">
-                                    <div class="productivity-gauge mx-auto mb-1">
-                                        <svg viewBox="0 0 36 36" class="gauge-bg">
-                                            <path d="M18 2.5 a 15.5 15.5 0 0 1 0 31 a 15.5 15.5 0 0 1 0 -31"
-                                                  fill="none"
-                                                  stroke="currentColor"
-                                                  stroke-width="3"
-                                                  class="text-gray-200 dark:text-gray-700"></path>
-                                        </svg>
-                                        <svg viewBox="0 0 36 36" class="gauge-fill absolute top-0 left-0">
-                                            <path d="M18 2.5 a 15.5 15.5 0 0 1 0 31 a 15.5 15.5 0 0 1 0 -31"
-                                                  fill="none"
-                                                  stroke="url(#gaugeGradient)"
-                                                  stroke-width="3"
-                                                  stroke-dasharray="0, 100"
-                                                  :stroke-dasharray="`${statsProductivityScore}, 100`"
-                                                  stroke-linecap="round"></path>
-                                        </svg>
-                                        <div class="gauge-text text-indigo-600 dark:text-indigo-400" x-text="statsProductivityScore + '%'"></div>
-                                    </div>
-                                    <div class="text-xs text-gray-500 dark:text-gray-400">Productivity</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Personal Boards Grid -->
-                    <div id="boards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" :class="{ 'reorder-mode': reorderMode }">
-                      {% for board in personal_boards %}
-                          {# FIX: Wrap card in a relative div so action buttons sit above the link layer #}
-                           <div class="relative flip-card"
-                                data-board-id="{{ board.id }}"
-                                data-preview-url="{% url 'task_management:personal_tasks_preview_api' board.id %}"
-                                data-detail-url="{% url 'task_management:personal_board_detail' board.id %}"
-                                data-board-tag="{{ board.tag|default:'' }}"
-                                x-show="expanded || {{ forloop.counter0 }} < 3"
-                                x-cloak
-                                :tabindex="reorderMode ? 0 : -1"
-                                @focus="focusedBoardId = {{ board.id }}">
-                            <a href="{% url 'task_management:personal_board_detail' board.id %}"
-                               draggable="false"
-                               class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-2 shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer"
-                               :style="`border-color: ${getBoardBorderColor('{{ board.tag|default:'' }}')}`"
-                               aria-label="Open {{ board.name|escape }} personal board">
-
-                                <!-- Gradient top accent bar -->
-                                <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
-                                     :style="`background: linear-gradient(90deg, ${boardColors[{{ forloop.counter0 }}]} 0%, ${adjustColor(boardColors[{{ forloop.counter0 }}], 40)} 100%)`">
-                                </div>
-
-                                <div class="pt-4">
-                                    <div class="flex items-start mb-3">
-                                        {# Drag handle - positioned top-left inside the card #}
-                                        <button draggable="false"
-                                                @click.stop
-                                                class="drag-handle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 transition-all shadow-sm text-xs font-medium cursor-grab me-3 flex-shrink-0"
-                                                title="Drag to reorder"
-                                                aria-label="Drag to reorder {{ board.name|escape }}">
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                <circle cx="12" cy="6" r="2"></circle>
-                                                <circle cx="12" cy="12" r="2"></circle>
-                                                <circle cx="12" cy="18" r="2"></circle>
-                                            </svg>
-                                        </button>
-                                        <div class="flex-1 min-w-0">
-                                            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors cursor-pointer px-2 py-1 -mx-2 -my-1 rounded"
-                                                data-board-id="{{ board.id }}"
-                                                data-field="name"
-                                                contenteditable="false"
-                                                title="Click to edit">{{ board.name|escape }}</h3>
-                                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 px-2 py-1 -mx-2 -my-1 rounded"
-                                                data-board-id="{{ board.id }}"
-                                                data-field="description"
-                                                contenteditable="false"
-                                                title="Click to edit">{{ board.description|default:"Personal productivity board"|escape }}</p>
-                                            {# Tag/Label Display #}
-                                            {% if board.tag %}
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-2
-                                                      {% if board.tag == 'work' %}bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300
-                                                      {% elif board.tag == 'personal' %}bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300
-                                                      {% elif board.tag == 'health' %}bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300
-                                                      {% elif board.tag == 'finance' %}bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300
-                                                      {% elif board.tag == 'learning' %}bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300
-                                                      {% elif board.tag == 'home' %}bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300
-                                                      {% elif board.tag == 'hobby' %}bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300
-                                                      {% else %}bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300{% endif %}">
-                                                {{ board.get_tag_display }}
-                                            </span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-
-                                    <!-- Stats Row - Desktop inline, Mobile collapsed -->
-                                    <div class="hidden md:flex items-center gap-4 pt-3 border-t border-gray-100 dark:border-gray-700"
-                                         data-board-id="{{ board.id }}">
-                                        <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-                                            <i class="fas fa-tasks text-sm"></i>
-                                            <span class="text-sm">{{ board.total_tasks|default:0 }}</span>
-                                        </div>
-                                        <div class="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                                            <i class="fas fa-check-circle text-sm"></i>
-                                            <span class="text-sm">{{ board.completed_tasks|default:0 }}</span>
-                                        </div>
-                                        <div class="flex-1"></div>
-                                        <!-- Priority indicators -->
-                                        <div class="flex items-center gap-2">
-                                            {% if board.high_priority_tasks > 0 %}
-                                            <span class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400" title="High priority pending">
-                                                <i class="fas fa-circle text-[8px]"></i>{{ board.high_priority_tasks }}
-                                            </span>
-                                            {% endif %}
-                                            {% if board.medium_priority_tasks > 0 %}
-                                            <span class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400" title="Medium priority pending">
-                                                <i class="fas fa-circle text-[8px]"></i>{{ board.medium_priority_tasks }}
-                                            </span>
-                                            {% endif %}
-                                            {% if board.low_priority_tasks > 0 %}
-                                            <span class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400" title="Low priority pending">
-                                                <i class="fas fa-circle text-[8px]"></i>{{ board.low_priority_tasks }}
-                                            </span>
-                                            {% endif %}
-                                        </div>
-                                        <!-- Progress ring -->
-                                        <div class="flex items-center gap-2">
-                                            <div class="relative w-8 h-8">
-                                               <svg class="w-8 h-8" viewBox="0 0 36 36">
-                                                   <circle cx="18" cy="18" r="16"
-                                                           fill="none"
-                                                           stroke="currentColor"
-                                                           stroke-width="3"
-                                                           class="text-gray-200 dark:text-gray-700"></circle>
-                                                   <circle cx="18" cy="18" r="16"
-                                                           fill="none"
-                                                           stroke="currentColor"
-                                                           stroke-width="3"
-                                                           stroke-dasharray="{% if board.total_tasks and board.total_tasks > 0 %}{% widthratio board.completed_tasks|default:0 board.total_tasks 100 %}, 100{% else %}0, 100{% endif %}"
-                                                           class="text-emerald-500 progress-ring-circle"></circle>
-                                               </svg>
-                                           </div>
-                                           <span class="text-xs font-medium text-gray-600 dark:text-gray-400">
-                                               {% if board.total_tasks and board.total_tasks > 0 %}{% widthratio board.completed_tasks|default:0 board.total_tasks 100 %}{% else %}0{% endif %}%
-                                           </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
-
-                            {# Mobile stats toggle button (outside anchor) #}
-                            <button class="md:hidden absolute top-3 right-14 p-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 transition-all shadow-sm text-xs"
-                                    @click="mobileStatsOpen[{{ board.id }}] = !mobileStatsOpen[{{ board.id }}]"
-                                    :aria-expanded="mobileStatsOpen[{{ board.id }}]"
-                                    aria-label="Toggle stats for {{ board.name|escape }}">
-                                <i class="fas fa-info-circle"></i>
-                            </button>
-
-                             {# Mobile tooltip dropdown (outside anchor) #}
-                             <div x-show="mobileStatsOpen[{{ board.id }}]"
-                                  x-transition
-                                  class="md:hidden absolute right-0 top-10 z-10 w-40 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 p-3"
-                                  @click.away="mobileStatsOpen[{{ board.id }}] = false" x-cloak>
-                                <div class="space-y-2">
-                                    <div class="flex items-center justify-between text-sm">
-                                        <span class="text-gray-600 dark:text-gray-300">Tasks</span>
-                                        <span class="font-medium text-gray-900 dark:text-gray-100">{{ board.total_tasks|default:0 }}</span>
-                                    </div>
-                                    <div class="flex items-center justify-between text-sm">
-                                        <span class="text-green-600 dark:text-green-400">Done</span>
-                                        <span class="font-medium text-green-600 dark:text-green-400">{{ board.completed_tasks|default:0 }}</span>
-                                    </div>
-                                    <div class="flex items-center justify-between text-sm pt-2 border-t border-gray-100 dark:border-gray-600">
-                                        <span class="text-gray-600 dark:text-gray-300">Progress</span>
-                                        <span class="font-medium text-gray-900 dark:text-gray-100">
-                                            {% if board.total_tasks and board.total_tasks > 0 %}{% widthratio board.completed_tasks|default:0 board.total_tasks 100 %}{% else %}0{% endif %}%
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {# Action buttons - positioned top-right, outside the link #}
-                             <div class="card-actions absolute top-3 right-3 flex items-center gap-1.5">
-                                 <button @click.prevent="openQuickAdd({{ board.id }})"
-                                         class="quick-add-toggle flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-green-50 dark:hover:bg-green-900/40 text-gray-500 hover:text-green-600 dark:hover:text-green-400 border border-gray-200 dark:border-gray-600 hover:border-green-300 dark:hover:border-green-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
-                                         title="Quick add task"
-                                         aria-label="Quick add task to {{ board.name|escape }}">
-                                     <i class="fas fa-plus"></i>
-                                 </button>
-                                 <button @click.prevent="duplicateBoard({{ board.id }}, '{{ board.name|escapejs }}')"
-                                         class="flex items-center justify-center w-6 h-6 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-purple-50 dark:hover:bg-purple-900/40 text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 border border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
-                                         title="Duplicate board"
-                                         aria-label="Duplicate board {{ board.name|escape }}">
-                                     <i class="fas fa-copy"></i>
-                                 </button>
-                                 <button onclick="event.stopPropagation(); openEditModal({{ board.id }}, '{{ board.name|escapejs }}', '{{ board.description|escapejs }}')"
-                                         class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-blue-50 dark:hover:bg-blue-900/40 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
-                                         title="Edit board"
-                                         aria-label="Edit board {{ board.name|escape }}">
-                                     <i class="fas fa-edit text-xs" aria-hidden="true"></i>
-                                     <span>Edit</span>
-                                 </button>
-                                 <form method="post" action="{% url 'task_management:personal_board_archive' board.id %}" class="inline" onsubmit="return confirmArchive(event, '{{ board.name|escapejs }}')">
-                                     {% csrf_token %}
-                                     <button type="submit"
-                                             class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/90 dark:bg-gray-700/90 hover:bg-red-50 dark:hover:bg-red-900/40 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all shadow-sm text-xs font-medium cursor-pointer"
-                                             title="Archive board"
-                                             aria-label="Archive board {{ board.name|escape }}">
-                                         <i class="fas fa-archive text-xs" aria-hidden="true"></i>
-                                         <span>Archive</span>
-                                     </button>
-                                 </form>
-                             </div>
-
-                             {# Quick Add Task Inline Form (expands) #}
-                             <div x-show="quickAddOpen === {{ board.id }}" x-transition class="absolute top-6 right-3 z-20 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-3"
-                                  @click.away="quickAddOpen = null" x-cloak>
-                                <form @submit.prevent="submitQuickAdd({{ board.id }})" class="space-y-2 quick-add-form">
-                                    {% csrf_token %}
-                                    <input type="text" name="title" placeholder="Task title" required
-                                           class="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 quick-add-form-input">
-                                    <div class="flex gap-2">
-                                        <select name="priority" class="flex-1 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                            <option value="low">Low</option>
-                                            <option value="medium" selected>Medium</option>
-                                            <option value="high">High</option>
-                                            <option value="urgent">Urgent</option>
-                                        </select>
-                                        <input type="date" name="deadline"
-                                               class="flex-1 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                    </div>
-                                    <input type="hidden" name="column" value="{{ board.to_do_column_id }}">
-                                    <div class="flex justify-end gap-2">
-                                        <button type="button" @click="quickAddOpen = null"
-                                                class="px-2.5 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">Cancel</button>
-                                        <button type="submit"
-                                                class="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors flex items-center gap-1">
-                                            <i class="fas fa-plus text-[10px]"></i>Add
-                                        </button>
-                                    </div>
-</form>
-                             </div>
-                         </div>
-                     {% endfor %}
-                        </div>
-
-                    {# Show More/Less button (when >3 boards) #}
-          <div class="mt-6 text-center" x-show="statsTotalBoards > 3">
-              <button @click="expanded = !expanded"
-                      class="px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-400 transition-colors text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm font-medium"
-                      x-text="expanded ? 'Show Less' : 'Show More (' + (statsTotalBoards - 3) + ' more)'">
-              </button>
-          </div>
-
-         {% else %}
-         <!-- Enhanced Empty State -->
-         <div class="empty-state-enhanced relative rounded-2xl overflow-hidden">
-             <!-- Animated gradient background -->
-             <div class="absolute inset-0 bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-gray-900 transition-colors duration-500"></div>
-
-             <!-- Floating decorative blobs -->
-              <div class="absolute top-20 left-10 w-32 h-32 rounded-full bg-blue-200/30 dark:bg-blue-500/10 animate-float-1 pointer-events-none"></div>
-              <div class="absolute bottom-32 right-20 w-24 h-24 rounded-full bg-blue-300/20 dark:bg-blue-400/10 animate-float-2 pointer-events-none"></div>
-              <div class="absolute top-1/2 left-1/4 w-16 h-16 rounded-full bg-blue-100/40 dark:bg-blue-600/5 animate-float-3 pointer-events-none"></div>
-
-             <!-- Main content -->
-             <div class="relative z-10 p-8 md:p-12 text-center">
-                 <!-- Animated illustration -->
-                 <div class="mx-auto w-24 h-24 mb-6 relative">
-                     <!-- Pulsing glow ring -->
-                      <div class="absolute inset-0 rounded-full bg-gradient-to-br from-blue-400/30 to-blue-500/30 dark:from-blue-500/20 dark:to-blue-600/20 blur-lg animate-pulse-slow pointer-events-none"></div>
-
-                     <!-- Main icon container -->
-                       <div class="absolute inset-0 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 shadow-lg animate-float-3 pointer-events-none" style="animation-delay: -2s">
-                         <div class="w-full h-full flex items-center justify-center">
-                             <svg class="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                             </svg>
-                         </div>
-                     </div>
-
-                     <!-- Floating checkmark badge -->
-                      <div class="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 dark:from-green-500 dark:to-emerald-600 flex items-center justify-center shadow-lg animate-bounce-slow pointer-events-none">
-                         <i class="fas fa-check text-white text-sm"></i>
-                     </div>
-
-                     <!-- Floating plus badge -->
-                      <div class="absolute -bottom-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600 flex items-center justify-center shadow-md animate-bounce-medium pointer-events-none" style="animation-delay: 0.5s">
-                         <i class="fas fa-plus text-white text-xs"></i>
-                     </div>
-                 </div>
-
-                 <h2 class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 mb-3">
-                     No Personal Boards Yet
-                 </h2>
-                 <p class="text-gray-600 dark:text-gray-400 mb-8 max-w-lg mx-auto leading-relaxed">
-                     Create your first personal board to organize goals, track habits, and manage daily tasks.
-                     Pick from templates or start from scratch.
-                 </p>
-
-                 <!-- Sample Board Preview (Ghosted) -->
-                 <div class="max-w-xs mx-auto mb-8 opacity-30 dark:opacity-20 scale-95 hover:scale-100 hover:opacity-40 dark:hover:opacity-25 transition-all duration-700 ease-out">
-                     <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 shadow-xl">
-                         <div class="flex items-center gap-3 mb-3">
-                             <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/50 dark:to-blue-800/50 flex items-center justify-center">
-                                 <i class="fas fa-bullseye text-blue-600 dark:text-blue-400 text-sm"></i>
-                             </div>
-                             <div class="flex-1 text-left">
-                                 <div class="h-3 w-24 bg-gray-300 dark:bg-gray-600 rounded animate-pulse"></div>
-                                 <div class="h-2 w-16 bg-gray-200 dark:bg-gray-700 rounded mt-1.5 animate-pulse"></div>
-                             </div>
-                         </div>
-                         <div class="flex items-center gap-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                             <div class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
-                                 <i class="fas fa-tasks text-xs"></i>
-                                 <span class="text-xs font-medium">12 tasks</span>
-                             </div>
-                             <div class="flex-1"></div>
-                             <div class="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                                 <i class="fas fa-check-circle text-xs"></i>
-                                 <span class="text-xs font-medium">5 done</span>
-                             </div>
-                         </div>
-                     </div>
-                 </div>
-
-                 <!-- Action buttons -->
-                 <div class="flex flex-col sm:flex-row gap-3 justify-center items-center mb-6">
-                     <a href="#create-board-form" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center gap-2 group">
-                         <i class="fas fa-plus-circle group-hover:rotate-90 transition-transform duration-300"></i>
-                         Create Your First Board
-                     </a>
-                     <a href="{% url 'task_management:help_index' %}" class="px-6 py-3 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300/50 dark:border-gray-600/50 rounded-xl font-medium transition-all hover:shadow-md flex items-center gap-2 backdrop-blur-sm group">
-                         <i class="fas fa-book-open text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform"></i>
-                         <span>View Quick-Start Guide</span>
-                     </a>
-                 </div>
-
-                 <!-- Keyboard shortcut hint -->
-                 <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100/80 dark:bg-gray-800/80 rounded-full text-xs text-gray-500 dark:text-gray-400 backdrop-blur-sm">
-                     <kbd class="px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 font-mono text-xs shadow-sm border border-gray-200 dark:border-gray-600">N</kbd>
-                     <span>or press</span>
-                     <kbd class="px-1.5 py-0.5 bg-white dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 font-mono text-xs shadow-sm border border-gray-200 dark:border-gray-600">Ctrl</kbd>
-                     <span class="text-gray-400">+</span>
-                     <kbd class="px-1.5 py-0.5 bg-white/90 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300 font-mono text-xs shadow-sm border border-gray-200 dark:border-gray-600">B</kbd>
-                     <span class="hidden sm:inline">to create quickly</span>
-                 </div>
-             </div>
-         </div>
-         {% endif %}
-
-        <!-- Quick Links -->
-        {% if personal_boards %}
-        <div class="mt-10 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <div class="flex flex-wrap gap-4">
-                <a href="{% url 'task_management:board_list' %}"
-                   class="quick-link flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-2 rounded-lg">
-                    <i class="fas fa-building text-sm"></i>
-                    <span class="font-medium">Company Tasks</span>
-                </a>
-                  <a href="{% url 'task_management:roadmap_list' %}"
-                     class="quick-link flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-2 rounded-lg">
-                      <i class="fas fa-map text-sm"></i>
-                      <span class="font-medium">Roadmaps</span>
-                  </a>
-                  <button @click="openArchivedDrawer()"
-                          class="quick-link flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors px-3 py-2 rounded-lg">
-                      <i class="fas fa-archive text-sm"></i>
-                      <span class="font-medium">Archived Boards</span>
-                  </button>
-             </div>
-         </div>
-        {% endif %}
-    </div>
-
-     <!-- Archived Boards Drawer -->
-     <div x-show="archivedDrawerOpen"
-          x-transition:enter="transform transition ease-in-out duration-300"
-          x-transition:enter-start="translate-x-full"
-          x-transition:enter-end="translate-x-0"
-          x-transition:leave="transform transition ease-in-out duration-300"
-          x-transition:leave-start="translate-x-0"
-          x-transition:leave-end="translate-x-full"
-          class="fixed top-0 right-0 h-full w-full sm:w-96 max-w-full bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700 z-50 flex flex-col"
-          style="display: none;"
-          @click.away="closeArchivedDrawer()">
-
-         <!-- Drawer Header with Filters -->
-         <div class="p-4 border-b border-gray-200 dark:border-gray-700 space-y-3">
-             <!-- Top row: Title + Close -->
-             <div class="flex items-center justify-between">
-                 <div class="flex items-center gap-2">
-                     <div class="p-1.5 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                         <i class="fas fa-archive text-gray-600 dark:text-gray-400 text-sm"></i>
-                     </div>
-                     <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                         Archived Boards
-                     </h2>
-                     <span class="text-xs text-gray-500 dark:text-gray-400"
-                           x-text="'(' + filteredArchivedBoards.length + ')'"></span>
-                 </div>
-                 <button @click="closeArchivedDrawer()"
-                         class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                         aria-label="Close archived boards drawer">
-                     <i class="fas fa-times"></i>
-                 </button>
-             </div>
-
-             <!-- Filter Controls -->
-             <div class="space-y-2">
-                 <!-- Search -->
-                 <div class="relative">
-                     <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                     <input type="text"
-                            x-model="archivedFilterName"
-                            @input.debounce.300ms="applyArchivedFilters()"
-                            placeholder="Search by name..."
-                            class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                 </div>
-
-                 <!-- Date range row -->
-                 <div class="flex gap-2">
-                     <input type="date"
-                            x-model="archivedFilterDateFrom"
-                            @change="applyArchivedFilters()"
-                            class="flex-1 px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
-                     <input type="date"
-                            x-model="archivedFilterDateTo"
-                            @change="applyArchivedFilters()"
-                            class="flex-1 px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
-                     <button @click="clearArchivedFilters"
-                             class="px-2 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
-                             title="Clear filters">
-                         <i class="fas fa-times"></i>
-                     </button>
-                 </div>
-             </div>
-
-             <!-- Bulk Actions Bar (shown when any selected) -->
-             <div x-show="selectedArchivedBoardIds.length > 0"
-                  x-transition
-                  class="flex items-center justify-between bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-2">
-                 <span class="text-xs font-medium text-blue-800 dark:text-blue-200"
-                       x-text="selectedArchivedBoardIds.length + ' selected'"></span>
-                 <div class="flex items-center gap-1">
-                     <button @click="bulkRestoreSelected"
-                             class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded transition-colors flex items-center gap-1">
-                         <i class="fas fa-undo text-[10px]"></i>
-                         <span>Restore</span>
-                     </button>
-                     <button @click="bulkDeleteSelected"
-                             class="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors flex items-center gap-1">
-                         <i class="fas fa-trash text-[10px]"></i>
-                         <span>Delete</span>
-                     </button>
-                     <button @click="clearSelection"
-                             class="px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors">
-                         Clear
-                     </button>
-                 </div>
-             </div>
-
-             <!-- Auto-Purge Quick Action -->
-             <div class="flex items-center justify-between text-xs">
-                 <span class="text-gray-500 dark:text-gray-400">
-                     <i class="fas fa-clock mr-1"></i>
-                     Auto-purge boards older than
-                 </span>
-                 <div class="flex items-center gap-1">
-                     <select x-model="autoPurgeDays"
-                             class="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
-                         <option value="7">7 days</option>
-                         <option value="30" selected>30 days</option>
-                         <option value="90">90 days</option>
-                         <option value="365">1 year</option>
-                     </select>
-                     <button @click="autoPurge"
-                             :disabled="isPurging"
-                             class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                             title="Purge old archived boards">
-                         <i class="fas" :class="isPurging ? 'fa-spinner fa-spin' : 'fa-broom'"></i>
-                         <span x-text="isPurging ? 'Purging...' : 'Purge'"></span>
-                     </button>
-                 </div>
-             </div>
-         </div>
-
-         <!-- Drawer Content -->
-         <div class="flex-1 overflow-y-auto p-4">
-             <!-- Select All -->
-             <div x-show="filteredArchivedBoards.length > 0"
-                  class="flex items-center gap-2 px-3 py-2 mb-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-700">
-                 <input type="checkbox"
-                        id="select-all-archived"
-                        class="archived-select-all w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 cursor-pointer">
-                 <label for="select-all-archived"
-                        class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
-                     Select All
-                 </label>
-             </div>
-
-             <div id="archived-boards-container" class="space-y-3">
-                 <!-- Board cards with checkboxes will be rendered here -->
-             </div>
-         </div>
-
-         <!-- Drawer Footer -->
-         <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-             <button @click="closeArchivedDrawer()"
-                     class="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors">
-                 Close
-             </button>
-         </div>
-     </div>
-
-     <!-- Preview Modal -->
-     <div id="previewModal"
-          x-show="showPreview"
-          x-transition:enter="transition ease-out duration-300"
-          x-transition:enter-start="opacity-0"
-          x-transition:enter-end="opacity-100"
-          x-transition:leave="transition ease-in duration-200"
-          x-transition:leave-start="opacity-100"
-          x-transition:leave-end="opacity-0"
-          class="fixed inset-0 z-50 flex items-center justify-center p-4"
-          @click.self="closePreview()"
-          role="dialog"
-          aria-modal="true"
-          style="display: none;"
-          tabindex="-1">
-         <div class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
-         <div class="relative bg-gray-800 rounded-2xl p-6 w-full max-w-lg mx-4 shadow-2xl border border-gray-700/50 max-h-[90vh] overflow-y-auto"
-              @click.stop>
-             <!-- Close button -->
-             <button @click="closePreview()"
-                     class="absolute top-4 right-4 p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
-                     aria-label="Close preview">
-                 <i class="fas fa-times"></i>
-             </button>
-
-             <!-- Preview content -->
-             <template x-if="previewBoard">
-                 <div class="space-y-4">
-                     <!-- Header -->
-                     <div class="flex items-start gap-3">
-                         <div class="w-12 h-12 rounded-xl flex items-center justify-center text-xl"
-                              :style="`background-color: ${getTagColor(previewBoard.tag)}20; color: ${getTagColor(previewBoard.tag)}`">
-                             <i :class="getTagIcon(previewBoard.tag)"></i>
-                         </div>
-                         <div class="flex-1 min-w-0">
-                             <h3 class="text-lg font-bold text-white truncate" x-text="previewBoard.name"></h3>
-                             <p class="text-sm text-gray-400 line-clamp-2" x-text="previewBoard.description || 'No description'"></p>
-                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-2"
-                                   :class="getTagBadgeClass(previewBoard.tag)"
-                                   x-text="getTagLabel(previewBoard.tag)"></span>
-                         </div>
-                     </div>
-
-                      <!-- Stats -->
-                      <div class="grid grid-cols-2 gap-3 p-3 bg-gray-700/30 rounded-lg border border-gray-700">
-                          <div class="text-center">
-                              <div class="text-xl font-bold text-gray-100" x-text="previewBoard.total_tasks || 0"></div>
-                              <div class="text-xs text-gray-400">Total Tasks</div>
-                          </div>
-                          <div class="text-center">
-                              <div class="text-xl font-bold text-green-400" x-text="previewBoard.completed_tasks || 0"></div>
-                              <div class="text-xs text-gray-400">Completed</div>
-                          </div>
-                      </div>
-
-                      <!-- Tasks List Preview (first 3 tasks) -->
-                      <div x-show="previewTasks && previewTasks.length > 0">
-                          <h4 class="text-sm font-semibold text-gray-300 mb-2">Recent Tasks</h4>
-                          <div class="space-y-2 max-h-48 overflow-y-auto">
-                               <template x-for="task in previewTasks" :key="$index">
-                                  <div class="flex items-center gap-2 p-2 rounded-lg bg-gray-700/30 border border-gray-700/50"
-                                       :style="`border-left: 3px solid ${getPriorityColor(task.priority)}`">
-                                      <input type="checkbox"
-                                             :checked="task.is_completed"
-                                             disabled
-                                             class="w-4 h-4 rounded border-gray-500 text-green-500 focus:ring-green-500">
-                                      <span class="flex-1 text-sm text-gray-200 truncate"
-                                            :class="task.is_completed ? 'line-through opacity-60' : ''"
-                                            x-text="task.title"></span>
-                                      <span x-show="task.deadline"
-                                            class="flex-shrink-0 px-1.5 py-0.5 rounded text-xs font-medium text-gray-400 bg-gray-700">
-                                          <i class="fas fa-calendar-alt mr-1"></i>
-                                          <span x-text="new Date(task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })"></span>
-                                      </span>
-                                      <span class="flex-shrink-0 px-1.5 py-0.5 rounded text-xs font-medium text-white"
-                                            :style="`background-color: ${getPriorityColor(task.priority)}`"
-                                            x-text="task.priority.charAt(0).toUpperCase()"></span>
-                                  </div>
-                              </template>
-                          </div>
-                      </div>
-
-                      <!-- Empty state for tasks -->
-                      <div x-show="!previewTasks || previewTasks.length === 0" class="text-center py-4">
-                          <i class="fas fa-clipboard-list text-gray-500 text-2xl mb-2"></i>
-                          <p class="text-sm text-gray-400">No tasks yet</p>
-                      </div>
-
-                     <!-- Archived date -->
-                     <div class="flex items-center gap-2 text-xs text-gray-500">
-                         <i class="fas fa-archive"></i>
-                         <span>Archived: </span>
-                         <span x-text="previewBoard.archived_at ? new Date(previewBoard.archived_at).toLocaleString() : 'Unknown'"></span>
-                     </div>
-
-                      <!-- Actions -->
-                      <div class="flex gap-2 pt-2 border-t border-gray-700">
-                          <button type="button"
-                                  @click="restoreBoardFromPreview()"
-                                  class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
-                              <i class="fas fa-undo"></i>
-                              <span>Restore Board</span>
-                          </button>
-                          <button type="button"
-                                  @click="deleteBoardFromPreview()"
-                                  class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
-                                  title="Delete permanently">
-                              <i class="fas fa-trash"></i>
-                          </button>
-                      </div>
-                 </div>
-             </template>
-         </div>
-     </div>
-
-    <!-- Backdrop overlay when drawer is open -->
-    <div x-show="archivedDrawerOpen"
-         x-transition:enter="transition-opacity ease-linear duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition-opacity ease-linear duration-300"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 bg-black/50 z-40"
-         style="display: none;"
-         @click="closeArchivedDrawer()">
-    </div>
-
-    <!-- Custom Confirmation Modal -->
-    <div id="confirmModal"
-         x-show="confirmModalOpen"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex items-center justify-center p-4"
-         @click.self="closeConfirmModal()"
-         role="dialog"
-         aria-modal="true"
-         aria-labelledby="confirmModalTitle"
-         aria-describedby="confirmModalDesc"
-         style="display: none;"
-         tabindex="-1">
-        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
-        
-        <div class="relative bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-700/50"
-             @click.stop>
-            <div class="flex items-start gap-4 mb-5">
-                <!-- Icon container -->
-                <div class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center"
-                     :class="confirmModalConfig.iconBgClass">
-                    <i class="fas text-xl"
-                       :class="confirmModalConfig.iconClass"
-                       aria-hidden="true"></i>
-                </div>
-                
-                <div class="flex-1 min-w-0">
-                    <h2 id="confirmModalTitle" 
-                        class="text-xl font-semibold text-white mb-1"
-                        x-text="confirmModalConfig.title"></h2>
-                    <p id="confirmModalDesc"
-                       class="text-gray-300 text-sm leading-relaxed"
-                       x-text="confirmModalConfig.message"></p>
-                </div>
-            </div>
-
-            <div class="flex justify-end gap-3 mt-6">
-                <button type="button"
-                        @click="closeConfirmModal()"
-                        class="px-4 py-2.5 border border-gray-600 rounded-xl hover:bg-gray-700 text-gray-300 hover:text-white font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-blue-500"
-                        aria-label="Cancel">
-                    Cancel
-                </button>
-                <button type="button"
-                        @click="executeConfirmCallback()"
-                        class="px-4 py-2.5 rounded-xl font-medium transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800"
-                        :class="confirmModalConfig.buttonClass"
-                        aria-label="Confirm"
-                        id="confirmModalActionBtn">
-                    <i class="fas mr-2"
-                       :class="confirmModalConfig.buttonIconClass"
-                       aria-hidden="true"></i>
-                    <span x-text="confirmModalConfig.confirmText"></span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scroll to top button -->
-     <button x-show="scrolled"
-             data-ripple-bound="true"
-             x-transition
-             @click="window.scrollTo({top: 0, behavior: 'smooth'})"
-             class="fixed bottom-6 right-6 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all hover:scale-105 z-50"
-             title="Scroll to top">
-        <i class="fas fa-arrow-up"></i>
-    </button>
-     <!-- Edit Board Modal -->
-     <div id="editBoardModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" aria-describedby="editModalDesc" tabindex="-1">
-         <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-600">
-             <div class="flex justify-between items-center mb-6">
-                 <h2 id="editModalTitle" class="text-xl font-semibold text-white">Edit Board</h2>
-                 <button onclick="closeEditModal()" class="p-2 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white" aria-label="Close modal">
-                     <i class="fas fa-times" aria-hidden="true"></i>
-                 </button>
-             </div>
-             <p id="editModalDesc" class="sr-only">Edit your personal board name and description</p>
-             <form id="editBoardForm" method="post" action="">
-                 {% csrf_token %}
-                 <div class="space-y-4">
-                     <div>
-                         <label class="block text-sm font-medium text-gray-300 mb-2">Board Name</label>
-                         <input type="text" name="name" id="editBoardName" required
-                                class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-200">
-                     </div>
-                     <div>
-                         <label class="block text-sm font-medium text-gray-300 mb-2">Description (optional)</label>
-                         <textarea name="description" id="editBoardDescription" rows="3"
-                                   class="w-full px-3 py-2 border border-gray-600 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-200"></textarea>
-                     </div>
-                 </div>
-                 <div class="flex justify-end gap-3 mt-6">
-                     <button type="button" onclick="closeEditModal()" class="px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 text-gray-300">Cancel</button>
-                      <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
-                         <i class="fas fa-save mr-2"></i>Save Changes
-                     </button>
-                 </div>
-             </form>
-           </div>
-       </div>
-
-    <!-- Help Modal - Keyboard Shortcuts -->
-    <div id="helpModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;" onclick="if(event.target === this) toggleHelp()">
-        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm"></div>
-        <div class="relative bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-300 dark:border-gray-600">
-            <div class="flex justify-between items-start mb-4">
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Keyboard Shortcuts</h2>
-                <button onclick="toggleHelp()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-white">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="space-y-2 text-sm">
-                <div class="flex justify-between items-center py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded">
-                    <span class="text-gray-700 dark:text-gray-300">Create new board</span>
-                    <kbd class="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs font-mono">N</kbd>
-                </div>
-                <div class="flex justify-between items-center py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded">
-                    <span class="text-gray-700 dark:text-gray-300">Toggle reorder mode</span>
-                    <kbd class="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs font-mono">R</kbd>
-                </div>
-                <div class="flex justify-between items-center py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded">
-                    <span class="text-gray-700 dark:text-gray-300">Open archived boards</span>
-                    <kbd class="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs font-mono">A</kbd>
-                </div>
-                <div class="flex justify-between items-center py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded">
-                    <span class="text-gray-700 dark:text-gray-300">Close modal/drawer</span>
-                    <kbd class="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs font-mono">Esc</kbd>
-                </div>
-                <div class="flex justify-between items-center py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded">
-                    <span class="text-gray-700 dark:text-gray-300">Navigate boards (reorder mode)</span>
-                    <kbd class="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs font-mono">↑ ↓</kbd>
-                </div>
-                <div class="flex justify-between items-center py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded">
-                    <span class="text-gray-700 dark:text-gray-300">Move board in reorder mode</span>
-                    <kbd class="px-2 py-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs font-mono">Enter</kbd>
-                </div>
-            </div>
-            <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded text-xs text-gray-600 dark:text-gray-400">
-                <i class="fas fa-info-circle mr-1"></i>Press <kbd class="px-1 py-0.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs">R</kbd> to toggle reorder mode, then use arrow keys to navigate and <kbd class="px-1 py-0.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-700 dark:text-gray-300 text-xs">Enter</kbd> to move a board.
-            </div>
-        </div>
-    </div>
-
- </div>
-{% endblock %}
-
-{% block extra_scripts %}
-<script src="{% static 'js/Sortable.min.js' %}"></script>
-<script>
        function personalBoardsData() {
             return {
                 scrolled: false,
@@ -1608,16 +123,16 @@
 
                  // Stats data from Django template
                 statsData: {
-                    boards: {{ personal_boards|length }},
-                    boardsLastWeek: {{ boards_last_week }},
-                    tasks: {{ total_tasks_count }},
-                    tasksLastWeek: {{ tasks_last_week }},
-                    completed: {{ completed_tasks_count }},
-                    completedLastWeek: {{ completed_tasks_last_week }},
-                    productivity: {{ productivity_score }},
-                    sparkBoards: [{{ sparkline_boards }}],
-                    sparkTasks: [{{ sparkline_tasks }}],
-                    sparkCompleted: [{{ sparkline_completed }}]
+                    boards: 0,
+                    boardsLastWeek: 0,
+                    tasks: 0,
+                    tasksLastWeek: 0,
+                    completed: 0,
+                    completedLastWeek: 0,
+                    productivity: 0,
+                    sparkBoards: [0],
+                    sparkTasks: [0],
+                    sparkCompleted: [0]
                 },
 
             init() {
@@ -2164,7 +679,7 @@
                  }, async () => {
                      try {
                          const response = await fetch(
-                             `{% url 'task_management:personal_board_duplicate' 0 %}`.replace('0', boardId),
+                             `0`.replace('0', boardId),
                              {
                                  method: 'POST',
                                  headers: {
@@ -2258,7 +773,7 @@
                     if (this.archivedFilterName) params.append('search', this.archivedFilterName);
                     if (this.archivedFilterDateFrom) params.append('date_from', this.archivedFilterDateFrom);
                     if (this.archivedFilterDateTo) params.append('date_to', this.archivedFilterDateTo);
-                    const url = `{% url 'task_management:personal_board_archived_api' %}?${params.toString()}`;
+                    const url = `0?${params.toString()}`;
 
                     const response = await fetch(url);
                     const data = await response.json();
@@ -2455,7 +970,7 @@
                 if (!confirmed) return;
 
                 try {
-                    const response = await fetch("{% url 'task_management:personal_board_bulk_restore' %}", {
+                    const response = await fetch("0", {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -2487,7 +1002,7 @@
                 if (!confirmed) return;
 
                 try {
-                    const response = await fetch("{% url 'task_management:personal_board_bulk_delete' %}", {
+                    const response = await fetch("0", {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -2517,7 +1032,7 @@
 
                 this.isPurging = true;
                 try {
-                    const response = await fetch("{% url 'task_management:personal_board_auto_purge' %}", {
+                    const response = await fetch("0", {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -2554,7 +1069,7 @@
 
             async fetchPreviewTasks(boardId) {
                 try {
-                    const url = "{% url 'task_management:personal_tasks_preview_api' 0 %}".replace('0', boardId);
+                    const url = "0".replace('0', boardId);
                     const response = await fetch(url);
                     const data = await response.json();
                     this.previewTasks = data.tasks || [];
@@ -2682,7 +1197,7 @@
                 const orderedIds = Array.from(cards).map(card => card.dataset.boardId);
 
                 try {
-                    const response = await fetch("{% url 'task_management:personal_board_reorder' %}", {
+                    const response = await fetch("0", {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -2771,7 +1286,7 @@
                 }, async () => {
                     try {
                         const response = await fetch(
-                            `{% url 'task_management:personal_board_restore' 0 %}`.replace('0', boardId),
+                            `0`.replace('0', boardId),
                             {
                                 method: 'POST',
                                 headers: {
@@ -2826,7 +1341,7 @@
                 const escapedDesc = board.description ? this.escapeHtml(board.description) : 'Personal productivity board';
                 const escapedNameJs = this.escapeJs(board.name);
                 const escapedDescJs = this.escapeJs(board.description || '');
-                const detailUrl = "{% url 'task_management:personal_board_detail' 0 %}".replace('0', board.id);
+                const detailUrl = "0".replace('0', board.id);
                 const totalTasks = board.total_tasks || 0;
                 const completedTasks = board.completed_tasks || 0;
                 const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
@@ -2835,7 +1350,7 @@
                 const card = document.createElement('div');
                 card.className = 'relative flip-card';
                 card.dataset.boardId = board.id;
-                card.dataset.previewUrl = "{% url 'task_management:personal_tasks_preview_api' 0 %}".replace('0', board.id);
+                card.dataset.previewUrl = "0".replace('0', board.id);
                 card.dataset.detailUrl = detailUrl;
                 card.dataset.boardTag = board.tag || '';
 
@@ -2975,8 +1490,8 @@
                 const card = document.createElement('div');
                 card.className = 'relative flip-card';
                 card.dataset.boardId = boardId;
-                 card.dataset.previewUrl = "{% url 'task_management:personal_tasks_preview_api' 0 %}".replace('0', boardId);
-                 card.dataset.detailUrl = "{% url 'task_management:personal_board_detail' 0 %}".replace('0', boardId);
+                 card.dataset.previewUrl = "0".replace('0', boardId);
+                 card.dataset.detailUrl = "0".replace('0', boardId);
                  card.dataset.boardTag = boardTag;
 
                 const escapedName = this.escapeHtml(name);
@@ -2984,7 +1499,7 @@
                 const escapedNameJs = this.escapeJs(name);
                  const escapedDescJs = this.escapeJs(description);
 
-                 const detailUrl = "{% url 'task_management:personal_board_detail' 0 %}".replace('0', boardId);
+                 const detailUrl = "0".replace('0', boardId);
                  const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
                 const dashArray = totalTasks > 0 ? `${progressPercent}, 100` : '0, 100';
 
@@ -3032,7 +1547,7 @@
                                <div class="flex-1"></div>
                                <!-- Priority indicators -->
                                <div class="flex items-center gap-2" data-priority-badges>
-                                   {% comment %}Populated by JS when counts change{% endcomment %}
+                                   0Populated by JS when counts change0
                                </div>
                                <!-- Progress ring -->
                                <div class="flex items-center gap-2">
@@ -3083,10 +1598,10 @@
                     </div>
 
                     {# Quick Add Task Inline Form (expands) #}
-                     <div x-show="quickAddOpen === {{ board.id }}" x-transition class="absolute top-12 right-3 z-20 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-3"
+                     <div x-show="quickAddOpen === 0" x-transition class="absolute top-12 right-3 z-20 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-3"
                           @click.away="quickAddOpen = null">
-                        <form @submit.prevent="submitQuickAdd({{ board.id }})" class="space-y-2 quick-add-form">
-                            {% csrf_token %}
+                        <form @submit.prevent="submitQuickAdd(0)" class="space-y-2 quick-add-form">
+                            0
                             <input type="text" name="title" placeholder="Task title" required
                                    class="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-blue-500 quick-add-form-input">
                             <div class="flex gap-2">
@@ -3163,7 +1678,7 @@
                 }, async () => {
                     try {
                         const response = await fetch(
-                            `{% url 'task_management:personal_board_delete_permanent' 0 %}`.replace('0', boardId),
+                            `0`.replace('0', boardId),
                             {
                                 method: 'POST',
                                 headers: {
@@ -3222,7 +1737,7 @@
                  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i>Saving...';
 
                  try {
-                     const response = await fetch("{% url 'task_management:personal_task_create' board_id=0 %}".replace('0', boardId), {
+                     const response = await fetch("0".replace('0', boardId), {
                          method: 'POST',
                          body: formData,
                          headers: {
@@ -3410,7 +1925,7 @@
 
     function openEditModal(boardId, name, description) {
         const modal = document.getElementById('editBoardModal');
-        const editUrl = "{% url 'task_management:personal_board_edit' 0 %}".replace('0', boardId);
+        const editUrl = "0".replace('0', boardId);
         document.getElementById('editBoardForm').action = editUrl;
         document.getElementById('editBoardName').value = name;
         document.getElementById('editBoardDescription').value = description || '';
@@ -3613,8 +2128,8 @@
           if (board.low_priority_tasks > 0) {
               priorityBadgesHtml += `<span class="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400" title="Low priority pending"><i class="fas fa-circle text-[8px]"></i>${board.low_priority_tasks}</span>`;
           }
-         const detailUrl = "{% url 'task_management:personal_board_detail' 0 %}".replace('0', board.id);
-         const previewUrl = "{% url 'task_management:personal_tasks_preview_api' 0 %}".replace('0', board.id);
+         const detailUrl = "0".replace('0', board.id);
+         const previewUrl = "0".replace('0', board.id);
          const archiveUrl = window.PersonalBoardsData.getArchiveUrl(board.id);
          const csrfToken = window.PersonalBoardsData.getCsrfToken();
          const color = window.PersonalBoardsData.getBoardBorderColor(board.tag || '');
@@ -3734,5 +2249,3 @@
         }, 2000);
     }
 
-</script>
-{% endblock %}
