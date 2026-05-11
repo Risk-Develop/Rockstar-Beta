@@ -725,7 +725,7 @@ def personal_board_create(request):
                 max_order=models.Max('order')
             )['max_order'] or 0
             board = PersonalBoard.objects.create(
-                user=current_staff, name=name, description=description, tag=tag, order=max_order + 1
+                user=current_staff, name=name, description=description, tag=tag, order=max_order + 1, is_archived=False
             )
             for col in PersonalColumn.DEFAULT_COLUMNS:
                 PersonalColumn.objects.create(board=board, **col)
