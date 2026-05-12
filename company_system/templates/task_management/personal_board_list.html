@@ -1697,9 +1697,12 @@
                   allBoards: [],
 
                   // === DRAG & DROP STATE ===
+                  isDragging: false,
+                  dragRafId: null,
+                  draggedEl: null,
                   dragBadge: null,
-                  lastValidIndex: 0,          // Last valid drag position
-                  lastSavedOrder: [],           // Last successfully saved order
+                  lastValidIndex: 0,
+                  lastSavedOrder: [],
                   saveDebounceTimer: null,
                   undoToast: {
                       visible: false,
@@ -1816,27 +1819,89 @@
                       return Array.from(cards).map(card => parseInt(card.dataset.boardId));
                   },
 
-                   updateDropZones(evt) {
-                       this.clearDropZones();
-                       const grid = document.querySelector('#boards-grid');
-                       if (!grid) return;
+                    updateDropZones(evt) {
+                        this.clearDropZones();
+                        const grid = document.querySelector('#boards-grid');
+                        if (!grid) return;
+                        const dragged = evt.item;
 
-                       const dragged = evt.item;
-                       const allCards = Array.from(grid.querySelectorAll('.relative[data-board-id]'));
-                       const targetIndex = evt.newIndex;
+                        // Only consider visible cards
+                        const allCards = Array.from(grid.querySelectorAll('.relative[data-board-id]')).filter(el => el.offsetParent !== null);
+                        const targetIndex = evt.newIndex;
 
-                       // If dragging to a valid index (not ghost)
-                       if (targetIndex >= 0 && targetIndex < allCards.length) {
-                           const targetCard = allCards[targetIndex];
-                           if (targetCard && targetCard !== dragged) {
-                               targetCard.classList.add('drop-target');
-                           }
-                       }
+                        if (targetIndex >= 0 && targetIndex < allCards.length) {
+                            const targetCard = allCards[targetIndex];
+                            if (targetCard && targetCard !== dragged) {
+                                targetCard.classList.add('drop-target');
+                            }
+                        }
+                    },
+
+                   clearDropZones() {
+                       document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
                    },
 
-                  clearDropZones() {
-                      document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
-                  },
+                   getPlaceholderIndex() {
+                       const grid = document.querySelector('#boards-grid');
+                       if (!grid) return 0;
+                       const placeholder = grid.querySelector('.sortable-ghost');
+                       if (placeholder) {
+                           const children = Array.from(grid.children);
+                           return children.indexOf(placeholder);
+                       }
+                       // Fallback: use order of dragged element
+                       const cards = Array.from(grid.querySelectorAll('.relative[data-board-id]'));
+                       const idx = cards.indexOf(this.draggedEl);
+                       return idx >= 0 ? idx : this.lastValidIndex;
+                   },
+
+                    dragPoll() {
+                        if (!this.isDragging) return;
+                        const grid = document.querySelector('#boards-grid');
+                        if (grid && this.draggedEl) {
+                            const placeholder = grid.querySelector('.sortable-ghost');
+                            let idx = -1;
+                            if (placeholder) {
+                                // Count number of visible board cards before the placeholder
+                                let count = 0;
+                                let sibling = placeholder.previousElementSibling;
+                                while (sibling) {
+                                    if (sibling.matches('.relative[data-board-id]') && sibling.offsetParent !== null) {
+                                        count++;
+                                    }
+                                    sibling = sibling.previousElementSibling;
+                                }
+                                idx = count;
+                            } else {
+                                // Fallback: find index of dragged element among cards
+                                const cards = Array.from(grid.querySelectorAll('.relative[data-board-id]'));
+                                idx = cards.indexOf(this.draggedEl);
+                            }
+                            if (idx >= 0) {
+                                this.lastValidIndex = idx;
+                                if (this.dragBadge) {
+                                    this.dragBadge.textContent = idx + 1;
+                                }
+                                // Highlight drop target
+                                const synthetic = { newIndex: idx, item: this.draggedEl };
+                                this.updateDropZones(synthetic);
+                            }
+                        }
+                        this.dragRafId = requestAnimationFrame(() => this.dragPoll());
+                    },
+
+                   safeGetNewIndex(evt) {
+                       let idx = evt.newIndex;
+                       if (typeof idx !== 'number' || isNaN(idx) || idx < 0) {
+                           // Fallback: compute index from DOM
+                           const grid = document.querySelector('#boards-grid');
+                           if (grid) {
+                               const cards = Array.from(grid.querySelectorAll('.relative[data-board-id]'));
+                               idx = cards.indexOf(evt.item);
+                           }
+                       }
+                       return (typeof idx === 'number' && !isNaN(idx) && idx >= 0) ? idx : (this.lastValidIndex || 0);
+                   },
 
                   syncAllBoardsOrderFromDOM() {
                       const order = this.getCurrentOrderFromDOM();
@@ -2076,76 +2141,65 @@
                  // Capture initial order as last saved
                  this.lastSavedOrder = this.getCurrentOrderFromDOM();
 
-                  // Initialize Sortable for drag-and-drop reordering
-                  const grid = document.querySelector('#boards-grid');
-                  if (grid && typeof Sortable !== 'undefined') {
-                      new Sortable(grid, {
-                          handle: '.drag-handle',
-                          animation: 150,
-                          ghostClass: 'sortable-ghost',
-                          dragClass: 'sortable-drag',
-                          easing: 'cubic-bezier(1, 0, 0, 1)',
-                          onStart: (evt) => {
-                              // Clear any pending undo toast from previous drag
-                              this.hideUndoToast();
+                   // Initialize Sortable for drag-and-drop reordering
+                   const grid = document.querySelector('#boards-grid');
+                   if (grid && typeof Sortable !== 'undefined') {
+                       new Sortable(grid, {
+                           handle: '.drag-handle',
+                           animation: 150,
+                           ghostClass: 'sortable-ghost',
+                           dragClass: 'sortable-drag',
+                           easing: 'cubic-bezier(1, 0, 0, 1)',
+                           onStart: (evt) => {
+                               this.hideUndoToast();
+                               this.undoToast.previousOrder = this.getCurrentOrderFromDOM();
 
-                              // Capture current order before drag
-                              this.undoToast.previousOrder = this.getCurrentOrderFromDOM();
+                                this.draggedEl = evt.item;
 
-                              // Initialize last valid index
-                              this.lastValidIndex = (typeof evt.newIndex === 'number' && evt.newIndex >= 0) ? evt.newIndex : 0;
+                                // Create badge element
+                                const badge = document.createElement('div');
+                                badge.className = 'position-badge';
 
-                              // Show position number on dragged item
-                              const item = evt.item;
-                              const positionBadge = document.createElement('div');
-                              positionBadge.className = 'position-badge';
-                              positionBadge.textContent = this.lastValidIndex + 1;
-                              this.dragBadge = positionBadge; // store reference
-                              item.style.position = 'relative';
-                              item.appendChild(positionBadge);
-                          },
-                          onMove: (evt) => {
-                              // Update last valid index when over a valid drop target
-                              if (typeof evt.newIndex === 'number' && evt.newIndex >= 0) {
-                                  this.lastValidIndex = evt.newIndex;
-                              }
-                              // Update position badge (always show last valid index)
-                              if (this.dragBadge) {
-                                  this.dragBadge.textContent = this.lastValidIndex + 1;
-                              }
-                              // Visual drop zone indicator
-                              this.updateDropZones(evt);
-                          },
-                              onEnd: (evt) => {
-                                  // Remove position badge
-                                  if (this.dragBadge) {
-                                      this.dragBadge.remove();
-                                      this.dragBadge = null;
-                                  }
-                                  // Clear drop zone indicators
-                                  this.clearDropZones();
+                                // Determine initial index safely
+                                const startIdx = (typeof evt.newIndex === 'number' && evt.newIndex >= 0) ? evt.newIndex : 0;
+                                this.lastValidIndex = startIdx;
+                                badge.textContent = startIdx + 1;
+                                this.dragBadge = badge;
+                                this.draggedEl.style.position = 'relative';
+                                this.draggedEl.appendChild(badge);
 
-                                  // Apply snap animation to the moved card
-                                  if (evt.item) {
-                                      evt.item.classList.add('snap-animate');
-                                      setTimeout(() => evt.item.classList.remove('snap-animate'), 400);
-                                  }
+                                // Start polling loop
+                                this.isDragging = true;
+                                this.dragPoll();
+                           },
+                           onEnd: (evt) => {
+                               // Stop polling
+                               this.isDragging = false;
+                               if (this.dragRafId) cancelAnimationFrame(this.dragRafId);
+                               this.draggedEl = null;
 
-                                  // Sync allBoards order to new DOM order
-                                  this.syncAllBoardsOrderFromDOM();
+                               // Remove badge and zones
+                               if (this.dragBadge) {
+                                   this.dragBadge.remove();
+                                   this.dragBadge = null;
+                               }
+                               this.clearDropZones();
 
-                                  // Only show undo toast if order actually changed
-                                  const newOrder = this.getCurrentOrderFromDOM();
-                                  if (JSON.stringify(newOrder) !== JSON.stringify(this.undoToast.previousOrder)) {
-                                      // Show undo toast
-                                      this.showUndoToast();
-                                  } else {
-                                      // No real change, still maybe schedule save if needed? Usually not.
-                                      // Optionally ensure lastSavedOrder is up to date; but it should be
-                                  }
-                              }
-                      });
-                  }
+                               // Snap animation
+                               if (evt.item) {
+                                   evt.item.classList.add('snap-animate');
+                                   setTimeout(() => evt.item.classList.remove('snap-animate'), 400);
+                               }
+
+                               // Sync order and show undo if changed
+                               this.syncAllBoardsOrderFromDOM();
+                               const newOrder = this.getCurrentOrderFromDOM();
+                               if (JSON.stringify(newOrder) !== JSON.stringify(this.undoToast.previousOrder)) {
+                                   this.showUndoToast();
+                               }
+                           }
+                       });
+                   }
 
             // Event delegation for archived drawer buttons
             const archivedContainer = document.getElementById('archived-boards-container');
