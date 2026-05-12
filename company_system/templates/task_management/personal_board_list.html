@@ -426,9 +426,9 @@
  {% endblock %}
 
 {% block main_content %}
-       <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
-       x-data="personalBoardsData()"
-       data-archive-url-pattern="{% url 'task_management:personal_board_archive' 0 %}">
+        <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200"
+        x-data="personalBoardsData()"
+        data-archive-url-pattern="{% url 'task_management:personal_board_archive' 0 %}">
 
      <div class="max-w-6xl mx-auto p-4 md:p-6 lg:p-8">
 
@@ -606,14 +606,82 @@
                     <button type="submit"
                             class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2">
                         <i class="fas fa-plus"></i>
-                        <span>Create Board</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+                                    <span>Create Board</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
-        </div>
+                    <!-- Filter & Search Bar -->
+                    <div class="mb-6 flex flex-wrap gap-3 items-center p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm"
+                         x-cloak>
+                        <!-- Search -->
+                        <div class="flex-1 min-w-[200px]">
+                            <div class="relative">
+                                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                <input type="text"
+                                       x-model.debounce.300ms="searchQuery"
+                                       placeholder="Search boards by name or description..."
+                                       class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                            </div>
+                        </div>
+
+                        <!-- Completion Rate Filter -->
+                        <div class="min-w-[160px]">
+                            <select x-model="filterCompletionRate"
+                                    @change="applyFilters()"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                <option value="all">All Completion Rates</option>
+                                <option value="0-25">0 - 25%</option>
+                                <option value="25-50">25 - 50%</option>
+                                <option value="50-75">50 - 75%</option>
+                                <option value="75-100">75 - 100%</option>
+                            </select>
+                        </div>
+
+                        <!-- Tag Filter -->
+                        <div class="min-w-[140px]">
+                            <select x-model="filterTag"
+                                    @change="applyFilters()"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                <option value="all">All Tags</option>
+                                <option value="work">Work</option>
+                                <option value="personal">Personal</option>
+                                <option value="health">Health</option>
+                                <option value="finance">Finance</option>
+                                <option value="learning">Learning</option>
+                                <option value="home">Home</option>
+                                <option value="hobby">Hobby</option>
+                            </select>
+                        </div>
+
+                        <!-- Sort -->
+                        <div class="min-w-[180px]">
+                            <select x-model="sortBy"
+                                    @change="applyFilters()"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                <option value="updated_desc">Recently Updated</option>
+                                <option value="tasks_desc">Most Tasks</option>
+                                <option value="tasks_asc">Fewest Tasks</option>
+                                <option value="completion_desc">Highest Completion</option>
+                                <option value="completion_asc">Lowest Completion</option>
+                                <option value="name_asc">Name (A-Z)</option>
+                                <option value="name_desc">Name (Z-A)</option>
+                            </select>
+                        </div>
+
+                        <!-- Results count -->
+                        <div class="text-sm text-gray-600 dark:text-gray-400"
+                             x-text="`${filteredAndSortedBoards.length} of ${statsTotalBoards} boards`">
+                        </div>
+
+                        <!-- Clear Filters -->
+                        <button @click="clearAllFilters()"
+                                class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                title="Clear all filters">
+                            <i class="fas fa-times mr-1"></i>Clear
+                        </button>
+                    </div>
 
         {% if personal_boards %}
                     <!-- Enhanced Stats Dashboard -->
@@ -721,15 +789,21 @@
                     <div id="boards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" :class="{ 'reorder-mode': reorderMode }">
                       {% for board in personal_boards %}
                           {# FIX: Wrap card in a relative div so action buttons sit above the link layer #}
-                           <div class="relative flip-card"
-                                data-board-id="{{ board.id }}"
-                                data-preview-url="{% url 'task_management:personal_tasks_preview_api' board.id %}"
-                                data-detail-url="{% url 'task_management:personal_board_detail' board.id %}"
-                                data-board-tag="{{ board.tag|default:'' }}"
-                                x-show="expanded || {{ forloop.counter0 }} < 3"
-                                x-cloak
-                                :tabindex="reorderMode ? 0 : -1"
-                                @focus="focusedBoardId = {{ board.id }}">
+                        <div class="relative flip-card"
+                             data-board-id="{{ board.id }}"
+                             data-board-name="{{ board.name|escape }}"
+                             data-board-description="{{ board.description|default:''|escape }}"
+                             data-board-tag="{{ board.tag|default:'' }}"
+                             data-board-total-tasks="{{ board.total_tasks|default:0 }}"
+                             data-board-completed-tasks="{{ board.completed_tasks|default:0 }}"
+                             data-board-to-do-column-id="{{ board.to_do_column_id|default:'' }}"
+                             data-board-order="{{ board.order|default:0 }}"
+                             data-preview-url="{% url 'task_management:personal_tasks_preview_api' board.id %}"
+                             data-detail-url="{% url 'task_management:personal_board_detail' board.id %}"
+                             x-show="visibleBoardIds.has({{ board.id }})"
+                             x-cloak
+                             :tabindex="reorderMode ? 0 : -1"
+                             @focus="focusedBoardId = {{ board.id }}">
                             <a href="{% url 'task_management:personal_board_detail' board.id %}"
                                draggable="false"
                                class="board-card block rounded-xl p-5 bg-white dark:bg-gray-800 border border-2 shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer"
@@ -934,13 +1008,13 @@
                      {% endfor %}
                         </div>
 
-                    {# Show More/Less button (when >3 boards) #}
-          <div class="mt-6 text-center" x-show="statsTotalBoards > 3">
-              <button @click="expanded = !expanded"
-                      class="px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-400 transition-colors text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm font-medium"
-                      x-text="expanded ? 'Show Less' : 'Show More (' + (statsTotalBoards - 3) + ' more)'">
-              </button>
-          </div>
+                     {# Show More/Less button (when >3 boards) #}
+           <div class="mt-6 text-center" x-show="filteredAndSortedBoards.length > 3">
+               <button @click="expanded = !expanded"
+                       class="px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-400 transition-colors text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm font-medium"
+                       x-text="expanded ? 'Show Less' : 'Show More (' + (filteredAndSortedBoards.length - 3) + ' more)'">
+               </button>
+           </div>
 
          {% else %}
          <!-- Enhanced Empty State -->
@@ -1484,42 +1558,147 @@
 {% block extra_scripts %}
 <script src="{% static 'js/Sortable.min.js' %}"></script>
 <script>
-       function personalBoardsData() {
-            return {
-                scrolled: false,
-                archivedDrawerOpen: false,
-                archivedBoards: [],           // Full list from API
-                selectedArchivedBoardIds: [], // Selected for bulk ops
-                archivedFilterName: '',
-                archivedFilterDateFrom: '',
-                archivedFilterDateTo: '',
+        function personalBoardsData() {
+             return {
+                 scrolled: false,
+                 archivedDrawerOpen: false,
+                 archivedBoards: [],
+                 selectedArchivedBoardIds: [],
+                 archivedFilterName: '',
+                 archivedFilterDateFrom: '',
+                 archivedFilterDateTo: '',
                  autoPurgeDays: 30,
                  isPurging: false,
                  previewBoard: null,
                  previewTasks: [],
                  showPreview: false,
-                confirmModalOpen: false,
-                confirmModalConfig: {
-                    title: '',
-                    message: '',
-                    type: 'danger',
-                    confirmText: 'Confirm',
-                    iconBgClass: 'bg-red-500/20',
-                    iconClass: 'fa-exclamation-triangle text-red-500',
-                    buttonClass: 'bg-red-600 hover:bg-red-500 text-white focus:ring-red-500',
-                    buttonIconClass: 'fa-trash-alt'
-                },
-                confirmModalCallback: null,
-                expanded: false,
-                mobileStatsOpen: {},
-                quickAddOpen: null,
-                createModalOpen: false,
-                selectedTemplate: null,
-                createFormName: '',
-                createFormDesc: '',
-                // Reorder mode
-                reorderMode: false,
-                focusedBoardIndex: 0,
+                 confirmModalOpen: false,
+                 confirmModalConfig: {
+                     title: '',
+                     message: '',
+                     type: 'danger',
+                     confirmText: 'Confirm',
+                     iconBgClass: 'bg-red-500/20',
+                     iconClass: 'fa-exclamation-triangle text-red-500',
+                     buttonClass: 'bg-red-600 hover:bg-red-500 text-white focus:ring-red-500',
+                     buttonIconClass: 'fa-trash-alt'
+                 },
+                 confirmModalCallback: null,
+                 expanded: false,
+                 mobileStatsOpen: {},
+                 quickAddOpen: null,
+                 createModalOpen: false,
+                 selectedTemplate: null,
+                 createFormName: '',
+                 createFormDesc: '',
+                 // Reorder mode
+                 reorderMode: false,
+                 focusedBoardIndex: 0,
+
+                 // === FILTER & SORT STATE ===
+                 searchQuery: '',
+                 filterCompletionRate: 'all',  // 'all', '0-25', '25-50', '50-75', '75-100'
+                 filterTag: 'all',             // 'all', 'work', 'personal', 'health', 'finance', 'learning', 'home', 'hobby'
+                 sortBy: 'updated_desc',       // 'updated_desc', 'tasks_desc', 'tasks_asc', 'completion_desc', 'completion_asc', 'name_asc', 'name_desc'
+
+                 // All boards data (populated from Django JSON)
+                 allBoards: [],
+
+           // ========== FILTER & SORT COMPUTED ==========
+           get filteredAndSortedBoards() {
+               let boards = [...this.allBoards];
+
+               // 1. Search filter (name or description)
+               if (this.searchQuery.trim()) {
+                   const q = this.searchQuery.toLowerCase().trim();
+                   boards = boards.filter(b =>
+                       (b.name && b.name.toLowerCase().includes(q)) ||
+                       (b.description && b.description.toLowerCase().includes(q))
+                   );
+               }
+
+               // 2. Completion rate filter
+               if (this.filterCompletionRate !== 'all') {
+                   boards = boards.filter(b => {
+                       const total = b.total_tasks || 0;
+                       const completed = b.completed_tasks || 0;
+                       if (total === 0) {
+                           return this.filterCompletionRate === '0-25'; // 0% boards go to 0-25 bucket
+                       }
+                       const pct = Math.round((completed / total) * 100);
+                       const [min, max] = this.filterCompletionRate.split('-').map(Number);
+                       return pct >= min && pct <= max;
+                   });
+               }
+
+               // 3. Tag filter
+               if (this.filterTag !== 'all') {
+                   boards = boards.filter(b => b.tag === this.filterTag);
+               }
+
+               // 4. Sort
+               switch (this.sortBy) {
+                   case 'tasks_desc':
+                       boards.sort((a, b) => (b.total_tasks || 0) - (a.total_tasks || 0));
+                       break;
+                   case 'tasks_asc':
+                       boards.sort((a, b) => (a.total_tasks || 0) - (b.total_tasks || 0));
+                       break;
+                   case 'completion_desc':
+                       boards.sort((a, b) => {
+                           const aPct = a.total_tasks ? a.completed_tasks / a.total_tasks : 0;
+                           const bPct = b.total_tasks ? b.completed_tasks / b.total_tasks : 0;
+                           return bPct - aPct;
+                       });
+                       break;
+                   case 'completion_asc':
+                       boards.sort((a, b) => {
+                           const aPct = a.total_tasks ? a.completed_tasks / a.total_tasks : 0;
+                           const bPct = b.total_tasks ? b.completed_tasks / b.total_tasks : 0;
+                           return aPct - bPct;
+                       });
+                       break;
+                   case 'name_asc':
+                       boards.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                       break;
+                   case 'name_desc':
+                       boards.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+                       break;
+                   case 'updated_desc':
+                   default:
+                       // Sort by order descending (reflects manual reorder) then by id
+                       boards.sort((a, b) => (b.order || b.id || 0) - (a.order || a.id || 0));
+                       break;
+               }
+
+               return boards;
+           },
+
+           get filteredBoardIds() {
+               return new Set(this.filteredAndSortedBoards.map(b => b.id));
+           },
+
+           get visibleBoardIds() {
+               const ids = this.filteredAndSortedBoards.map(b => b.id);
+               if (this.expanded || ids.length <= 3) {
+                   return new Set(ids);
+               }
+               return new Set(ids.slice(0, 3));
+           },
+
+                 // Filter action (for explicit binding)
+                 applyFilters() {
+                     // Computed auto-updates; method exists for binding clarity
+                 },
+
+                 // Clear all filters
+                 clearAllFilters() {
+                     this.searchQuery = '';
+                     this.filterCompletionRate = 'all';
+                     this.filterTag = 'all';
+                     this.sortBy = 'updated_desc';
+                     // computed updates automatically
+                 },
 
                  // Predefined board templates
                  boardTemplates: [
@@ -1621,24 +1800,37 @@
                 },
 
             init() {
-            const handler = () => { this.scrolled = window.scrollY > 300; };
-            window.addEventListener('scroll', handler, { passive: true });
-            this.$cleanup = () => window.removeEventListener('scroll', handler);
+                const handler = () => { this.scrolled = window.scrollY > 300; };
+                window.addEventListener('scroll', handler, { passive: true });
+                this.$cleanup = () => window.removeEventListener('scroll', handler);
 
-             // Initialize Sortable for drag-and-drop reordering
-             const grid = document.querySelector('#boards-grid');
-             if (grid && typeof Sortable !== 'undefined') {
-                 new Sortable(grid, {
-                     handle: '.drag-handle',
-                     animation: 150,
-                     ghostClass: 'sortable-ghost',
-                     dragClass: 'sortable-drag',
-                     easing: 'cubic-bezier(1, 0, 0, 1)',
-                     onEnd: (evt) => {
-                         this.updateBoardOrder();
-                     }
-                 });
-             }
+                // Parse allBoards from DOM data attributes (cards rendered server-side)
+                const cards = document.querySelectorAll('.relative[data-board-id]');
+                this.allBoards = Array.from(cards).map(card => ({
+                    id: parseInt(card.dataset.boardId) || 0,
+                    name: card.dataset.boardName || '',
+                    description: card.dataset.boardDescription || '',
+                    tag: card.dataset.boardTag || '',
+                    total_tasks: parseInt(card.dataset.boardTotalTasks) || 0,
+                    completed_tasks: parseInt(card.dataset.boardCompletedTasks) || 0,
+                    to_do_column_id: card.dataset.boardToDoColumnId ? parseInt(card.dataset.boardToDoColumnId) : null,
+                    order: parseInt(card.dataset.boardOrder) || 0,
+                }));
+
+                 // Initialize Sortable for drag-and-drop reordering
+                 const grid = document.querySelector('#boards-grid');
+                 if (grid && typeof Sortable !== 'undefined') {
+                     new Sortable(grid, {
+                         handle: '.drag-handle',
+                         animation: 150,
+                         ghostClass: 'sortable-ghost',
+                         dragClass: 'sortable-drag',
+                         easing: 'cubic-bezier(1, 0, 0, 1)',
+                         onEnd: (evt) => {
+                             this.updateBoardOrder();
+                         }
+                     });
+                 }
 
             // Event delegation for archived drawer buttons
             const archivedContainer = document.getElementById('archived-boards-container');
@@ -1770,14 +1962,98 @@
              window.PersonalBoardsData = this;
          },
 
-          // ========== Stats Dashboard Computed ==========
-          get statsTotalBoards() { return this.statsData.boards; },
-          get statsTotalTasks() { return this.statsData.tasks; },
-          get statsCompletedTasks() { return this.statsData.completed; },
-          get statsAvgTasks() {
-              return this.statsData.boards > 0 ? Math.round(this.statsData.tasks / this.statsData.boards * 10) / 10 : 0;
-          },
-          get statsProductivityScore() { return this.statsData.productivity; },
+           // ========== Stats Dashboard Computed ==========
+           get statsTotalBoards() { return this.statsData.boards; },
+           get statsTotalTasks() { return this.statsData.tasks; },
+           get statsCompletedTasks() { return this.statsData.completed; },
+           get statsAvgTasks() {
+               return this.statsData.boards > 0 ? Math.round(this.statsData.tasks / this.statsData.boards * 10) / 10 : 0;
+           },
+           get statsProductivityScore() { return this.statsData.productivity; },
+
+           // ========== Filter & Sort Computed ==========
+           get filteredAndSortedBoards() {
+               let boards = [...this.allBoards];
+
+               // 1. Search filter (name or description)
+               if (this.searchQuery.trim()) {
+                   const q = this.searchQuery.toLowerCase().trim();
+                   boards = boards.filter(b =>
+                       (b.name && b.name.toLowerCase().includes(q)) ||
+                       (b.description && b.description.toLowerCase().includes(q))
+                   );
+               }
+
+               // 2. Completion rate filter
+               if (this.filterCompletionRate !== 'all') {
+                   boards = boards.filter(b => {
+                       const total = b.total_tasks || 0;
+                       const completed = b.completed_tasks || 0;
+                       if (total === 0) {
+                           return this.filterCompletionRate === '0-25'; // 0% boards go to 0-25 bucket
+                       }
+                       const pct = Math.round((completed / total) * 100);
+                       const [min, max] = this.filterCompletionRate.split('-').map(Number);
+                       return pct >= min && pct <= max;
+                   });
+               }
+
+               // 3. Tag filter
+               if (this.filterTag !== 'all') {
+                   boards = boards.filter(b => b.tag === this.filterTag);
+               }
+
+               // 4. Sort
+               switch (this.sortBy) {
+                   case 'tasks_desc':
+                       boards.sort((a, b) => (b.total_tasks || 0) - (a.total_tasks || 0));
+                       break;
+                   case 'tasks_asc':
+                       boards.sort((a, b) => (a.total_tasks || 0) - (b.total_tasks || 0));
+                       break;
+                   case 'completion_desc':
+                       boards.sort((a, b) => {
+                           const aPct = a.total_tasks ? a.completed_tasks / a.total_tasks : 0;
+                           const bPct = b.total_tasks ? b.completed_tasks / b.total_tasks : 0;
+                           return bPct - aPct;
+                       });
+                       break;
+                   case 'completion_asc':
+                       boards.sort((a, b) => {
+                           const aPct = a.total_tasks ? a.completed_tasks / a.total_tasks : 0;
+                           const bPct = b.total_tasks ? b.completed_tasks / b.total_tasks : 0;
+                           return aPct - bPct;
+                       });
+                       break;
+                   case 'name_asc':
+                       boards.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                       break;
+                   case 'name_desc':
+                       boards.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+                       break;
+                   case 'updated_desc':
+                   default:
+                       // Sort by order field (assumed to reflect update recency) or fallback to id
+                       boards.sort((a, b) => (b.order || b.id || 0) - (a.order || a.id || 0));
+                       break;
+               }
+
+               return boards;
+           },
+
+           // Filter helper
+           applyFilters() {
+               // Trigger reactivity update (computed property auto-updates)
+               // This method exists for x-on:change binding clarity
+           },
+
+           clearAllFilters() {
+               this.searchQuery = '';
+               this.filterCompletionRate = 'all';
+               this.filterTag = 'all';
+               this.sortBy = 'updated_desc';
+               this.applyFilters();
+           },
 
           // ========== Archive Management Computed ==========
           get filteredArchivedBoards() {
