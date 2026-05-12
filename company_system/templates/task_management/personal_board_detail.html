@@ -2102,16 +2102,16 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
              Description
              <span class="text-gray-400 font-normal">(optional)</span>
            </label>
-           <textarea name="description"
-                     id="addDescription"
-                     rows="3"
-                     maxlength="1000"
-                     class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                     placeholder="Add more details..."
-                     oninput="updateCharCount('addDescription', 'addDescriptionCount')"></textarea>
-           <div class="char-count">
-             <span id="addDescriptionCount">0</span>/1000 characters
-           </div>
+            <textarea name="description"
+                      id="addDescription"
+                      rows="3"
+                      maxlength="10000"
+                      class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      placeholder="Add more details..."
+                      oninput="updateCharCount('addDescription', 'addDescriptionCount')"></textarea>
+            <div class="char-count">
+              <span id="addDescriptionCount">0</span>/10000 characters
+            </div>
          </div>
 
         <!-- Column selection -->
@@ -2378,16 +2378,16 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
          <!-- Description -->
          <div>
            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Description</label>
-           <textarea name="description"
-                     id="detailDescription"
-                     rows="3"
-                     maxlength="1000"
-                     class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                     placeholder="Describe what needs to be done..."
-                     oninput="updateCharCount('detailDescription', 'detailDescriptionCount')"></textarea>
-           <div class="char-count">
-             <span id="detailDescriptionCount">0</span>/1000 characters
-           </div>
+            <textarea name="description"
+                      id="detailDescription"
+                      rows="3"
+                      maxlength="10000"
+                      class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      placeholder="Describe what needs to be done..."
+                      oninput="updateCharCount('detailDescription', 'detailDescriptionCount')"></textarea>
+            <div class="char-count">
+              <span id="detailDescriptionCount">0</span>/10000 characters
+            </div>
          </div>
 
         <!-- Column -->
@@ -2598,16 +2598,16 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
          Notes
        </h3>
        <div>
-         <textarea name="notes"
-                   id="detailNotes"
-                   rows="4"
-                   maxlength="1000"
-                   class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                   placeholder="Additional notes, links, or reminders..."
-                   oninput="updateCharCount('detailNotes', 'detailNotesCount')"></textarea>
-         <div class="char-count">
-           <span id="detailNotesCount">0</span>/1000 characters
-         </div>
+          <textarea name="notes"
+                    id="detailNotes"
+                    rows="4"
+                    maxlength="10000"
+                    class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    placeholder="Additional notes, links, or reminders..."
+                    oninput="updateCharCount('detailNotes', 'detailNotesCount')"></textarea>
+          <div class="char-count">
+            <span id="detailNotesCount">0</span>/10000 characters
+          </div>
        </div>
      </section>
 
