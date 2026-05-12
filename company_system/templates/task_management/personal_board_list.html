@@ -238,53 +238,109 @@
          display: flex;
      }
 
-/* FIX: Card action buttons should not overlap the card link */
-     .card-actions {
-         position: relative;
-         z-index: 10;
-     }
-
-       /* Drag handle styles */
-       .drag-handle {
-           cursor: grab;
-           transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease, box-shadow 0.2s ease;
-           width: 24px;
-           height: 24px;
-           padding: 0;
-           display: inline-flex;
-           align-items: center;
-           justify-content: center;
-           color: #9ca3af;
-           border-radius: 6px;
-       }
-       .drag-handle:hover {
-           color: #3b82f6;
-           transform: scale(1.15);
-           box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-       }
-       .drag-handle.magnetic-active {
-           transform: scale(1.25);
-           color: #3b82f6;
-           box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
-       }
-       .drag-handle:active {
-           cursor: grabbing;
-           transform: scale(1.1);
-       }
-       .drag-handle svg {
-           width: 14px;
-           height: 14px;
-           pointer-events: none;
-       }
-     .sortable-ghost {
-         opacity: 0.4;
-         border: 2px dashed #3b82f6;
-     }
-      .sortable-drag {
-          cursor: grabbing;
-          transform: rotate(2deg);
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+     /* FIX: Card action buttons should not overlap the card link */
+      .card-actions {
+          position: relative;
+          z-index: 10;
       }
+
+        /* Drag handle styles */
+        .drag-handle {
+            cursor: grab;
+            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease, box-shadow 0.2s ease;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            border-radius: 6px;
+        }
+        .drag-handle:hover {
+            color: #3b82f6;
+            transform: scale(1.15);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+        }
+        .drag-handle.magnetic-active {
+            transform: scale(1.25);
+            color: #3b82f6;
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
+        }
+        .drag-handle:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+        }
+        .drag-handle svg {
+            width: 14px;
+            height: 14px;
+            pointer-events: none;
+        }
+
+        /* Sortable styles */
+        .sortable-ghost {
+            opacity: 0.4;
+            border: 2px dashed #3b82f6;
+            background: rgba(59, 130, 246, 0.05);
+        }
+        .sortable-drag {
+            cursor: grabbing;
+            transform: rotate(2deg);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            z-index: 9999;
+            position: relative;
+        }
+
+        /* Drop zone indicator - horizontal line between cards */
+        .drop-zone {
+            height: 4px;
+            margin: 4px 0;
+            border-radius: 2px;
+            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.6);
+            transition: all 0.2s ease;
+            pointer-events: none;
+        }
+        .drop-zone.active {
+            height: 6px;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+        }
+
+        /* Position badge on card while dragging */
+        .position-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+            z-index: 50;
+            animation: bounce-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+        }
+        @keyframes bounce-in {
+            0% { transform: scale(0); }
+            60% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* Snap to grid animation after drop */
+        .snap-animate {
+            animation: snap-to-grid 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes snap-to-grid {
+            0% { transform: scale(1.02); }
+            50% { transform: scale(0.98); }
+            100% { transform: scale(1); }
+        }
 
       /* Empty State Animations */
       @keyframes float-1 {
@@ -418,11 +474,20 @@
             outline-offset: 3px;
             box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
         }
-        .grid.reorder-mode .drag-handle {
-            opacity: 1 !important;
-            color: #3b82f6 !important;
-        }
-    </style>
+         .grid.reorder-mode .drag-handle {
+             opacity: 1 !important;
+             color: #3b82f6 !important;
+         }
+
+         /* Drop target highlight during drag */
+         .drop-target {
+             outline: 3px solid #3b82f6;
+             outline-offset: 2px;
+             border-radius: 0.75rem;
+             box-shadow: 0 0 24px rgba(59, 130, 246, 0.5);
+             transition: outline 0.2s ease, box-shadow 0.2s ease;
+         }
+     </style>
  {% endblock %}
 
 {% block main_content %}
@@ -798,6 +863,7 @@
                              data-board-completed-tasks="{{ board.completed_tasks|default:0 }}"
                              data-board-to-do-column-id="{{ board.to_do_column_id|default:'' }}"
                              data-board-order="{{ board.order|default:0 }}"
+                             data-board-updated="{{ board.updated_at|date:'U' }}"
                              data-preview-url="{% url 'task_management:personal_tasks_preview_api' board.id %}"
                              data-detail-url="{% url 'task_management:personal_board_detail' board.id %}"
                              x-show="visibleBoardIds.has({{ board.id }})"
@@ -1008,7 +1074,7 @@
                      {% endfor %}
                         </div>
 
-                     {# Show More/Less button (when >3 boards) #}
+                    {# Show More/Less button (when >3 visible boards after filtering) #}
            <div class="mt-6 text-center" x-show="filteredAndSortedBoards.length > 3">
                <button @click="expanded = !expanded"
                        class="px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-400 transition-colors text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm font-medium"
@@ -1467,15 +1533,41 @@
         </div>
     </div>
 
-    <!-- Scroll to top button -->
-     <button x-show="scrolled"
-             data-ripple-bound="true"
-             x-transition
-             @click="window.scrollTo({top: 0, behavior: 'smooth'})"
-             class="fixed bottom-6 right-6 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all hover:scale-105 z-50"
-             title="Scroll to top">
-        <i class="fas fa-arrow-up"></i>
-    </button>
+     <!-- Scroll to top button -->
+      <button x-show="scrolled"
+              data-ripple-bound="true"
+              x-transition
+              @click="window.scrollTo({top: 0, behavior: 'smooth'})"
+              class="fixed bottom-6 right-6 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all hover:scale-105 z-50"
+              title="Scroll to top">
+         <i class="fas fa-arrow-up"></i>
+      </button>
+
+      <!-- Undo Toast after reorder -->
+      <div x-show="undoToast.visible"
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 translate-y-4"
+           x-transition:enter-end="opacity-100 translate-y-0"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 translate-y-0"
+           x-transition:leave-end="opacity-0 translate-y-4"
+           class="fixed bottom-20 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl"
+           style="display: none;"
+           @click.away="undoLastReorder()">
+          <div class="flex-1">
+              <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">Boards reordered</div>
+              <div class="text-xs text-gray-600 dark:text-gray-400">Drag completed — want to undo?</div>
+          </div>
+          <button @click.stop="undoLastReorder()"
+                  class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1">
+              <i class="fas fa-undo"></i>Undo
+          </button>
+          <button @click.stop="hideUndoToast()"
+                  class="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 rounded transition-colors"
+                  title="Dismiss">
+              <i class="fas fa-times"></i>
+          </button>
+      </div>
      <!-- Edit Board Modal -->
      <div id="editBoardModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" aria-describedby="editModalDesc" tabindex="-1">
          <div class="bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-600">
@@ -1601,78 +1693,87 @@
                  filterTag: 'all',             // 'all', 'work', 'personal', 'health', 'finance', 'learning', 'home', 'hobby'
                  sortBy: 'updated_desc',       // 'updated_desc', 'tasks_desc', 'tasks_asc', 'completion_desc', 'completion_asc', 'name_asc', 'name_desc'
 
-                 // All boards data (populated from Django JSON)
-                 allBoards: [],
+                  // All boards data (populated from Django JSON)
+                  allBoards: [],
 
-           // ========== FILTER & SORT COMPUTED ==========
-           get filteredAndSortedBoards() {
-               let boards = [...this.allBoards];
+                  // === DRAG & DROP STATE ===
+                  dragBadge: null,
+                  lastValidIndex: 0,          // Last valid drag position
+                  lastSavedOrder: [],           // Last successfully saved order
+                  saveDebounceTimer: null,
+                  undoToast: {
+                      visible: false,
+                      timeoutId: null,
+                      previousOrder: []
+                  },
 
-               // 1. Search filter (name or description)
-               if (this.searchQuery.trim()) {
-                   const q = this.searchQuery.toLowerCase().trim();
-                   boards = boards.filter(b =>
-                       (b.name && b.name.toLowerCase().includes(q)) ||
-                       (b.description && b.description.toLowerCase().includes(q))
-                   );
-               }
+            // ========== SORT & FILTER COMPUTED ==========
+            get sortedAllBoards() {
+                let boards = [...this.allBoards];
+                // Apply sort only
+                switch (this.sortBy) {
+                    case 'tasks_desc':
+                        boards.sort((a, b) => (b.total_tasks || 0) - (a.total_tasks || 0));
+                        break;
+                    case 'tasks_asc':
+                        boards.sort((a, b) => (a.total_tasks || 0) - (b.total_tasks || 0));
+                        break;
+                    case 'completion_desc':
+                        boards.sort((a, b) => {
+                            const aPct = a.total_tasks ? a.completed_tasks / a.total_tasks : 0;
+                            const bPct = b.total_tasks ? b.completed_tasks / b.total_tasks : 0;
+                            return bPct - aPct;
+                        });
+                        break;
+                    case 'completion_asc':
+                        boards.sort((a, b) => {
+                            const aPct = a.total_tasks ? a.completed_tasks / a.total_tasks : 0;
+                            const bPct = b.total_tasks ? b.completed_tasks / b.total_tasks : 0;
+                            return aPct - bPct;
+                        });
+                        break;
+                    case 'name_asc':
+                        boards.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                        break;
+                    case 'name_desc':
+                        boards.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+                        break;
+                    case 'updated_desc':
+                        boards.sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0));
+                        break;
+                }
+                return boards;
+            },
 
-               // 2. Completion rate filter
-               if (this.filterCompletionRate !== 'all') {
-                   boards = boards.filter(b => {
-                       const total = b.total_tasks || 0;
-                       const completed = b.completed_tasks || 0;
-                       if (total === 0) {
-                           return this.filterCompletionRate === '0-25'; // 0% boards go to 0-25 bucket
-                       }
-                       const pct = Math.round((completed / total) * 100);
-                       const [min, max] = this.filterCompletionRate.split('-').map(Number);
-                       return pct >= min && pct <= max;
-                   });
-               }
-
-               // 3. Tag filter
-               if (this.filterTag !== 'all') {
-                   boards = boards.filter(b => b.tag === this.filterTag);
-               }
-
-               // 4. Sort
-               switch (this.sortBy) {
-                   case 'tasks_desc':
-                       boards.sort((a, b) => (b.total_tasks || 0) - (a.total_tasks || 0));
-                       break;
-                   case 'tasks_asc':
-                       boards.sort((a, b) => (a.total_tasks || 0) - (b.total_tasks || 0));
-                       break;
-                   case 'completion_desc':
-                       boards.sort((a, b) => {
-                           const aPct = a.total_tasks ? a.completed_tasks / a.total_tasks : 0;
-                           const bPct = b.total_tasks ? b.completed_tasks / b.total_tasks : 0;
-                           return bPct - aPct;
-                       });
-                       break;
-                   case 'completion_asc':
-                       boards.sort((a, b) => {
-                           const aPct = a.total_tasks ? a.completed_tasks / a.total_tasks : 0;
-                           const bPct = b.total_tasks ? b.completed_tasks / b.total_tasks : 0;
-                           return aPct - bPct;
-                       });
-                       break;
-                   case 'name_asc':
-                       boards.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-                       break;
-                   case 'name_desc':
-                       boards.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
-                       break;
-                   case 'updated_desc':
-                   default:
-                       // Sort by order descending (reflects manual reorder) then by id
-                       boards.sort((a, b) => (b.order || b.id || 0) - (a.order || a.id || 0));
-                       break;
-               }
-
-               return boards;
-           },
+            get filteredAndSortedBoards() {
+                let boards = this.sortedAllBoards;
+                // 1. Search filter (name or description)
+                if (this.searchQuery.trim()) {
+                    const q = this.searchQuery.toLowerCase().trim();
+                    boards = boards.filter(b =>
+                        (b.name && b.name.toLowerCase().includes(q)) ||
+                        (b.description && b.description.toLowerCase().includes(q))
+                    );
+                }
+                // 2. Completion rate filter
+                if (this.filterCompletionRate !== 'all') {
+                    boards = boards.filter(b => {
+                        const total = b.total_tasks || 0;
+                        const completed = b.completed_tasks || 0;
+                        if (total === 0) {
+                            return this.filterCompletionRate === '0-25';
+                        }
+                        const pct = Math.round((completed / total) * 100);
+                        const [min, max] = this.filterCompletionRate.split('-').map(Number);
+                        return pct >= min && pct <= max;
+                    });
+                }
+                // 3. Tag filter
+                if (this.filterTag !== 'all') {
+                    boards = boards.filter(b => b.tag === this.filterTag);
+                }
+                return boards;
+            },
 
            get filteredBoardIds() {
                return new Set(this.filteredAndSortedBoards.map(b => b.id));
@@ -1686,19 +1787,173 @@
                return new Set(ids.slice(0, 3));
            },
 
-                 // Filter action (for explicit binding)
-                 applyFilters() {
-                     // Computed auto-updates; method exists for binding clarity
-                 },
+                  // Called on sort changes (and also bound to filter selects for convenience)
+                  applyFilters() {
+                      // Reorder DOM according to current sort order
+                      const sortedIds = this.sortedAllBoards.map(b => b.id);
+                      const currentOrder = this.getCurrentOrderFromDOM();
+                      if (JSON.stringify(sortedIds) !== JSON.stringify(currentOrder)) {
+                          this.reorderDOM(sortedIds);
+                          // Schedule save after reorder (debounced)
+                          this.scheduleBatchSave();
+                      }
+                  },
 
-                 // Clear all filters
-                 clearAllFilters() {
-                     this.searchQuery = '';
-                     this.filterCompletionRate = 'all';
-                     this.filterTag = 'all';
-                     this.sortBy = 'updated_desc';
-                     // computed updates automatically
-                 },
+                  // Clear all filters
+                  clearAllFilters() {
+                      this.searchQuery = '';
+                      this.filterCompletionRate = 'all';
+                      this.filterTag = 'all';
+                      this.sortBy = 'updated_desc';
+                      // computed updates automatically
+                  },
+
+                  // ========== DRAG & DROP HELPERS ==========
+                  getCurrentOrderFromDOM() {
+                      const grid = document.querySelector('#boards-grid');
+                      if (!grid) return [];
+                      const cards = grid.querySelectorAll('.relative[data-board-id]');
+                      return Array.from(cards).map(card => parseInt(card.dataset.boardId));
+                  },
+
+                   updateDropZones(evt) {
+                       this.clearDropZones();
+                       const grid = document.querySelector('#boards-grid');
+                       if (!grid) return;
+
+                       const dragged = evt.item;
+                       const allCards = Array.from(grid.querySelectorAll('.relative[data-board-id]'));
+                       const targetIndex = evt.newIndex;
+
+                       // If dragging to a valid index (not ghost)
+                       if (targetIndex >= 0 && targetIndex < allCards.length) {
+                           const targetCard = allCards[targetIndex];
+                           if (targetCard && targetCard !== dragged) {
+                               targetCard.classList.add('drop-target');
+                           }
+                       }
+                   },
+
+                  clearDropZones() {
+                      document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+                  },
+
+                  syncAllBoardsOrderFromDOM() {
+                      const order = this.getCurrentOrderFromDOM();
+                      // Reorder allBoards array to match DOM
+                      const reordered = [];
+                      order.forEach((boardId, index) => {
+                          const board = this.allBoards.find(b => b.id === boardId);
+                          if (board) {
+                              // Preserve order as the new index (or keep original order property)
+                              reordered.push({ ...board, order: index });
+                          }
+                      });
+                      // Keep any boards not in DOM (shouldn't happen) at end
+                      const remaining = this.allBoards.filter(b => !order.includes(b.id));
+                      this.allBoards = [...reordered, ...remaining];
+                  },
+
+                  showUndoToast() {
+                      // Hide any existing undo toast
+                      this.hideUndoToast();
+
+                      // previousOrder was already set in onStart; just show toast
+                      this.undoToast.visible = true;
+
+                      // Auto-hide after 5 seconds
+                      this.undoToast.timeoutId = setTimeout(() => {
+                          this.hideUndoToast();
+                      }, 5000);
+
+                      // Schedule batch save (debounced)
+                      this.scheduleBatchSave();
+                  },
+
+                  hideUndoToast() {
+                      this.undoToast.visible = false;
+                      if (this.undoToast.timeoutId) {
+                          clearTimeout(this.undoToast.timeoutId);
+                          this.undoToast.timeoutId = null;
+                      }
+                  },
+
+                   undoLastReorder() {
+                       if (!this.undoToast.visible || this.undoToast.previousOrder.length === 0) return;
+
+                       // Cancel pending save
+                       if (this.saveDebounceTimer) {
+                           clearTimeout(this.saveDebounceTimer);
+                           this.saveDebounceTimer = null;
+                       }
+
+                       // Revert DOM order to previous
+                       this.reorderDOM(this.undoToast.previousOrder);
+                       this.hideUndoToast();
+                       showToast('Order reverted', 'info');
+
+                       // Schedule save for the reverted order
+                       this.scheduleBatchSave();
+                   },
+
+                  reorderDOM(newOrder) {
+                      const grid = document.querySelector('#boards-grid');
+                      if (!grid) return;
+                      const cards = Array.from(grid.querySelectorAll('.relative[data-board-id]'));
+                      newOrder.forEach(boardId => {
+                          const card = cards.find(c => parseInt(c.dataset.boardId) === boardId);
+                          if (card) grid.appendChild(card); // appendChild moves existing element
+                      });
+                      // Sync allBoards
+                      this.syncAllBoardsOrderFromDOM();
+                  },
+
+                  scheduleBatchSave() {
+                      if (this.saveDebounceTimer) clearTimeout(this.saveDebounceTimer);
+                      this.saveDebounceTimer = setTimeout(() => {
+                          this.saveDebounceTimer = null;
+                          this.updateBoardOrder();
+                      }, 800); // Save 800ms after last drag
+                  },
+
+                   // Actual API call to persist order (called by batch scheduler)
+                  async updateBoardOrder() {
+                      const grid = document.querySelector('#boards-grid');
+                      if (!grid) return;
+
+                      const orderedIds = this.getCurrentOrderFromDOM();
+
+                      // Send only if order changed from last saved
+                      if (JSON.stringify(orderedIds) === JSON.stringify(this.lastSavedOrder)) {
+                          return; // No change
+                      }
+
+                      try {
+                          const response = await fetch("{% url 'task_management:personal_board_reorder' %}", {
+                              method: 'POST',
+                              headers: {
+                                  'Content-Type': 'application/json',
+                                  'X-CSRFToken': this.getCsrfToken(),
+                                  'X-Requested-With': 'XMLHttpRequest'
+                              },
+                              body: JSON.stringify({ order: orderedIds })
+                          });
+
+                          const data = await response.json();
+                          if (!data.success) {
+                              console.error('Failed to update board order:', data.error);
+                              showToast('Failed to save order', 'error');
+                              // Optionally: revert to previous order
+                          } else {
+                              showToast('Board order saved', 'success');
+                              // Update last saved order snapshot
+                              this.lastSavedOrder = [...orderedIds];
+                          }
+                      } catch (err) {
+                          console.error('Error updating board order:', err);
+                          showToast('Error saving order', 'error');
+                      }
+                  },
 
                  // Predefined board templates
                  boardTemplates: [
@@ -1804,33 +2059,93 @@
                 window.addEventListener('scroll', handler, { passive: true });
                 this.$cleanup = () => window.removeEventListener('scroll', handler);
 
-                // Parse allBoards from DOM data attributes (cards rendered server-side)
-                const cards = document.querySelectorAll('.relative[data-board-id]');
-                this.allBoards = Array.from(cards).map(card => ({
-                    id: parseInt(card.dataset.boardId) || 0,
-                    name: card.dataset.boardName || '',
-                    description: card.dataset.boardDescription || '',
-                    tag: card.dataset.boardTag || '',
-                    total_tasks: parseInt(card.dataset.boardTotalTasks) || 0,
-                    completed_tasks: parseInt(card.dataset.boardCompletedTasks) || 0,
-                    to_do_column_id: card.dataset.boardToDoColumnId ? parseInt(card.dataset.boardToDoColumnId) : null,
-                    order: parseInt(card.dataset.boardOrder) || 0,
-                }));
+                 // Parse allBoards from DOM data attributes (cards rendered server-side)
+                 const cards = document.querySelectorAll('.relative[data-board-id]');
+                 this.allBoards = Array.from(cards).map(card => ({
+                     id: parseInt(card.dataset.boardId) || 0,
+                     name: card.dataset.boardName || '',
+                     description: card.dataset.boardDescription || '',
+                     tag: card.dataset.boardTag || '',
+                     total_tasks: parseInt(card.dataset.boardTotalTasks) || 0,
+                     completed_tasks: parseInt(card.dataset.boardCompletedTasks) || 0,
+                     to_do_column_id: card.dataset.boardToDoColumnId ? parseInt(card.dataset.boardToDoColumnId) : null,
+                     order: parseInt(card.dataset.boardOrder) || 0,
+                     updated_at: parseInt(card.dataset.boardUpdated) || 0,
+                 }));
 
-                 // Initialize Sortable for drag-and-drop reordering
-                 const grid = document.querySelector('#boards-grid');
-                 if (grid && typeof Sortable !== 'undefined') {
-                     new Sortable(grid, {
-                         handle: '.drag-handle',
-                         animation: 150,
-                         ghostClass: 'sortable-ghost',
-                         dragClass: 'sortable-drag',
-                         easing: 'cubic-bezier(1, 0, 0, 1)',
-                         onEnd: (evt) => {
-                             this.updateBoardOrder();
-                         }
-                     });
-                 }
+                 // Capture initial order as last saved
+                 this.lastSavedOrder = this.getCurrentOrderFromDOM();
+
+                  // Initialize Sortable for drag-and-drop reordering
+                  const grid = document.querySelector('#boards-grid');
+                  if (grid && typeof Sortable !== 'undefined') {
+                      new Sortable(grid, {
+                          handle: '.drag-handle',
+                          animation: 150,
+                          ghostClass: 'sortable-ghost',
+                          dragClass: 'sortable-drag',
+                          easing: 'cubic-bezier(1, 0, 0, 1)',
+                          onStart: (evt) => {
+                              // Clear any pending undo toast from previous drag
+                              this.hideUndoToast();
+
+                              // Capture current order before drag
+                              this.undoToast.previousOrder = this.getCurrentOrderFromDOM();
+
+                              // Initialize last valid index
+                              this.lastValidIndex = (typeof evt.newIndex === 'number' && evt.newIndex >= 0) ? evt.newIndex : 0;
+
+                              // Show position number on dragged item
+                              const item = evt.item;
+                              const positionBadge = document.createElement('div');
+                              positionBadge.className = 'position-badge';
+                              positionBadge.textContent = this.lastValidIndex + 1;
+                              this.dragBadge = positionBadge; // store reference
+                              item.style.position = 'relative';
+                              item.appendChild(positionBadge);
+                          },
+                          onMove: (evt) => {
+                              // Update last valid index when over a valid drop target
+                              if (typeof evt.newIndex === 'number' && evt.newIndex >= 0) {
+                                  this.lastValidIndex = evt.newIndex;
+                              }
+                              // Update position badge (always show last valid index)
+                              if (this.dragBadge) {
+                                  this.dragBadge.textContent = this.lastValidIndex + 1;
+                              }
+                              // Visual drop zone indicator
+                              this.updateDropZones(evt);
+                          },
+                              onEnd: (evt) => {
+                                  // Remove position badge
+                                  if (this.dragBadge) {
+                                      this.dragBadge.remove();
+                                      this.dragBadge = null;
+                                  }
+                                  // Clear drop zone indicators
+                                  this.clearDropZones();
+
+                                  // Apply snap animation to the moved card
+                                  if (evt.item) {
+                                      evt.item.classList.add('snap-animate');
+                                      setTimeout(() => evt.item.classList.remove('snap-animate'), 400);
+                                  }
+
+                                  // Sync allBoards order to new DOM order
+                                  this.syncAllBoardsOrderFromDOM();
+
+                                  // Only show undo toast if order actually changed
+                                  const newOrder = this.getCurrentOrderFromDOM();
+                                  if (JSON.stringify(newOrder) !== JSON.stringify(this.undoToast.previousOrder)) {
+                                      // Show undo toast
+                                      this.showUndoToast();
+                                  } else {
+                                      // No real change, still maybe schedule save if needed? Usually not.
+                                      // Optionally ensure lastSavedOrder is up to date; but it should be
+                                  }
+                              }
+                      });
+                  }
 
             // Event delegation for archived drawer buttons
             const archivedContainer = document.getElementById('archived-boards-container');
