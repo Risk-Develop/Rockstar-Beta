@@ -2710,11 +2710,15 @@ taskChecklists[{{ task.id }}] = {{ task.checklist_items_json|safe }};
 {% endfor %}
 {% endfor %}
 
-// Escape HTML to prevent XSS
+// Escape HTML to prevent XSS and ensure safe attribute insertion
 function escapeHtml(str) {
+    if (str == null) return '';
     var d = document.createElement('div');
     d.appendChild(document.createTextNode(str));
-    return d.innerHTML;
+    var html = d.innerHTML;
+    // Escape quotes for safe use inside HTML attributes (both single and double quoted)
+    html = html.replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+    return html;
 }
 
 // Character counter for form fields
