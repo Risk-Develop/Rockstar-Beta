@@ -1,12 +1,11 @@
 {% load static %}
 <!-- HTMX -->
-<script src="{% static 'js/htmx.min.js' %}"></script>
+<script src="{% static 'js/htmx.min.js' %}" defer></script>
 <!-- Alpine.js (local) -->
 <script src="{% static 'js/alpine.min.js' %}" defer></script>
-<!-- Flowbite JS (local) -->
-<script src="{% static 'js/flowbite.min.js' %}"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+<!-- Flowbite JS (local) - requires Alpine -->
+<script src="{% static 'js/flowbite.min.js' %}" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 
 <script>
 

@@ -847,22 +847,30 @@
                               x-model="createFormDesc"></textarea>
                 </div>
 
-                <!-- Selected template preview -->
-                <div x-show="selectedTemplate"
-                     x-transition
-                     class="flex items-center gap-3 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
-                    <div class="w-8 h-8 rounded flex items-center justify-center"
-                         :style="`background-color: ${selectedTemplate.color}20; color: ${selectedTemplate.color}`">
-                        <i :class="selectedTemplate.icon" class="text-sm"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="text-sm font-medium text-gray-200" x-text="selectedTemplate.name"></div>
-                        <div class="text-xs text-gray-400 truncate" x-text="selectedTemplate.description"></div>
-                    </div>
-                    <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
-                          :class="getTagBadgeClass(selectedTemplate.tag)"
-                          x-text="getTagLabel(selectedTemplate.tag)"></span>
-                </div>
+                 <!-- Selected template preview -->
+                 <template x-if="selectedTemplate">
+                     <div class="flex items-center gap-3 p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+                         <div class="w-8 h-8 rounded flex items-center justify-center"
+                              :style="`background-color: ${selectedTemplate?.color}20; color: ${selectedTemplate?.color}`">
+                             <i :class="selectedTemplate?.icon" class="text-sm"></i>
+                         </div>
+                         <div class="flex-1 min-w-0">
+                             <div class="text-sm font-medium text-gray-200" x-text="selectedTemplate?.name || ''"></div>
+                             <div class="text-xs text-gray-400 truncate" x-text="selectedTemplate?.description || ''"></div>
+                         </div>
+                         <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                               :class="getTagBadgeClass(selectedTemplate?.tag)"
+                               x-text="getTagLabel(selectedTemplate?.tag)"></span>
+                     </div>
+                 </template>
+                     <div class="flex-1 min-w-0">
+                         <div class="text-sm font-medium text-gray-200" x-text="selectedTemplate?.name || ''"></div>
+                         <div class="text-xs text-gray-400 truncate" x-text="selectedTemplate?.description || ''"></div>
+                     </div>
+                     <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                           :class="getTagBadgeClass(selectedTemplate?.tag)"
+                           x-text="getTagLabel(selectedTemplate?.tag)"></span>
+                 </div>
 
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button"
@@ -1078,10 +1086,10 @@
                                :style="`border-color: ${getBoardBorderColor('{{ board.tag|default:'' }}')}`"
                                aria-label="Open {{ board.name|escape }} personal board">
 
-                                <!-- Gradient top accent bar -->
-                                <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
-                                     :style="`background: linear-gradient(90deg, ${boardColors[{{ forloop.counter0 }}]} 0%, ${adjustColor(boardColors[{{ forloop.counter0 }}], 40)} 100%)`">
-                                </div>
+                                 <!-- Gradient top accent bar -->
+                                 <div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl"
+                                      :style="`background: linear-gradient(90deg, ${getBoardColor({{ forloop.counter0 }})} 0%, ${adjustColor(getBoardColor({{ forloop.counter0 }}), 40)} 100%)`">
+                                 </div>
 
                                 <div class="pt-4">
                                     <div class="flex items-start mb-3">
@@ -2859,12 +2867,16 @@
                 });
             },
 
-            boardColors: [
-                '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444',
-                '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1'
-            ],
+             boardColors: [
+                 '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444',
+                 '#06b6d4', '#ec4899', '#84cc16', '#f97316', '#6366f1'
+             ],
 
-            getBoardBorderColor(tag) {
+             getBoardColor(index) {
+                 return this.boardColors[index % this.boardColors.length];
+             },
+
+             getBoardBorderColor(tag) {
                  const colorMap = {
                      'work': '#3b82f6',
                      'personal': '#8b5cf6',
@@ -3043,10 +3055,15 @@
                                       window.location.reload();
                                       return;
                                   }
-                                  const tempDiv = document.createElement('div');
-                                  tempDiv.innerHTML = cardHtml;
-                                  const newCard = tempDiv.firstElementChild;
-                                  grid.insertBefore(newCard, grid.firstChild);
+                                   const tempDiv = document.createElement('div');
+                                   tempDiv.innerHTML = cardHtml;
+                                   const newCard = tempDiv.firstElementChild;
+                                   if (!newCard) {
+                                       console.error('Failed to create card element from HTML');
+                                       window.location.reload();
+                                       return;
+                                   }
+                                   grid.insertBefore(newCard, grid.firstChild);
 
                                   // Initialize Alpine bindings for dynamic card
                                   if (window.Alpine && typeof window.Alpine.initTree === 'function') {
@@ -3108,6 +3125,10 @@
 
             async fetchArchivedBoards() {
                 const container = document.getElementById('archived-boards-container');
+                if (!container) {
+                    console.warn('Archived boards container not found');
+                    return;
+                }
                 try {
                     const params = new URLSearchParams();
                     if (this.archivedFilterName) params.append('search', this.archivedFilterName);
@@ -3449,59 +3470,6 @@
                 }
             },
 
-            // Helper methods
-            getTagColor(tag) {
-                const colorMap = {
-                    'work': '#3b82f6',
-                    'personal': '#8b5cf6',
-                    'health': '#10b981',
-                    'finance': '#f59e0b',
-                    'learning': '#ec4899',
-                    'home': '#f97316',
-                    'hobby': '#06b6d4'
-                };
-                return colorMap[tag] || '#9ca3af';
-            },
-
-            getTagIcon(tag) {
-                const iconMap = {
-                    'work': 'fas fa-briefcase',
-                    'personal': 'fas fa-user',
-                    'health': 'fas fa-heartbeat',
-                    'finance': 'fas fa-chart-line',
-                    'learning': 'fas fa-graduation-cap',
-                    'home': 'fas fa-home',
-                    'hobby': 'fas fa-gamepad'
-                };
-                return iconMap[tag] || 'fas fa-clipboard';
-            },
-
-            getTagBadgeClass(tag) {
-                const classMap = {
-                    'work': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-                    'personal': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-                    'health': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-                    'finance': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-                    'learning': 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
-                    'home': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-                    'hobby': 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300'
-                };
-                return classMap[tag] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-            },
-
-            getTagLabel(tag) {
-                const labelMap = {
-                    'work': 'Work',
-                    'personal': 'Personal',
-                    'health': 'Health',
-                    'finance': 'Finance',
-                    'learning': 'Learning',
-                    'home': 'Home',
-                    'hobby': 'Hobby'
-                };
-                return labelMap[tag] || 'Other';
-            },
-
             getPriorityColor(priority) {
                 const colorMap = {
                     'urgent': '#dc2626',
@@ -3511,7 +3479,6 @@
                 };
                 return colorMap[priority] || '#6b7280';
             },
-
 
             escapeHtml(unsafe) {
                 return unsafe
@@ -4067,10 +4034,18 @@
                  });
              },
 
-             async submitQuickAdd(boardId) {
-                 const card = document.querySelector(`[data-board-id="${boardId}"]`);
-                 const form = card.querySelector('.quick-add-form');
-                 const formData = new FormData(form);
+              async submitQuickAdd(boardId) {
+                  const card = document.querySelector(`[data-board-id="${boardId}"]`);
+                  if (!card) {
+                      console.warn(`submitQuickAdd: board card ${boardId} not found (may have been removed)`);
+                      return;
+                  }
+                  const form = card.querySelector('.quick-add-form');
+                  if (!form) {
+                      console.warn(`submitQuickAdd: quick-add form not found for board ${boardId}`);
+                      return;
+                  }
+                  const formData = new FormData(form);
                  const column = formData.get('column');
                  if (!column) {
                      alert('Cannot add task: this board has no columns configured.');
@@ -4118,45 +4093,48 @@
                  }
              },
 
-             incrementBoardCounts(boardId, priority) {
-                 const card = document.querySelector(`[data-board-id="${boardId}"]`);
-                 if (!card) return;
-                 // Title mapping
-                 const titleMap = {
-                     high: 'High priority pending',
-                     medium: 'Medium priority pending',
-                     low: 'Low priority pending'
-                 };
-                 const title = titleMap[priority];
-                 if (!title) return; // urgent not tracked
-                 
-                 // Increment total tasks
-                 const tasksIcon = card.querySelector('.fa-tasks');
-                 if (tasksIcon) {
-                     const totalSpan = tasksIcon.closest('div').querySelector('.text-sm');
-                     if (totalSpan) {
-                         totalSpan.textContent = parseInt(totalSpan.textContent) + 1;
-                     }
-                 }
+              incrementBoardCounts(boardId, priority) {
+                  const card = document.querySelector(`[data-board-id="${boardId}"]`);
+                  if (!card) return;
+                  // Title mapping
+                  const titleMap = {
+                      high: 'High priority pending',
+                      medium: 'Medium priority pending',
+                      low: 'Low priority pending'
+                  };
+                  const title = titleMap[priority];
+                  if (!title) return; // urgent not tracked
 
-                 // Increment priority badge if exists; else create it
-                 let badge = card.querySelector(`[title="${title}"]`);
-                 if (badge) {
-                     const count = parseInt(badge.textContent.trim()) || 0;
-                     badge.innerHTML = `<i class="fas fa-circle text-[8px]"></i>${count + 1}`;
-                 } else {
-                     // Create badge and append to priority container
-                     const container = card.querySelector('.flex.items-center.gap-2'); // container for priority badges
-                     if (container) {
-                         const color = priority === 'high' ? 'red' : priority === 'medium' ? 'yellow' : 'blue';
-                         const title = titleMap[priority];
-                         badge = document.createElement('span');
-                         badge.className = `flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-${color}-100 dark:bg-${color}-900/30 text-${color}-700 dark:text-${color}-400`;
-                         badge.setAttribute('title', title);
-                         badge.innerHTML = `<i class="fas fa-circle text-[8px]"></i>1`;
-                         container.appendChild(badge);
-                     }
-                 }
+                  // Increment total tasks
+                  const tasksIcon = card.querySelector('.fa-tasks');
+                  if (tasksIcon) {
+                      const tasksContainer = tasksIcon.closest('div');
+                      if (tasksContainer) {
+                          const totalSpan = tasksContainer.querySelector('.text-sm');
+                          if (totalSpan) {
+                              totalSpan.textContent = parseInt(totalSpan.textContent) + 1;
+                          }
+                      }
+                  }
+
+                  // Increment priority badge if exists; else create it
+                  let badge = card.querySelector(`[title="${title}"]`);
+                  if (badge) {
+                      const count = parseInt(badge.textContent.trim()) || 0;
+                      badge.innerHTML = `<i class="fas fa-circle text-[8px]"></i>${count + 1}`;
+                  } else {
+                      // Create badge and append to priority container
+                      const container = card.querySelector('.flex.items-center.gap-2'); // container for priority badges
+                      if (container) {
+                          const color = priority === 'high' ? 'red' : priority === 'medium' ? 'yellow' : 'blue';
+                          // title already defined above from titleMap
+                          badge = document.createElement('span');
+                          badge.className = `flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-${color}-100 dark:bg-${color}-900/30 text-${color}-700 dark:text-${color}-400`;
+                          badge.setAttribute('title', title);
+                          badge.innerHTML = `<i class="fas fa-circle text-[8px]"></i>1`;
+                          container.appendChild(badge);
+                      }
+                  }
              },
 
              refreshTooltip(boardId) {
@@ -4215,7 +4193,13 @@
         event.preventDefault();
         const form = event.target;
 
-        if (window.PersonalBoardsData?.confirmModalOpen) {
+        // Guard: Alpine component may not be initialized yet
+        if (!window.PersonalBoardsData) {
+            console.warn('PersonalBoardsData not initialized – falling back to normal submit');
+            return true; // allow normal form submission
+        }
+
+        if (window.PersonalBoardsData.confirmModalOpen) {
             window.PersonalBoardsData.closeConfirmModal();
             return false;
         }
