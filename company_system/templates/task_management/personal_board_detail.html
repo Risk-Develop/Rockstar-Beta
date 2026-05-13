@@ -654,36 +654,106 @@ html.dark #toast.success { background: #065f46; color: #6ee7b7; border: 1px soli
 #toast.error { background: #fee2e2; color: #7f1d1d; border: 1px solid #ef4444; }
 html.dark #toast.error { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; }
 
-/* Calendar styles */
-#calendar { background: #ffffff; padding: 16px; border-radius: 8px; }
-html.dark #calendar { background: #1f2937; }
-#calendar .fc-toolbar-title { color: #111827; font-size: 1.25rem; }
-html.dark #calendar .fc-toolbar-title { color: #fff; }
-#calendar .fc-button { background: #f3f4f6 !important; border-color: #e5e7eb !important; }
-html.dark #calendar .fc-button { background: #374151 !important; border-color: #4b5563 !important; }
-#calendar .fc-button:hover { background: #e5e7eb !important; }
-html.dark #calendar .fc-button:hover { background: #4b5563 !important; }
-#calendar .fc-button:disabled { background: #d1d5db !important; }
-html.dark #calendar .fc-button:disabled { background: #6b7280 !important; }
-#calendar .fc-daygrid-day { background: #ffffff; }
-html.dark #calendar .fc-daygrid-day { background: #1f2937; }
-#calendar .fc-daygrid-day-number { color: #4b5563; }
-html.dark #calendar .fc-daygrid-day-number { color: #9ca3af; }
-#calendar .fc-day-today { background: #eff6ff !important; }
-html.dark #calendar .fc-day-today { background: #374151 !important; }
-#calendar .fc-col-header-cell { background: #f9fafb; }
-html.dark #calendar .fc-col-header-cell { background: #111827; }
-#calendar .fc-col-header-cell-cushion { color: #4b5563; }
-html.dark #calendar .fc-col-header-cell-cushion { color: #9ca3af; }
-#calendar .fc-event { cursor: pointer; border-radius: 4px; padding: 2px 4px; font-size: 0.85rem; }
-#calendar .fc-event .fc-event-main-content { padding: 2px; }
-#calendar .fc-daygrid-event { margin: 2px; }
-#calendar .fc-list-event:hover { background: #f3f4f6; }
-html.dark #calendar .fc-list-event:hover { background: #374151; }
-#calendar .fc-list-day-cushion { background: #ffffff; }
-html.dark #calendar .fc-list-day-cushion { background: #1f2937; }
-#calendar .fc-list-event-title a { color: #111827; }
-html.dark #calendar .fc-list-event-title a { color: #fff; }
+   /* Timeline event styling */
+   .fc-event {
+     border-radius: 6px !important;
+     padding: 2px 6px !important;
+     font-size: 0.8125rem !important;
+     transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+     cursor: pointer !important;
+     border-left-width: 3px !important;
+     border-left-style: solid !important;
+   }
+   .fc-event:hover {
+     transform: scale(1.02);
+     box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+     z-index: 10 !important;
+     position: relative;
+   }
+   html.dark .fc-event:hover {
+     box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
+   }
+   /* Priority-based left border colors */
+   .fc-event.priority-low { border-left-color: #10b981 !important; }
+   .fc-event.priority-medium { border-left-color: #3b82f6 !important; }
+   .fc-event.priority-high { border-left-color: #f59e0b !important; }
+   .fc-event.priority-urgent { border-left-color: #ef4444 !important; }
+   /* Completion strikethrough matching Kanban */
+   .fc-event.completed {
+     opacity: 0.65 !important;
+     text-decoration: line-through !important;
+     text-decoration-color: currentColor !important;
+     text-decoration-thickness: 2px !important;
+   }
+   html.dark .fc-event.completed {
+     opacity: 0.5 !important;
+   }
+   /* Recurring indicator */
+   .fc-event .recurring-indicator {
+     display: inline-flex;
+     align-items: center;
+     gap: 2px;
+     margin-left: 4px;
+     font-size: 0.7rem;
+     opacity: 0.8;
+   }
+   /* Deadline time */
+   .fc-event .deadline-time {
+     display: block;
+     font-size: 0.75rem;
+     opacity: 0.85;
+     font-weight: 400;
+   }
+   /* Tooltip */
+   .fc-event-tooltip {
+     position: absolute;
+     background: #1f2937;
+     color: #f3f4f6;
+     padding: 8px 12px;
+     border-radius: 6px;
+     font-size: 0.8125rem;
+     max-width: 280px;
+     z-index: 1000;
+     pointer-events: none;
+     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+     line-height: 1.5;
+   }
+   .fc-event-tooltip strong {
+     display: block;
+     margin-bottom: 4px;
+     color: #fff;
+   }
+   .fc-event-tooltip .meta {
+     display: flex;
+     flex-wrap: wrap;
+     gap: 8px;
+     margin-top: 6px;
+     font-size: 0.75rem;
+     color: #9ca3af;
+   }
+   .fc-event-tooltip .meta span {
+     display: inline-flex;
+     align-items: center;
+     gap: 3px;
+   }
+   html.dark .fc-event-tooltip {
+     background: #111827;
+     border: 1px solid #374151;
+   }
+   html.dark .fc-event-tooltip strong {
+     color: #fff;
+   }
+
+   /* Calendar container spacing */
+   #calendar {
+     background: #ffffff;
+     padding: 16px;
+     border-radius: 8px;
+   }
+   html.dark #calendar {
+     background: #1f2937;
+   }
+
 
 /* Flatpickr Dark Mode */
 html.dark .flatpickr-calendar {
@@ -3019,45 +3089,147 @@ function buildColumnHtml(column) {
 
 // ── View Mode Toggle ───────────────────────────────────────────────────────────
 
-function toggleViewMode() {
-isTimelineView = !isTimelineView;
-var kanbanView = document.getElementById('personalKanban');
-var timelineView = document.getElementById('timelineView');
-var btnText = document.getElementById('viewModeBtnText');
+// Timeline state persistence key
+const TIMELINE_STATE_KEY = 'personalBoardTimelineState';
 
-if (isTimelineView) {
-kanbanView.classList.add('hidden');
-timelineView.classList.remove('hidden');
-btnText.textContent = 'Kanban';
-renderTimeline();
-} else {
-kanbanView.classList.remove('hidden');
-timelineView.classList.add('hidden');
-btnText.textContent = 'Timeline';
-}
+function saveTimelineState(state) {
+    try {
+        localStorage.setItem(TIMELINE_STATE_KEY, JSON.stringify(state));
+    } catch(e) {
+        console.warn('Failed to save timeline state:', e);
+    }
 }
 
-function renderTimeline() {
-    var calendarEl = document.getElementById('calendar');
-    if (!calendarEl) {
-        console.error('Calendar element not found');
-        return;
+function loadTimelineState() {
+    try {
+        var raw = localStorage.getItem(TIMELINE_STATE_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch(e) {
+        console.warn('Failed to load timeline state:', e);
+        return null;
+    }
+}
+
+function clearTimelineState() {
+    try {
+        localStorage.removeItem(TIMELINE_STATE_KEY);
+    } catch(e) {
+        console.warn('Failed to clear timeline state:', e);
+    }
+}
+
+function restoreCalendarState() {
+    var saved = loadTimelineState();
+    if (!saved) {
+        return false;
     }
     
-    // Safe detection for FullCalendar v6 global
-    var Fc = (typeof window !== 'undefined' && window.FullCalendar) ? window.FullCalendar : 
-             (typeof FullCalendar !== 'undefined' ? FullCalendar : null);
+    // Restore filters (UI and currentFilter) regardless of calendar existence
+    if (saved.filters) {
+        var searchInput = document.getElementById('taskFilterInput');
+        var priorityFilter = document.getElementById('priorityFilter');
+        var statusFilter = document.getElementById('statusFilter');
+        
+        if (searchInput) {
+            searchInput.value = saved.filters.search || '';
+            currentFilter.search = saved.filters.search || '';
+        }
+        if (priorityFilter) {
+            priorityFilter.value = saved.filters.priority || 'all';
+            currentFilter.priority = saved.filters.priority || 'all';
+        }
+        if (statusFilter) {
+            statusFilter.value = saved.filters.status || 'all';
+            currentFilter.status = saved.filters.status || 'all';
+        }
+        
+        // Apply filters to kanban board
+        applyTaskFilters();
+    }
+    
+    // Restore view/date only if calendar already exists
+    if (window.personalCalendar) {
+        if (saved.currentDate) {
+            window.personalCalendar.gotoDate(new Date(saved.currentDate));
+        }
+        if (saved.currentView && typeof window.personalCalendar.changeView === 'function') {
+            window.personalCalendar.changeView(saved.currentView);
+        }
+    }
+    
+     return true;
+ }
+
+// Get appropriate initial view based on screen width
+function getResponsiveInitialView() {
+    // Use list view on mobile for better readability
+    if (window.innerWidth < 640) {
+        return 'listWeek';
+    }
+    // Use dayGridMonth on tablets and desktop
+    return 'dayGridMonth';
+}
+
+function toggleViewMode() {
+    isTimelineView = !isTimelineView;
+    var kanbanView = document.getElementById('personalKanban');
+    var timelineView = document.getElementById('timelineView');
+    var btnText = document.getElementById('viewModeBtnText');
+
+    if (isTimelineView) {
+        kanbanView.classList.add('hidden');
+        timelineView.classList.remove('hidden');
+        btnText.textContent = 'Kanban';
+        // Restore saved state before rendering
+        restoreCalendarState();
+        renderTimeline();
+    } else {
+        kanbanView.classList.remove('hidden');
+        timelineView.classList.add('hidden');
+        btnText.textContent = 'Timeline';
+        // Save state before leaving
+        if (window.personalCalendar) {
+            var currentDate = window.personalCalendar.view.currentStart;
+            var currentView = window.personalCalendar.view.type;
+            saveTimelineState({
+                currentDate: currentDate ? currentDate.toISOString() : null,
+                currentView: currentView,
+                filters: Object.assign({}, currentFilter)
+            });
+        }
+    }
+}
+
+ function renderTimeline() {
+     var calendarEl = document.getElementById('calendar');
+     if (!calendarEl) {
+         console.error('Calendar element not found');
+         return;
+     }
+     
+     // Clean up any lingering tooltip elements from previous calendar render
+     var oldTooltips = document.querySelectorAll('.fc-event-tooltip');
+     oldTooltips.forEach(function(t) { t.remove(); });
+     
+     // Safe detection for FullCalendar v6 global
+     var Fc = (typeof window !== 'undefined' && window.FullCalendar) ? window.FullCalendar : 
+              (typeof FullCalendar !== 'undefined' ? FullCalendar : null);
     if (!Fc) {
         console.error('FullCalendar library not loaded - check static files');
         calendarEl.innerHTML = '<div class="p-4 text-center text-red-500">Calendar library not loaded. Check console.</div>';
         return;
     }
     
-    var tasks = [];
-    var taskEls = document.querySelectorAll('.personal-task');
-    console.log('Total tasks on page:', taskEls.length);
+    // Restore saved filters (if any) before collecting tasks
+    restoreCalendarState();
     
-    taskEls.forEach(function(taskEl) {
+    var tasks = [];
+     // Get all tasks and filter according to current Kanban filters
+     var allTaskEls = document.querySelectorAll('.personal-task');
+     var taskEls = Array.from(allTaskEls).filter(taskMatchesFilters);
+     console.log('Total tasks on page:', allTaskEls.length, 'Filtered for timeline:', taskEls.length);
+     
+     taskEls.forEach(function(taskEl) {
         var dateStart = taskEl.getAttribute('data-date-start');
         var dateEnd = taskEl.getAttribute('data-date-end');
         var deadline = taskEl.getAttribute('data-deadline');
@@ -3086,35 +3258,73 @@ function renderTimeline() {
             if (nameEl) columnName = nameEl.textContent.trim();
         }
         
-        var priority = taskEl.getAttribute('data-priority') || 'medium';
-        var isCompleted = taskEl.classList.contains('completed');
-        
-        tasks.push({
-            id: parseInt(taskId),
-            title: title,
-            start: start,
-            end: end,
-            backgroundColor: columnColor,
-            borderColor: columnColor,
-            extendedProps: {
-                columnName: columnName,
-                priority: priority,
-                isCompleted: isCompleted
-            }
-        });
+         var priority = taskEl.getAttribute('data-priority') || 'medium';
+         var isCompleted = taskEl.classList.contains('completed');
+         var description = taskEl.getAttribute('data-description') || '';
+         var isRecurring = taskEl.getAttribute('data-is-recurring') === 'true';
+         
+         tasks.push({
+             id: parseInt(taskId),
+             title: title,
+             start: start,
+             end: end,
+             backgroundColor: columnColor,
+             borderColor: columnColor,
+             extendedProps: {
+                 columnName: columnName,
+                 priority: priority,
+                 isCompleted: isCompleted,
+                 deadlineTime: taskEl.getAttribute('data-deadline_time') || null,
+                 description: description,
+                 isRecurring: isRecurring
+             }
+         });
     });
     
-    console.log('Tasks for calendar:', tasks);
-    
-    if (tasks.length === 0) {
-        calendarEl.innerHTML = '<div class="p-4 text-center text-gray-500 dark:text-gray-400">No tasks with date ranges. Add date_start or date_end to tasks to see them here.</div>';
-        // Clear any existing calendar
-        if (window.personalCalendar) {
-            window.personalCalendar.destroy();
-            window.personalCalendar = null;
-        }
-        return;
-    }
+     console.log('Tasks for calendar:', tasks);
+     
+      if (tasks.length === 0) {
+          // Check if there are any tasks with date ranges at all (ignoring filters)
+          var tasksWithDates = document.querySelectorAll('.personal-task[data-date-start], .personal-task[data-deadline]');
+          var hasDateRangedTasks = tasksWithDates.length > 0;
+          
+          var emptyMsg, helpText, showAddBtn;
+          
+          if (hasDateRangedTasks) {
+              // Tasks with dates exist but none match current filters
+              emptyMsg = 'No tasks match current filters.';
+              helpText = 'Try adjusting your search, priority, or status filters.';
+              showAddBtn = false;
+          } else {
+              emptyMsg = 'No timeline tasks yet.';
+              helpText = 'Add start/end dates or deadlines to tasks to visualize them on the timeline.';
+              showAddBtn = true;
+          }
+          
+          var html = '<div class="p-8 text-center">' +
+                     '<div class="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">' +
+                     '<i class="fas fa-calendar-alt text-2xl text-blue-600 dark:text-blue-400"></i>' +
+                     '</div>' +
+                     '<h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">' + emptyMsg + '</h3>' +
+                     '<p class="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">' + helpText + '</p>';
+          
+          if (showAddBtn) {
+              html += '<button onclick="openAddTaskModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto">' +
+                      '<i class="fas fa-plus"></i>' +
+                      '<span>Add Task</span>' +
+                      '</button>';
+          }
+          
+          html += '</div>';
+          
+          calendarEl.innerHTML = html;
+          // Clear any existing calendar
+          if (window.personalCalendar) {
+              window.personalCalendar.destroy();
+              window.personalCalendar = null;
+          }
+          return;
+      }
     
     // Adjust end date inclusivity for FullCalendar (end is exclusive)
     tasks.forEach(function(task) {
@@ -3130,9 +3340,9 @@ function renderTimeline() {
         window.personalCalendar.destroy();
     }
     
-    // Initialize calendar
+    // Initialize calendar with enhanced rendering
     window.personalCalendar = new Fc.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
+        initialView: getResponsiveInitialView(),
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
@@ -3142,25 +3352,141 @@ function renderTimeline() {
         eventClick: function(info) {
             openTaskDetail(info.event.id);
         },
+        datesSet: function(info) {
+            if (window.personalCalendar) {
+                var state = {
+                    currentDate: info.start ? info.start.toISOString() : null,
+                    currentView: info.view.type,
+                    filters: Object.assign({}, currentFilter)
+                };
+                saveTimelineState(state);
+            }
+        },
+        viewDidMount: function(info) {
+            if (window.personalCalendar) {
+                var view = info.view;
+                var start = view.currentStart;
+                var state = {
+                    currentDate: start ? start.toISOString() : null,
+                    currentView: view.type,
+                    filters: Object.assign({}, currentFilter)
+                };
+                saveTimelineState(state);
+            }
+        },
         eventContent: function(arg) {
+            var priority = arg.event.extendedProps.priority || 'medium';
             var columnName = arg.event.extendedProps.columnName || '';
-            var priority = arg.event.extendedProps.priority || '';
-            return {
-                html: '<div class="fc-event-main-content">' +
-                      '<div class="font-semibold">' + arg.event.title + '</div>' +
-                      '<div class="text-xs" style="opacity:0.8">' + columnName + '</div>' +
-                      '</div>'
-            };
+            var deadlineTime = arg.event.extendedProps.deadlineTime || null;
+            var isRecurring = arg.event.extendedProps.isRecurring || false;
+            var isCompleted = arg.event.extendedProps.isCompleted || false;
+            
+            // Build event HTML
+            var html = '<div class="fc-event-main-content">';
+            
+            // Title row with priority indicator
+            html += '<div class="flex items-center gap-1 mb-1">';
+            html += '<span class="priority-badge priority-' + priority + '" style="font-size:0.65rem; padding:1px 6px; border-radius:9999px;">';
+            html += '<span class="indicator" style="width:6px; height:6px;"></span>';
+            html += priority.charAt(0).toUpperCase() + '</span>';
+            html += '<span class="font-semibold task-title" style="flex:1;min-width:0;">' + arg.event.title + '</span>';
+            html += '</div>';
+            
+            // Column label
+            if (columnName) {
+                html += '<div class="text-xs opacity-75" style="line-height:1.2;">' + escapeHtml(columnName) + '</div>';
+            }
+            
+            // Deadline time if available
+            if (deadlineTime) {
+                html += '<div class="deadline-time"><i class="far fa-clock mr-1"></i>' + deadlineTime + '</div>';
+            }
+            
+            // Recurring indicator
+            if (isRecurring) {
+                html += '<div class="recurring-indicator"><i class="fas fa-redo-alt"></i> Recurring</div>';
+            }
+            
+            html += '</div>';
+            
+            return { html: html };
         },
         eventDidMount: function(info) {
+            // Apply priority-based border class
+            var priority = info.event.extendedProps.priority || 'medium';
+            info.el.classList.add('priority-' + priority);
+            
+            // Apply completion styling
             if (info.event.extendedProps.isCompleted) {
-                info.el.style.opacity = '0.5';
-                info.el.style.textDecoration = 'line-through';
+                info.el.classList.add('completed');
             }
+            
+            // Truncate long titles with CSS
+            var titleEl = info.el.querySelector('.fc-event-title');
+            if (titleEl) {
+                titleEl.style.overflow = 'hidden';
+                titleEl.style.textOverflow = 'ellipsis';
+                titleEl.style.whiteSpace = 'nowrap';
+                titleEl.style.maxWidth = '100%';
+                titleEl.style.display = 'block';
+            }
+            
+            // Build tooltip with full details
+            var tooltip = document.createElement('div');
+            tooltip.className = 'fc-event-tooltip';
+            tooltip.style.position = 'absolute';
+            tooltip.style.display = 'none';
+            tooltip.style.pointerEvents = 'none';
+            
+            var priorityLabel = priority.charAt(0).toUpperCase() + priority.slice(1);
+            var columnName = info.event.extendedProps.columnName || '';
+            var deadlineTime = info.event.extendedProps.deadlineTime || '';
+            var isRecurring = info.event.extendedProps.isRecurring || false;
+            var description = info.event.extendedProps.description || '';
+            var displayDesc = description.length > 120 ? description.substring(0, 120) + '...' : description;
+            
+            var content = `<strong>${escapeHtml(info.event.title)}</strong>
+<div class="meta">
+  <span><i class="fas fa-flag"></i> ${priorityLabel}</span>
+  ${columnName ? `<span><i class="fas fa-columns"></i> ${escapeHtml(columnName)}</span>` : ''}
+  ${deadlineTime ? `<span><i class="far fa-clock"></i> ${deadlineTime}</span>` : ''}
+  ${isRecurring ? `<span><i class="fas fa-redo-alt"></i> Recurring</span>` : ''}
+</div>
+${description ? `<div style="margin-top:6px; font-size:0.8125rem; color:#d1d5db;">${escapeHtml(displayDesc)}</div>` : ''}`;
+            
+            tooltip.innerHTML = content;
+            document.body.appendChild(tooltip);
+            info.el._tooltip = tooltip;
+            
+            // Show/hide tooltip on hover
+            info.el.addEventListener('mouseenter', function(e) {
+                tooltip.style.display = 'block';
+                var rect = info.el.getBoundingClientRect();
+                tooltip.style.left = (rect.left + window.scrollX + rect.width / 2) + 'px';
+                tooltip.style.top = (rect.top + window.scrollY - tooltip.offsetHeight - 8) + 'px';
+                tooltip.style.transform = 'translateX(-50%)';
+            });
+            
+            info.el.addEventListener('mouseleave', function() {
+                tooltip.style.display = 'none';
+            });
+            
+            // Add keyboard accessibility
+            info.el.setAttribute('role', 'button');
+            info.el.setAttribute('tabindex', '0');
+            info.el.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openTaskDetail(info.event.id);
+                }
+            });
         },
         height: 'auto',
         themeSystem: 'standard'
     });
+    
+    // Restore saved state (view, date, filters) before initial render
+    restoreCalendarState();
     
     window.personalCalendar.render();
 }
@@ -4011,6 +4337,15 @@ function toggleArchivedDrawer() {
     }
 }
 
+function persistTimelineFilters() {
+    // Merge current filters into saved timeline state without losing date/view
+    var saved = loadTimelineState();
+    if (saved) {
+        saved.filters = Object.assign({}, currentFilter);
+        saveTimelineState(saved);
+    }
+}
+
 // ── Task Filtering ──────────────────────────────────────────────────────────────
 
 let currentFilter = {
@@ -4019,27 +4354,42 @@ let currentFilter = {
     status: 'all'
 };
 
-function applyTaskFilters() {
-    document.querySelectorAll('.personal-task').forEach(taskEl => {
-        const title = (taskEl.dataset.title || '').toLowerCase();
-        const priority = taskEl.dataset.priority || '';
-        const isCompleted = taskEl.classList.contains('completed');
+ function applyTaskFilters() {
+     document.querySelectorAll('.personal-task').forEach(taskEl => {
+         const title = (taskEl.dataset.title || '').toLowerCase();
+         const priority = taskEl.dataset.priority || '';
+         const isCompleted = taskEl.classList.contains('completed');
 
-        const matchesSearch = title.includes(currentFilter.search);
-        const matchesPriority = currentFilter.priority === 'all' || priority === currentFilter.priority;
-        const matchesStatus = currentFilter.status === 'all' ||
-                            (currentFilter.status === 'active' && !isCompleted) ||
-                            (currentFilter.status === 'completed' && isCompleted);
+         const matchesSearch = title.includes(currentFilter.search);
+         const matchesPriority = currentFilter.priority === 'all' || priority === currentFilter.priority;
+         const matchesStatus = currentFilter.status === 'all' ||
+                             (currentFilter.status === 'active' && !isCompleted) ||
+                             (currentFilter.status === 'completed' && isCompleted);
 
-        if (matchesSearch && matchesPriority && matchesStatus) {
-            taskEl.classList.remove('hidden');
-        } else {
-            taskEl.classList.add('hidden');
-        }
-    });
-}
+         if (matchesSearch && matchesPriority && matchesStatus) {
+             taskEl.classList.remove('hidden');
+         } else {
+             taskEl.classList.add('hidden');
+         }
+     });
+ }
 
-// Debounce helper for search input
+ // Helper: check if a task element matches current filters
+ function taskMatchesFilters(taskEl) {
+     const title = (taskEl.dataset.title || '').toLowerCase();
+     const priority = taskEl.dataset.priority || '';
+     const isCompleted = taskEl.classList.contains('completed');
+
+     const matchesSearch = title.includes(currentFilter.search);
+     const matchesPriority = currentFilter.priority === 'all' || priority === currentFilter.priority;
+     const matchesStatus = currentFilter.status === 'all' ||
+                         (currentFilter.status === 'active' && !isCompleted) ||
+                         (currentFilter.status === 'completed' && isCompleted);
+
+     return matchesSearch && matchesPriority && matchesStatus;
+ }
+
+ // Debounce helper for search input
 function debounce(func, wait) {
     let timeout;
     return function(...args) {
@@ -4055,36 +4405,56 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusFilter = document.getElementById('statusFilter');
     const clearBtn = document.getElementById('clearFilters');
 
-    if (searchInput) {
-        searchInput.addEventListener('input', debounce(function(e) {
-            currentFilter.search = e.target.value.toLowerCase().trim();
-            applyTaskFilters();
-        }, 300));
-    }
+     if (searchInput) {
+         searchInput.addEventListener('input', debounce(function(e) {
+             currentFilter.search = e.target.value.toLowerCase().trim();
+             applyTaskFilters();
+             persistTimelineFilters();
+             // Refresh timeline if visible
+             if (isTimelineView && window.personalCalendar) {
+                 renderTimeline();
+             }
+         }, 300));
+     }
 
-    if (priorityFilter) {
-        priorityFilter.addEventListener('change', function(e) {
-            currentFilter.priority = e.target.value;
-            applyTaskFilters();
-        });
-    }
+     if (priorityFilter) {
+         priorityFilter.addEventListener('change', function(e) {
+             currentFilter.priority = e.target.value;
+             applyTaskFilters();
+             persistTimelineFilters();
+             // Refresh timeline if visible
+             if (isTimelineView && window.personalCalendar) {
+                 renderTimeline();
+             }
+         });
+     }
 
-    if (statusFilter) {
-        statusFilter.addEventListener('change', function(e) {
-            currentFilter.status = e.target.value;
-            applyTaskFilters();
-        });
-    }
+     if (statusFilter) {
+         statusFilter.addEventListener('change', function(e) {
+             currentFilter.status = e.target.value;
+             applyTaskFilters();
+             persistTimelineFilters();
+             // Refresh timeline if visible
+             if (isTimelineView && window.personalCalendar) {
+                 renderTimeline();
+             }
+         });
+     }
 
-    if (clearBtn) {
-        clearBtn.addEventListener('click', function() {
-            currentFilter = { search: '', priority: 'all', status: 'all' };
-            if (searchInput) searchInput.value = '';
-            if (priorityFilter) priorityFilter.value = 'all';
-            if (statusFilter) statusFilter.value = 'all';
-            applyTaskFilters();
-        });
-    }
+     if (clearBtn) {
+         clearBtn.addEventListener('click', function() {
+             currentFilter = { search: '', priority: 'all', status: 'all' };
+             if (searchInput) searchInput.value = '';
+             if (priorityFilter) priorityFilter.value = 'all';
+             if (statusFilter) statusFilter.value = 'all';
+             applyTaskFilters();
+             persistTimelineFilters();
+             // Refresh timeline if visible
+             if (isTimelineView && window.personalCalendar) {
+                 renderTimeline();
+             }
+          });
+      }
 });
 
 // ── Column Count Updater ──────────────────────────────────────────────────────
@@ -5116,14 +5486,14 @@ function validateField(field) {
             errorDiv.style.display = 'block';
         }
         return false;
-    } else {
-        field.classList.remove('input-error');
-        if (errorDiv) {
-            errorDiv.style.display = 'none';
-        }
-        return true;
-    }
-}
+     } else {
+         field.classList.remove('input-error');
+         if (errorDiv) {
+             errorDiv.style.display = 'none';
+         }
+         return true;
+     }
+ }
 
 function validateForm(formId) {
     const form = document.getElementById(formId);
