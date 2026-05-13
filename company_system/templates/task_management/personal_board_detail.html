@@ -754,6 +754,13 @@ html.dark #toast.error { background: #7f1d1d; color: #fca5a5; border: 1px solid 
      background: #1f2937;
    }
 
+  .fc-h-event .fc-event-main {
+    color: #050505 !important;
+  } 
+
+  html.dark #calendar .fc-h-event .fc-event-main {
+    color: #ffffff !important;
+  } 
 
 /* Flatpickr Dark Mode */
 html.dark .flatpickr-calendar {
@@ -1483,22 +1490,23 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
 {% for task in column.tasks_list %}
 <div class="personal-task rounded-lg p-4 mb-3 
          {% if task.is_completed %}completed{% endif %}"
-     data-task-id="{{ task.id }}"
-     data-title="{{ task.title|escape }}"
-     data-priority="{{ task.priority }}"
-     data-description="{{ task.description|escape }}"
-     data-deadline="{{ task.deadline|date:'Y-m-d' }}"
-     data-deadline_time="{% if task.deadline_time %}{{ task.deadline_time|time:'H:i' }}{% endif %}"
-     data-date-start="{{ task.date_start|date:'Y-m-d' }}"
-     data-date-end="{{ task.date_end|date:'Y-m-d' }}"
-      data-notes="{{ task.notes|default:''|escape }}"
-      data-checklist="{{ task.checklist_items_json|escape }}"
-      data-is-recurring="{{ task.is_recurring|lower }}"
-      data-recurring-type="{{ task.recurring_type|default:'' }}"
-      draggable="true"
-     tabindex="0"
-     role="article"
-     aria-label="Task: {{ task.title }}{% if task.is_completed %}, completed{% endif %}">
+      data-task-id="{{ task.id }}"
+      data-column-id="{{ task.column.id }}"
+      data-title="{{ task.title|escape }}"
+      data-priority="{{ task.priority }}"
+      data-description="{{ task.description|escape }}"
+      data-deadline="{{ task.deadline|date:'Y-m-d' }}"
+      data-deadline_time="{% if task.deadline_time %}{{ task.deadline_time|time:'H:i' }}{% endif %}"
+      data-date-start="{{ task.date_start|date:'Y-m-d' }}"
+      data-date-end="{{ task.date_end|date:'Y-m-d' }}"
+       data-notes="{{ task.notes|default:''|escape }}"
+       data-checklist="{{ task.checklist_items_json|escape }}"
+       data-is-recurring="{{ task.is_recurring|lower }}"
+       data-recurring-type="{{ task.recurring_type|default:'' }}"
+       draggable="true"
+      tabindex="0"
+      role="article"
+      aria-label="Task: {{ task.title }}{% if task.is_completed %}, completed{% endif %}">
   
    <div class="flex items-start gap-2">
     <!-- Enhanced Checkbox -->
@@ -2465,15 +2473,15 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
             </div>
          </div>
 
-        <!-- Column -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Column</label>
-          <select name="column" 
-                  required
-                  class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer">
-            {% for column in columns %}
-            <option value="{{ column.id }}">{{ column.name }}</option>
-             {% endfor %}
+         <!-- Column (hidden - use drag-and-drop to move between columns) -->
+         <div class="hidden">
+           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Column</label>
+           <select name="column"
+                   required
+                   class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer">
+             {% for column in columns %}
+             <option value="{{ column.id }}">{{ column.name }}</option>
+              {% endfor %}
            </select>
            <div class="error-message text-red-500 text-sm mt-1" id="detailColumnError" style="display: none"></div>
          </div>
@@ -2881,6 +2889,7 @@ function buildTaskCardHtml(task) {
     
     var html = '<div class="personal-task rounded-lg p-4 mb-3 ' + statusClass + '"' +
         ' data-task-id="' + task.id + '"' +
+        ' data-column-id="' + task.column_id + '"' +
         ' data-title="' + escapeHtml(task.title) + '"' +
         ' data-priority="' + task.priority + '"' +
         ' data-description="' + escapeHtml(task.description || '') + '"' +
@@ -3664,14 +3673,22 @@ function openTaskDetail(taskId) {
         return;
     }
 
-    // Populate form fields
-    document.getElementById('detailTaskId').value      = taskId;
-    document.getElementById('detailTitle').value       = taskEl.dataset.title       || '';
-    document.getElementById('detailDescription').value = taskEl.dataset.description || '';
-    // Set priority radio
-    const priority = taskEl.dataset.priority || 'medium';
-    const priorityRadio = document.querySelector(`#updateTaskForm input[name="priority"][value="${priority}"]`);
-    if (priorityRadio) priorityRadio.checked = true;
+     // Populate form fields
+     document.getElementById('detailTaskId').value      = taskId;
+     document.getElementById('detailTitle').value       = taskEl.dataset.title       || '';
+     document.getElementById('detailDescription').value = taskEl.dataset.description || '';
+     
+     // Set column (hidden field - tracks current column for backend)
+     var columnId = taskEl.dataset.columnId;
+     var columnSelect = document.querySelector('#updateTaskForm select[name="column"]');
+     if (columnSelect && columnId) {
+         columnSelect.value = columnId;
+     }
+     
+     // Set priority radio
+     const priority = taskEl.dataset.priority || 'medium';
+     const priorityRadio = document.querySelector(`#updateTaskForm input[name="priority"][value="${priority}"]`);
+     if (priorityRadio) priorityRadio.checked = true;
 
     var deadline = taskEl.dataset.deadline || '';
     var deadlineTime = taskEl.dataset.deadline_time || '';

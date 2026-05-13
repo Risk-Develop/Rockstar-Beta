@@ -1532,82 +1532,87 @@ def personal_task_edit(request, task_id):
         return redirect('task_management:personal_board_detail', board_id=task.board.id)
 
 
-@require_POST
 @custom_login_required
 @require_POST
 def personal_task_duplicate(request, task_id):
     """Duplicate a personal task"""
-    current_staff = get_current_staff(request)
-    original = get_object_or_404(PersonalTask, id=task_id, board__user=current_staff)
-    board = original.board
-    column = original.column
+    try:
+        current_staff = get_current_staff(request)
+        original = get_object_or_404(PersonalTask, id=task_id, board__user=current_staff)
+        board = original.board
+        column = original.column
 
-    # Determine order: append to end of column
-    max_order = column.tasks.order_by('-order').first()
-    new_order = (max_order.order + 1) if max_order else 0
+        if column is None:
+            return JsonResponse({'success': False, 'error': 'Cannot duplicate: task has no assigned column.'}, status=400)
 
-    # Create duplicate task with " (copy)" suffix
-    new_task = PersonalTask.objects.create(
-        board=board,
-        column=column,
-        title=original.title + " (copy)" if original.title else "Copy of task",
-        description=original.description,
-        order=new_order,
-        priority=original.priority,
-        deadline=original.deadline,
-        deadline_time=original.deadline_time,
-        date_start=original.date_start,
-        date_end=original.date_end,
-        notes=original.notes,
-        is_recurring=original.is_recurring,
-        recurring_type=original.recurring_type,
-        recurring_interval=original.recurring_interval,
-        recurring_weekday=original.recurring_weekday,
-        recurring_month_day=original.recurring_month_day,
-        recurring_end_date=original.recurring_end_date,
-        last_recurring_generated=original.last_recurring_generated,
-        is_completed=False,  # Duplicated task starts incomplete
-        is_archived=False
-    )
+        # Determine order: append to end of column
+        max_order = column.tasks.order_by('-order').first()
+        new_order = (max_order.order + 1) if max_order else 0
 
-    # Copy checklist items (preserve completion state)
-    for item in original.checklist_items.all():
-        PersonalTaskChecklistItem.objects.create(
-            task=new_task,
-            text=item.text,
-            order=item.order,
-            is_completed=item.is_completed
+        # Build new title with copy suffix, safely truncating if needed
+        suffix = " (copy)"
+        max_title_len = 255 - len(suffix)
+        if original.title:
+            new_title = (original.title[:max_title_len] + suffix) if len(original.title) > max_title_len else (original.title + suffix)
+        else:
+            new_title = "Copy of task"
+
+        # Create duplicate task
+        new_task = PersonalTask.objects.create(
+            board=board,
+            column=column,
+            title=new_title,
+            description=original.description,
+            order=new_order,
+            priority=original.priority,
+            deadline=original.deadline,
+            deadline_time=original.deadline_time,
+            date_start=original.date_start,
+            date_end=original.date_end,
+            notes=original.notes,
+            is_recurring=original.is_recurring,
+            recurring_type=original.recurring_type,
+            is_completed=False,
+            is_archived=False
         )
 
-    # Prepare response data
-    _enrich_personal_task_checklist(new_task)
-    task_data = {
-        'id': new_task.id,
-        'title': new_task.title,
-        'description': new_task.description or '',
-        'priority': new_task.priority,
-        'deadline': new_task.deadline.isoformat() if new_task.deadline else '',
-        'deadline_time': new_task.deadline_time.isoformat() if new_task.deadline_time else '',
-        'date_start': new_task.date_start.isoformat() if new_task.date_start else '',
-        'date_end': new_task.date_end.isoformat() if new_task.date_end else '',
-        'notes': new_task.notes or '',
-        'is_recurring': new_task.is_recurring,
-        'recurring_type': new_task.recurring_type if new_task.is_recurring else None,
-        'is_completed': new_task.is_completed,
-        'column_id': new_task.column.id,
-        'checklist_items': [{'id': ci.id, 'text': ci.text, 'is_completed': ci.is_completed} for ci in new_task.checklist_items.all()]
-    }
+        # Copy checklist items (preserve completion state)
+        for item in original.checklist_items.all():
+            PersonalTaskChecklistItem.objects.create(
+                task=new_task,
+                text=item.text,
+                order=item.order,
+                is_completed=item.is_completed
+            )
 
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Prepare response data
+        _enrich_personal_task_checklist(new_task)
+        task_data = {
+            'id': new_task.id,
+            'title': new_task.title,
+            'description': new_task.description or '',
+            'priority': new_task.priority,
+            'deadline': new_task.deadline.isoformat() if new_task.deadline else '',
+            'deadline_time': new_task.deadline_time.isoformat() if new_task.deadline_time else '',
+            'date_start': new_task.date_start.isoformat() if new_task.date_start else '',
+            'date_end': new_task.date_end.isoformat() if new_task.date_end else '',
+            'notes': new_task.notes or '',
+            'is_recurring': new_task.is_recurring,
+            'recurring_type': new_task.recurring_type if new_task.is_recurring else None,
+            'is_completed': new_task.is_completed,
+            'column_id': new_task.column.id,
+            'checklist_items': [{'id': ci.id, 'text': ci.text, 'is_completed': ci.is_completed} for ci in new_task.checklist_items.all()]
+        }
+
         return JsonResponse({
             'success': True,
-            'message': f'Task "{new_task.title}" created!',
+            'message': f'Task "{new_task.title}" duplicated!',
             'column_id': new_task.column.id,
             'task': task_data
         })
-
-    messages.success(request, f'Task "{new_task.title}" duplicated!')
-    return redirect('task_management:personal_board_detail', board_id=board.id)
+    except Exception as e:
+        logger.error(f"Error duplicating personal task {task_id}: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 @custom_login_required
