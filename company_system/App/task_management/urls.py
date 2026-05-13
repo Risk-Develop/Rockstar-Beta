@@ -63,6 +63,7 @@ urlpatterns = [
     path('personal/checklist/<int:item_id>/rename/', views.personal_task_checklist_rename, name='personal_task_checklist_rename'),
     path('personal/tasks/<int:task_id>/checklist/reorder/', views.personal_task_checklist_reorder, name='personal_task_checklist_reorder'),
     path('personal/tasks/<int:task_id>/set_priority/', views.personal_task_set_priority, name='personal_task_set_priority'),
+    path('personal/tasks/<int:task_id>/duplicate/', views.personal_task_duplicate, name='personal_task_duplicate'),
     path('personal/api/update-position/', views.personal_task_update_position, name='personal_task_update_position'),
 
     # Personal Column URLs

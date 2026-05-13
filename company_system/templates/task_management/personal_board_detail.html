@@ -1517,24 +1517,29 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
         <span title="{{ task.notes|escape }}">{{ task.notes|truncatechars:80 }}</span>
       </div>
       {% endif %}
-        <!-- Inline Task Actions Row -->
-        <div class="task-actions">
-          <button onclick="event.stopPropagation(); openTaskDetail('{{ task.id }}')" 
-                  class="task-action-btn text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                  title="Edit task">
-            <i class="fas fa-edit"></i>
-          </button>
-          <button onclick="event.stopPropagation(); cyclePriority('{{ task.id }}')" 
-                  class="task-action-btn text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                  title="Change priority">
-            <i class="fas fa-flag"></i>
-          </button>
-          <button onclick="event.stopPropagation(); openDeleteTaskModal('{{ task.id }}', this)"
-                  class="task-action-btn text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                  title="Delete task">
-            <i class="fas fa-trash-alt"></i>
-          </button>
-        </div>
+         <!-- Inline Task Actions Row -->
+         <div class="task-actions">
+           <button onclick="event.stopPropagation(); openTaskDetail('{{ task.id }}')" 
+                   class="task-action-btn text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                   title="Edit task">
+             <i class="fas fa-edit"></i>
+           </button>
+           <button onclick="event.stopPropagation(); cyclePriority('{{ task.id }}')" 
+                   class="task-action-btn text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                   title="Change priority">
+             <i class="fas fa-flag"></i>
+           </button>
+           <button onclick="event.stopPropagation(); duplicateTask('{{ task.id }}')" 
+                   class="task-action-btn text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                   title="Duplicate task">
+             <i class="fas fa-copy"></i>
+           </button>
+           <button onclick="event.stopPropagation(); openDeleteTaskModal('{{ task.id }}', this)"
+                   class="task-action-btn text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                   title="Delete task">
+             <i class="fas fa-trash-alt"></i>
+           </button>
+         </div>
 
         </div>
 
@@ -2671,6 +2676,7 @@ const URL_CONFIG = {
     TASK_ARCHIVE: (id) => `/task/personal/tasks/${id}/archive/`,
     TASK_RESTORE: (id) => `/task/personal/tasks/${id}/restore/`,
     TASK_SET_PRIORITY: (id) => `/task/personal/tasks/${id}/set_priority/`,
+    TASK_DUPLICATE: (id) => `/task/personal/tasks/${id}/duplicate/`,
     COLUMN_CREATE: "{% url 'task_management:personal_column_create' board.id %}",
     COLUMN_EDIT: (id) => `/task/personal/columns/${id}/edit/`,
     COLUMN_DELETE: (id) => `/task/personal/columns/${id}/delete/`,
@@ -2893,21 +2899,25 @@ function buildTaskCardHtml(task) {
              '</div>';
      }
 
-     // Inline Task Actions Row (edit, cycle priority, delete)
-     html += '<div class="task-actions">' +
-         '<button onclick="event.stopPropagation(); openTaskDetail(' + task.id + ')"' +
-         ' class="task-action-btn text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"' +
-         ' title="Edit task">' +
-         '<i class="fas fa-edit"></i></button>' +
-         '<button onclick="event.stopPropagation(); cyclePriority(' + task.id + ')"' +
-         ' class="task-action-btn text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"' +
-         ' title="Change priority">' +
-         '<i class="fas fa-flag"></i></button>' +
-         '<button onclick="event.stopPropagation(); openDeleteTaskModal(' + task.id + ', this)"' +
-         ' class="task-action-btn text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"' +
-         ' title="Delete task">' +
-         '<i class="fas fa-trash-alt"></i></button>' +
-         '</div>';
+      // Inline Task Actions Row (edit, cycle priority, duplicate, delete)
+      html += '<div class="task-actions">' +
+          '<button onclick="event.stopPropagation(); openTaskDetail(' + task.id + ')"' +
+          ' class="task-action-btn text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"' +
+          ' title="Edit task">' +
+          '<i class="fas fa-edit"></i></button>' +
+          '<button onclick="event.stopPropagation(); cyclePriority(' + task.id + ')"' +
+          ' class="task-action-btn text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20"' +
+          ' title="Change priority">' +
+          '<i class="fas fa-flag"></i></button>' +
+          '<button onclick="event.stopPropagation(); duplicateTask(' + task.id + ')"' +
+          ' class="task-action-btn text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"' +
+          ' title="Duplicate task">' +
+          '<i class="fas fa-copy"></i></button>' +
+          '<button onclick="event.stopPropagation(); openDeleteTaskModal(' + task.id + ', this)"' +
+          ' class="task-action-btn text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"' +
+          ' title="Delete task">' +
+          '<i class="fas fa-trash-alt"></i></button>' +
+          '</div>';
 
      html += '</div>';
 
@@ -3160,13 +3170,14 @@ function renderTimeline() {
 // ── Modal helpers ────────────────────────────────────────────────────────────
 
 function openAddTaskModal(columnId) {
+    // Reset form to defaults first
+    document.getElementById('addTaskForm').reset();
+    
+    // Then set the column if provided
     if (columnId) {
         var select = document.querySelector('#addTaskModal select[name="column"]');
         if (select) select.value = columnId;
     }
-    
-    // Reset form to defaults
-    document.getElementById('addTaskForm').reset();
     
     // Reset deadline display and hidden fields
     clearDeadline('add');
@@ -4349,6 +4360,65 @@ function archiveTask(taskId, btnElement) {
                     if (taskData) prependArchivedTask(taskData);
                 } else {
                     showToast('Archive failed', 'error');
+                }
+            })
+            .catch(err => {
+                showToast('Failed: ' + err.message, 'error');
+            })
+            .finally(function() {
+                setButtonLoading(confirmBtn, false, originalBtnText);
+                closeConfirmModal();
+            });
+        }
+    );
+}
+
+function duplicateTask(taskId) {
+    var taskEl = document.querySelector('[data-task-id="' + taskId + '"]');
+    if (!taskEl) {
+        showToast('Task not found', 'error');
+        return;
+    }
+
+    showConfirmModal(
+        'Duplicate Task',
+        'Create a copy of this task with all its properties? The new task will be placed in the same column.',
+        function() {
+            var confirmBtn = document.getElementById('confirmModalYes');
+            var originalBtnText = confirmBtn.innerHTML;
+            setButtonLoading(confirmBtn, true, 'Duplicating...');
+
+            fetch(URL_CONFIG.TASK_DUPLICATE(taskId), {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Task duplicated successfully', 'success');
+                    closeConfirmModal();
+
+                    // Add new task card to the column
+                    var taskHtml = buildTaskCardHtml(data.task);
+                    var columnEl = document.getElementById('column-' + data.column_id);
+                    if (columnEl) {
+                        columnEl.insertAdjacentHTML('beforeend', taskHtml);
+                        // Update column count
+                        var countEl = document.getElementById('count-col-' + data.column_id);
+                        if (countEl) {
+                            countEl.textContent = parseInt(countEl.textContent || 0) + 1;
+                        }
+                        // Hide "No tasks" placeholder if present
+                        var noTasksMsg = columnEl.querySelector('.text-center.py-8');
+                        if (noTasksMsg) noTasksMsg.style.display = 'none';
+                        // Add to checklist cache
+                        taskChecklists[data.task.id] = data.task.checklist_items || [];
+                    }
+                } else {
+                    showToast(data.error || 'Duplication failed', 'error');
                 }
             })
             .catch(err => {
