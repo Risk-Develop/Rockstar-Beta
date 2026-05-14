@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import EmployeeProfileSettings, EmployeeShiftRule
+from .models import EmployeeProfileSettings, EmployeeShiftRule, ExitInterview
 from .payroll_models import (
     PayrollRecord, Payout, PayoutDetail, Loan, Benefit, EmployeeBenefit,
     BankType, BankAccount, BankAllocation, PayrollOverride, PayrollAuditLog,
@@ -300,4 +300,52 @@ class EmployeeViolationAdmin(admin.ModelAdmin):
     raw_id_fields = ['employee', 'submitted_by', 'offense_classification']
     readonly_fields = ['incident_number', 'offense_count', 'remedial_action_range', 
                        'created_at', 'updated_at', 'last_updated']
+
+
+@admin.register(ExitInterview)
+class ExitInterviewAdmin(admin.ModelAdmin):
+    list_display = [
+        'employee', 'resignation_status', 'date_filed',
+        'exit_interview_status', 'clearance_status', 'final_pay_status',
+        'created_at'
+    ]
+    list_filter = [
+        'resignation_status', 'exit_interview_status',
+        'clearance_status', 'final_pay_status', 'created_at'
+    ]
+    search_fields = [
+        'employee__first_name', 'employee__last_name', 'employee__employee_number'
+    ]
+    ordering = ['-created_at']
+    raw_id_fields = ['employee']
+
+    fieldsets = (
+        ('Employee Information', {
+            'fields': ('employee',)
+        }),
+        ('Resignation Details', {
+            'fields': (
+                'resignation_status', 'date_filed', 'desired_last_day',
+                'approved_last_day', 'resignation_letter', 'resignation_letter_text'
+            )
+        }),
+        ('Workflow Status', {
+            'fields': (
+                'rendering_30day_status', 'exit_interview_status',
+                'knowledge_transfer_status', 'asset_return_status',
+                'clearance_status', 'quitclaim_status', 'final_pay_status'
+            )
+        }),
+        ('Compliance', {
+            'fields': ('nda_signed', 'nca_signed')
+        }),
+        ('Attachments', {
+            'fields': ('other_attachments',)
+        }),
+        ('Qualitative Feedback', {
+            'fields': ('qualitative_data', 'interview_notes')
+        }),
+    )
+    readonly_fields = ('created_at', 'updated_at')
+
 

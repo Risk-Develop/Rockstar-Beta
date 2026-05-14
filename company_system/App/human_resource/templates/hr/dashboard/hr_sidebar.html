@@ -200,25 +200,33 @@
         </ul>
       </li>
 
-      <!-- Compliance & Offense Management Section -->
-      <li>
-        <button data-collapse="compliance_mgnt" class="nav-collapse flex items-center w-full text-left p-2 rounded-lg hover:bg-gray-700 transition-colors duration-200" aria-expanded="false">
-          <svg class="w-5 h-5 sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <span class="flex-1 sidebar-text ml-3">Compliance & Offense</span>
-          <svg class="w-4 h-4 transition-transform duration-300 arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-        </button>
-        <ul id="compliance_mgnt" class="submenu-content pl-4 space-y-1">
-          <li><a href="{% url 'human_resource:offense_group_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="offense_group_list">Offense Groups</a></li>
-          <li><a href="{% url 'human_resource:offense_section_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="offense_section_list">Offense Sections</a></li>
-          <li><a href="{% url 'human_resource:classification_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="classification_list">Classifications</a></li>
-          <li><a href="{% url 'human_resource:remedial_action_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="remedial_action_list">Remedial Actions</a></li>
-          <li><a href="{% url 'human_resource:violation_category_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="violation_category_list">Violation Categories</a></li>
-          <li><a href="{% url 'human_resource:violation_type_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="violation_type_list">Violation Types</a></li>
-          <li><a href="{% url 'human_resource:violation_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="violation_list">Employee Violations</a></li>
-        </ul>
-      </li>
-    </ul>
-  </nav>
+       <!-- Compliance & Offense Management Section -->
+       <li>
+         <button data-collapse="compliance_mgnt" class="nav-collapse flex items-center w-full text-left p-2 rounded-lg hover:bg-gray-700 transition-colors duration-200" aria-expanded="false">
+           <svg class="w-5 h-5 sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+           <span class="flex-1 sidebar-text ml-3">Compliance & Offense</span>
+           <svg class="w-4 h-4 transition-transform duration-300 arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+         </button>
+         <ul id="compliance_mgnt" class="submenu-content pl-4 space-y-1">
+           <li><a href="{% url 'human_resource:offense_group_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="offense_group_list">Offense Groups</a></li>
+           <li><a href="{% url 'human_resource:offense_section_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="offense_section_list">Offense Sections</a></li>
+           <li><a href="{% url 'human_resource:classification_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="classification_list">Classifications</a></li>
+           <li><a href="{% url 'human_resource:remedial_action_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="remedial_action_list">Remedial Actions</a></li>
+           <li><a href="{% url 'human_resource:violation_category_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="violation_category_list">Violation Categories</a></li>
+           <li><a href="{% url 'human_resource:violation_type_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="violation_type_list">Violation Types</a></li>
+           <li><a href="{% url 'human_resource:violation_list' %}" class="nav-item block px-4 py-2 rounded hover:bg-gray-700 text-gray-400 hover:text-white sidebar-text" data-url-name="violation_list">Employee Violations</a></li>
+         </ul>
+       </li>
+
+       <!-- Exit Interview / Offboarding Section -->
+       <li>
+         <a href="{% url 'human_resource:exit_interview_list' %}" class="nav-item flex items-center justify-start w-full text-left px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200" data-url-name="exit_interview_list">
+           <svg class="w-5 h-5 sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1m-6 0h6"></path></svg>
+           <span class="sidebar-text ml-3">Exit Interviews</span>
+         </a>
+       </li>
+     </ul>
+   </nav>
 </aside>
 
 <!-- Overlay -->
@@ -387,39 +395,40 @@
     }
 
     // ── Breadcrumb page name map ───────────────────────────────────────────────
-    const pageNames = {
-      hr_dashboard:          'Dashboard',
-      hr_user_mgnt:          'User Management',
-      staff_history_hr_list: 'Employee History',
-      individual_payroll:    'Individual Payroll',
-      payroll_preview:       'Batch Payroll',
-      payroll_finalize:      'Finalize Payroll',
-      payout_list:           'Payouts',
-      bankaccount_list:      'Bank Accounts',
-      banktype_list:         'Bank Types',
-      loan_list:             'Loans',
-      tier_list:             'Tier Thresholds',
-      salary_setting_list:   'Salary Settings',
-      demiminimis_list:      'De Minimis Types',
-      deduction_type_list:   'Deduction Types',
-      employee_deduction_account_list: 'Employee Deduction Accounts',
-      payroll_history_list:  'Payroll History',
-      attendance_list:       'Attendance',
-      hr_shift_rules_list:   'Shift Rules',
-      hr_mark_absent:        'Mark Absent',
-      leave_request_list:    'Leave Requests',
-      role_list:             'Role Management',
-      position_list:         'Position Management',
-      department_list:       'Department Management',
-      enps_survey_list:      'Survey',
-      offense_group_list:   'Offense Groups',
-      offense_section_list:  'Offense Sections',
-      classification_list:   'Classifications',
-      remedial_action_list:  'Remedial Actions',
-      violation_category_list: 'Violation Categories',
-      violation_type_list:   'Violation Types',
-      violation_list:        'Employee Violations',
-    };
+     const pageNames = {
+       hr_dashboard:          'Dashboard',
+       hr_user_mgnt:          'User Management',
+       staff_history_hr_list: 'Employee History',
+       individual_payroll:    'Individual Payroll',
+       payroll_preview:       'Batch Payroll',
+       payroll_finalize:      'Finalize Payroll',
+       payout_list:           'Payouts',
+       bankaccount_list:      'Bank Accounts',
+       banktype_list:         'Bank Types',
+       loan_list:             'Loans',
+       tier_list:             'Tier Thresholds',
+       salary_setting_list:   'Salary Settings',
+       demiminimis_list:      'De Minimis Types',
+       deduction_type_list:   'Deduction Types',
+       employee_deduction_account_list: 'Employee Deduction Accounts',
+       payroll_history_list:  'Payroll History',
+       attendance_list:       'Attendance',
+       hr_shift_rules_list:   'Shift Rules',
+       hr_mark_absent:        'Mark Absent',
+       leave_request_list:    'Leave Requests',
+       role_list:             'Role Management',
+       position_list:         'Position Management',
+       department_list:       'Department Management',
+       enps_survey_list:      'Survey',
+       offense_group_list:   'Offense Groups',
+       offense_section_list:  'Offense Sections',
+       classification_list:   'Classifications',
+       remedial_action_list:  'Remedial Actions',
+       violation_category_list: 'Violation Categories',
+       violation_type_list:   'Violation Types',
+       violation_list:        'Employee Violations',
+       exit_interview_list:   'Exit Interviews',
+     };
 
     const currentUrlName = "{{ request.resolver_match.url_name|default:'' }}";
     const currentPageEl  = document.getElementById('currentPage');

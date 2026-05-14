@@ -4,6 +4,7 @@ from . import views
 from . import views_payroll_settings
 from . import views_enps
 from . import views_handbook
+from . import views_exit_interview
 
 
 app_name = "human_resource"  # Important for namespacing
@@ -256,8 +257,18 @@ urlpatterns = [
     path('ajax/employee-violations/', views_handbook.ajax_get_employee_violations, name='ajax_get_employee_violations'),
     path('ajax/violation/<int:pk>/', views_handbook.ajax_violation_detail, name='ajax_violation_detail'),
     path('ajax/violation/<int:pk>/status/', views_handbook.ajax_update_violation_status, name='ajax_update_violation_status'),
-    path('ajax/violation/<int:pk>/da_status/', views_handbook.ajax_update_violation_da_status, name='ajax_update_violation_da_status'),
-    path('ajax/violations/filter/', views_handbook.ajax_violation_filter, name='ajax_violation_filter'),
+     path('ajax/violation/<int:pk>/da_status/', views_handbook.ajax_update_violation_da_status, name='ajax_update_violation_da_status'),
+     path('ajax/violations/filter/', views_handbook.ajax_violation_filter, name='ajax_violation_filter'),
+
+     # ==============================
+     # Exit Interview
+     # ==============================
+     path('exit-interviews/', views_exit_interview.exit_interview_list, name='exit_interview_list'),
+     path('exit-interview/add/', views_exit_interview.exit_interview_add, name='exit_interview_add'),
+     path('exit-interview/edit/<int:pk>/', views_exit_interview.exit_interview_edit, name='exit_interview_edit'),
+     path('exit-interview/<int:pk>/', views_exit_interview.exit_interview_detail, name='exit_interview_detail'),
+     path('exit-interview/<int:pk>/quick-status/', views_exit_interview.exit_interview_quick_status_update, name='exit_interview_quick_status'),
+     path('exit-interview/<int:pk>/delete/', views_exit_interview.exit_interview_delete, name='exit_interview_delete'),
 
 
 ]

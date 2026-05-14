@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Form field styling for Django-rendered inputs */
+  input[type="text"],
+  input[type="date"],
+  input[type="number"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    background-color: #fff;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+    color: #111827;
+  }
+
+  /* Dark mode support */
+  .dark input[type="text"],
+  .dark input[type="date"],
+  .dark input[type="number"],
+  .dark select,
+  .dark textarea {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+
+  /* Focus states */
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background-color: white;
+  }
+
+  .dark input:focus,
+  .dark select:focus,
+  .dark textarea:focus {
+    background-color: #374151;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+
+  /* Hover states */
+  input:hover,
+  select:hover {
+    border-color: #9ca3af;
+  }
+
+  .dark input:hover,
+  .dark select:hover {
+    border-color: #6b7280;
+  }
+
+  /* Checkbox styling */
+  input[type="checkbox"] {
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.25rem;
+    background-color: #fff;
+    cursor: pointer;
+  }
+
+  .dark input[type="checkbox"] {
+    background-color: #374151;
+    border-color: #4b5563;
+  }
+
+  /* Error state */
+  input.error,
+  select.error {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+  }
+
+  .dark input.error,
+  .dark select.error {
+    background-color: #450a0a;
+  }
+
+  /* Section headers */
+  .section-header {
+    background: linear-gradient(90deg, #1d4ed8 0%, #3b82f6 100%);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .section-body {
+    background: white;
+    padding: 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+  }
+  .dark .section-body {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  /* Stepper on form */
+  .form-stepper {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    position: relative;
+  }
+  .form-stepper::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #e5e7eb;
+    z-index: 0;
+    transform: translateY(-50%);
+  }
+  .dark .form-stepper::before {
+    background: #4b5563;
+  }
+  .form-step {
+    position: relative;
+    z-index: 1;
+    background: white;
+    padding: 0 1rem;
+    text-align: center;
+  }
+  .dark .form-step {
+    background: #111827;
+  }
+  .form-step-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin: 0 auto 0.5rem;
+  }
+  .form-step.active .form-step-circle {
+    background: #3b82f6;
+    color: white;
+  }
+  .form-step.completed .form-step-circle {
+    background: #10b981;
+    color: white;
+  }
+  .form-step-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    max-width: 80px;
+    margin: 0 auto;
+  }
+  .dark .form-step-label {
+    color: #9ca3af;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'includes/navbar.html' %}
+{% include 'hr/dashboard/hr_sidebar.html' %}
+
+<main id="mainContent" class="md:ml-64 pt-20 min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+  <div class="max-w-5xl mx-auto">
+
+    <!-- Breadcrumb -->
+    <nav class="mb-6">
+      <ol class="flex items-center space-x-2 text-sm">
+        <li><a href="{% url 'human_resource:hr_dashboard' %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">Dashboard</a></li>
+        <li class="text-gray-400 dark:text-gray-500">/</li>
+        <li><a href="{% url 'human_resource:exit_interview_list' %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">Exit Interviews</a></li>
+        <li class="text-gray-400 dark:text-gray-500">/</li>
+        <li class="text-gray-600 dark:text-gray-300">{{ title }}</li>
+      </ol>
+    </nav>
+
+    <!-- Form Header -->
+    <div class="mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ title }}</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Complete all sections to process employee offboarding</p>
+    </div>
+
+    <form method="post" id="exitInterviewForm" enctype="multipart/form-data" class="space-y-6">
+      {% csrf_token %}
+
+      {% if form.errors %}
+      <div class="p-4 bg-red-100 dark:bg-red-900/50 border-2 border-red-500 dark:border-red-400 rounded-lg">
+        <h4 class="text-red-700 dark:text-red-300 font-bold mb-2">Please correct the following errors:</h4>
+        <ul class="list-disc list-inside text-red-600 dark:text-red-400 text-sm">
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+              <li><strong>{{ field|title }}:</strong> {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <!-- Employee Selection (only for new records) -->
+      {{ form.employee }}
+      {% if not form.instance.pk %}
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="section-header">Select Employee</div>
+        <div class="section-body">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Employee <span class="text-red-500">*</span></label>
+              <select id="employeeSelect" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">-- Select Employee --</option>
+                {% for emp in employees %}
+                <option value="{{ emp.id }}" data-name="{{ emp.first_name }} {{ emp.last_name }}" data-dept="{{ emp.departmentlink.department_name|default:emp.department }}">
+                  {{ emp.employee_number }} - {{ emp.first_name }} {{ emp.last_name }} ({{ emp.job_title }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Selected Employee</label>
+              <input type="text" id="selectedEmployeeName" readonly class="w-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-3 py-2.5 rounded-md">
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Section 1: Resignation Details -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="section-header">
+          <span class="flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Resignation Details
+          </span>
+        </div>
+        <div class="section-body">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Resignation Status <span class="text-red-500">*</span></label>
+              {{ form.resignation_status }}
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Filed <span class="text-red-500">*</span></label>
+              {{ form.date_filed }}
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Desired Last Day</label>
+              {{ form.desired_last_day }}
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Approved Last Day</label>
+              {{ form.approved_last_day }}
+            </div>
+            <div class="md:col-span-2 lg:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Resignation Letter (Text)</label>
+              {{ form.resignation_letter_text }}
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">If not uploading a file, type the resignation letter content here.</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Upload Letter (PDF/DOC)</label>
+              {{ form.resignation_letter }}
+              {% if form.instance.resignation_letter %}
+                <p class="text-xs text-green-600 dark:text-green-400 mt-1">
+                  Current: <a href="{{ form.instance.resignation_letter.url }}" target="_blank" class="underline">Download</a>
+                </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Status Tracking -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="section-header" style="background: linear-gradient(90deg, #059669 0%, #10b981 100%);">
+          <span class="flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+            Workflow Status
+          </span>
+        </div>
+        <div class="section-body">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">30-Day Rendering</label>
+              {{ form.rendering_30day_status }}
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Exit Interview</label>
+              {{ form.exit_interview_status }}
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Knowledge Transfer</label>
+              {{ form.knowledge_transfer_status }}
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Asset Return</label>
+              {{ form.asset_return_status }}
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Clearance</label>
+              {{ form.clearance_status }}
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quitclaim</label>
+              {{ form.quitclaim_status }}
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Final Pay</label>
+              {{ form.final_pay_status }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Compliance -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="section-header" style="background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);">
+          <span class="flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            Compliance Agreements
+          </span>
+        </div>
+        <div class="section-body">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="flex items-center space-x-3">
+              {{ form.nda_signed }}
+              <label for="id_nda_signed" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                NDA (Non-Disclosure Agreement) Signed
+              </label>
+            </div>
+            <div class="flex items-center space-x-3">
+              {{ form.nca_signed }}
+              <label for="id_nca_signed" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                NCA (Non-Compete Agreement) Signed
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Attachments -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="section-header" style="background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%);">
+          <span class="flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+            Attachments
+          </span>
+        </div>
+        <div class="section-body">
+          <div class="grid grid-cols-1 gap-4">
+            <div>
+              {{ form.other_attachments }}
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Upload any additional supporting documents (e.g., clearance forms, asset return receipts).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 5: Qualitative Insights -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="section-header" style="background: linear-gradient(90deg, #0891b2 0%, #06b6d4 100%);">
+          <span class="flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+            Qualitative Feedback
+          </span>
+        </div>
+        <div class="section-body">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Primary Reason for Leaving</label>
+              {{ form.primary_driver }}
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">e.g., Better opportunity, compensation, work-life balance, career growth</p>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Areas for Company Improvement</label>
+              {{ form.improvement_areas }}
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
+              {{ form.categorization }}
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Culture, Pay, System, Management, Workload, etc.</p>
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Feedback</label>
+              {{ form.additional_feedback }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 6: Notes -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div class="section-header" style="background: linear-gradient(90deg, #4b5563 0%, #6b7280 100%);">
+          <span class="flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            HR Notes
+          </span>
+        </div>
+        <div class="section-body">
+          {{ form.interview_notes }}
+        </div>
+      </div>
+
+      <!-- Submit Buttons -->
+      <div class="flex justify-end gap-3 pt-4">
+        <a href="{% url 'human_resource:exit_interview_list' %}"
+           class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+          Cancel
+        </a>
+        <button type="submit"
+                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm">
+          <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          Save Exit Interview
+        </button>
+      </div>
+
+    </form>
+  </div>
+</main>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const employeeSelect = document.getElementById('employeeSelect');
+  const employeeNameField = document.getElementById('selectedEmployeeName');
+  const employeeHiddenField = document.getElementById('id_employee');
+
+  function updateFromSelection() {
+    if (!employeeSelect || !employeeHiddenField) return;
+    const selectedOption = employeeSelect.options[employeeSelect.selectedIndex];
+    if (selectedOption && selectedOption.value) {
+      employeeHiddenField.value = selectedOption.value;
+      employeeNameField.value = selectedOption.dataset.name || '';
+    } else {
+      employeeHiddenField.value = '';
+      employeeNameField.value = '';
+    }
+  }
+
+  if (employeeSelect) {
+    // On change, update hidden field and display
+    employeeSelect.addEventListener('change', updateFromSelection);
+
+    // On page load, if hidden field already has a value (e.g., form validation error),
+    // pre-select the corresponding employee in the dropdown.
+    if (employeeHiddenField && employeeHiddenField.value) {
+      employeeSelect.value = employeeHiddenField.value;
+      updateFromSelection();
+    }
+  }
+});
+</script>
+{% endblock %}

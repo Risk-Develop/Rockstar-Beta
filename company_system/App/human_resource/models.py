@@ -277,6 +277,289 @@ class LeaveRequest(models.Model):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Exit Interview
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def resignation_letter_upload_path(instance, filename):
+    """Generate upload path for resignation letter files."""
+    employee_name = f"{instance.employee.first_name}_{instance.employee.last_name}"
+    return f"exit_interview/resignation_letters/{employee_name}/{filename}"
+
+
+def other_attachments_upload_path(instance, filename):
+    """Generate upload path for other attachment files."""
+    employee_name = f"{instance.employee.first_name}_{instance.employee.last_name}"
+    return f"exit_interview/attachments/{employee_name}/{filename}"
+
+
+class ExitInterview(models.Model):
+    """
+    Comprehensive Exit Interview module tracking the full resignation workflow
+    from filing to final pay release.
+    """
+    # ── Choice Constants ───────────────────────────────────────────────────────
+    RESIGNATION_STATUS_CHOICES = [
+        ('exit', 'Exit'),
+        ('revoked', 'Revoked'),
+        ('indefinite_leave', 'Indefinite Leave'),
+        ('end_contract', 'End Contract'),
+    ]
+
+    RENDERING_30DAY_STATUS_CHOICES = [
+        ('on_process', 'On-Process'),
+        ('completed', 'Completed'),
+        ('on_hold', 'On-Hold'),
+        ('immediate', 'Immediate'),
+        ('awol', 'AWOL'),
+        ('ordered', 'Ordered'),
+        ('na', 'N/A'),
+    ]
+
+    EXIT_INTERVIEW_STATUS_CHOICES = [
+        ('on_process', 'On-Process'),
+        ('completed', 'Completed'),
+        ('on_hold', 'On-Hold'),
+        ('not_necessary', 'Not Necessary'),
+        ('ordered', 'Ordered'),
+    ]
+
+    KNOWLEDGE_TRANSFER_STATUS_CHOICES = [
+        ('on_process', 'On-Process'),
+        ('completed', 'Completed'),
+        ('on_hold', 'On-Hold'),
+        ('not_necessary', 'Not Necessary'),
+        ('ordered', 'Ordered'),
+    ]
+
+    ASSET_RETURN_STATUS_CHOICES = [
+        ('on_process', 'On-Process'),
+        ('completed', 'Completed'),
+        ('on_hold', 'On-Hold'),
+    ]
+
+    CLEARANCE_STATUS_CHOICES = [
+        ('on_process', 'On-Process'),
+        ('completed', 'Completed'),
+        ('on_hold', 'On-Hold'),
+    ]
+
+    QUITCLAIM_STATUS_CHOICES = [
+        ('on_process', 'On-Process'),
+        ('completed', 'Completed'),
+        ('on_hold', 'On-Hold'),
+        ('ordered', 'Ordered'),
+    ]
+
+    FINAL_PAY_STATUS_CHOICES = [
+        ('on_hold', 'On Hold'),
+        ('released', 'Released'),
+        ('void', 'Void'),
+    ]
+
+    employee = models.ForeignKey(
+        Staff,
+        on_delete=models.CASCADE,
+        related_name='exit_interviews'
+    )
+
+    # ── Resignation Details ────────────────────────────────────────────────────
+    resignation_status = models.CharField(
+        max_length=30,
+        choices=RESIGNATION_STATUS_CHOICES,
+        default='exit'
+    )
+    date_filed = models.DateField(
+        default=date.today,
+        help_text="Date when resignation was formally submitted"
+    )
+    resignation_letter = models.FileField(
+        upload_to=resignation_letter_upload_path,
+        blank=True,
+        null=True,
+        help_text="Scanned copy or text file of resignation letter"
+    )
+    resignation_letter_text = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Text content of resignation letter (if not uploaded as file)"
+    )
+    desired_last_day = models.DateField(
+        blank=True,
+        null=True,
+        help_text="Employee's requested last working day"
+    )
+    approved_last_day = models.DateField(
+        blank=True,
+        null=True,
+        help_text="HR-approved final working day (considering 30-day notice)"
+    )
+
+    # ── Status Tracking (Progress Stepper) ───────────────────────────────────
+    rendering_30day_status = models.CharField(
+        max_length=20,
+        choices=RENDERING_30DAY_STATUS_CHOICES,
+        default='na'
+    )
+    exit_interview_status = models.CharField(
+        max_length=20,
+        choices=EXIT_INTERVIEW_STATUS_CHOICES,
+        default='on_process'
+    )
+    knowledge_transfer_status = models.CharField(
+        max_length=20,
+        choices=KNOWLEDGE_TRANSFER_STATUS_CHOICES,
+        default='on_process'
+    )
+    asset_return_status = models.CharField(
+        max_length=20,
+        choices=ASSET_RETURN_STATUS_CHOICES,
+        default='on_process'
+    )
+    clearance_status = models.CharField(
+        max_length=20,
+        choices=CLEARANCE_STATUS_CHOICES,
+        default='on_process'
+    )
+    quitclaim_status = models.CharField(
+        max_length=20,
+        choices=QUITCLAIM_STATUS_CHOICES,
+        default='on_process'
+    )
+    final_pay_status = models.CharField(
+        max_length=20,
+        choices=FINAL_PAY_STATUS_CHOICES,
+        default='on_hold'
+    )
+
+    # ── Compliance Checkboxes ─────────────────────────────────────────────────
+    nda_signed = models.BooleanField(
+        default=False,
+        help_text="Non-Disclosure Agreement signed"
+    )
+    nca_signed = models.BooleanField(
+        default=False,
+        help_text="Non-Compete Agreement signed"
+    )
+
+    # ── Attachments ────────────────────────────────────────────────────────────
+    other_attachments = models.FileField(
+        upload_to=other_attachments_upload_path,
+        blank=True,
+        null=True,
+        help_text="Additional supporting documents"
+    )
+
+    # ── Qualitative Data (JSON) ───────────────────────────────────────────────
+    qualitative_data = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Structured feedback: primary drivers, improvement areas, categories"
+    )
+    # Backward-compatible text field for free-form notes
+    interview_notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Additional HR notes from exit interview"
+    )
+
+    # ── Timestamps ────────────────────────────────────────────────────────────
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Exit Interview'
+        verbose_name_plural = 'Exit Interviews'
+        # An employee can have only one active exit interview at a time
+        unique_together = ('employee', 'approved_last_day')  # loosely enforced
+
+    def __str__(self):
+        return f"{self.employee} - {self.get_resignation_status_display()} ({self.approved_last_day})"
+
+    # ── Helper Methods ────────────────────────────────────────────────────────
+
+    def get_full_name(self):
+        """Return employee's full name."""
+        return f"{self.employee.first_name} {self.employee.last_name}"
+
+    def get_employee_number(self):
+        """Return employee number."""
+        return self.employee.employee_number
+
+    def get_department(self):
+        """Return department name."""
+        return self.employee.departmentlink.department_name if self.employee.departmentlink else self.employee.department
+
+    def get_status_badge_class(self, status_field):
+        """
+        Return Tailwind CSS classes for status badge based on status value.
+        Usage: obj.get_status_badge_class('exit_interview_status')
+        """
+        status = getattr(self, status_field)
+        status_map = {
+            'completed': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+            'on_process': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+            'on_hold': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+            'not_necessary': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+            'ordered': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+            'released': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+            'immediate': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+            'awol': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+            'na': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+            'void': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+            'exit': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+            'revoked': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+            'indefinite_leave': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+            'end_contract': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+        }
+        return status_map.get(status, 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200')
+
+    def is_process_complete(self):
+        """
+        Check if all required steps are completed for exit clearance.
+        Required: exit_interview, knowledge_transfer, asset_return, clearance, quitclaim all 'completed'
+        and final_pay is 'released'.
+        """
+        required_statuses = [
+            'exit_interview_status',
+            'knowledge_transfer_status',
+            'asset_return_status',
+            'clearance_status',
+            'quitclaim_status',
+            'final_pay_status',
+        ]
+        for field in required_statuses:
+            if getattr(self, field) != 'completed' if field != 'final_pay_status' else getattr(self, field) != 'released':
+                return False
+        return True
+
+    def get_progress_percentage(self):
+        """
+        Calculate overall progress percentage based on completed steps.
+        6 steps total (interview, KT, assets, clearance, quitclaim, final pay).
+        """
+        steps = [
+            self.exit_interview_status in ['completed'],
+            self.knowledge_transfer_status in ['completed'],
+            self.asset_return_status in ['completed'],
+            self.clearance_status in ['completed'],
+            self.quitclaim_status in ['completed'],
+            self.final_pay_status in ['released'],
+        ]
+        completed = sum(steps)
+        return int((completed / len(steps)) * 100)
+
+    def get_qualitative_insight(self, key, default=''):
+        """Retrieve a specific qualitative insight from JSON data."""
+        return self.qualitative_data.get(key, default)
+
+    def set_qualitative_insight(self, key, value):
+        """Set a qualitative insight in JSON data."""
+        self.qualitative_data[key] = value
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # ENPS (Employee Net Promoter Score) Survey
 # ═══════════════════════════════════════════════════════════════════════════════
 
