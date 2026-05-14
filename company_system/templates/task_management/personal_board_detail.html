@@ -2473,18 +2473,17 @@ html.dark .flatpickr-calendar .flatpickr-month-dropdown .flatpickr-monthDropdown
             </div>
          </div>
 
-         <!-- Column (hidden - use drag-and-drop to move between columns) -->
-         <div class="hidden">
-           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Column</label>
-           <select name="column"
-                   required
-                   class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer">
-             {% for column in columns %}
-             <option value="{{ column.id }}">{{ column.name }}</option>
-              {% endfor %}
-           </select>
-           <div class="error-message text-red-500 text-sm mt-1" id="detailColumnError" style="display: none"></div>
-         </div>
+          <!-- Column (hidden - use drag-and-drop to move between columns) -->
+          <div class="hidden">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Column</label>
+            <select name="column"
+                    class="w-full px-3 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer">
+              {% for column in columns %}
+              <option value="{{ column.id }}">{{ column.name }}</option>
+               {% endfor %}
+            </select>
+            <div class="error-message text-red-500 text-sm mt-1" id="detailColumnError" style="display: none"></div>
+          </div>
       </div>
     </section>
 
@@ -3047,6 +3046,14 @@ function handleAddColumnFormSubmit(form) {
                 option.textContent = data.column.name;
                 select.appendChild(option);
                 select.value = data.column.id; // auto-select new column
+            }
+            // Also add new column to edit task modal's column select
+            var editSelect = document.querySelector('#updateTaskForm select[name="column"]');
+            if (editSelect) {
+                var editOption = document.createElement('option');
+                editOption.value = data.column.id;
+                editOption.textContent = data.column.name;
+                editSelect.appendChild(editOption);
             }
             // Initialize Sortable for the new column
             var newColumnEl = document.getElementById('column-' + data.column.id);
@@ -3646,6 +3653,12 @@ function deleteColumn(columnId) {
                     if (select) {
                         var option = select.querySelector('option[value="' + columnId + '"]');
                         if (option) option.remove();
+                    }
+                    // Also remove from edit task modal's column select
+                    var editSelect = document.querySelector('#updateTaskForm select[name="column"]');
+                    if (editSelect) {
+                        var editOption = editSelect.querySelector('option[value="' + columnId + '"]');
+                        if (editOption) editOption.remove();
                     }
                     closeConfirmModal();
                 } else {
