@@ -8,6 +8,7 @@ from django.db import transaction
 from django.db.models import Q, F, Value, CharField
 from django.db.models.functions import Concat
 from django.utils import timezone
+import csv
 
 from datetime import date, time, datetime, timedelta
 from decimal import Decimal
@@ -26,7 +27,7 @@ from .forms import ExitInterviewForm
 @login_required
 def exit_interview_list(request):
     """
-    HR Dashboard: List all exit interviews with filtering and progress overview.
+    HR Dashboard: List all exit interviews with filtering, sorting, and progress overview.
     Supports HTMX for live filtering without page reload.
     """
     emp_num = request.session.get('employee_number')
@@ -44,21 +45,31 @@ def exit_interview_list(request):
     else:
         employee = None
 
+    # Base queryset
+    interviews = ExitInterview.objects.select_related('employee').all()
+
     # Search & filter
     search_query = request.GET.get('search', '').strip()
     status_filter = request.GET.get('status', '').strip()
-
-    interviews = ExitInterview.objects.select_related('employee').all()
-
     if search_query:
         interviews = interviews.filter(
             Q(employee__first_name__icontains=search_query) |
             Q(employee__last_name__icontains=search_query) |
             Q(employee__employee_number__icontains=search_query)
         )
-
     if status_filter:
         interviews = interviews.filter(resignation_status=status_filter)
+
+    # Sorting
+    sort_by = request.GET.get('sort', 'created_at')
+    sort_order = request.GET.get('order', 'desc')
+    allowed_sort_fields = [
+        'employee__first_name', 'employee__last_name', 'resignation_status',
+        'date_filed', 'approved_last_day', 'created_at'
+    ]
+    if sort_by not in allowed_sort_fields:
+        sort_by = 'created_at'
+    interviews = interviews.order_by(sort_by) if sort_order == 'asc' else interviews.order_by(f'-{sort_by}')
 
     # Pagination
     paginator = Paginator(interviews, 20)
@@ -84,13 +95,18 @@ def exit_interview_list(request):
         'revoked_count': revoked_count,
         'indefinite_count': indefinite_count,
         'contract_end_count': contract_end_count,
+        'current_sort': sort_by,
+        'current_order': sort_order,
+        'rendering_30day_status_choices': ExitInterview.RENDERING_30DAY_STATUS_CHOICES,
+        'exit_interview_status_choices': ExitInterview.EXIT_INTERVIEW_STATUS_CHOICES,
+        'knowledge_transfer_status_choices': ExitInterview.KNOWLEDGE_TRANSFER_STATUS_CHOICES,
+        'asset_return_status_choices': ExitInterview.ASSET_RETURN_STATUS_CHOICES,
+        'clearance_status_choices': ExitInterview.CLEARANCE_STATUS_CHOICES,
+        'quitclaim_status_choices': ExitInterview.QUITCLAIM_STATUS_CHOICES,
+        'final_pay_status_choices': ExitInterview.FINAL_PAY_STATUS_CHOICES,
     }
 
-    # Check if this is an HTMX request
-    is_htmx = request.headers.get('HX-Request', False)
-
-    if is_htmx:
-        # Return only the partial content for HTMX
+    if request.headers.get('HX-Request'):
         return render(request, 'hr/default/exit_interview/_exit_interview_results_partial.html', context)
 
     return render(request, 'hr/default/exit_interview/exit_interview_list.html', context)
@@ -220,6 +236,7 @@ def exit_interview_detail(request, pk):
 def exit_interview_quick_status_update(request, pk):
     """
     HTMX endpoint: Quick status update for a single field.
+    Returns the updated table row HTML for HTMX requests.
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -258,13 +275,21 @@ def exit_interview_quick_status_update(request, pk):
     setattr(interview, field_name, new_value)
     interview.save()
 
-    # Return updated badge HTML
-    if field_name in ['rendering_30day_status', 'exit_interview_status',
-                      'knowledge_transfer_status', 'asset_return_status',
-                      'clearance_status', 'quitclaim_status', 'final_pay_status']:
-        badge_class = interview.get_status_badge_class(field_name)
-        display_value = getattr(interview, f'get_{field_name}_display')()
-        html = f'<span class="{badge_class} inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">{display_value}</span>'
+    # If HTMX request, return the updated row HTML
+    if request.headers.get('HX-Request'):
+        # Render the row partial with full context
+        context = {
+            'interview': interview,
+            'request': request,
+            'rendering_30day_status_choices': ExitInterview.RENDERING_30DAY_STATUS_CHOICES,
+            'exit_interview_status_choices': ExitInterview.EXIT_INTERVIEW_STATUS_CHOICES,
+            'knowledge_transfer_status_choices': ExitInterview.KNOWLEDGE_TRANSFER_STATUS_CHOICES,
+            'asset_return_status_choices': ExitInterview.ASSET_RETURN_STATUS_CHOICES,
+            'clearance_status_choices': ExitInterview.CLEARANCE_STATUS_CHOICES,
+            'quitclaim_status_choices': ExitInterview.QUITCLAIM_STATUS_CHOICES,
+            'final_pay_status_choices': ExitInterview.FINAL_PAY_STATUS_CHOICES,
+        }
+        html = render_to_string('hr/default/exit_interview/_exit_interview_row.html', context)
         return HttpResponse(html)
 
     return JsonResponse({'success': True})
@@ -298,3 +323,119 @@ def exit_interview_delete(request, pk):
         'interview': interview,
     }
     return render(request, 'hr/default/exit_interview/exit_interview_confirm_delete.html', context)
+
+
+@login_required
+def exit_interview_export(request):
+    """
+    Export filtered exit interviews to CSV.
+    """
+    emp_num = request.session.get('employee_number')
+    is_owner = request.session.get('is_owner', False)
+
+    if not is_owner:
+        employee = Staff.objects.filter(employee_number=emp_num).first()
+        if not employee:
+            return redirect('login')
+        role_name = employee.role.role_name if employee.role else ''
+        if role_name not in ['Owner', 'Master', 'Developer', 'Admin', 'HR']:
+            messages.error(request, "Permission denied.")
+            return redirect('human_resource:hr_dashboard')
+    else:
+        employee = None
+
+    # Get filter parameters (same as list)
+    search_query = request.GET.get('search', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+
+    interviews = ExitInterview.objects.select_related('employee').all()
+
+    if search_query:
+        interviews = interviews.filter(
+            Q(employee__first_name__icontains=search_query) |
+            Q(employee__last_name__icontains=search_query) |
+            Q(employee__employee_number__icontains=search_query)
+        )
+
+    if status_filter:
+        interviews = interviews.filter(resignation_status=status_filter)
+
+    # Sorting
+    sort_by = request.GET.get('sort', 'created_at')
+    sort_order = request.GET.get('order', 'desc')
+    allowed_sort_fields = [
+        'employee__first_name', 'employee__last_name', 'resignation_status',
+        'date_filed', 'approved_last_day', 'created_at'
+    ]
+    if sort_by not in allowed_sort_fields:
+        sort_by = 'created_at'
+    if sort_order == 'asc':
+        interviews = interviews.order_by(sort_by)
+    else:
+        interviews = interviews.order_by(f'-{sort_by}')
+
+    # Create CSV response
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="exit_interviews.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow([
+        'Employee Number', 'Full Name', 'Department', 'Job Title', 'Employment Type',
+        'Resignation Status', 'Date Filed', 'Desired Last Day', 'Approved Last Day',
+        '30-Day Status', 'Exit Interview Status', 'Knowledge Transfer Status',
+        'Asset Return Status', 'Clearance Status', 'Quitclaim Status', 'Final Pay Status',
+        'Progress %', 'NDA Signed', 'NCA Signed'
+    ])
+
+    for interview in interviews:
+        writer.writerow([
+            interview.get_employee_number(),
+            interview.get_full_name(),
+            interview.get_department(),
+            interview.employee.job_title or '',
+            interview.employee.get_type_display() if interview.employee.type else '',
+            interview.get_resignation_status_display(),
+            interview.date_filed.strftime('%Y-%m-%d') if interview.date_filed else '',
+            interview.desired_last_day.strftime('%Y-%m-%d') if interview.desired_last_day else '',
+            interview.approved_last_day.strftime('%Y-%m-%d') if interview.approved_last_day else '',
+            interview.get_rendering_30day_status_display(),
+            interview.get_exit_interview_status_display(),
+            interview.get_knowledge_transfer_status_display(),
+            interview.get_asset_return_status_display(),
+            interview.get_clearance_status_display(),
+            interview.get_quitclaim_status_display(),
+            interview.get_final_pay_status_display(),
+            interview.get_progress_percentage(),
+            'Yes' if interview.nda_signed else 'No',
+            'Yes' if interview.nca_signed else 'No',
+        ])
+
+    return response
+
+
+@login_required
+def exit_interview_quick_view(request, pk):
+    """
+    Return quick view HTML for modal (HTMX).
+    """
+    emp_num = request.session.get('employee_number')
+    is_owner = request.session.get('is_owner', False)
+
+    if not is_owner:
+        employee = Staff.objects.filter(employee_number=emp_num).first()
+        if not employee:
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        role_name = employee.role.role_name if employee.role else ''
+        if role_name not in ['Owner', 'Master', 'Developer', 'Admin', 'HR']:
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+
+    interview = get_object_or_404(ExitInterview.objects.select_related('employee'), pk=pk)
+    progress_percentage = interview.get_progress_percentage()
+    is_complete = interview.is_process_complete()
+
+    context = {
+        'interview': interview,
+        'progress_percentage': progress_percentage,
+        'is_complete': is_complete,
+    }
+    return render(request, 'hr/default/exit_interview/_exit_interview_quick_view.html', context)

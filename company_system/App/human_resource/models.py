@@ -494,20 +494,31 @@ class ExitInterview(models.Model):
     def get_status_badge_class(self, status_field):
         """
         Return Tailwind CSS classes for status badge based on status value.
+        Updated for colorblind accessibility: uses blue/amber/teal/purple/gray palette
+        to avoid red-green confusion.
         Usage: obj.get_status_badge_class('exit_interview_status')
         """
         status = getattr(self, status_field)
         status_map = {
-            'completed': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-            'on_process': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-            'on_hold': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+            # Completed states - teal (distinct from green)
+            'completed': 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-white',
+            # In progress - blue
+            'on_process': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-white',
+            # On hold - amber/orange (instead of red)
+            'on_hold': 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+            # Not necessary / N/A - gray
             'not_necessary': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-            'ordered': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-            'released': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-            'immediate': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-            'awol': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
             'na': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
             'void': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
+            # Ordered - purple
+            'ordered': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+            # Released - green (distinct from teal)
+            'released': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+            # Immediate - orange (different from amber)
+            'immediate': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+            # AWOL - rose/pink (distinct from other alerts)
+            'awol': 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200',
+            # Resignation types - blue/purple/gray palette
             'exit': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
             'revoked': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
             'indefinite_leave': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',

@@ -1,0 +1,102 @@
+{% load hr_extras %}
+<div class="space-y-4">
+  <!-- Header -->
+  <div class="flex items-center justify-between pb-3 border-b border-gray-200 dark:border-gray-700">
+    <div>
+      <h3 class="text-lg font-bold text-gray-800 dark:text-gray-100">{{ interview.get_full_name }}</h3>
+      <p class="text-sm text-gray-500 dark:text-gray-400">{{ interview.get_employee_number }} • {{ interview.get_department }}</p>
+    </div>
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ interview|status_badge_class:"resignation_status" }}">
+      {{ interview.get_resignation_status_display }}
+    </span>
+  </div>
+
+  <!-- Progress -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-100 dark:border-gray-700">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Progress</span>
+      <span class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ progress_percentage }}%</span>
+    </div>
+    <div class="progress-bar h-2">
+      <div class="progress-fill" style="width: {{ progress_percentage }}%"></div>
+    </div>
+    {% if is_complete %}
+      <div class="mt-2 text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        Offboarding completed
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Status Grid -->
+  <div class="grid grid-cols-2 gap-3">
+    <div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">30-Day</p>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ interview|status_badge_class:"rendering_30day_status" }}">
+        {{ interview.get_rendering_30day_status_display }}
+      </span>
+    </div>
+    <div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Interview</p>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ interview|status_badge_class:"exit_interview_status" }}">
+        {{ interview.get_exit_interview_status_display }}
+      </span>
+    </div>
+    <div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Clearance</p>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ interview|status_badge_class:"clearance_status" }}">
+        {{ interview.get_clearance_status_display }}
+      </span>
+    </div>
+    <div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Quitclaim</p>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ interview|status_badge_class:"quitclaim_status" }}">
+        {{ interview.get_quitclaim_status_display }}
+      </span>
+    </div>
+    <div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Final Pay</p>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ interview|status_badge_class:"final_pay_status" }}">
+        {{ interview.get_final_pay_status_display }}
+      </span>
+    </div>
+    <div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Knowledge Transfer</p>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ interview|status_badge_class:"knowledge_transfer_status" }}">
+        {{ interview.get_knowledge_transfer_status_display }}
+      </span>
+    </div>
+    <div class="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Asset Return</p>
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ interview|status_badge_class:"asset_return_status" }}">
+        {{ interview.get_asset_return_status_display }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Compliance -->
+  <div class="flex items-center gap-4 text-sm">
+    <div class="flex items-center gap-1.5">
+      <span class="text-gray-500 dark:text-gray-400">NDA:</span>
+      {% if interview.nda_signed %}
+        <span class="text-green-600 dark:text-green-400">✓ Signed</span>
+      {% else %}
+        <span class="text-red-600 dark:text-red-400">✗ Not Signed</span>
+      {% endif %}
+    </div>
+    <div class="flex items-center gap-1.5">
+      <span class="text-gray-500 dark:text-gray-400">NCA:</span>
+      {% if interview.nca_signed %}
+        <span class="text-green-600 dark:text-green-400">✓ Signed</span>
+      {% else %}
+        <span class="text-red-600 dark:text-red-400">✗ Not Signed</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Quick Links -->
+  <div class="flex justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+    <a href="{% url 'human_resource:exit_interview_detail' interview.pk %}" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">Full Details</a>
+    <a href="{% url 'human_resource:exit_interview_edit' interview.pk %}" class="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-sm rounded-lg transition-colors">Edit</a>
+  </div>
+</div>

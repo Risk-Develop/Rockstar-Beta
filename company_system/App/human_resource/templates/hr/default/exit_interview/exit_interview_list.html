@@ -8,9 +8,9 @@
 <style>
   /* Progress bar styling */
   .progress-bar {
-    height: 8px;
+    height: 6px;
     background-color: #e5e7eb;
-    border-radius: 4px;
+    border-radius: 3px;
     overflow: hidden;
   }
   .dark .progress-bar {
@@ -18,9 +18,10 @@
   }
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
-    transition: width 0.3s ease;
+    background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+    transition: width 0.4s ease;
   }
+
   /* Stepper styling */
   .stepper {
     display: flex;
@@ -53,7 +54,7 @@
     gap: 0.5rem;
   }
   .dark .stepper-step {
-    background: #1f2937;
+    background: #111827;
   }
   .step-circle {
     width: 36px;
@@ -95,6 +96,7 @@
     color: #10b981;
     font-weight: 600;
   }
+
   /* Filter section */
   .filter-section {
     background: white;
@@ -102,9 +104,179 @@
     border-radius: 0.75rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     margin-bottom: 1.5rem;
+    position: sticky;
+    top: 5rem;
+    z-index: 40;
   }
   .dark .filter-section {
     background: #1f2937;
+  }
+
+  /* Modern Table Design */
+  .table-container {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+  }
+  .dark .table-container {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  /* Header with subtle gradient */
+  .table-header-cell {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #6b7280;
+    background-color: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+  }
+  .dark .table-header-cell {
+    color: #9ca3af;
+    background-color: #111827;
+    border-bottom-color: #374151;
+  }
+
+  /* Row striping and hover */
+  .table-row {
+    transition: all 0.15s ease;
+  }
+  .table-row-even {
+    background-color: #ffffff;
+  }
+  .table-row-odd {
+    background-color: #f9fafb;
+  }
+  .dark .table-row-even {
+    background-color: #1f2937;
+  }
+  .dark .table-row-odd {
+    background-color: #111827;
+  }
+  .table-row:hover {
+    background-color: #f3f4f6;
+  }
+  .dark .table-row:hover {
+    background-color: #374151;
+  }
+
+  /* Cell padding and alignment utilities */
+  .table-cell {
+    padding: 0.875rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .dark .table-cell {
+    border-bottom-color: #374151;
+  }
+  .table-cell-align-center { text-align: center; }
+  .table-cell-align-right { text-align: right; }
+
+  /* Progress bar column */
+  .progress-cell {
+    width: 120px;
+  }
+
+  /* Quick action select styling */
+  .quick-action-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2rem;
+    white-space: nowrap;
+  }
+
+  /* Status badge consistency */
+  .inline-flex.items-center.px-3.py-1.rounded-full {
+    white-space: nowrap;
+    line-height: 1;
+  }
+
+  /* Action icons */
+  .action-icon {
+    transition: all 0.2s ease;
+    opacity: 0.7;
+  }
+  .action-icon:hover {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  /* Modal styles (re-use from list template) */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+  }
+  .modal-overlay.show {
+    display: flex;
+  }
+  .modal-content {
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    width: 100%;
+    max-width: 700px;
+  }
+  .dark .modal-content {
+    background: #1f2937;
+  }
+  .modal-header-accent {
+    height: 4px;
+    background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+    border-radius: 0.75rem 0.75rem 0 0;
+  }
+  .modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: #6b7280;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .dark .modal-close {
+    color: #9ca3af;
+  }
+  .modal-close:hover {
+    color: #111827;
+  }
+  .dark .modal-close:hover {
+    color: #f3f4f6;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .table-cell {
+      padding: 0.75rem 1rem;
+    }
+    .table-header-cell {
+      padding: 0.75rem 1rem;
+      font-size: 0.7rem;
+    }
+    .quick-action-select {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
   }
 </style>
 {% endblock %}
@@ -122,16 +294,22 @@
         <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Exit Interview Management</h2>
         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Track and manage employee offboarding process</p>
       </div>
-      <div class="flex gap-2">
-        <a href="{% url 'human_resource:hr_dashboard' %}" class="inline-flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-          Dashboard
-        </a>
-        <a href="{% url 'human_resource:exit_interview_add' %}" class="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-          New Exit Interview
-        </a>
-      </div>
+       <div class="flex gap-2">
+         <a href="{% url 'human_resource:hr_dashboard' %}" class="inline-flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+           Dashboard
+         </a>
+         <a href="{% url 'human_resource:exit_interview_add' %}" class="inline-flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors shadow-sm">
+           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+           New Exit Interview
+         </a>
+         <a href="{% url 'human_resource:exit_interview_export' %}?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if current_sort %}sort={{ current_sort }}&{% endif %}{% if current_order %}order={{ current_order }}{% endif %}" 
+            class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+            title="Export to CSV">
+           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+           Export CSV
+         </a>
+       </div>
       </div>
 
      <!-- Stats Cards -->
@@ -197,49 +375,79 @@
        </div>
      </div>
 
-     <!-- Filter Section -->
-     <div class="filter-section">
-        <form method="get"
-              hx-get="{% url 'human_resource:exit_interview_list' %}"
-              hx-target="#exit-interview-results"
-              hx-swap="innerHTML"
-              hx-push-url="true"
-              hx-trigger="keyup delay:500ms from:input[name='search'], change from:select[name='status'], submit"
-              class="flex flex-col sm:flex-row gap-4">
-         <div class="flex-1">
-           <input type="text"
-                  name="search"
-                  value="{{ search_query }}"
-                  placeholder="Search by name or employee number..."
-                  class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-         </div>
-         <div class="flex items-end gap-2">
-           <select name="status"
-                   class="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-             <option value="">All Statuses</option>
-             {% for value, label in resignation_status_choices %}
-               <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
-             {% endfor %}
-           </select>
-           <button type="submit"
-                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
-             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-           </button>
-         </div>
-       </form>
-     </div>
+      <!-- Filter Section -->
+      <div class="filter-section">
+         <form method="get"
+               hx-get="{% url 'human_resource:exit_interview_list' %}"
+               hx-target="#exit-interview-results"
+               hx-swap="innerHTML"
+               hx-push-url="true"
+               hx-trigger="keyup delay:500ms from:input[name='search'], change from:select[name='status'], submit"
+               class="flex flex-col sm:flex-row gap-4">
+          <div class="flex-1">
+            <input type="text"
+                   name="search"
+                   value="{{ search_query }}"
+                   placeholder="Search by name or employee number..."
+                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div class="flex items-end gap-2">
+            <select name="status"
+                    class="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">All Statuses</option>
+              {% for value, label in resignation_status_choices %}
+                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            {# Preserve sort and order when filtering #}
+            <input type="hidden" name="sort" value="{{ current_sort|default:'created_at' }}">
+            <input type="hidden" name="order" value="{{ current_order|default:'desc' }}">
+            <button type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </button>
+          </div>
+        </form>
+      </div>
 
      <!-- Results Container (HTMX target) -->
      <div id="exit-interview-results">
        {% include "hr/default/exit_interview/_exit_interview_results_partial.html" %}
       </div>
     </div>
- </main>
+  </main>
+
+  <!-- Quick View Modal -->
+  <div id="quickViewModal" class="modal-overlay" style="display:none;" onclick="if(event.target === this) closeQuickViewModal();">
+    <div class="modal-content">
+      <div class="modal-header-accent"></div>
+      <button class="modal-close" onclick="closeQuickViewModal()" aria-label="Close modal">&times;</button>
+      <div id="quickViewContent" class="p-6">
+        <!-- Content loaded via HTMX -->
+      </div>
+    </div>
+  </div>
 
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-  // Optional: Auto-refresh progress bars or add dynamic behavior
+  function showQuickViewModal() {
+    document.getElementById('quickViewModal').style.display = 'flex';
+  }
+
+  function closeQuickViewModal() {
+    const modal = document.getElementById('quickViewModal');
+    modal.style.display = 'none';
+    // Clear content to free memory
+    document.getElementById('quickViewContent').innerHTML = '';
+  }
+
+  // Close on Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeQuickViewModal();
+    }
+  });
 </script>
 {% endblock %}

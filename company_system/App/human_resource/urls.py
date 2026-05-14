@@ -266,9 +266,11 @@ urlpatterns = [
      path('exit-interviews/', views_exit_interview.exit_interview_list, name='exit_interview_list'),
      path('exit-interview/add/', views_exit_interview.exit_interview_add, name='exit_interview_add'),
      path('exit-interview/edit/<int:pk>/', views_exit_interview.exit_interview_edit, name='exit_interview_edit'),
-     path('exit-interview/<int:pk>/', views_exit_interview.exit_interview_detail, name='exit_interview_detail'),
-     path('exit-interview/<int:pk>/quick-status/', views_exit_interview.exit_interview_quick_status_update, name='exit_interview_quick_status'),
-     path('exit-interview/<int:pk>/delete/', views_exit_interview.exit_interview_delete, name='exit_interview_delete'),
+      path('exit-interview/<int:pk>/', views_exit_interview.exit_interview_detail, name='exit_interview_detail'),
+      path('exit-interview/<int:pk>/quick-status/', views_exit_interview.exit_interview_quick_status_update, name='exit_interview_quick_status'),
+      path('exit-interview/<int:pk>/quick-view/', views_exit_interview.exit_interview_quick_view, name='exit_interview_quick_view'),
+      path('exit-interview/<int:pk>/delete/', views_exit_interview.exit_interview_delete, name='exit_interview_delete'),
+      path('exit-interviews/export/', views_exit_interview.exit_interview_export, name='exit_interview_export'),
 
 
 ]
