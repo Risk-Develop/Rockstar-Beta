@@ -873,17 +873,8 @@
     const item = button.closest('.accordion-item');
     const isOpen = item.classList.contains('open');
     const icon = button.querySelector('.accordion-icon');
+    button.setAttribute('aria-expanded', !isOpen);
 
-    // Close all siblings
-    const allItems = document.querySelectorAll('.accordion-item');
-    allItems.forEach(other => {
-      if (other !== item) {
-        other.classList.remove('open');
-        other.querySelector('.accordion-icon').style.transform = 'rotate(0deg)';
-      }
-    });
-
-    // Toggle current
     item.classList.toggle('open');
     icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
   }
