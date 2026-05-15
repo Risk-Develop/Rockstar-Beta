@@ -50,7 +50,7 @@
             My Profile
           </a>
           {% endif %}
-          <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">
+          <a href="{% url 'human_resource:hr_self_service' %}" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
             Settings
           </a>
@@ -89,11 +89,11 @@
 
   <!-- Sidebar Toggle Button (Collapse to Icons) - Desktop Only -->
   <div class="px-2 py-2 border-b border-gray-700 hidden md:block">
-    <button id="sidebarToggleIcons" class="flex items-center justify-start w-full px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors" title="Toggle Sidebar">
+    <button id="sidebarToggleIcons" class="flex items-center justify-start w-full px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors" title="Toggle Sidebar (Ctrl+B)">
       <svg id="collapseIcon" class="w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
       </svg>
-      <span class="ml-2 sidebar-text" id="toggleText">Collapse</span>
+      <span class="ml-2 sidebar-text" id="toggleText">Toggle <kbd class="ml-1 pointer-events-none inline-block h-4 align-middle select-none rounded border border-gray-600 bg-gray-700 px-1 font-mono text-[10px] text-gray-300 opacity-60">Ctrl+B</kbd></span>
     </button>
   </div>
 
@@ -241,31 +241,48 @@
 </div>
 
 <style>
-  /* Sidebar collapsed state styles */
+  /* ── Focus rings — scoped to nav elements only ────────────────────────────── */
+  #sidebar .nav-item:focus,
+  #sidebar .nav-item:focus-visible,
+  #sidebar .nav-collapse:focus,
+  #sidebar .nav-collapse:focus-visible,
+  #sidebar button:focus,
+  #sidebar a:focus {
+    outline: 2px solid #f97316;
+    outline-offset: 2px;
+  }
+
+  /* ── Collapsed sidebar state ──────────────────────────────────────────────── */
   #sidebar.sidebar-collapsed .nav-item {
-    padding: 0.5rem !important;
+    padding: 0.5rem 0 !important;
     justify-content: center !important;
+  }
+  #sidebar.sidebar-collapsed .nav-collapse {
+    justify-content: center !important;
+  }
+  #sidebar.sidebar-collapsed .nav-collapse .arrow {
+    display: none;
+  }
+  #sidebar.sidebar-collapsed .nav-collapse .sidebar-text,
+  #sidebar.sidebar-collapsed .submenu-content {
+    display: none !important;
   }
   #sidebar.sidebar-collapsed .sidebar-icon {
     margin-right: 0 !important;
   }
 
-  /* Focus states for accessibility */
-  .nav-item:focus,
-  .nav-collapse:focus,
-  button:focus,
-  a:focus {
-    outline: 2px solid #f97316;
-    outline-offset: 2px;
+  /* ── Active nav item ──────────────────────────────────────────────────────── */
+  .nav-active {
+    border-left: 4px solid #f97316 !important;
+    border-radius: 4px 0 0 4px !important;
+    background-color: #374151 !important;
   }
-  .nav-item:focus-visible,
-  .nav-collapse:focus-visible,
-  button:focus-visible {
-    outline: 2px solid #f97316;
-    outline-offset: 2px;
+  .nav-active.nav-collapse {
+    border-left: 4px solid #f97316 !important;
+    border-radius: 4px 0 0 4px !important;
   }
 
-  /* Submenu smooth animation */
+  /* ── Submenu smooth animation — collapse waits, expand runs together ──────── */
   .submenu-content {
     overflow: hidden;
     max-height: 0;
@@ -275,9 +292,15 @@
   .submenu-content.expanded {
     max-height: 600px;
     opacity: 1;
+    transition: max-height 0.35s ease-in-out 0s, opacity 0.25s ease-in-out 0s;
+  }
+  .submenu-content.collapsing {
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.35s ease-in-out 0s, opacity 0.25s ease-in-out 0.1s;
   }
 
-  /* Loading overlay */
+  /* ── Loading overlay ──────────────────────────────────────────────────────── */
   #page-loader {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -313,9 +336,7 @@
 
     const pageLoader = document.getElementById('page-loader');
 
-    // ── FIX 1: Hide spinner on load + on bfcache restore (back/forward nav) ────
-    // pageshow fires when browser restores page from back/forward cache,
-    // where DOMContentLoaded does NOT re-fire — without this, spinner stays visible.
+    // ── Hide spinner on load and on bfcache restore ─────────────────────────
     if (pageLoader) pageLoader.classList.remove('active');
     window.addEventListener('pageshow', function () {
       if (pageLoader) pageLoader.classList.remove('active');
@@ -333,29 +354,46 @@
     const userMenuBtn        = document.getElementById('userMenuBtn');
     const userMenu           = document.getElementById('userMenu');
 
-    // ── Initialize sidebar state immediately to prevent flash ──────────────────
+    // ── Per-page submenu storage ─────────────────────────────────────────────
+    // Keys open submenus by pathname so each page remembers its own state.
+    const PAGE_SUBMENUS_KEY = 'hrSidebarOpenSubmenusByPage:';
+    function getPageKey() { return 'path=' + window.location.pathname; }
+    function getPageSubmenus() {
+      try { return JSON.parse(localStorage.getItem(PAGE_SUBMENUS_KEY) || '{}')[getPageKey()] || []; }
+      catch { return []; }
+    }
+    function setPageSubmenu(id, open) {
+      try {
+        const store = JSON.parse(localStorage.getItem(PAGE_SUBMENUS_KEY) || '{}');
+        if (!store[getPageKey()]) store[getPageKey()] = [];
+        if (open && !store[getPageKey()].includes(id)) store[getPageKey()].push(id);
+        else if (!open) store[getPageKey()] = store[getPageKey()].filter((v) => v !== id);
+        localStorage.setItem(PAGE_SUBMENUS_KEY, JSON.stringify(store));
+      } catch { /* storage unavailable */ }
+    }
+
+    // ── Init sidebar state immediately to prevent flash ──────────────────────
     (function initSidebarState() {
       const mainContent         = document.getElementById('mainContent');
       const header              = document.getElementById('mainHeader');
+      const footer              = document.getElementById('mainFooter');
       const sidebarTextElements = document.querySelectorAll('.sidebar-text');
       const sidebarIcons        = document.querySelectorAll('.sidebar-icon');
       const allNavItems         = document.querySelectorAll('.nav-item');
+      const isCollapsed         = localStorage.getItem('sidebarCollapsed') === 'true';
+      const isMobile            = window.innerWidth < 768;
 
-      const isMobile    = window.innerWidth < 768;
-      const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+      if (isCollapsed && !isMobile) sidebar.classList.add('sidebar-collapsed');
 
       if (isMobile) {
         sidebar.style.width = '256px';
         if (mainContent) mainContent.style.marginLeft = '0';
         if (header)      header.style.marginLeft      = '0';
+        if (footer)      footer.style.marginLeft      = '0';
       } else if (isCollapsed) {
-        sidebar.classList.add('sidebar-collapsed');
         sidebar.style.width = '64px';
-        if (toggleText)   toggleText.textContent       = '';
         if (collapseIcon) collapseIcon.style.transform = 'rotate(180deg)';
         allNavItems.forEach((el) => {
-          el.style.paddingLeft  = '0';
-          el.style.paddingRight = '0';
           const textEl = el.querySelector('.sidebar-text');
           if (textEl) el.setAttribute('title', textEl.textContent.trim());
         });
@@ -363,16 +401,11 @@
         sidebarTextElements.forEach((el) => (el.style.display     = 'none'));
         if (mainContent) mainContent.style.marginLeft = '64px';
         if (header)      header.style.marginLeft      = '64px';
+        if (footer)      footer.style.marginLeft      = '64px';
       } else {
         sidebar.style.width = '256px';
-        if (toggleText)   toggleText.textContent       = 'Collapse';
         if (collapseIcon) collapseIcon.style.transform = 'rotate(0deg)';
-        allNavItems.forEach((el) => {
-          el.style.justifyContent = 'flex-start';
-          el.style.paddingLeft    = '1rem';
-          el.style.paddingRight   = '1rem';
-          el.removeAttribute('title');
-        });
+        allNavItems.forEach((el) => el.removeAttribute('title'));
         sidebarIcons.forEach((el) => (el.style.marginRight = '0.75rem'));
         sidebarTextElements.forEach((el) => {
           el.style.display   = '';
@@ -380,118 +413,15 @@
         });
         if (mainContent) mainContent.style.marginLeft = '256px';
         if (header)      header.style.marginLeft      = '256px';
+        if (footer)      footer.style.marginLeft      = '256px';
       }
     })();
 
-    // ── User Menu Dropdown ─────────────────────────────────────────────────────
-    if (userMenuBtn && userMenu) {
-      userMenuBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        userMenu.classList.toggle('hidden');
-      });
-      document.addEventListener('click', function () {
-        userMenu.classList.add('hidden');
-      });
-    }
-
-    // ── Breadcrumb page name map ───────────────────────────────────────────────
-     const pageNames = {
-       hr_dashboard:          'Dashboard',
-       hr_user_mgnt:          'User Management',
-       staff_history_hr_list: 'Employee History',
-       individual_payroll:    'Individual Payroll',
-       payroll_preview:       'Batch Payroll',
-       payroll_finalize:      'Finalize Payroll',
-       payout_list:           'Payouts',
-       bankaccount_list:      'Bank Accounts',
-       banktype_list:         'Bank Types',
-       loan_list:             'Loans',
-       tier_list:             'Tier Thresholds',
-       salary_setting_list:   'Salary Settings',
-       demiminimis_list:      'De Minimis Types',
-       deduction_type_list:   'Deduction Types',
-       employee_deduction_account_list: 'Employee Deduction Accounts',
-       payroll_history_list:  'Payroll History',
-       attendance_list:       'Attendance',
-       hr_shift_rules_list:   'Shift Rules',
-       hr_mark_absent:        'Mark Absent',
-       leave_request_list:    'Leave Requests',
-       role_list:             'Role Management',
-       position_list:         'Position Management',
-       department_list:       'Department Management',
-       enps_survey_list:      'Survey',
-       offense_group_list:   'Offense Groups',
-       offense_section_list:  'Offense Sections',
-       classification_list:   'Classifications',
-       remedial_action_list:  'Remedial Actions',
-       violation_category_list: 'Violation Categories',
-       violation_type_list:   'Violation Types',
-       violation_list:        'Employee Violations',
-       exit_interview_list:   'Exit Interviews',
-     };
-
-    const currentUrlName = "{{ request.resolver_match.url_name|default:'' }}";
-    const currentPageEl  = document.getElementById('currentPage');
-    if (currentPageEl && currentUrlName && pageNames[currentUrlName]) {
-      currentPageEl.textContent = pageNames[currentUrlName];
-    }
-
-    // ── Active nav item highlight ──────────────────────────────────────────────
-    const currentPath = window.location.pathname.replace(/\/$/, '');
-    navItems.forEach((item) => {
-      const href = item.getAttribute('href');
-      if (!href || href === '#') return;
-      const cleanHref = href.split('?')[0].replace(/\/$/, '');
-      if (currentPath === cleanHref) {
-        item.classList.add('bg-gray-700', 'text-white');
-        item.classList.remove('text-gray-400');
-        item.style.borderLeft   = '4px solid #f97316';
-        item.style.borderRadius = '4px 0 0 4px';
-      }
-    });
-
-    // ── Submenu init + click handlers ─────────────────────────────────────────
-    collapses.forEach((btn) => {
-      const targetId = btn.dataset.collapse;
-      const target   = document.getElementById(targetId);
-      if (!target) return;
-
-      const activeChild  = target.querySelector('.nav-item.bg-gray-700');
-      const savedOpen    = JSON.parse(localStorage.getItem('openSubmenus') || '[]');
-      const shouldExpand = activeChild || savedOpen.includes(targetId);
-
-      if (shouldExpand) {
-        target.classList.add('expanded');
-        const arrow = btn.querySelector('.arrow');
-        if (arrow) arrow.classList.add('rotate-90');
-        btn.setAttribute('aria-expanded', 'true');
-      }
-
-      btn.addEventListener('click', () => {
-        const isExpanded = btn.getAttribute('aria-expanded') === 'true';
-        const arrow      = btn.querySelector('.arrow');
-        if (isExpanded) {
-          target.classList.remove('expanded');
-          if (arrow) arrow.classList.remove('rotate-90');
-          btn.setAttribute('aria-expanded', 'false');
-        } else {
-          target.classList.add('expanded');
-          if (arrow) arrow.classList.add('rotate-90');
-          btn.setAttribute('aria-expanded', 'true');
-        }
-        const openSubmenus = Array.from(
-          document.querySelectorAll('.submenu-content.expanded')
-        ).map((el) => el.id);
-        localStorage.setItem('openSubmenus', JSON.stringify(openSubmenus));
-      });
-    });
-
-    // ── Sidebar collapse/expand (desktop) ─────────────────────────────────────
-    let isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-
+    // ── Sidebar collapse / expand helper ─────────────────────────────────────
     function updateSidebarState(collapsed) {
       const mainContent         = document.getElementById('mainContent');
       const header              = document.getElementById('mainHeader');
+      const footer              = document.getElementById('mainFooter');
       const sidebarIcons        = document.querySelectorAll('.sidebar-icon');
       const sidebarTextElements = document.querySelectorAll('.sidebar-text');
       const allNavItems         = document.querySelectorAll('.nav-item');
@@ -505,22 +435,22 @@
 
       if (isMobile) {
         sidebar.style.width = '256px';
-        if (toggleText) toggleText.textContent = '';
-        allNavItems.forEach((el)         => (el.style.justifyContent = 'flex-start'));
-        sidebarIcons.forEach((el)        => (el.style.marginRight    = '0.75rem'));
-        sidebarTextElements.forEach((el) => (el.style.display        = ''));
+        allNavItems.forEach((el) => {
+          el.style.justifyContent = 'flex-start';
+          el.removeAttribute('title');
+        });
+        sidebarIcons.forEach((el) => (el.style.marginRight    = '0.75rem'));
+        sidebarTextElements.forEach((el) => (el.style.display = ''));
         if (mainContent) mainContent.style.marginLeft = '0';
         if (header)      header.style.marginLeft      = '0';
+        if (footer)      footer.style.marginLeft      = '0';
         return;
       }
 
       if (collapsed) {
         sidebar.style.width = '64px';
-        if (toggleText)   toggleText.textContent       = '';
         if (collapseIcon) collapseIcon.style.transform = 'rotate(180deg)';
         allNavItems.forEach((el) => {
-          el.style.paddingLeft  = '1rem';
-          el.style.paddingRight = '1rem';
           const textEl = el.querySelector('.sidebar-text');
           if (textEl) el.setAttribute('title', textEl.textContent.trim());
         });
@@ -528,14 +458,12 @@
         sidebarTextElements.forEach((el) => (el.style.display     = 'none'));
         if (mainContent) mainContent.style.marginLeft = '64px';
         if (header)      header.style.marginLeft      = '64px';
+        if (footer)      footer.style.marginLeft      = '64px';
       } else {
         sidebar.style.width = '256px';
-        if (toggleText)   toggleText.textContent       = 'Collapse';
         if (collapseIcon) collapseIcon.style.transform = 'rotate(0deg)';
         allNavItems.forEach((el) => {
           el.style.justifyContent = 'flex-start';
-          el.style.paddingLeft    = '1rem';
-          el.style.paddingRight   = '1rem';
           el.removeAttribute('title');
         });
         sidebarIcons.forEach((el) => (el.style.marginRight = '0.75rem'));
@@ -545,9 +473,11 @@
         });
         if (mainContent) mainContent.style.marginLeft = '256px';
         if (header)      header.style.marginLeft      = '256px';
+        if (footer)      footer.style.marginLeft      = '256px';
       }
     }
 
+    let isCollapsed  = localStorage.getItem('sidebarCollapsed') === 'true';
     updateSidebarState(isCollapsed);
 
     window.addEventListener('resize', function () {
@@ -562,6 +492,89 @@
         updateSidebarState(isCollapsed);
       });
     }
+
+    // ── Keyboard shortcut: Ctrl+B toggles sidebar ─────────────────────────────
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        if (sidebarToggleIcons && window.innerWidth >= 768) sidebarToggleIcons.click();
+      }
+    });
+
+    // ── User Menu Dropdown ─────────────────────────────────────────────────────
+    if (userMenuBtn && userMenu) {
+      userMenuBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        userMenu.classList.toggle('hidden');
+      });
+    }
+    // Close only when click is outside both the button AND the menu panel
+    document.addEventListener('click', function (e) {
+      if (userMenu && userMenuBtn && !userMenu.contains(e.target) && !userMenuBtn.contains(e.target)) {
+        userMenu.classList.add('hidden');
+      }
+    });
+
+    // ── Breadcrumb ────────────────────────────────────────────────────────────
+    const currentUrlName = "{{ request.resolver_match.url_name|default:'' }}";
+    const currentPageEl  = document.getElementById('currentPage');
+    if (currentPageEl && currentUrlName) {
+      const pageNames = {
+        hr_dashboard:              'Dashboard',
+        hr_user_mgnt:              'User Management',
+        staff_history_hr_list:     'Employee History',
+        individual_payroll:        'Individual Payroll',
+        payroll_preview:           'Batch Payroll',
+        payroll_finalize:          'Finalize Payroll',
+        payout_list:               'Payouts',
+        bankaccount_list:          'Bank Accounts',
+        banktype_list:             'Bank Types',
+        loan_list:                 'Loans',
+        tier_list:                 'Tier Thresholds',
+        salary_setting_list:       'Salary Settings',
+        demiminimis_list:          'De Minimis Types',
+        deduction_type_list:       'Deduction Types',
+        employee_deduction_account_list: 'Employee Deduction Accounts',
+        payroll_history_list:      'Payroll History',
+        attendance_list:           'Attendance',
+        hr_shift_rules_list:       'Shift Rules',
+        hr_mark_absent:            'Mark Absent',
+        leave_request_list:        'Leave Requests',
+        role_list:                 'Role Management',
+        position_list:             'Position Management',
+        department_list:           'Department Management',
+        enps_survey_list:          'Survey',
+        offense_group_list:        'Offense Groups',
+        offense_section_list:      'Offense Sections',
+        classification_list:       'Classifications',
+        remedial_action_list:      'Remedial Actions',
+        violation_category_list:   'Violation Categories',
+        violation_type_list:       'Violation Types',
+        violation_list:            'Employee Violations',
+        exit_interview_list:       'Exit Interviews',
+      };
+      if (pageNames[currentUrlName]) currentPageEl.textContent = pageNames[currentUrlName];
+      // Fallback: use <title> when no url_name match
+      else if (document.title) currentPageEl.textContent = document.title.split(' | ')[0];
+    }
+
+    // ── Active nav item highlight ─────────────────────────────────────────────
+    // CSS class instead of inline style prevents border-radius "scar" on collapse.
+    function setActiveNavItem() {
+      const currentPath = window.location.pathname.replace(/\/$/, '');
+      navItems.forEach((item) => {
+        const href = item.getAttribute('href');
+        if (!href || href === '#') return;
+        const cleanHref = href.split('?')[0].replace(/\/$/, '');
+        if (currentPath === cleanHref) {
+          item.classList.add('nav-active');
+        } else {
+          item.classList.remove('nav-active');
+        }
+      });
+    }
+    setActiveNavItem();
+    window.addEventListener('popstate', setActiveNavItem);
 
     // ── Mobile sidebar open/close ──────────────────────────────────────────────
     if (sidebarOpenBtn) {
@@ -583,7 +596,7 @@
     if (sidebarCloseBtn) sidebarCloseBtn.addEventListener('click', closeSidebar);
     if (overlay)         overlay.addEventListener('click', closeSidebar);
 
-    // ── Main content fade-in animation ────────────────────────────────────────
+    // ── Main content fade-in ──────────────────────────────────────────────────
     const main = document.getElementById('mainContent');
     if (main) {
       setTimeout(() => {
@@ -592,25 +605,70 @@
       }, 100);
     }
 
-    // ── FIX 2: Page loader scoped to #sidebar links ONLY ──────────────────────
-    // Was: document.querySelectorAll('.nav-item[href], a[href]')
-    // That matched ALL <a> tags on the page — including pagination prev/next arrows —
-    // causing the spinner to trigger on those clicks and appear stuck mid-transition.
-    // Now scoped strictly to links inside the sidebar element only.
+    // ── Submenu init + click handlers ─────────────────────────────────────────
+    collapses.forEach((btn) => {
+      const targetId = btn.dataset.collapse;
+      const target   = document.getElementById(targetId);
+      if (!target) return;
+
+      // Re-open submenu if it has an active child or was saved for this page
+      const savedOpen   = getPageSubmenus();
+      const activeChild = target.querySelector('.nav-active');
+      if (activeChild || savedOpen.includes(targetId)) {
+        target.classList.add('expanded');
+        const arrow = btn.querySelector('.arrow');
+        if (arrow) arrow.classList.add('rotate-90');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+
+      btn.addEventListener('click', () => {
+        if (isCollapsed && window.innerWidth > 767) {
+          // Auto-expand so the user can see / interact with submenu items
+          isCollapsed = false;
+          localStorage.setItem('sidebarCollapsed', false);
+          updateSidebarState(false);
+        }
+
+        const isExpanded = btn.getAttribute('aria-expanded') === 'true';
+        const arrow      = btn.querySelector('.arrow');
+        if (isExpanded) {
+          target.classList.remove('expanded');
+          target.classList.add('collapsing');
+          if (arrow) arrow.classList.remove('rotate-90');
+          btn.setAttribute('aria-expanded', 'false');
+          setPageSubmenu(targetId, false);
+          target.addEventListener('transitionend', function onEnd(e) {
+            if (e.propertyName === 'max-height') {
+              target.classList.remove('collapsing');
+              target.removeEventListener('transitionend', onEnd);
+            }
+          });
+        } else {
+          if (target.classList.contains('collapsing')) {
+            target.classList.remove('collapsing');
+            target.style.transition = 'none';
+            target.style.maxHeight  = '0';
+            target.style.opacity    = '';
+            requestAnimationFrame(() => {
+              target.style.transition = '';
+              target.style.maxHeight  = '';
+            });
+          }
+          target.classList.add('expanded');
+          if (arrow) arrow.classList.add('rotate-90');
+          btn.setAttribute('aria-expanded', 'true');
+          setPageSubmenu(targetId, true);
+        }
+      });
+    });
+
+    // ── Page loader on sidebar nav clicks ONLY ────────────────────────────────
     const sidebarEl = document.getElementById('sidebar');
     if (sidebarEl) {
       sidebarEl.querySelectorAll('a[href]').forEach((link) => {
         link.addEventListener('click', function () {
           const href = this.getAttribute('href');
-          if (
-            !href ||
-            href === '#' ||
-            href.startsWith('http') ||
-            href.startsWith('javascript') ||
-            href.startsWith('mailto:') ||
-            href.startsWith('tel:') ||
-            href.includes('confirmLogout')
-          ) return;
+          if (!href || href === '#' || href.match(/^(https?|javascript|mailto|tel):/) || href.includes('confirmLogout')) return;
           if (pageLoader) pageLoader.classList.add('active');
         });
       });
