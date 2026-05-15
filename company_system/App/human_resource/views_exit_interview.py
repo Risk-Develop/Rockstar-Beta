@@ -16,7 +16,7 @@ from decimal import Decimal
 from App.users.models import Staff, Role, Position, Department
 from App.authentication.decorators import login_required
 
-from .models import ExitInterview, ExitInterviewHistory
+from .models import ExitInterview, ExitInterviewHistory, ExitFilterPreset, ExitInterviewNotification
 from .forms import ExitInterviewForm
 
 
@@ -44,11 +44,12 @@ def exit_interview_list(request):
             return redirect('human_resource:hr_dashboard')
     else:
         employee = None
+        staff = None
 
     # Base queryset
     interviews = ExitInterview.objects.select_related('employee').all()
 
-    # Search & filter
+    # Search (status filter is handled client-side for view persistence)
     search_query = request.GET.get('search', '').strip()
     status_filter = request.GET.get('status', '').strip()
     if search_query:
@@ -57,10 +58,11 @@ def exit_interview_list(request):
             Q(employee__last_name__icontains=search_query) |
             Q(employee__employee_number__icontains=search_query)
         )
-    if status_filter:
-        interviews = interviews.filter(resignation_status=status_filter)
+    # NOTE: resignation_status filtering is intentionally NOT applied server-side.
+    # The client-side JS in exit_interview.js toggles row visibility by status,
+    # ensuring a single unified table and consistent view-mode switching.
 
-    # Sorting
+    # Sort
     sort_by = request.GET.get('sort', 'created_at')
     sort_order = request.GET.get('order', 'desc')
     allowed_sort_fields = [
@@ -72,7 +74,10 @@ def exit_interview_list(request):
     interviews = interviews.order_by(sort_by) if sort_order == 'asc' else interviews.order_by(f'-{sort_by}')
 
     # Pagination
-    paginator = Paginator(interviews, 20)
+    page_size = int(request.GET.get('page_size', 20))
+    if page_size not in [10, 25, 50, 100]:
+        page_size = 20
+    paginator = Paginator(interviews, page_size)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -83,6 +88,20 @@ def exit_interview_list(request):
     indefinite_count = ExitInterview.objects.filter(resignation_status='indefinite_leave').count()
     contract_end_count = ExitInterview.objects.filter(resignation_status='end_contract').count()
 
+    # Saved presets & notification count
+    presets_list = []
+    unread_count = 0
+    if not is_owner:
+        _staff = Staff.objects.filter(employee_number=emp_num).first()
+        if _staff:
+            presets_list = [
+                {'name': p.name, 'category': p.category, 'filter_params': p.filter_params}
+                for p in ExitFilterPreset.objects.filter(user=_staff)
+            ]
+            unread_count = ExitInterviewNotification.objects.filter(
+                user=_staff, is_read=False
+            ).count()
+
     context = {
         'employee': employee,
         'is_owner': is_owner,
@@ -90,6 +109,7 @@ def exit_interview_list(request):
         'search_query': search_query,
         'status_filter': status_filter,
         'resignation_status_choices': ExitInterview.RESIGNATION_STATUS_CHOICES,
+        'all_statuses_choices': [{'value': v, 'label': l} for v, l in ExitInterview.RESIGNATION_STATUS_CHOICES],
         'total_count': total_count,
         'exit_count': exit_count,
         'revoked_count': revoked_count,
@@ -104,11 +124,45 @@ def exit_interview_list(request):
         'clearance_status_choices': ExitInterview.CLEARANCE_STATUS_CHOICES,
         'quitclaim_status_choices': ExitInterview.QUITCLAIM_STATUS_CHOICES,
         'final_pay_status_choices': ExitInterview.FINAL_PAY_STATUS_CHOICES,
+        'view_mode': request.GET.get('view', 'list'),
+        'current_page_size': page_size,
+        'modes': [
+            {'v': 'list',    'l': 'List',    'i': 'fa-list-ul'},
+            {'v': 'calendar','l': 'Calendar','i': 'fa-calendar-alt'},
+            {'v': 'kanban',  'l': 'Kanban',  'i': 'fa-columns'},
+        ],
+        'presets': presets_list,
+        'notification_count': unread_count,
     }
 
-    if request.headers.get('HX-Request'):
-        return render(request, 'hr/default/exit_interview/_exit_interview_results_partial.html', context)
+    hx_request = request.headers.get('HX-Request')
+    view_mode = context['view_mode']
 
+    # ── Calendar partial ──────────────────────────────────────────────────────
+    if view_mode == 'calendar' and hx_request:
+        from collections import defaultdict
+        from datetime import date
+        calendar_data = defaultdict(list)
+        for iv in page_obj:
+            day = iv.approved_last_day or iv.desired_last_day
+            if day:
+                calendar_data[day].append(iv)
+        context['calendar_data'] = dict(sorted(calendar_data.items()))
+        return render(request, 'hr/default/exit_interview/_exit_interview_calendar_partial.html', context)
+
+    # ── Kanban partial ────────────────────────────────────────────────────────
+    if view_mode == 'kanban' and hx_request:
+        from collections import defaultdict
+        kanban_columns = defaultdict(list)
+        for iv in page_obj:
+            kanban_columns[iv.exit_interview_status].append(iv)
+        context['kanban_columns'] = dict(sorted(kanban_columns.items()))
+        context['status_choices'] = ExitInterview.EXIT_INTERVIEW_STATUS_CHOICES
+        return render(request, 'hr/default/exit_interview/_exit_interview_kanban_partial.html', context)
+
+    # ── Default list path ─────────────────────────────────────────────────────
+    if hx_request:
+        return render(request, 'hr/default/exit_interview/_exit_interview_results_partial.html', context)
     return render(request, 'hr/default/exit_interview/exit_interview_list.html', context)
 
 
@@ -781,19 +835,17 @@ def exit_interview_bulk_mark_all_read(request):
         if role_name not in ['Owner', 'Master', 'Developer', 'Admin', 'HR']:
             return JsonResponse({'error': 'Permission denied'}, status=403)
 
-    # Build the same queryset as the list view (respects search + status filter)
+    # Build the same queryset as the list view (respects search; status is client-side)
     interviews = ExitInterview.objects.select_related('employee').all()
 
     search_query = request.POST.get('search', '').strip()
-    status_filter = request.POST.get('status', '').strip()
+    status_filter = request.POST.get('status', '').strip()   # kept for context URL; NOT a DB filter
     if search_query:
         interviews = interviews.filter(
             Q(employee__first_name__icontains=search_query) |
             Q(employee__last_name__icontains=search_query) |
             Q(employee__employee_number__icontains=search_query)
         )
-    if status_filter:
-        interviews = interviews.filter(resignation_status=status_filter)
 
     field_name = request.POST.get('field', 'exit_interview_status')
     new_value = request.POST.get('value', 'completed')
@@ -825,8 +877,9 @@ def _render_results_partial(request, search_query='', status_filter=''):
         )
     else:
         qs = ExitInterview.objects.all()
-    if status_filter:
-        qs = qs.filter(resignation_status=status_filter)
+    # NOTE: resignation_status filtering is intentionally NOT applied here.
+    # Client-side status toggling is handled by exit_interview.js, keeping a
+    # single unified table regardless of the active status filter.
     allowed_sort_fields = [
         'employee__first_name', 'employee__last_name', 'resignation_status',
         'date_filed', 'approved_last_day', 'created_at',
@@ -842,6 +895,8 @@ def _render_results_partial(request, search_query='', status_filter=''):
         'page_obj': page_obj,
         'search_query': search_query,
         'status_filter': status_filter,
+        'view_mode': request.GET.get('view', 'list'),
+        'all_statuses_choices': [{'value': v, 'label': l} for v, l in ExitInterview.RESIGNATION_STATUS_CHOICES],
         'current_sort': sort_by,
         'current_order': sort_order,
         'page_window_start': page_obj.number - 3,
@@ -1041,3 +1096,192 @@ def _sentiment_score(text):
     score = round(score * (0.5 + 0.5 * weight))
 
     return max(0, min(100, score))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FILTER PRESETS — Save / list user filter configurations
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def exit_interview_filter_preset_list(request):
+    """Return JSON array of the current user's saved filter presets."""
+    emp_num = request.session.get('employee_number')
+    is_owner = request.session.get('is_owner', False)
+    if is_owner:
+        return JsonResponse([], safe=False)
+    staff = Staff.objects.filter(employee_number=emp_num).first()
+    if not staff:
+        return JsonResponse([], safe=False)
+    presets = ExitFilterPreset.objects.filter(user=staff)
+    data = [
+        {
+            'id': p.id,
+            'name': p.name,
+            'category': p.category,
+            'filter_params': p.filter_params,
+        }
+        for p in presets
+    ]
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+def exit_interview_filter_preset_save(request):
+    """Save or update a named filter preset (POST)."""
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    emp_num = request.session.get('employee_number')
+    is_owner = request.session.get('is_owner', False)
+    if is_owner:
+        return JsonResponse({'success': True})  # owner has no personal presets
+    staff = Staff.objects.filter(employee_number=emp_num).first()
+    if not staff:
+        return JsonResponse({'error': 'Not authenticated'}, status=401)
+
+    name = request.POST.get('name', '').strip()
+    category = request.POST.get('category', 'custom')
+    if not name:
+        return JsonResponse({'error': 'Name is required'}, status=400)
+
+    # Build filter_params from current request params (exclude preset keys)
+    filter_params = {k: v for k, v in request.GET.items() if k not in ('preset', 'notification_dismissed', 'page')}
+
+    preset, _ = ExitFilterPreset.objects.update_or_create(
+        user=staff,
+        name=name,
+        defaults={'category': category, 'filter_params': filter_params},
+    )
+    return JsonResponse({'id': preset.id, 'name': preset.name})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SEARCH AUTOCOMPLETE — JSON suggestions for the search field
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def exit_interview_search_suggestions(request):
+    """Return up to 10 employee name / employee-number matches as JSON for autocomplete."""
+    q = request.GET.get('q', '').strip()
+    if len(q) < 2:
+        return JsonResponse({'suggestions': []})
+    matches = (
+        ExitInterview.objects
+        .select_related('employee')
+        .filter(
+            Q(employee__first_name__icontains=q) |
+            Q(employee__last_name__icontains=q) |
+            Q(employee__employee_number__icontains=q)
+        )
+        .values('id', 'employee__first_name', 'employee__last_name',
+                'employee__employee_number')[:10]
+    )
+    suggestions = [{
+        'id': m['id'],
+        'label': f"{m['employee__first_name']} {m['employee__last_name']} (#{m['employee__employee_number']})",
+    } for m in matches]
+    return JsonResponse({'suggestions': suggestions})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# NOTIFICATIONS — Bell icon dropdown + mark-as-read
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def exit_interview_notifications_dropdown(request):
+    """Return an HTML fragment for the bell dropdown panel."""
+    emp_num = request.session.get('employee_number')
+    is_owner = request.session.get('is_owner', False)
+    if is_owner:
+        return render(request, 'hr/default/exit_interview/_exit_interview_notifications_dropdown.html',
+                      {'notifications': [], 'unread_count': 0})
+    staff = Staff.objects.filter(employee_number=emp_num).first()
+    if not staff:
+        return render(request, 'hr/default/exit_interview/_exit_interview_notifications_dropdown.html',
+                      {'notifications': [], 'unread_count': 0})
+    qs = ExitInterviewNotification.objects.filter(
+        user=staff, is_read=False
+    ).select_related('interview', 'interview__employee')[:20]
+    return render(request, 'hr/default/exit_interview/_exit_interview_notifications_dropdown.html',
+                  {'notifications': qs, 'unread_count': qs.count()})
+
+
+@login_required
+def exit_interview_notifications(request):
+    """Return unread notification count + list (JSON) — used by JS poller only."""
+    emp_num = request.session.get('employee_number')
+    is_owner = request.session.get('is_owner', False)
+    if is_owner:
+        return JsonResponse({'count': 0, 'notifications': []})
+    staff = Staff.objects.filter(employee_number=emp_num).first()
+    if not staff:
+        return JsonResponse({'count': 0, 'notifications': []})
+    qs = ExitInterviewNotification.objects.filter(
+        user=staff, is_read=False
+    ).select_related('interview', 'interview__employee')[:20]
+    data = [{
+        'id': n.id,
+        'type': n.get_notification_type_display(),
+        'interview_id': n.interview_id,
+        'employee': n.interview.get_full_name(),
+        'created_at': n.created_at.strftime('%b %d, %Y %I:%M %p'),
+        'url': reverse('human_resource:exit_interview_detail', args=[n.interview_id]),
+    } for n in qs]
+    return JsonResponse({'count': qs.count(), 'notifications': data})
+
+
+@login_required
+def exit_interview_notification_mark_read(request, notif_id):
+    """Mark a single notification as read (POST)."""
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    emp_num = request.session.get('employee_number')
+    is_owner = request.session.get('is_owner', False)
+    if is_owner:
+        return JsonResponse({'status': 'ok'})
+    staff = Staff.objects.filter(employee_number=emp_num).first()
+    if not staff:
+        return JsonResponse({'error': 'Not authenticated'}, status=401)
+    ExitInterviewNotification.objects.filter(id=notif_id, user=staff).update(is_read=True)
+    return JsonResponse({'status': 'ok'})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# COLUMN TOGGLE — persist which columns are visible
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def exit_interview_toggle_column(request):
+    """Toggle visibility of a specific column (per-user, stored in session for now)."""
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    column_field = request.POST.get('column_field', '').strip()
+    visible = request.POST.get('visible', '0') == '1'
+    emp_num = request.session.get('employee_number')
+    if not emp_num:
+        return JsonResponse({'status': 'ok'})
+    key = f'exit_interview_hidden_columns_{emp_num}'
+    hidden = request.session.get(key, [])
+    if visible:
+        if column_field in hidden:
+            hidden = [h for h in hidden if h != column_field]
+    else:
+        if column_field not in hidden:
+            hidden.append(column_field)
+    request.session[key] = hidden
+    request.session.modified = True
+    return JsonResponse({'status': 'ok', 'hidden_columns': hidden})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PAGE SIZE — persist preferred row count per-user
+# ══════════════════════════════════════════════════════════════════════════════
+
+@login_required
+def exit_interview_set_page_size(request):
+    """Store user's preferred page size in session."""
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    page_size = request.POST.get('page_size', '20')
+    emp_num = request.session.get('employee_number') or 'anon'
+    request.session[f'exit_interview_page_size_{emp_num}'] = int(page_size)
+    return JsonResponse({'status': 'ok'})

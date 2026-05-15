@@ -338,6 +338,12 @@ tr:hover .row-actions-hover { opacity: 1; }
 
 th.select-header-cell { width: 44px; max-width: 50px; }
 td.select-col { width: 44px; max-width: 50px; text-align: center; vertical-align: middle; }
+
+/* ── Focus ring (accessibility) ── */
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+}
 </style>
 {% endblock %}
 
@@ -363,7 +369,7 @@ td.select-col { width: 44px; max-width: 50px; text-align: center; vertical-align
            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
            New Exit Interview
          </a>
-         <a href="{% url 'human_resource:exit_interview_export' %}?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if current_sort %}sort={{ current_sort }}&{% endif %}{% if current_order %}order={{ current_order }}{% endif %}" 
+          <a href="{% url 'human_resource:exit_interview_export' %}?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if current_sort %}sort={{ current_sort }}&{% endif %}{% if current_order %}order={{ current_order }}{% endif %}{% if current_page_size != 20 %}page_size={{ current_page_size }}&{% endif %}" 
             class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
             title="Export to CSV">
            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -433,32 +439,165 @@ td.select-col { width: 44px; max-width: 50px; text-align: center; vertical-align
            </div>
          </div>
        </div>
-     </div>
+      </div>
 
-      <!-- Filter Section -->
-      <div class="filter-section">
-         <form method="get"
-               hx-get="{% url 'human_resource:exit_interview_list' %}"
-               hx-target="#exit-interview-results"
-               hx-swap="innerHTML"
-               hx-push-url="true"
-               hx-trigger="keyup delay:500ms from:input[name='search'], change from:select[name='status'], submit"
-               class="flex flex-col sm:flex-row gap-4">
-          <div class="flex-1">
-            <input type="text"
-                   name="search"
-                   value="{{ search_query }}"
-                   placeholder="Search by name or employee number..."
-                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <!-- ── View Toolbar: toggle, page-size, columns, bell, presets ── -->
+      <div class="flex flex-wrap items-center gap-3 my-2"
+           x-data="{ columnsOpen: false, notifOpen: false, helpOpen: false }">
+
+        <!-- View mode toggle -->
+        <div class="inline-flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1"
+             role="group" aria-label="View mode">
+          {% for mode in modes %}
+          <button type="button"
+                  value="{{ mode.v }}"
+                  {% if view_mode == mode.v %}aria-pressed="true"{% endif %}
+                  hx-get="{% url 'human_resource:exit_interview_list' %}?{% if search_query %}search={{ search_query }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}sort={{ current_sort }}&order={{ current_order }}{% if current_page_size != 20 %}&page_size={{ current_page_size }}{% endif %}{% if view_mode and view_mode != mode.v %}&view={{ view_mode }}{% endif %}&view={{ mode.v }}"
+                  hx-target="#exit-interview-results"
+                  hx-swap="innerHTML"
+                  hx-push-url="true"
+                  class="px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all
+                         {% if view_mode == mode.v %}bg-white shadow text-blue-600 ring-1 ring-gray-200 dark:ring-gray-600{% else %}text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200{% endif %}">
+            <i class="fas {{ mode.i }} mr-1"></i>{{ mode.l }}
+          </button>
+          {% endfor %}
+        </div>
+
+        <!-- Divider -->
+        <div class="hidden sm:block w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
+
+        <!-- Page size selector -->
+        <select onchange="window.setPageSize(parseInt(this.value))"
+                class="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1.5
+                       bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300
+                       focus:ring-2 focus:ring-blue-500"
+                aria-label="Rows per page">
+          <option value="10"  {% if current_page_size == 10  %}selected{% endif %}>10</option>
+          <option value="25"  {% if current_page_size == 25  %}selected{% endif %}>25</option>
+          <option value="50"  {% if current_page_size == 50  %}selected{% endif %}>50</option>
+          <option value="100" {% if current_page_size == 100 %}selected{% endif %}>100</option>
+        </select>
+
+        <!-- Spacer -->
+        <div class="flex-1"></div>
+
+        <!-- Notification bell -->
+        <div class="relative" @click.outside="notifOpen=false"
+             x-data="{ notifOpen: false,
+                       notificationCount: (window.exitInterviewUI && window.exitInterviewUI.notificationCount) || 0 }"
+             x-init="
+               // Mirror polling updates from the global plain object into this Alpine-reactive field
+               setInterval(() => {
+                 if (window.exitInterviewUI && typeof window.exitInterviewUI.notificationCount === 'number') {
+                   notificationCount = window.exitInterviewUI.notificationCount;
+                 }
+               }, 1000)">
+          <button @click="notifOpen=!notifOpen"
+                  hx-get="{% url 'human_resource:exit_interview_notifications_dropdown' %}"
+                  hx-target="#notif-dropdown-content"
+                  hx-trigger="click once"
+                  hx-swap="innerHTML"
+                  class="relative p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                  aria-label="Notifications">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+            </svg>
+            <span id="notif-badge"
+                  class="absolute top-0.5 right-0.5 inline-flex items-center justify-center w-4.5 h-4.5
+                         text-[10px] leading-none font-bold text-white bg-red-600 rounded-full"
+                  x-show="notificationCount > 0"
+                  x-text="notificationCount">
+            </span>
+          </button>
+          <div x-show="notifOpen"
+               x-transition
+               x-cloak
+               id="notif-dropdown-content"
+               class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-xl z-50 max-h-96 overflow-y-auto">
+            <div class="p-4 text-center text-gray-500 text-sm">Loading…</div>
           </div>
-          <div class="flex items-end gap-2">
-            <select name="status"
-                    class="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">All Statuses</option>
-              {% for value, label in resignation_status_choices %}
-                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
+        </div>
+
+        <!-- Help button -->
+        <div x-data="{ helpOpen: false }" class="relative">
+          <button @click="helpOpen=!helpOpen"
+                  type="button"
+                  class="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  title="Help / Key shortcuts">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </button>
+          <!-- Help dropdown -->
+          <div x-show="helpOpen"
+               x-transition
+               @click.outside="helpOpen=false"
+               x-cloak
+               class="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-xl z-50 max-h-96 overflow-y-auto"
+               x-init="$refs.container?.focus()">
+            <div class="p-4" tabindex="-1" x-ref="container">
+              <h3 class="text-base font-bold text-gray-900 dark:text-gray-100 mb-3">Exit Interview Help</h3>
+              <div class="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+                <details open>
+                  <summary class="font-semibold cursor-pointer hover:text-gray-800 dark:hover:text-gray-200">Status colors</summary>
+                  <p class="mt-1 pl-4 text-xs leading-relaxed">Teal = Completed · Blue = In progress · Amber = On hold · Purple = Ordered · Gray = Not necessary / N/A</p>
+                </details>
+                <details>
+                  <summary class="font-semibold cursor-pointer hover:text-gray-800 dark:hover:text-gray-200">Bulk update</summary>
+                  <p class="mt-1 pl-4 text-xs leading-relaxed">Check the rows, then use the action toolbar that appears above the table to update all selected records at once.</p>
+                </details>
+                <details>
+                  <summary class="font-semibold cursor-pointer hover:text-gray-800 dark:hover:text-gray-200">Views</summary>
+                  <p class="mt-1 pl-4 text-xs leading-relaxed">Use the List / Calendar / Kanban toggle to switch layouts. Calendar groups interviews by approved last day; Kanban groups by exit-interview status.</p>
+                </details>
+                <details>
+                  <summary class="font-semibold cursor-pointer hover:text-gray-800 dark:hover:text-gray-200">Search</summary>
+                  <p class="mt-1 pl-4 text-xs leading-relaxed">Type 2+ characters in the search box for autocomplete suggestions. Press Enter or click a suggestion to filter the table.</p>
+                </details>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="filter-section">
+        <form method="get"
+              hx-get="{% url 'human_resource:exit_interview_list' %}"
+              hx-target="#exit-interview-results"
+              hx-swap="innerHTML"
+              hx-push-url="true"
+              hx-trigger="keyup delay:500ms from:input[name='search'], submit"
+               class="flex flex-col sm:flex-row gap-4">
+           <div class="flex-1 relative">
+             <input type="text"
+                    name="search"
+                    id="search-input"
+                    value="{{ search_query }}"
+                    placeholder="Search by name or employee number…"
+                    autocomplete="off"
+                    hx-get="{% url 'human_resource:exit_interview_search_suggestions' %}"
+                    hx-trigger="keyup changed delay:150ms"
+                    hx-target="#search-suggestions"
+                    hx-swap="innerHTML"
+                    class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2
+                           bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+                           focus:outline-none focus:ring-2 focus:ring-blue-500">
+             <!-- Autocomplete dropdown -->
+             <div id="search-suggestions"
+                  class="absolute z-30 w-full mt-1 bg-white dark:bg-gray-800 rounded-lg border
+                         border-gray-200 dark:border-gray-700 shadow-lg max-h-64 overflow-y-auto hidden">
+             </div>
+           </div>
+            <div class="flex items-end gap-2">
+             <select name="status"
+                     id="status-filter"
+                     class="border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">All Statuses</option>
+                {% for value, label in resignation_status_choices %}
+                  <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+             </select>
             {# Preserve sort and order when filtering #}
             <input type="hidden" name="sort" value="{{ current_sort|default:'created_at' }}">
             <input type="hidden" name="order" value="{{ current_order|default:'desc' }}">
@@ -471,7 +610,8 @@ td.select-col { width: 44px; max-width: 50px; text-align: center; vertical-align
       </div>
 
      <!-- Results Container (HTMX target) -->
-     <div id="exit-interview-results">
+      <!-- HTMX target for all results partials (list, calendar, kanban) -->
+      <div id="exit-interview-results" hx-indicator=".htmx-skeleton">
        {% include "hr/default/exit_interview/_exit_interview_results_partial.html" %}
       </div>
     </div>
@@ -491,97 +631,18 @@ td.select-col { width: 44px; max-width: 50px; text-align: center; vertical-align
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-  function showQuickViewModal() {
-    document.getElementById('quickViewModal').style.display = 'flex';
-  }
+<!-- Server-side config consumed by exit_interview.js -->
+<div id="exit-interview-config"
+     data-notifications-url="{% url 'human_resource:exit_interview_notifications' %}"
+     data-bulk-status-url="{% bulk_status_update_url %}"
+     data-bulk-mark-read-url="{% bulk_mark_all_read_url %}"
+     data-notif-base-path="{% url 'human_resource:exit_interview_notification_mark_read' notif_id=999999999 %}"
+     data-csrf-token="{% csrf_token %}"
+     style="display:none"></div>
 
-  function closeQuickViewModal() {
-    var modal = document.getElementById('quickViewModal');
-    if (modal) modal.style.display = 'none';
-    document.getElementById('quickViewContent').innerHTML = '';
-  }
+<!-- Status choices JSON (safe text node — no HTML attribute quoting issues) -->
+{{ all_statuses_choices|json_script:"exit-statuses-json" }}
 
-  // Close on Escape key
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') { closeQuickViewModal(); }
-  });
-
-  function collectSelectedIds() {
-    return [...document.querySelectorAll('.row-checkbox:checked')]
-      .map(function(cb) { return cb.dataset.pk; });
-  }
-
-  function onRowCheckChanged() {
-    var count   = collectSelectedIds().length;
-    var toolbar = document.getElementById('bulkToolbar');
-    document.getElementById('bulkToolbarLabel').textContent = count + (count === 1 ? ' selected' : ' selected');
-    toolbar.classList.toggle('visible', count > 0);
-    syncSelectAllHeader();
-  }
-
-  function toggleSelectAll(masterCb) {
-    document.querySelectorAll('.row-checkbox').forEach(function(cb) {
-      cb.checked = masterCb.checked;
-    });
-    onRowCheckChanged();
-  }
-
-  function syncSelectAllHeader() {
-    var master = document.getElementById('selectAll');
-    if (!master) return;
-    var total   = document.querySelectorAll('.row-checkbox').length;
-    var checked = document.querySelectorAll('.row-checkbox:checked').length;
-    master.checked       = total > 0 && checked === total;
-    master.indeterminate = checked > 0 && checked < total;
-  }
-
-  function clearBulkSelection() {
-    document.querySelectorAll('.row-checkbox').forEach(function(cb) { cb.checked = false; });
-    onRowCheckChanged();
-  }
-
-  function applyBulkAction() {
-    var ids   = collectSelectedIds();
-    var parts = document.getElementById('bulkFieldSelect').value.split('|');
-    if (parts.length < 2 || !ids.length) return;
-    var field = parts[0], value = parts[1];
-    var form  = document.createElement('form');
-    form.method = 'POST'; form.action = '{% bulk_status_update_url %}';
-    var csrfEl = document.createElement('input');
-    csrfEl.type  = 'hidden';
-    csrfEl.name  = 'csrfmiddlewaretoken';
-    csrfEl.value = '{% csrf_token %}';
-    form.appendChild(csrfEl);
-    ids.forEach(function(id) {
-      var el = document.createElement('input');
-      el.type = 'hidden'; el.name = 'ids'; el.value = id; form.appendChild(el);
-    });
-    ['field', 'value'].forEach(function(n) {
-      var el = document.createElement('input');
-      el.type = 'hidden'; el.name = n; el.value = (n === 'field') ? field : value; form.appendChild(el);
-    });
-    document.body.appendChild(form);
-    htmx.ajax('POST', form.action, { source: form, target: '#exit-interview-results', swap: 'innerHTML' });
-    document.body.removeChild(form);
-  }
-
-  function bulkMarkAllAsCompleted() {
-    var ids = collectSelectedIds();
-    var form = document.createElement('form');
-    form.method = 'POST'; form.action = '{% bulk_mark_all_read_url %}';
-    var csrfEl = document.createElement('input');
-    csrfEl.type  = 'hidden';
-    csrfEl.name  = 'csrfmiddlewaretoken';
-    csrfEl.value = '{% csrf_token %}';
-    form.appendChild(csrfEl);
-    ids.forEach(function(id) {
-      var el = document.createElement('input');
-      el.type = 'hidden'; el.name = 'ids'; el.value = id; form.appendChild(el);
-    });
-    document.body.appendChild(form);
-    htmx.ajax('POST', form.action, { source: form, target: '#exit-interview-results', swap: 'innerHTML' });
-    document.body.removeChild(form);
-  }
-</script>
+<script type="module" src="{% static 'js/exit_interview.js' %}"></script>
 {% endblock %}
+

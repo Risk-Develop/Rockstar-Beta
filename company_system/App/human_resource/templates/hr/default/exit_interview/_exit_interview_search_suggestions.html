@@ -1,0 +1,11 @@
+{% for s in suggestions %}
+<a href="?{% if search_query %}search={{ s.label|urlencode }}&{% else %}search={{ s.label|urlencode }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% if current_sort %}sort={{ current_sort }}&{% if current_order %}{{ current_order }}&{% endif %}{% endif %}{% if view_mode %}view={{ view_mode }}&{% endif %}{% if current_page_size %}page_size={{ current_page_size }}&{% endif %}"
+   class="block px-4 py-2.5 text-sm text-gray-800 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer"
+   onclick="document.getElementById('search-input').value=this.innerText;
+             htmx.ajax('GET', this.getAttribute('href'),
+                        {target: '#exit-interview-results', swap: 'innerHTML', pushUrl: 'true'}); return false;">
+  {{ s.label }}
+</a>
+{% empty %}
+<p class="px-4 py-3 text-sm text-gray-400 dark:text-gray-500">No matches found</p>
+{% endfor %}

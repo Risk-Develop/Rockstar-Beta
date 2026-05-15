@@ -278,6 +278,15 @@ urlpatterns = [
        path('exit-interview/<int:pk>/add-note/', views_exit_interview.exit_interview_add_note, name='exit_interview_add_note'),
        path('exit-interview/<int:pk>/request-update/', views_exit_interview.exit_interview_request_update, name='exit_interview_request_update'),
        path('exit-interview/<int:pk>/satisfaction-chart/', views_exit_interview.exit_interview_satisfaction_chart, name='exit_interview_satisfaction_chart'),
+       path('exit-interview/presets/', views_exit_interview.exit_interview_filter_preset_list, name='exit_interview_filter_preset_list'),
+       path('exit-interview/presets/save/', views_exit_interview.exit_interview_filter_preset_save, name='exit_interview_filter_preset_save'),
+       path('exit-interview/search/', views_exit_interview.exit_interview_search_suggestions, name='exit_interview_search_suggestions'),
+       path('exit-interview/notifications/', views_exit_interview.exit_interview_notifications, name='exit_interview_notifications'),
+       path('exit-interview/notifications/dropdown/', views_exit_interview.exit_interview_notifications_dropdown, name='exit_interview_notifications_dropdown'),
+       path('exit-interview/notification/<int:notif_id>/read/', views_exit_interview.exit_interview_notification_mark_read, name='exit_interview_notification_mark_read'),
+       path('exit-interview/column/toggle/', views_exit_interview.exit_interview_toggle_column, name='exit_interview_toggle_column'),
+       path('exit-interview/page-size/', views_exit_interview.exit_interview_set_page_size, name='exit_interview_set_page_size'),
+
 
 
 ]

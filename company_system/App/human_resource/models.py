@@ -636,6 +636,86 @@ class ExitInterviewHistory(models.Model):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# Saved Filter Presets for Exit Interviews
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class ExitFilterPreset(models.Model):
+    """User-saved filter configurations for the exit interview list."""
+
+    PRESET_CATEGORIES = [
+        ('my_team', 'My Team'),
+        ('this_week', 'This Week'),
+        ('overdue', 'Overdue'),
+        ('custom', 'Custom'),
+    ]
+
+    user = models.ForeignKey(
+        Staff,
+        on_delete=models.CASCADE,
+        related_name='exit_filter_presets'
+    )
+    name = models.CharField(max_length=100)
+    category = models.CharField(
+        max_length=30,
+        choices=PRESET_CATEGORIES,
+        default='custom'
+    )
+    filter_params = models.JSONField(default=dict)
+    is_shared = models.BooleanField(
+        default=False,
+        help_text="Share this preset with other HR users"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['user', 'name']
+        verbose_name = 'Exit Interview Filter Preset'
+        verbose_name_plural = 'Exit Interview Filter Presets'
+
+    def __str__(self):
+        return f"{self.name} — {self.get_category_display()}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Deadline Notifications for Exit Interviews
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class ExitInterviewNotification(models.Model):
+    """Per-user notifications for upcoming or overdue exit interview deadlines."""
+
+    NOTIFICATION_TYPES = [
+        ('upcoming_30day',     '30-day review due soon'),
+        ('upcoming_clearance', 'Clearance deadline approaching'),
+        ('overdue_clearance',  'Overdue clearance'),
+        ('overdue_pay',        'Overdue final pay'),
+    ]
+
+    user = models.ForeignKey(
+        Staff,
+        on_delete=models.CASCADE,
+        related_name='exit_notifications'
+    )
+    interview = models.ForeignKey(
+        ExitInterview,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+    notification_type = models.CharField(max_length=40, choices=NOTIFICATION_TYPES)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = ['user', 'interview', 'notification_type']
+        verbose_name = 'Exit Interview Notification'
+        verbose_name_plural = 'Exit Interview Notifications'
+
+    def __str__(self):
+        return f"{self.get_notification_type_display()} — {self.interview.get_full_name()}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # ENPS (Employee Net Promoter Score) Survey
 # ═══════════════════════════════════════════════════════════════════════════════
 
