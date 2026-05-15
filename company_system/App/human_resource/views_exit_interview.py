@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
 from django.template.loader import render_to_string
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed, HttpResponseBadRequest, HttpResponseNotAllowed
 from django.urls import reverse
 from django.contrib import messages
 from django.db import transaction
@@ -136,6 +136,8 @@ def exit_interview_add(request):
         if form.is_valid():
             interview = form.save()
             messages.success(request, f"Exit interview created for {interview.get_full_name()}.")
+            if request.POST.get('save_and_add_another'):
+                return redirect('human_resource:exit_interview_add')
             return redirect('human_resource:exit_interview_list')
     else:
         form = ExitInterviewForm()
@@ -185,6 +187,8 @@ def exit_interview_edit(request, pk):
             interview.save()
             form.save_m2m() if hasattr(form, 'save_m2m') else None
             messages.success(request, f"Exit interview updated for {interview.get_full_name()}.")
+            if request.POST.get('save_and_add_another'):
+                return redirect('human_resource:exit_interview_add')
             return redirect('human_resource:exit_interview_list')
     else:
         form = ExitInterviewForm(instance=interview)
@@ -610,3 +614,49 @@ def exit_interview_quick_view(request, pk):
         'is_complete': is_complete,
     }
     return render(request, 'hr/default/exit_interview/_exit_interview_quick_view.html', context)
+
+
+@login_required
+def exit_interview_auto_save(request):
+    """
+    AJAX endpoint for client-side auto-save.
+    Accepts partial POST data and persists a draft ExitInterview. Returns 200 JSON.
+    Does NOT redirect on render — always JSON.
+    """
+    emp_num = request.session.get('employee_number')
+    is_owner = request.session.get('is_owner', False)
+
+    if not is_owner:
+        employee = Staff.objects.filter(employee_number=emp_num).first()
+        if not employee:
+            return JsonResponse({'error': 'Unauthorized'}, status=403)
+        role_name = employee.role.role_name if employee.role else ''
+        if role_name not in ['Owner', 'Master', 'Developer', 'Admin', 'HR']:
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+
+    pk = request.POST.get('pk')
+    bound_flags = request.POST.get('bound_fields')
+
+    if pk:
+        interview = get_object_or_404(ExitInterview, pk=pk)
+        form = ExitInterviewForm(request.POST, request.FILES, instance=interview)
+    else:
+        form = ExitInterviewForm(request.POST, request.FILES)
+
+    if form.is_valid():
+        interview = form.save(commit=False)
+        interview.save()
+        form.save_m2m() if hasattr(form, 'save_m2m') else None
+        return JsonResponse({
+            'status': 'ok',
+            'id': interview.pk,
+            'timestamp': timezone.now().isoformat(),
+        })
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'errors': form.errors,
+        }, status=400)

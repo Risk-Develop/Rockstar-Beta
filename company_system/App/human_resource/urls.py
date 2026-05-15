@@ -270,6 +270,7 @@ urlpatterns = [
       path('exit-interview/<int:pk>/quick-status/', views_exit_interview.exit_interview_quick_status_update, name='exit_interview_quick_status'),
       path('exit-interview/<int:pk>/quick-view/', views_exit_interview.exit_interview_quick_view, name='exit_interview_quick_view'),
       path('exit-interview/<int:pk>/delete/', views_exit_interview.exit_interview_delete, name='exit_interview_delete'),
+      path('exit-interview/auto-save/', views_exit_interview.exit_interview_auto_save, name='exit_interview_auto_save'),
       path('exit-interviews/export/', views_exit_interview.exit_interview_export, name='exit_interview_export'),
 
 

@@ -1,470 +1,1617 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ title }}{% endblock %}
+{% block title %}
+  {{ title }}
+{% endblock %}
 
 {% block extra_css %}
-<style>
-  /* Form field styling for Django-rendered inputs */
-  input[type="text"],
-  input[type="date"],
-  input[type="number"],
-  select,
-  textarea {
-    width: 100%;
-    padding: 0.625rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    background-color: #fff;
-    transition: all 0.2s;
-    font-size: 0.875rem;
-    color: #111827;
-  }
-
-  /* Dark mode support */
-  .dark input[type="text"],
-  .dark input[type="date"],
-  .dark input[type="number"],
-  .dark select,
-  .dark textarea {
-    background-color: #374151;
-    border-color: #4b5563;
-    color: #f9fafb;
-  }
-
-  /* Focus states */
-  input:focus,
-  select:focus,
-  textarea:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    background-color: white;
-  }
-
-  .dark input:focus,
-  .dark select:focus,
-  .dark textarea:focus {
-    background-color: #374151;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-  }
-
-  /* Hover states */
-  input:hover,
-  select:hover {
-    border-color: #9ca3af;
-  }
-
-  .dark input:hover,
-  .dark select:hover {
-    border-color: #6b7280;
-  }
-
-  /* Checkbox styling */
-  input[type="checkbox"] {
-    width: 1.125rem;
-    height: 1.125rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.25rem;
-    background-color: #fff;
-    cursor: pointer;
-  }
-
-  .dark input[type="checkbox"] {
-    background-color: #374151;
-    border-color: #4b5563;
-  }
-
-  /* Error state */
-  input.error,
-  select.error {
-    border-color: #ef4444;
-    background-color: #fef2f2;
-  }
-
-  .dark input.error,
-  .dark select.error {
-    background-color: #450a0a;
-  }
-
-  /* Section headers */
-  .section-header {
-    background: linear-gradient(90deg, #1d4ed8 0%, #3b82f6 100%);
-    color: white;
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem 0.5rem 0 0;
-    font-weight: 600;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .section-body {
-    background: white;
-    padding: 1.5rem;
-    border: 1px solid #e5e7eb;
-    border-top: none;
-    border-radius: 0 0 0.5rem 0.5rem;
-  }
-  .dark .section-body {
-    background: #1f2937;
-    border-color: #374151;
-  }
-
-  /* Stepper on form */
-  .form-stepper {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 2rem;
-    position: relative;
-  }
-  .form-stepper::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: #e5e7eb;
-    z-index: 0;
-    transform: translateY(-50%);
-  }
-  .dark .form-stepper::before {
-    background: #4b5563;
-  }
-  .form-step {
-    position: relative;
-    z-index: 1;
-    background: white;
-    padding: 0 1rem;
-    text-align: center;
-  }
-  .dark .form-step {
-    background: #111827;
-  }
-  .form-step-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #e5e7eb;
-    color: #6b7280;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    margin: 0 auto 0.5rem;
-  }
-  .form-step.active .form-step-circle {
-    background: #3b82f6;
-    color: white;
-  }
-  .form-step.completed .form-step-circle {
-    background: #10b981;
-    color: white;
-  }
-  .form-step-label {
-    font-size: 0.75rem;
-    color: #6b7280;
-    max-width: 80px;
-    margin: 0 auto;
-  }
-  .dark .form-step-label {
-    color: #9ca3af;
-  }
-</style>
+  <style>
+    /* ── Wizard Stepper ── */
+    .wizard-stepper {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin-bottom: 2rem;
+      padding: 0 0.5rem;
+    }
+    .wizard-stepper::before {
+      content: '';
+      position: absolute;
+      top: 1.25rem;
+      left: 3rem;
+      right: 3rem;
+      height: 3px;
+      background: #e5e7eb;
+      z-index: 0;
+    }
+    .dark .wizard-stepper::before {
+      background: #374151;
+    }
+    .wizard-step {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      cursor: default;
+    }
+    .wizard-step-circle {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      background: #e5e7eb;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.875rem;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+    .dark .wizard-step-circle {
+      background: #374151;
+      color: #9ca3af;
+    }
+    .wizard-step.active .wizard-step-circle {
+      background: #3b82f6;
+      color: white;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+      border-color: #60a5fa;
+    }
+    .wizard-step.completed .wizard-step-circle {
+      background: #10b981;
+      color: white;
+    }
+    .wizard-step-label {
+      font-size: 0.6875rem;
+      color: #6b7280;
+      text-align: center;
+      margin-top: 0.375rem;
+      max-width: 80px;
+      line-height: 1.3;
+    }
+    .dark .wizard-step-label {
+      color: #9ca3af;
+    }
+    .wizard-step.active .wizard-step-label {
+      color: #3b82f6;
+      font-weight: 600;
+    }
+    .wizard-step.completed .wizard-step-label {
+      color: #10b981;
+      font-weight: 600;
+    }
+    
+    /* ── Wizard Step Panels ── */
+    .wizard-panel {
+      display: none;
+      animation: wizardFadeIn 0.35s ease-out;
+    }
+    .wizard-panel.active {
+      display: block;
+    }
+    @keyframes wizardFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    /* ── Section Cards ── */
+    .wizard-section-card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .dark .wizard-section-card {
+      background: #1f2937;
+      border-color: #374151;
+    }
+    .wizard-card-header {
+      padding: 0.875rem 1.25rem;
+      font-weight: 700;
+      font-size: 0.9375rem;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .wizard-card-body {
+      padding: 1.25rem;
+    }
+    
+    /* ── Required Field Indicator ── */
+    .field-required {
+      color: #ef4444;
+      margin-left: 2px;
+    }
+    
+    /* ── Tooltip ── */
+    .help-trigger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.125rem;
+      height: 1.125rem;
+      border-radius: 50%;
+      background: #d1d5db;
+      color: #374151;
+      font-size: 0.625rem;
+      font-weight: 700;
+      cursor: help;
+      margin-left: 0.375rem;
+      vertical-align: middle;
+      position: relative;
+      transition: background 0.2s;
+      font-family: sans-serif;
+      line-height: 1;
+      border: none;
+      padding: 0;
+    }
+    .help-trigger:hover,
+    .help-trigger:focus {
+      background: #3b82f6;
+      color: white;
+      outline: none;
+    }
+    .help-tooltip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1f2937;
+      color: #f9fafb;
+      font-size: 0.75rem;
+      line-height: 1.4;
+      white-space: normal;
+      width: max-content;
+      max-width: 260px;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 50;
+      font-weight: 400;
+      text-align: left;
+      pointer-events: none;
+    }
+    .help-trigger:hover .help-tooltip,
+    .help-trigger:focus .help-tooltip {
+      display: block;
+    }
+    
+    /* ── Conditional field transitions ── */
+    .conditional-field {
+      transition: all 0.25s ease;
+      overflow: hidden;
+    }
+    .conditional-field.hidden {
+      display: none;
+    }
+    
+    /* ── Mandatory field visual ── */
+    .field-group.required > .form-field-label-label::after {
+      content: ' *';
+      color: #ef4444;
+    }
+    .field-error-msg {
+      color: #ef4444;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+    
+    /* ── Drag-and-Drop Upload Zone ── */
+    .drop-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: 0.75rem;
+      padding: 1.5rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      background: #f9fafb;
+      position: relative;
+    }
+    .dark .drop-zone {
+      border-color: #4b5563;
+      background: #1f2937;
+    }
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+      border-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.04);
+    }
+    .dark .drop-zone:hover,
+    .dark .drop-zone.drag-over {
+      background: rgba(59, 130, 246, 0.1);
+    }
+    .drop-zone.drag-over {
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+    .drop-zone-icon {
+      font-size: 2rem;
+      color: #9ca3af;
+      margin-bottom: 0.5rem;
+    }
+    .drop-zone-text {
+      font-size: 0.8125rem;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+    .dark .drop-zone-text {
+      color: #9ca3af;
+    }
+    .drop-zone-text strong {
+      color: #3b82f6;
+    }
+    
+    /* ── File preview thumbnails ── */
+    .file-previews {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+    .file-preview {
+      position: relative;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      width: 96px;
+      background: #f9fafb;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .dark .file-preview {
+      border-color: #374151;
+      background: #1f2937;
+    }
+    .file-preview-img {
+      width: 96px;
+      height: 72px;
+      object-fit: cover;
+      display: block;
+      cursor: pointer;
+    }
+    .file-preview-pdf {
+      width: 96px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fef2f2;
+      color: #dc2626;
+      font-size: 1.75rem;
+      cursor: pointer;
+    }
+    .dark .file-preview-pdf {
+      background: #7f1d1d;
+    }
+    .file-preview-name {
+      font-size: 0.625rem;
+      color: #374151;
+      padding: 0.25rem 0.375rem;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dark .file-preview-name {
+      color: #d1d5db;
+    }
+    .file-preview-remove {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: rgba(0, 0, 0, 0.65);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 1.25rem;
+      height: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.625rem;
+      line-height: 1;
+      transition: background 0.2s;
+    }
+    .file-preview-remove:hover {
+      background: #ef4444;
+    }
+    
+    /* ── Auto-save indicator ── */
+    .autosave-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.75rem;
+      color: #6b7280;
+      padding: 0.25rem 0.625rem;
+      border-radius: 9999px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+    }
+    .dark .autosave-badge {
+      background: #374151;
+      border-color: #4b5563;
+      color: #9ca3af;
+    }
+    .autosave-badge.saving {
+      color: #2563eb;
+      border-color: #93c5fd;
+      background: #eff6ff;
+    }
+    .dark .autosave-badge.saving {
+      background: #1e3a8a;
+      border-color: #1e40af;
+    }
+    .autosave-badge.saved {
+      color: #16a34a;
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+    .dark .autosave-badge.saved {
+      background: #14532d;
+      border-color: #166534;
+    }
+    .autosave-badge.error-save {
+      color: #dc2626;
+      border-color: #fca5a5;
+      background: #fef2f2;
+    }
+    .dark .autosave-badge.error-save {
+      background: #7f1d1d;
+      border-color: #991b1b;
+    }
+    
+    .autosave-spinner {
+      display: inline-block;
+      width: 0.75rem;
+      height: 0.75rem;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: autosaveSpin 0.75s linear infinite;
+    }
+    @keyframes autosaveSpin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    
+    /* ── Wizard Navigation Buttons ── */
+    .wizard-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 1rem;
+      border-top: 1px solid #e5e7eb;
+      margin-top: 1.5rem;
+    }
+    .dark .wizard-actions {
+      border-top-color: #374151;
+    }
+    .wizard-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .wizard-btn-prev {
+      background: #f3f4f6;
+      border-color: #d1d5db;
+      color: #374151;
+    }
+    .wizard-btn-prev:hover {
+      background: #e5e7eb;
+    }
+    .dark .wizard-btn-prev {
+      background: #374151;
+      border-color: #4b5563;
+      color: #f3f4f6;
+    }
+    .wizard-btn-prev:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .wizard-btn-next {
+      background: #3b82f6;
+      color: white;
+    }
+    .wizard-btn-next:hover {
+      background: #2563eb;
+    }
+    .wizard-btn-submit {
+      background: #16a34a;
+      color: white;
+    }
+    .wizard-btn-submit:hover {
+      background: #15803d;
+    }
+    
+    /* ── Progress bar inside a step ── */
+    .step-progress-text {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+    .dark .step-progress-text {
+      color: #9ca3af;
+    }
+    
+    /* ── Status grid ── */
+    .status-grid {
+      display: grid;
+      gap: 1rem;
+    }
+    .status-grid.cols-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .status-grid.cols-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* ── Highlight known fields ── */
+    .wizard-field-row {
+      margin-bottom: 1rem;
+    }
+    
+    /* ── Step header bar within panel ── */
+    .wizard-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .wizard-panel-header h2 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #111827;
+    }
+    .dark .wizard-panel-header h2 {
+      color: #f3f4f6;
+    }
+    .wizard-panel-header .step-badge {
+      font-size: 0.6875rem;
+      background: #dbeafe;
+      color: #1e40af;
+      border-radius: 9999px;
+      padding: 0.125rem 0.625rem;
+      font-weight: 600;
+    }
+    .dark .wizard-panel-header .step-badge {
+      background: #1e3a8a;
+      color: #93c5fd;
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
-{% include 'includes/navbar.html' %}
-{% include 'hr/dashboard/hr_sidebar.html' %}
+  {% include 'includes/navbar.html' %}
+  {% include 'hr/dashboard/hr_sidebar.html' %}
 
-<main id="mainContent" class="md:ml-64 pt-20 min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
-  <div class="max-w-5xl mx-auto">
+  <main id="mainContent" class="md:ml-64 pt-20 min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+    <div class="max-w-4xl mx-auto">
+      <!-- Breadcrumb -->
+      <nav class="mb-5">
+        <ol class="flex items-center space-x-2 text-sm">
+          <li>
+            <a href="{% url 'human_resource:hr_dashboard' %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800">Dashboard</a>
+          </li>
+          <li class="text-gray-400">/</li>
+          <li>
+            <a href="{% url 'human_resource:exit_interview_list' %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800">Exit Interviews</a>
+          </li>
+          <li class="text-gray-400">/</li>
+          <li class="text-gray-600 dark:text-gray-300 font-medium">{{ title }}</li>
+        </ol>
+      </nav>
 
-    <!-- Breadcrumb -->
-    <nav class="mb-6">
-      <ol class="flex items-center space-x-2 text-sm">
-        <li><a href="{% url 'human_resource:hr_dashboard' %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">Dashboard</a></li>
-        <li class="text-gray-400 dark:text-gray-500">/</li>
-        <li><a href="{% url 'human_resource:exit_interview_list' %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">Exit Interviews</a></li>
-        <li class="text-gray-400 dark:text-gray-500">/</li>
-        <li class="text-gray-600 dark:text-gray-300">{{ title }}</li>
-      </ol>
-    </nav>
-
-    <!-- Form Header -->
-    <div class="mb-6">
-      <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ title }}</h2>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Complete all sections to process employee offboarding</p>
-    </div>
-
-    <form method="post" id="exitInterviewForm" enctype="multipart/form-data" class="space-y-6">
-      {% csrf_token %}
-
-      {% if form.errors %}
-      <div class="p-4 bg-red-100 dark:bg-red-900/50 border-2 border-red-500 dark:border-red-400 rounded-lg">
-        <h4 class="text-red-700 dark:text-red-300 font-bold mb-2">Please correct the following errors:</h4>
-        <ul class="list-disc list-inside text-red-600 dark:text-red-400 text-sm">
-          {% for field, errors in form.errors.items %}
-            {% for error in errors %}
-              <li><strong>{{ field|title }}:</strong> {{ error }}</li>
-            {% endfor %}
-          {% endfor %}
-        </ul>
+      <!-- Page Title Row -->
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ title }}</h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Complete all steps to process the employee offboarding record</p>
+        </div>
+        <div id="autosaveBadge" class="autosave-badge">
+          <i class="fas fa-save"></i>
+          <span id="autosaveText">Ready</span>
+        </div>
       </div>
-      {% endif %}
 
-      <!-- Employee Selection (only for new records) -->
-      {{ form.employee }}
-      {% if not form.instance.pk %}
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="section-header">Select Employee</div>
-        <div class="section-body">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Employee <span class="text-red-500">*</span></label>
-              <select id="employeeSelect" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">-- Select Employee --</option>
-                {% for emp in employees %}
-                <option value="{{ emp.id }}" data-name="{{ emp.first_name }} {{ emp.last_name }}" data-dept="{{ emp.departmentlink.department_name|default:emp.department }}">
-                  {{ emp.employee_number }} - {{ emp.first_name }} {{ emp.last_name }} ({{ emp.job_title }})
-                </option>
+      <!--      ═══════════════════════════════════════════════
+         WIZARD STEPPER
+    ═══════════════════════════════════════════════      -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 mb-6">
+        <div class="wizard-stepper">
+          <div class="wizard-step active" data-step="1">
+            <div class="wizard-step-circle">
+              <i class="fas fa-file-signature"></i>
+            </div>
+            <div class="wizard-step-label">
+              Resignation<br />Details
+            </div>
+          </div>
+          <div class="wizard-step" data-step="2">
+            <div class="wizard-step-circle">
+              <i class="fas fa-tasks"></i>
+            </div>
+            <div class="wizard-step-label">
+              Status<br />Tracking
+            </div>
+          </div>
+          <div class="wizard-step" data-step="3">
+            <div class="wizard-step-circle">
+              <i class="fas fa-shield-alt"></i>
+            </div>
+            <div class="wizard-step-label">Compliance</div>
+          </div>
+          <div class="wizard-step" data-step="4">
+            <div class="wizard-step-circle">
+              <i class="fas fa-comments"></i>
+            </div>
+            <div class="wizard-step-label">
+              Feedback &amp;<br />Attachments
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!--      ═══════════════════════════════════════════════
+         FORM
+    ═══════════════════════════════════════════════      -->
+      <form method="post" id="exitInterviewWizardForm" enctype="multipart/form-data" class="space-y-0">
+        {% csrf_token %}
+        {{ form.employee }}
+
+        <!-- ── ERRORS ── -->
+        {% if form.errors %}
+          <div class="p-4 bg-red-100 dark:bg-red-900/50 border-2 border-red-500 dark:border-red-400 rounded-lg mb-4">
+            <h4 class="text-red-700 dark:text-red-300 font-bold mb-2">Please correct the following errors:</h4>
+            <ul class="list-disc list-inside text-red-600 dark:text-red-400 text-sm space-y-1">
+              {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                  <li>
+                    <strong>{{ field|title }}:</strong> {{ error }}
+                  </li>
                 {% endfor %}
-              </select>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+
+        <!--      ══════════════════════════════════════
+           STEP 1 – Resignation Details
+      ══════════════════════════════════════      -->
+        <div class="wizard-panel active" data-panel="1">
+          <!-- Employee Selection (new records only) -->
+          {% if not form.instance.pk %}
+            <div class="wizard-section-card">
+              <div class="wizard-card-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6);">
+                <i class="fas fa-user"></i> Select Employee
+              </div>
+              <div class="wizard-card-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="md:col-span-2">
+                    <label class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Employee <span class="field-required">*</span></label>
+                    <select id="employeeSelect" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                      <option value="">-- Select Employee --</option>
+                      {% for emp in employees %}
+                        <option value="{{ emp.id }}" data-name="{{ emp.first_name }} {{ emp.last_name }}" data-dept="{{ emp.departmentlink.department_name|default:emp.department }}">{{ emp.employee_number }} - {{ emp.first_name }} {{ emp.last_name }} ({{ emp.job_title }})</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Selected Employee</label>
+                    <input type="text" id="selectedEmployeeName" readonly class="w-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-3 py-2.5 rounded-md border border-gray-200 dark:border-gray-600" />
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Selected Employee</label>
-              <input type="text" id="selectedEmployeeName" readonly class="w-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-3 py-2.5 rounded-md">
+          {% endif %}
+
+          <!-- Core Resignation Fields -->
+          <div class="wizard-section-card">
+            <div class="wizard-card-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6);">
+              <i class="fas fa-file-signature"></i> Resignation Details
+            </div>
+            <div class="wizard-card-body">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Row 1: Resignation Status | Date Filed -->
+                {% for field in form.visible_fields %}
+                  {% if field.name == 'resignation_status' %}
+                    <div class="field-group required w-full md:w-auto">
+                      <label for="{{ field.id_for_label }}" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {{ field.label }}
+                        <button type="button" class="help-trigger" tabindex="-1">
+                          ?
+                          <span class="help-tooltip">The type of separation: voluntary exit, contract end, indefinite leave, or revoked resignation.</span>
+                        </button>
+                      </label>
+                      {{ field }}
+                      {% if field.help_text %}
+                        <div class="field-help-text text-xs text-gray-500 dark:text-gray-400 mt-1">{{ field.help_text }}</div>
+                      {% endif %}
+                      {% for error in field.errors %}
+                        <div class="field-error-msg">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% elif field.name == 'date_filed' %}
+                    <div class="field-group required w-full md:w-auto">
+                      <label for="{{ field.id_for_label }}" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {{ field.label }}
+                        <button type="button" class="help-trigger" tabindex="-1">
+                          ?
+                          <span class="help-tooltip">The date the employee formally submitted their resignation letter.</span>
+                        </button>
+                      </label>
+                      {{ field }}
+                      {% if field.help_text %}
+                        <div class="field-help-text text-xs text-gray-500 dark:text-gray-400 mt-1">{{ field.help_text }}</div>
+                      {% endif %}
+                      {% for error in field.errors %}
+                        <div class="field-error-msg">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+
+                <!-- Row 2: Resignation Letter Text (col 1) + Desired/Approved stacked (col 2) -->
+                {% for field in form.visible_fields %}
+                  {% if field.name == 'resignation_letter_text' %}
+                    <!-- Resignation Letter Textarea -->
+                    <div>
+                      <label for="{{ field.id_for_label }}" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {{ field.label }}
+                        <button type="button" class="help-trigger" tabindex="-1">
+                          ?
+                          <span class="help-tooltip">Full text of the resignation letter. Use this if a scanned file is not available.</span>
+                        </button>
+                      </label>
+                      {{ field }}
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">If not uploading a file above, paste the resignation letter content here.</p>
+                      {% for error in field.errors %}
+                        <div class="field-error-msg">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+
+                <!-- Right column — desired + approved last day -->
+                <div class="flex flex-col gap-4">
+                  {% for field in form.visible_fields %}
+                    {% if field.name == 'desired_last_day' %}
+                      <div class="field-group">
+                        <label for="{{ field.id_for_label }}" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          {{ field.label }}
+                          <button type="button" class="help-trigger" tabindex="-1">
+                            ?
+                            <span class="help-tooltip">The last working day the employee originally requested.</span>
+                          </button>
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                          <div class="field-help-text text-xs text-gray-500 dark:text-gray-400 mt-1">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% for error in field.errors %}
+                          <div class="field-error-msg">{{ error }}</div>
+                        {% endfor %}
+                      </div>
+                    {% elif field.name == 'approved_last_day' %}
+                      <div class="field-group">
+                        <label for="{{ field.id_for_label }}" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          {{ field.label }}
+                          <button type="button" class="help-trigger" tabindex="-1">
+                            ?
+                            <span class="help-tooltip">HR-approved last working day. Must not be earlier than the desired last day.</span>
+                          </button>
+                        </label>
+                        {{ field }}
+                        {% if field.help_text %}
+                          <div class="field-help-text text-xs text-gray-500 dark:text-gray-400 mt-1">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% for error in field.errors %}
+                          <div class="field-error-msg">{{ error }}</div>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-      {% endif %}
 
-      <!-- Section 1: Resignation Details -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="section-header">
-          <span class="flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            Resignation Details
-          </span>
-        </div>
-        <div class="section-body">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Resignation Status <span class="text-red-500">*</span></label>
-              {{ form.resignation_status }}
+          <!-- Conditional: Contract End Details (shown when resignation_status == 'end_contract') -->
+          <div id="contractEndSection" class="wizard-section-card conditional-field hidden">
+            <div class="wizard-card-header" style="background: linear-gradient(90deg, #92400e, #f59e0b);">
+              <i class="fas fa-file-contract"></i> Contract End Details
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Filed <span class="text-red-500">*</span></label>
-              {{ form.date_filed }}
+            <div class="wizard-card-body">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="field-group">
+                  <label for="id_employment_type" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Employment Type
+                    <button type="button" class="help-trigger" tabindex="-1">
+                      ?
+                      <span class="help-tooltip">Whether this was a regular or contractual employment.</span>
+                    </button>
+                  </label>
+                  <select id="id_employment_type" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- Select --</option>
+                    <option value="regular">Regular</option>
+                    <option value="contract">Contract</option>
+                    <option value="probationary">Probationary</option>
+                  </select>
+                </div>
+                <div class="field-group">
+                  <label for="id_contract_end_date" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Contract End Date
+                    <button type="button" class="help-trigger" tabindex="-1">
+                      ?
+                      <span class="help-tooltip">The official end date stated in the employment contract.</span>
+                    </button>
+                  </label>
+                  <input type="date" id="id_contract_end_date" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div class="field-group md:col-span-2">
+                  <label for="id_renewal_option" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Renewal Option
+                    <button type="button" class="help-trigger" tabindex="-1">
+                      ?
+                      <span class="help-tooltip">Whether there is an option to renew the contract, and if so under what terms.</span>
+                    </button>
+                  </label>
+                  <select id="id_renewal_option" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">-- Select --</option>
+                    <option value="renewable">Renewable</option>
+                    <option value="non_renewable">Non-Renewable</option>
+                    <option value="subject_to_review">Subject to Review</option>
+                    <option value="n/a">N/A</option>
+                  </select>
+                </div>
+              </div>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Desired Last Day</label>
-              {{ form.desired_last_day }}
+          </div>
+
+          <!-- Resignation Letter Upload (Drag & Drop) -->
+          <div class="wizard-section-card">
+            <div class="wizard-card-header" style="background: linear-gradient(90deg, #1e3a8a, #3b82f6);">
+              <i class="fas fa-paperclip"></i> Resignation Letter Upload
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Approved Last Day</label>
-              {{ form.approved_last_day }}
-            </div>
-            <div class="md:col-span-2 lg:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Resignation Letter (Text)</label>
-              {{ form.resignation_letter_text }}
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">If not uploading a file, type the resignation letter content here.</p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Upload Letter (PDF/DOC)</label>
-              {{ form.resignation_letter }}
+            <div class="wizard-card-body">
               {% if form.instance.resignation_letter %}
-                <p class="text-xs text-green-600 dark:text-green-400 mt-1">
-                  Current: <a href="{{ form.instance.resignation_letter.url }}" target="_blank" class="underline">Download</a>
-                </p>
+                <div class="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg mb-4">
+                  <i class="fas fa-file-pdf text-blue-600 text-xl"></i>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-blue-800 dark:text-blue-200 truncate">Current file attached</div>
+                    <a href="{{ form.instance.resignation_letter.url }}" target="_blank" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">View / Download</a>
+                  </div>
+                  <button type="button" id="removeCurrentResignationLetter" class="text-red-500 hover:text-red-700 text-sm font-medium">Remove</button>
+                </div>
               {% endif %}
+
+              <label class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Upload Resignation Letter (PDF/DOC)</label>
+              <div class="drop-zone" id="resignationLetterDropZone">
+                <input type="file" id="{{ form.resignation_letter.id_for_label }}" name="{{ form.resignation_letter.name }}" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.txt" class="hidden" data-existing-url="{% if form.instance.resignation_letter %}{{ form.instance.resignation_letter.url }}{% endif %}" />
+                <div class="drop-zone-icon">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="drop-zone-text">
+                  Drag and drop your file here, or <strong>click to browse</strong><br />
+                  <span class="text-xs">Accepts: PDF, DOC, DOCX, PNG, JPG, GIF, TXT (max 10 MB)</span>
+                </div>
+              </div>
+              <div class="file-previews" id="resignationLetterPreviewContainer"></div>
             </div>
           </div>
         </div>
-      </div>
+        <!-- /Step 1 -->
 
-      <!-- Section 2: Status Tracking -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="section-header" style="background: linear-gradient(90deg, #059669 0%, #10b981 100%);">
-          <span class="flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-            Workflow Status
-          </span>
-        </div>
-        <div class="section-body">
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">30-Day Rendering</label>
-              {{ form.rendering_30day_status }}
+        <!--      ══════════════════════════════════════
+           STEP 2 – Status Tracking
+      ══════════════════════════════════════      -->
+        <div class="wizard-panel" data-panel="2">
+          <div class="wizard-panel-header">
+            <h2>Workflow Status</h2>
+            <span class="step-badge">Step 2 of 4</span>
+          </div>
+
+          <!-- Rendering 30-Day Status -->
+          <div class="wizard-section-card">
+            <div class="wizard-card-header" style="background: linear-gradient(90deg, #065f46, #10b981);">
+              <i class="fas fa-clock"></i> 30-Day Rendering
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Exit Interview</label>
-              {{ form.exit_interview_status }}
+            <div class="wizard-card-body">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {% for field in form.visible_fields %}
+                  {% if field.name == 'rendering_30day_status' %}
+                    <div class="field-group required">
+                      <label for="{{ field.id_for_label }}" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {{ field.label }}
+                        <button type="button" class="help-trigger" tabindex="-1">
+                          ?
+                          <span class="help-tooltip">Current status of the employee's 30-day pre-departure utility rendering process.</span>
+                        </button>
+                      </label>
+                      {{ field }}
+                      {% for error in field.errors %}
+                        <div class="field-error-msg">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+                <!-- Dynamic note shown when N/A -->
+                <div id="rendering30DayNote" class="conditional-field hidden md:col-span-3">
+                  <div class="p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <i class="fas fa-info-circle text-yellow-600 mr-2"></i>
+                    <span class="text-sm text-yellow-800 dark:text-yellow-300">Marked as N/A: the standard 30-day rendering process does not apply for this employee.</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Knowledge Transfer</label>
-              {{ form.knowledge_transfer_status }}
+          </div>
+
+          <!-- All Pipeline Status Fields -->
+          <div class="wizard-section-card">
+            <div class="wizard-card-header" style="background: linear-gradient(90deg, #1e40af, #3b82f6);">
+              <i class="fas fa-stream"></i> Pipeline Status
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Asset Return</label>
-              {{ form.asset_return_status }}
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Clearance</label>
-              {{ form.clearance_status }}
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quitclaim</label>
-              {{ form.quitclaim_status }}
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Final Pay</label>
-              {{ form.final_pay_status }}
+            <div class="wizard-card-body">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for field in form.visible_fields %}
+                  {% if field.name in 'exit_interview_status,knowledge_transfer_status,asset_return_status,clearance_status,quitclaim_status,final_pay_status' %}
+                    <div class="field-group">
+                      <label for="{{ field.id_for_label }}" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {{ field.label }}
+                        <button type="button" class="help-trigger" tabindex="-1">
+                          ?{% if field.name == 'exit_interview_status' %}
+                            <span class="help-tooltip">Status of the official exit interview session with HR.</span>
+                          {% elif field.name == 'knowledge_transfer_status' %}
+                            <span class="help-tooltip">Progress of the employee's knowledge handover to team members.</span>
+                          {% elif field.name == 'asset_return_status' %}
+                            <span class="help-tooltip">Status of returned company equipment (laptop, badge, keys, etc.).</span>
+                          {% elif field.name == 'clearance_status' %}
+                            <span class="help-tooltip">Overall administrative clearance status at time of separation.</span>
+                          {% elif field.name == 'quitclaim_status' %}
+                            <span class="help-tooltip">Whether the quitclaim / release document has been signed and processed.</span>
+                          {% elif field.name == 'final_pay_status' %}
+                            <span class="help-tooltip">Final pay release status: on hold, released, or voided.</span>
+                          {% endif %}
+                        </button>
+                      </label>
+                      {{ field }}
+                      {% for error in field.errors %}
+                        <div class="field-error-msg">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+        <!-- /Step 2 -->
 
-      <!-- Section 3: Compliance -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="section-header" style="background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);">
-          <span class="flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-            Compliance Agreements
-          </span>
-        </div>
-        <div class="section-body">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="flex items-center space-x-3">
-              {{ form.nda_signed }}
-              <label for="id_nda_signed" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
-                NDA (Non-Disclosure Agreement) Signed
-              </label>
+        <!--      ══════════════════════════════════════
+           STEP 3 – Compliance
+      ══════════════════════════════════════      -->
+        <div class="wizard-panel" data-panel="3">
+          <div class="wizard-panel-header">
+            <h2>Compliance Agreements</h2>
+            <span class="step-badge">Step 3 of 4</span>
+          </div>
+
+          <div class="wizard-section-card">
+            <div class="wizard-card-header" style="background: linear-gradient(90deg, #991b1b, #dc2626);">
+              <i class="fas fa-gavel"></i> Compliance Agreements
             </div>
-            <div class="flex items-center space-x-3">
-              {{ form.nca_signed }}
-              <label for="id_nca_signed" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
-                NCA (Non-Compete Agreement) Signed
-              </label>
+            <div class="wizard-card-body">
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Confirm whether the employee has executed the following agreements before exit.</p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for field in form.visible_fields %}
+                  {% if field.name == 'nda_signed' %}
+                    <!-- NDA row -->
+                    <div class="field-group">
+                      <div class="flex items-center gap-3 mb-1">
+                        {{ field }}
+                        <label for="{{ field.id_for_label }}" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex-1">
+                          NDA <button type="button" class="help-trigger" tabindex="-1" style="vertical-align:middle;background:none;border:none;margin-left:2px;margin-right:4px;">
+                            ?
+                            <span class="help-tooltip">Confirm the employee has signed the Non-Disclosure Agreement. This prevents them from sharing confidential company information.</span>
+                          </button>
+                        </label>
+                      </div>
+                      <div id="ndaDetail" class="conditional-field ml-8 hidden">
+                        <label for="id_nda_date_signed" class="form-field-label-label block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date Signed</label>
+                        <input type="date" id="id_nda_date_signed" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      {% for error in field.errors %}
+                        <div class="field-error-msg">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% elif field.name == 'nca_signed' %}
+                    <!-- NCA row -->
+                    <div class="field-group">
+                      <div class="flex items-center gap-3 mb-1">
+                        {{ field }}
+                        <label for="{{ field.id_for_label }}" class="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer flex-1">
+                          NCA <button type="button" class="help-trigger" tabindex="-1" style="vertical-align:middle;background:none;border:none;margin-left:2px;margin-right:4px;">
+                            ?
+                            <span class="help-tooltip">Confirm the employee has signed the Non-Compete Agreement. This restricts them from working for direct competitors for a defined period.</span>
+                          </button>
+                        </label>
+                      </div>
+                      <div id="ncaDetail" class="conditional-field ml-8 hidden">
+                        <label for="id_nca_date_signed" class="form-field-label-label block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date Signed</label>
+                        <input type="date" id="id_nca_date_signed" class="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      {% for error in field.errors %}
+                        <div class="field-error-msg">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+
+              <!-- Compliance checklist notice -->
+              <div class="mt-4 p-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <div class="flex items-start gap-3">
+                  <i class="fas fa-exclamation-triangle text-amber-600 mt-0.5"></i>
+                  <div class="text-sm text-amber-800 dark:text-amber-300">
+                    <strong>Legal Notice:</strong> Ensure both agreements are properly filed in the employee's records. Missing signatures require escalation to Legal before processing final pay.
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+        <!-- /Step 3 -->
 
-      <!-- Section 4: Attachments -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="section-header" style="background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%);">
-          <span class="flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
-            Attachments
-          </span>
-        </div>
-        <div class="section-body">
-          <div class="grid grid-cols-1 gap-4">
-            <div>
-              {{ form.other_attachments }}
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Upload any additional supporting documents (e.g., clearance forms, asset return receipts).</p>
+        <!--      ══════════════════════════════════════
+           STEP 4 – Feedback &amp; Attachments
+      ══════════════════════════════════════      -->
+        <div class="wizard-panel" data-panel="4">
+          <div class="wizard-panel-header">
+            <h2>Feedback &amp; Attachments</h2>
+            <span class="step-badge">Step 4 of 4</span>
+          </div>
+
+          <!-- Primary Reason & Category -->
+          <div class="wizard-section-card">
+            <div class="wizard-card-header" style="background: linear-gradient(90deg, #065f46, #10b981);">
+              <i class="fas fa-comment-dots"></i> Primary Driver
+            </div>
+            <div class="wizard-card-body">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for field in form.visible_fields %}
+                  {% if field.name == 'primary_driver' %}
+                    <div class="field-group md:col-span-2">
+                      <label for="{{ field.id_for_label }}" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {{ field.label }}
+                        <button type="button" class="help-trigger" tabindex="-1">
+                          ?
+                          <span class="help-tooltip">Single most-cited reason for leaving. e.g., Better opportunity, compensation, work-life balance, career growth.</span>
+                        </button>
+                      </label>
+                      {{ field }}
+                      {% for error in field.errors %}
+                        <div class="field-error-msg">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% elif field.name == 'categorization' %}
+                    <div class="field-group">
+                      <label for="{{ field.id_for_label }}" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {{ field.label }}
+                        <button type="button" class="help-trigger" tabindex="-1">
+                          ?
+                          <span class="help-tooltip">Broad category for analytics: Culture, Pay, System, Management, Workload, Benefits, Others.</span>
+                        </button>
+                      </label>
+                      {{ field }}
+                      {% for error in field.errors %}
+                        <div class="field-error-msg">{{ error }}</div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Section 5: Qualitative Insights -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="section-header" style="background: linear-gradient(90deg, #0891b2 0%, #06b6d4 100%);">
-          <span class="flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-            Qualitative Feedback
-          </span>
+          <!-- Induction-based Conditional Fields -->
+          {% for field in form.visible_fields %}
+            {% if field.name == 'improvement_areas' %}
+              <div class="wizard-section-card conditional-field" id="improvementCard">
+                <div class="wizard-card-header" style="background: linear-gradient(90deg, #0891b2, #06b6d4);">
+                  <i class="fas fa-lightbulb"></i> Improvements
+                  <button type="button" class="ml-auto help-trigger" tabindex="-1" style="background:none;border:none;color:white;font-size:0.75rem;">
+                    ?
+                    <span class="help-tooltip" style="background:#1f2937;color:#f9fafb;">Areas where the company can improve based on employee feedback.</span>
+                  </button>
+                </div>
+                <div class="wizard-card-body">
+                  <label for="{{ field.id_for_label }}" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ field.label }}</label>
+                  {{ field }}
+                  {% for error in field.errors %}
+                    <div class="field-error-msg">{{ error }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% elif field.name == 'additional_feedback' %}
+              <div class="wizard-section-card conditional-field" id="feedbackCard">
+                <div class="wizard-card-header" style="background: linear-gradient(90deg, #0891b2, #06b6d4);">
+                  <i class="fas fa-pen-alt"></i> Additional Feedback
+                </div>
+                <div class="wizard-card-body">
+                  <label for="{{ field.id_for_label }}" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ field.label }}</label>
+                  {{ field }}
+                  {% for error in field.errors %}
+                    <div class="field-error-msg">{{ error }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% elif field.name == 'other_attachments' %}
+              <!-- Other Attachments (Drag & Drop) -->
+              <div class="wizard-section-card">
+                <div class="wizard-card-header" style="background: linear-gradient(90deg, #7c3aed, #a78bfa);">
+                  <i class="fas fa-folder-open"></i> Other Attachments
+                </div>
+                <div class="wizard-card-body">
+                  {% if form.instance.other_attachments %}
+                    <div class="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/30 rounded-lg mb-4">
+                      <i class="fas fa-file text-purple-600 text-xl"></i>
+                      <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium text-purple-800 dark:text-purple-200 truncate">Current file attached</div>
+                        <a href="{{ form.instance.other_attachments.url }}" target="_blank" class="text-xs text-purple-600 dark:text-purple-400 hover:underline">View / Download</a>
+                      </div>
+                    </div>
+                  {% endif %}
+
+                  <label class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Supporting Documents</label>
+                  <div class="drop-zone" id="otherAttachmentsDropZone">
+                    <input type="file" id="{{ form.other_attachments.id_for_label }}" name="{{ form.other_attachments.name }}" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.txt,.zip,.xlsx" class="hidden" multiple data-existing-url="{% if form.instance.other_attachments %}{{ form.instance.other_attachments.url }}{% endif %}" />
+                    <div class="drop-zone-icon">
+                      <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="drop-zone-text">
+                      Drag and drop your files here, or <strong>click to browse</strong><br />
+                      <span class="text-xs">Accepts: PDF, DOC, DOCX, PNG, JPG, ZIP, XLSX (max 10 MB each)</span>
+                    </div>
+                  </div>
+                  <div class="file-previews" id="otherAttachmentsPreviewContainer"></div>
+                </div>
+              </div>
+            {% elif field.name == 'interview_notes' %}
+              <div class="wizard-section-card">
+                <div class="wizard-card-header" style="background: linear-gradient(90deg, #374151, #6b7280);">
+                  <i class="fas fa-sticky-note"></i> HR Notes
+                </div>
+                <div class="wizard-card-body">
+                  <label for="{{ field.id_for_label }}" class="form-field-label-label block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{{ field.label }}</label>
+                  {{ field }}
+                  {% if field.help_text %}
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ field.help_text }}</p>
+                  {% endif %}
+                  {% for error in field.errors %}
+                    <div class="field-error-msg">{{ error }}</div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
         </div>
-        <div class="section-body">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Primary Reason for Leaving</label>
-              {{ form.primary_driver }}
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">e.g., Better opportunity, compensation, work-life balance, career growth</p>
-            </div>
-            <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Areas for Company Improvement</label>
-              {{ form.improvement_areas }}
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category</label>
-              {{ form.categorization }}
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Culture, Pay, System, Management, Workload, etc.</p>
-            </div>
-            <div class="md:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Feedback</label>
-              {{ form.additional_feedback }}
+        <!-- /Step 4 -->
+
+        <!--      ══════════════════════════════════════
+           WIZARD NAVIGATION FOOTER
+      ══════════════════════════════════════      -->
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mt-6 mb-8 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div class="flex gap-2">
+            <button type="button" id="wizardPrevBtn" class="wizard-btn wizard-btn-prev">
+              <i class="fas fa-arrow-left"></i>
+              Previous
+            </button>
+          </div>
+
+          <div class="flex flex-col items-center">
+            <span id="stepCounter" class="step-progress-text font-medium">Step 1 / 4</span>
+            <div class="flex items-center gap-2 mt-1">
+              <span id="autosaveBadgeWizard" class="autosave-badge" style="font-size:0.6875rem;">
+                <i class="fas fa-save"></i>
+                <span id="autosaveTextWizard">Ready</span>
+              </span>
             </div>
           </div>
+
+          <div class="flex gap-2 items-center">
+            <button type="button" id="wizardNextBtn" class="wizard-btn wizard-btn-next">
+              Next
+              <i class="fas fa-arrow-right"></i>
+            </button>
+            <button type="submit" id="wizardSubmitBtn" class="wizard-btn wizard-btn-submit" style="display:none;">
+              <i class="fas fa-save"></i>
+              Save Exit Interview
+            </button>
+            <button type="submit" id="wizardSaveAddBtn" name="save_and_add_another" value="1" class="wizard-btn wizard-btn-submit" style="display:none;background:#0e7490;">
+              <i class="fas fa-plus"></i>
+              Save &amp; Add Another
+            </button>
+          </div>
         </div>
-      </div>
+      </form>
+    </div>
+  </main>
 
-      <!-- Section 6: Notes -->
-      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-        <div class="section-header" style="background: linear-gradient(90deg, #4b5563 0%, #6b7280 100%);">
-          <span class="flex items-center gap-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-            HR Notes
-          </span>
-        </div>
-        <div class="section-body">
-          {{ form.interview_notes }}
-        </div>
-      </div>
-
-      <!-- Submit Buttons -->
-      <div class="flex justify-end gap-3 pt-4">
-        <a href="{% url 'human_resource:exit_interview_list' %}"
-           class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-          Cancel
-        </a>
-        <button type="submit"
-                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm">
-          <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-          Save Exit Interview
-        </button>
-      </div>
-
-    </form>
-  </div>
-</main>
-
+  <!-- Hidden inputs for conditional fields that need to be submitted -->
+  <input type="hidden" name="nda_date_signed" id="id_nda_date_signed_wizard" />
+  <input type="hidden" name="nca_date_signed" id="id_nca_date_signed_wizard" />
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const employeeSelect = document.getElementById('employeeSelect');
-  const employeeNameField = document.getElementById('selectedEmployeeName');
-  const employeeHiddenField = document.getElementById('id_employee');
+  <script>
+(function () {
+  'use strict';
 
-  function updateFromSelection() {
-    if (!employeeSelect || !employeeHiddenField) return;
-    const selectedOption = employeeSelect.options[employeeSelect.selectedIndex];
-    if (selectedOption && selectedOption.value) {
-      employeeHiddenField.value = selectedOption.value;
-      employeeNameField.value = selectedOption.dataset.name || '';
+  /* ═══════════════════════════════════
+     1. STATE
+  ═══════════════════════════════════ */
+  let currentStep = 1;
+  const TOTAL_STEPS = 4;
+
+  // Drag-drop temporary file buffers
+  const resignationLetterFile = { file: null };
+  const otherAttachmentsFiles  = { files: [] };
+
+  /* ═══════════════════════════════════
+     2. WIZARD NAVIGATION
+  ═══════════════════════════════════ */
+  const panels    = document.querySelectorAll('.wizard-panel');
+  const stepEls   = document.querySelectorAll('.wizard-step');
+  const prevBtn   = document.getElementById('wizardPrevBtn');
+  const nextBtn   = document.getElementById('wizardNextBtn');
+  const submitBtn = document.getElementById('wizardSubmitBtn');
+  const saveAddBtn= document.getElementById('wizardSaveAddBtn');
+  const counter   = document.getElementById('stepCounter');
+
+  function goToStep(step) {
+    currentStep = step;
+
+    // Panels
+    panels.forEach(p =>
+      p.classList.toggle('active', parseInt(p.dataset.panel) === step)
+    );
+    // Stepper
+    stepEls.forEach(s => {
+      const n = parseInt(s.dataset.step);
+      s.classList.remove('active', 'completed');
+      if (n === step)      s.classList.add('active');
+      else if (n < step)   s.classList.add('completed');
+    });
+    // Buttons
+    prevBtn.disabled = step === 1;
+    nextBtn.style.display = step < TOTAL_STEPS ? 'inline-flex' : 'none';
+    submitBtn.style.display  = step === TOTAL_STEPS ? 'inline-flex' : 'none';
+    saveAddBtn.style.display = step === TOTAL_STEPS ? 'inline-flex' : 'none';
+    counter.textContent = `Step ${step} / ${TOTAL_STEPS}`;
+
+    // Re-attach any post-transition events
+    triggerConditionalLogic();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  prevBtn.addEventListener('click', () => goToStep(currentStep - 1));
+  nextBtn.addEventListener('click', () => {
+    if (validateStep(currentStep)) goToStep(currentStep + 1);
+  });
+
+  function validateStep(step) {
+    const form = document.getElementById('exitInterviewWizardForm');
+    let valid = true;
+    let firstInvalid = null;
+
+    if (step === 1) {
+      // Employee required (new only)
+      {% if not form.instance.pk %}
+      const empSelect = document.getElementById('employeeSelect');
+      const empHidden = form.querySelector('input[name="employee"]');
+      if (!empHidden.value && empSelect) {
+        empSelect.classList.add('error');
+        const lbl = empSelect.previousElementSibling;
+        if (lbl && lbl.classList.contains('field-error-msg')) { /* already */ }
+        else {
+          const err = document.createElement('div');
+          err.className = 'field-error-msg'; err.textContent = 'Employee is required.';
+          empSelect.parentNode.appendChild(err);
+        }
+        firstInvalid = empSelect;
+        valid = false;
+      }
+      {% endif %}
+
+      // Required fields: resignation_status, date_filed
+      ['resignation_status', 'date_filed'].forEach(name => {
+        const el = form.querySelector(`[name="${name}"]`);
+        if (el) {
+          if (!el.value) {
+            el.classList.add('error');
+            valid = false;
+            if (!firstInvalid) firstInvalid = el;
+          } else {
+            el.classList.remove('error');
+          }
+        }
+      });
+    }
+
+    if (!valid && firstInvalid) {
+      firstInvalid.focus();
+    }
+    return valid;
+  }
+
+  /* ═══════════════════════════════════
+     3. DYNAMIC CONDITIONAL LOGIC
+  ═══════════════════════════════════ */
+  const contractEndSection   = document.getElementById('contractEndSection');
+  const improvementCard      = document.getElementById('improvementCard');
+  const feedbackCard         = document.getElementById('feedbackCard');
+  const ndaDetail            = document.getElementById('ndaDetail');
+  const rendering30DayNote   = document.getElementById('rendering30DayNote');
+
+  function triggerConditionalLogic() {
+    // Resignation status → show contract-end fields
+    const resignEl = document.querySelector('[name="resignation_status"]');
+    if (resignEl && contractEndSection) {
+      const isContractEnd = resignEl.value === 'end_contract';
+      contractEndSection.classList.toggle('hidden', !isContractEnd);
+    }
+
+    // Rendering 30-Day N/A note
+    const rend30El = document.querySelector('[name="rendering_30day_status"]');
+    if (rend30El && rendering30DayNote) {
+      const isNA = rend30El.value === 'na';
+      rendering30DayNote.classList.toggle('hidden', !isNA);
+    }
+
+    // NDA signed → expand detail
+    const ndaEl = document.querySelector('[name="nda_signed"]');
+    if (ndaEl && ndaDetail) {
+      ndaDetail.classList.toggle('hidden', !ndaEl.checked);
+    }
+
+    // NCA signed → expand detail
+    const ncaEl = document.querySelector('[name="nca_signed"]');
+    if (ncaEl && ncaDetail) {
+      ncaDetail.classList.toggle('hidden', !ncaEl.checked);
+    }
+  }
+
+  // Attach listeners
+  document.querySelector('[name="resignation_status"]')?.addEventListener('change', triggerConditionalLogic);
+  document.querySelector('[name="rendering_30day_status"]')?.addEventListener('change', triggerConditionalLogic);
+  document.querySelector('[name="nda_signed"]')?.addEventListener('change', triggerConditionalLogic);
+  document.querySelector('[name="nca_signed"]')?.addEventListener('change', triggerConditionalLogic);
+
+  /* ═══════════════════════════════════
+     4. AUTO-SAVE
+  ═══════════════════════════════════ */
+  const autosaveBadge     = document.getElementById('autosaveBadge');
+  const autosaveText      = document.getElementById('autosaveText');
+  const autosaveBadgeWz   = document.getElementById('autosaveBadgeWizard');
+  const autosaveTextWz    = document.getElementById('autosaveTextWizard');
+
+  let autosaveTimer = null;
+  const AUTOSAVE_DELAY = 2000; // ms
+
+  function setAutosaveStatus(status, message) {
+    ['saving','saved','error-save',''].forEach(c =>
+      { autosaveBadge?.classList.remove(c); autosaveBadgeWz?.classList.remove(c); }
+    );
+    autosaveBadge?.classList.add(status);
+    autosaveBadgeWz?.classList.add(status);
+    const prefix = status === 'saving' ? '<span class="autosave-spinner"></span>' : '';
+    if (autosaveText) autosaveText.innerHTML = prefix + (message || status);
+    if (autosaveTextWz) autosaveTextWz.innerHTML = prefix + (message || status);
+  }
+
+  function collectFormState() {
+    const form = document.getElementById('exitInterviewWizardForm');
+    const data = new FormData(form);
+    // Include conditional hidden inputs
+    data.set('nda_date_signed', document.getElementById('id_nda_date_signed')?.value || '');
+    data.set('nca_date_signed', document.getElementById('id_nca_date_signed')?.value || '');
+
+    // Include resignation letter temp file if uploaded
+    if (resignationLetterFile.file) data.set('resignation_letter', resignationLetterFile.file);
+    data.set('resignation_letter_remove', resignationLetterFile.removed ? '1' : '0');
+
+    // Include other attachments
+    otherAttachmentsFiles.files.forEach((f, i) => data.append('other_attachments', f));
+    data.set('other_attachments_remove', otherAttachmentsFiles.removed ? '1' : '0');
+    return data;
+  }
+
+  function triggerAutosave() {
+    clearTimeout(autosaveTimer);
+    setAutosaveStatus('saving', 'Saving…');
+    autosaveTimer = setTimeout(async () => {
+      try {
+        const form = document.getElementById('exitInterviewWizardForm');
+        const url  = form.action || window.location.href;
+        const formData = collectFormState();
+
+        // Persist to localStorage freeze (resume on refresh)
+        try {
+          localStorage.setItem('exit_interview_draft', JSON.stringify({
+            step: currentStep,
+            timestamp: Date.now(),
+            fields: Object.fromEntries(formData.entries())
+          }));
+        } catch(e) { /* storage full — ignore */ }
+
+        // Fire-and-forget debounced API save (won't block user)
+        const controller = new AbortController();
+        controller.abort(); // Ensure no hanging request from previous timer
+        try {
+          await fetch(url, {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-AutoSave': 'true'
+            },
+            body: formData,
+            signal: controller.signal
+          }).catch(() => {});
+        } catch(e) { /* network issues — silent */ }
+
+        setAutosaveStatus('saved', 'Saved');
+        setTimeout(() => { if (autosaveBadge) autosaveBadge.classList.remove('saved'); }, 3000);
+      } catch(e) {
+        setAutosaveStatus('error-save', 'Save failed');
+      }
+    }, AUTOSAVE_DELAY);
+  }
+
+  // Wire up autosave to all inputs
+  document.addEventListener('input', e => {
+    if (
+      e.target.closest && e.target.closest('#exitInterviewWizardForm')
+      && e.target.type !== 'file'
+    ) triggerAutosave();
+  });
+
+  // Wire checkbox & select changes
+  document.addEventListener('change', e => {
+    if (e.target.closest && e.target.closest('#exitInterviewWizardForm')) {
+      triggerAutosave();
+      triggerConditionalLogic();
+    }
+  });
+
+  // Restore draft from localStorage on load
+  (function restoreDraft() {
+    try {
+      const raw = localStorage.getItem('exit_interview_draft');
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      if (!draft.fields) return;
+
+      Object.entries(draft.fields).forEach(([name, val]) => {
+        if (val === null || val === undefined || val === '') return;
+        const el = document.querySelector(`[name="${name}"]`);
+        if (el && el.type !== 'file') {
+          el.value = val;
+          // Re-fire change handler for conditional logic
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        const el2 = document.getElementById('id_' + name);
+        if (el2 && el2.type !== 'file') el2.value = val;
+      });
+
+      // Navigate to the saved step
+      if (draft.step) goToStep(Math.max(1, Math.min(TOTAL_STEPS, draft.step)));
+      setAutosaveStatus('saved', 'Draft restored');
+      setTimeout(() => { autosaveBadge?.classList.remove('saved'); autosaveBadgeWz?.classList.remove('saved'); }, 4000);
+    } catch(e) { /* parse error — ignore */ }
+  })();
+
+  /* ═══════════════════════════════════
+     5. DRAG-AND-DROP FILE UPLOAD
+  ═══════════════════════════════════ */
+  function initDropZone(zoneId, stateKey, previewContainerId, acceptMultiple) {
+    const zone   = document.getElementById(zoneId);
+    const stored = document.getElementById(zoneId);
+    if (!zone) return;
+
+    const actualInput = zone.querySelector('input[type="file"]');
+
+    zone.addEventListener('click', () => actualInput.click());
+
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      zone.classList.add('drag-over');
+    });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      handleFiles(e.dataTransfer.files, stateKey, previewContainerId, acceptMultiple);
+    });
+
+    actualInput.addEventListener('change', () => {
+      handleFiles(actualInput.files, stateKey, previewContainerId, acceptMultiple);
+    });
+  }
+
+  function handleFiles(files, stateKey, previewContainerId, multi) {
+    Array.from(files).forEach(f => {
+      const maxFileSizeMB = 10;
+      if (f.size > maxFileSizeMB * 1024 * 1024) {
+        alert(`"${f.name}" exceeds ${maxFileSizeMB} MB limit.`);
+        return;
+      }
+
+      if (stateKey === 'resignationLetterFile') {
+        resignationLetterFile.file = f;
+        resignationLetterFile.removed = false;
+      } else {
+        if (!multi) otherAttachmentsFiles.files = [];
+        otherAttachmentsFiles.files.push(f);
+        otherAttachmentsFiles.removed = false;
+      }
+
+      renderPreview(f, previewContainerId);
+    });
+  }
+
+  function renderPreview(file, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const isImage = file.type.startsWith('image/');
+    const isPdf   = file.type === 'application/pdf';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'file-preview';
+
+    if (isImage) {
+      const url = URL.createObjectURL(file);
+      const img = document.createElement('img');
+      img.src   = url;
+      img.className = 'file-preview-img';
+      img.title  = file.name;
+      img.addEventListener('click', () => window.open(url, '_blank'));
+      wrapper.appendChild(img);
+    } else if (isPdf) {
+      const div = document.createElement('div');
+      div.className = 'file-preview-pdf';
+      div.textContent = '📄';
+      div.title = file.name;
+      div.addEventListener('click', () => {
+        onOpenPreviewFile(file);
+      });
+      wrapper.appendChild(div);
     } else {
-      employeeHiddenField.value = '';
-      employeeNameField.value = '';
+      const div = document.createElement('div');
+      div.className = 'file-preview-pdf';
+      div.style.background = '#f3f4f6';
+      div.style.color = '#6b7280';
+      div.textContent = '📎';
+      div.title = file.name;
+      wrapper.appendChild(div);
     }
+
+    // Name label
+    const nameEl = document.createElement('div');
+    nameEl.className = 'file-preview-name';
+    nameEl.textContent = file.name;
+    wrapper.appendChild(nameEl);
+
+    // Remove button
+    const rmBtn = document.createElement('button');
+    rmBtn.type = 'button';
+    rmBtn.className = 'file-preview-remove';
+    rmBtn.innerHTML = '<i class="fas fa-times"></i>';
+    rmBtn.title = 'Remove';
+    rmBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      wrapper.remove();
+      triggerAutosave();
+    });
+    wrapper.appendChild(rmBtn);
+
+    container.prepend(wrapper);
   }
 
-  if (employeeSelect) {
-    // On change, update hidden field and display
-    employeeSelect.addEventListener('change', updateFromSelection);
-
-    // On page load, if hidden field already has a value (e.g., form validation error),
-    // pre-select the corresponding employee in the dropdown.
-    if (employeeHiddenField && employeeHiddenField.value) {
-      employeeSelect.value = employeeHiddenField.value;
-      updateFromSelection();
-    }
+  function onOpenPreviewFile(file) {
+    const url = URL.createObjectURL(file);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
   }
-});
+
+  initDropZone('resignationLetterDropZone', 'resignationLetterFile', 'resignationLetterPreviewContainer', false);
+  initDropZone('otherAttachmentsDropZone',  'otherAttachmentsFiles',  'otherAttachmentsPreviewContainer',  true);
+
+  /* ═══════════════════════════════════
+     6. EMPLOYEE SELECT (new records)
+  ═══════════════════════════════════ */
+  (function () {
+    const empSelect   = document.getElementById('employeeSelect');
+    const empName     = document.getElementById('selectedEmployeeName');
+    const empHidden   = document.getElementById('id_employee');
+
+    if (!empSelect || !empHidden) return;
+
+    function sync() {
+      const opt = empSelect.options[empSelect.selectedIndex];
+      empHidden.value = opt.value || '';
+      if (opt && opt.value) {
+        empName.value = opt.dataset.name || '';
+        empSelect.classList.remove('error');
+      } else {
+        empName.value = '';
+      }
+    }
+
+    empSelect.addEventListener('change', sync);
+    if (empHidden.value) empSelect.value = empHidden.value;
+    sync();
+  })();
+
+  /* ═══════════════════════════════════
+     7. CLEAR DRAFT ON SUCCESSFUL SUBMIT
+  ═══════════════════════════════════ */
+  const formEl = document.getElementById('exitInterviewWizardForm');
+  formEl.addEventListener('submit', function () {
+    try { localStorage.removeItem('exit_interview_draft'); } catch(e) {}
+  });
+
+  /* ═══════════════════════════════════
+     8. SAVE & ADD ANOTHER (form-level handler)
+  ═══════════════════════════════════ */
+  // The hidden field "save_and_add_another" is already in the form via the button value;
+  // Django will handle it server-side. No extra JS needed.
+
+  /* ═══════════════════════════════════
+     9. REMOVE CURRENT RESIGNATION LETTER
+  ═══════════════════════════════════ */
+  const rmCurrentBtn = document.getElementById('removeCurrentResignationLetter');
+  if (rmCurrentBtn) {
+    rmCurrentBtn.addEventListener('click', () => {
+      resignationLetterFile.removed = true;
+      resignationLetterFile.file   = null;
+      rmCurrentBtn.closest('.flex').style.display = 'none';
+      const existingInput = document.querySelector('input[name="resignation_letter"]');
+      if (existingInput) existingInput.value = '';
+      triggerAutosave();
+    });
+  }
+
+  /* ═══════════════════════════════════
+     INIT
+  ═══════════════════════════════════ */
+  goToStep(1);
+  triggerConditionalLogic();
+  document.addEventListener('DOMContentLoaded', () => { goToStep(1); triggerConditionalLogic(); });
+
+})();
 </script>
 {% endblock %}
