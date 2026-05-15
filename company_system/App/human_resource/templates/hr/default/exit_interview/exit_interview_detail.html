@@ -5,136 +5,278 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-  /* Progress stepper */
-  .progress-stepper {
-    display: flex;
-    justify-content: space-between;
-    position: relative;
-    margin: 2rem 0;
+  /* ── Custom scrollbar ── */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #f1f5f9; }
+  .dark ::-webkit-scrollbar-track { background: #1f2937; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
+
+  /* ── Print styles ── */
+  @media print {
+    .no-print, .no-print * { display: none !important; }
+    .print-only { display: block !important; }
+    .bg-white, .bg-gray-50, .dark .bg-gray-900 { background: white !important; }
+    .shadow-sm, .border { border: 1px solid #e5e7eb !important; }
+    .text-blue-600, .text-green-600, .text-red-600, .text-yellow-600 { color: #000 !important; }
+    .dark .text-gray-100, .dark .text-gray-900 { color: #000 !important; }
   }
-  .progress-stepper::before {
+
+  /* ── Timeline ── */
+  .timeline-container {
+    position: relative;
+    padding: 1rem 0;
+  }
+  .timeline-container::before {
     content: '';
     position: absolute;
-    top: 20px;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: #e5e7eb;
-    z-index: 0;
+    left: 1.25rem;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, #e5e7eb 0%, #e5e7eb 100%);
+    border-radius: 2px;
   }
-  .dark .progress-stepper::before {
-    background: #4b5563;
-  }
-  .step-item {
+  .dark .timeline-container::before { background: linear-gradient(to bottom, #374151 0%, #374151 100%); }
+  .timeline-item {
     position: relative;
-    z-index: 1;
-    text-align: center;
-    flex: 1;
+    padding-left: 3.5rem;
+    padding-bottom: 2rem;
   }
-  .step-circle {
-    width: 40px;
-    height: 40px;
+  .timeline-item:last-child { padding-bottom: 0; }
+  .timeline-icon {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2.5rem;
+    height: 2.5rem;
     border-radius: 50%;
-    background: #e5e7eb;
-    color: #6b7280;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 0.5rem;
-    font-weight: 700;
     font-size: 0.875rem;
+    z-index: 1;
+    transition: all 0.3s ease;
   }
-  .step-item.completed .step-circle {
-    background: #10b981;
+  .timeline-item.completed .timeline-icon {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
   }
-  .step-item.current .step-circle {
-    background: #3b82f6;
+  .timeline-item.current .timeline-icon {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+    animation: pulse 2s infinite;
   }
-  .step-label {
+  .timeline-item.pending .timeline-icon {
+    background: #e5e7eb;
+    color: #9ca3af;
+  }
+  .dark .timeline-item.pending .timeline-icon { background: #374151; color: #6b7280; }
+  .timeline-content {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    transition: all 0.2s;
+  }
+  .dark .timeline-content { background: #1f2937; border-color: #374151; }
+  .timeline-item.completed .timeline-content { border-left: 4px solid #10b981; }
+  .timeline-item.current .timeline-content { border-left: 4px solid #3b82f6; }
+  .timeline-item.pending .timeline-content { border-left: 4px solid #9ca3af; }
+  .timeline-date {
     font-size: 0.75rem;
     color: #6b7280;
-    max-width: 90px;
-    margin: 0 auto;
-    line-height: 1.2;
+    margin-top: 0.25rem;
   }
-  .dark .step-label {
-    color: #9ca3af;
-  }
-  .step-item.current .step-label {
-    color: #1f2937;
-    font-weight: 600;
-  }
-  .dark .step-item.current .step-label {
-    color: #f3f4f6;
-  }
-  .step-item.completed .step-label {
-    color: #10b981;
+  .dark .timeline-date { color: #9ca3af; }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); }
+    50% { box-shadow: 0 4px 12px -1px rgba(59, 130, 246, 0.5); }
   }
 
-  /* Info cards */
-  .info-card {
-    background: white;
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  /* ── Collapsible/Accordion ── */
+  .accordion-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
     overflow: hidden;
+    margin-bottom: 1rem;
+    background: white;
   }
-  .dark .info-card {
-    background: #1f2937;
+  .dark .accordion-item { background: #1f2937; border-color: #374151; }
+   .accordion-header {
+     width: 100%;
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     padding: 1rem 1.25rem;
+     background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%);
+     border: none;
+     cursor: pointer;
+     font-size: 1rem;
+     font-weight: 600;
+     color: white;
+     transition: filter 0.2s;
+   }
+   .accordion-header:hover { filter: brightness(0.9); }
+   .dark .accordion-header { color: white; }
+   .accordion-icon {
+     transition: transform 0.3s ease;
+   }
+   .accordion-item.open .accordion-icon { transform: rotate(180deg); }
+  .accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
   }
-  .info-card-header {
-    padding: 0.75rem 1rem;
-    font-weight: 600;
+  .accordion-item.open .accordion-content { max-height: 2000px; }
+  .accordion-body { padding: 1rem 1.25rem 1.5rem; }
+
+  /* ── Audit trail table ── */
+  .audit-table {
+    width: 100%;
+    border-collapse: collapse;
     font-size: 0.875rem;
+  }
+  .audit-table th {
+    text-align: left;
+    padding: 0.75rem;
+    border-bottom: 2px solid #e5e7eb;
+    font-weight: 600;
+    color: #6b7280;
+    background: #f9fafb;
+  }
+  .dark .audit-table th { background: #111827; color: #9ca3af; border-bottom-color: #374151; }
+  .audit-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: top;
+  }
+  .dark .audit-table td { border-bottom-color: #374151; }
+  .audit-table tr:last-child td { border-bottom: none; }
+  .audit-table tr:hover { background: #f9fafb; }
+  .dark .audit-table tr:hover { background: #111827; }
+
+  /* ── Deadline badges ── */
+  .deadline-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .deadline-badge.overdue {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+  }
+  .dark .deadline-badge.overdue { background: #7f1d1d; color: #fca5a5; border-color: #991b1b; }
+  .deadline-badge.approaching {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+  }
+  .dark .deadline-badge.approaching { background: #78350f; color: #fcd34d; border-color: #92400e; }
+  .deadline-badge.on_track {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+  }
+  .dark .deadline-badge.on_track { background: #14532d; color: #86efac; border-color: #166534; }
+
+  /* ── Employee Context Card ── */
+  .employee-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    position: sticky;
+    top: 6rem;
+    z-index: 20;
+  }
+  .employee-avatar {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+  .employee-info-label {
+    font-size: 0.75rem;
+    opacity: 0.8;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: white;
   }
-  .info-card-body {
-    padding: 1.5rem;
-  }
-  .info-row {
-    display: flex;
-    border-bottom: 1px solid #e5e7eb;
-    padding: 0.75rem 0;
-  }
-  .dark .info-row {
-    border-color: #374151;
-  }
-  .info-row:last-child {
-    border-bottom: none;
-  }
-  .info-label {
-    width: 200px;
-    font-weight: 500;
-    color: #6b7280;
-    flex-shrink: 0;
-  }
-  .dark .info-label {
-    color: #9ca3af;
-  }
-  .info-value {
-    flex: 1;
-    color: #1f2937;
-  }
-  .dark .info-value {
-    color: #f3f4f6;
+  .employee-info-value {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
   }
 
-  /* File link */
-  .file-link {
+  /* ── Section headers ── */
+  .section-header {
+    font-size: 1.125rem;
+    font-weight: 700;
+    padding: 1rem 1.25rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Buttons ── */
+  .btn-icon {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    color: #2563eb;
-    text-decoration: underline;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
   }
-  .file-link:hover {
-    color: #1d4ed8;
+  .btn-primary { background: #3b82f6; color: white; }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-secondary { background: white; border-color: #d1d5db; color: #374151; }
+  .dark .btn-secondary { background: #374151; border-color: #4b5563; color: #f3f4f6; }
+  .btn-secondary:hover { background: #f9fafb; }
+  .dark .btn-secondary:hover { background: #4b5563; }
+  .btn-success { background: #10b981; color: white; }
+  .btn-success:hover { background: #059669; }
+  .btn-danger { background: #ef4444; color: white; }
+  .btn-danger:hover { background: #dc2626; }
+
+  /* ── Loader ── */
+  .loader {
+    border: 3px solid #e5e7eb;
+    border-top: 3px solid #3b82f6;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    animation: spin 1s linear infinite;
   }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+  /* ── Fade in ── */
+  .fade-in {
+    animation: fadeIn 0.3s ease-in;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 {% endblock %}
 
@@ -143,289 +285,644 @@
 {% include 'hr/dashboard/hr_sidebar.html' %}
 
 <main id="mainContent" class="md:ml-64 pt-20 min-h-screen p-4 sm:p-6 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
-  <div class="max-w-6xl mx-auto space-y-6">
+  <div class="max-w-7xl mx-auto">
 
-    <!-- Header & Actions -->
-    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-      <div>
-        <div class="flex items-center gap-2 mb-2">
-          <a href="{% url 'human_resource:exit_interview_list' %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+    <!-- ── Header & Action Bar ── -->
+    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-6 fade-in">
+      <div class="flex-1">
+        <div class="flex items-center gap-3 mb-2">
+          <a href="{% url 'human_resource:exit_interview_list' %}"
+             class="p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
           </a>
-          <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Exit Interview Details</h2>
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Exit Interview Dashboard</h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              {{ interview.get_full_name }} &bull; {{ interview.get_employee_number }}
+            </p>
+          </div>
         </div>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          {{ interview.get_full_name }} ({{ interview.get_employee_number }})
-        </p>
       </div>
-      <div class="flex gap-2">
+
+      <!-- Utility Bar -->
+      <div class="flex flex-wrap gap-2 no-print">
+        <button onclick="window.print()"
+                class="btn-icon btn-secondary"
+                title="Print / PDF Export">
+          <i class="fas fa-print"></i>
+          <span class="hidden sm:inline">Print / PDF</span>
+        </button>
+        <button onclick="copyInterviewLink()"
+                class="btn-icon btn-secondary"
+                title="Copy direct link">
+          <i class="fas fa-link" id="copyIcon"></i>
+          <span class="hidden sm:inline">Copy Link</span>
+        </button>
         <a href="{% url 'human_resource:exit_interview_edit' interview.pk %}"
-           class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-          Edit
+           class="btn-icon btn-primary">
+          <i class="fas fa-edit"></i>
+          <span>Edit</span>
         </a>
         <a href="{% url 'human_resource:exit_interview_delete' interview.pk %}"
-           class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+           class="btn-icon btn-danger"
            onclick="return confirm('Are you sure you want to delete this exit interview? This action cannot be undone.');">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-          Delete
+          <i class="fas fa-trash"></i>
+          <span class="hidden sm:inline">Delete</span>
         </a>
       </div>
     </div>
 
-    <!-- Progress Overview -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Process Progress</h3>
-        <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ progress_percentage }}%</span>
-      </div>
-      <div class="progress-bar mb-4" style="height: 12px;">
-        <div class="progress-fill" style="width: {{ progress_percentage }}%;"></div>
-      </div>
-      <div class="progress-stepper">
-        <div class="step-item {% if interview.exit_interview_status == 'completed' %}completed{% elif interview.exit_interview_status != 'not_started' %}current{% endif %}">
-          <div class="step-circle">1</div>
-          <div class="step-label">Interview</div>
-        </div>
-        <div class="step-item {% if interview.knowledge_transfer_status == 'completed' %}completed{% elif interview.exit_interview_status == 'completed' %}current{% endif %}">
-          <div class="step-circle">2</div>
-          <div class="step-label">Knowledge Transfer</div>
-        </div>
-        <div class="step-item {% if interview.asset_return_status == 'completed' and interview.clearance_status == 'completed' and interview.quitclaim_status == 'completed' %}completed{% elif interview.knowledge_transfer_status == 'completed' %}current{% endif %}">
-          <div class="step-circle">3</div>
-          <div class="step-label">Clearance & Quitclaim</div>
-        </div>
-        <div class="step-item {% if interview.final_pay_status == 'released' %}completed{% elif interview.quitclaim_status == 'completed' %}current{% endif %}">
-          <div class="step-circle">4</div>
-          <div class="step-label">Final Pay</div>
-        </div>
-      </div>
-      {% if is_complete %}
-      <div class="mt-4 p-3 bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg flex items-center gap-2">
-        <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        <span class="text-green-700 dark:text-green-300 font-medium">Offboarding process completed</span>
-      </div>
-      {% endif %}
-    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-    <!-- Employee Summary -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-      <div class="section-header">Employee Summary</div>
-      <div class="info-card-body">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="space-y-3">
-            <div class="info-row">
-              <div class="info-label">Full Name</div>
-              <div class="info-value">{{ interview.get_full_name }}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Employee ID</div>
-              <div class="info-value">{{ interview.get_employee_number }}</div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Department</div>
-              <div class="info-value">{{ interview.get_department }}</div>
-            </div>
+      <!-- ── Left Sidebar: Employee Context Card ── -->
+      <div class="md:col-span-1 space-y-6 fade-in" style="animation-delay: 0.05s;">
+        <!-- Employee Profile -->
+        <div class="employee-card shadow-lg md:sticky z-10">
+          <div class="employee-avatar">
+            {{ interview.employee.first_name|first }}{{ interview.employee.last_name|first }}
           </div>
-          <div class="space-y-3">
-            <div class="info-row">
-              <div class="info-label">Job Title</div>
-              <div class="info-value">{{ interview.employee.job_title|default:"-" }}</div>
+          <h3 class="text-lg font-bold mb-4">{{ interview.get_full_name }}</h3>
+
+          <div class="space-y-3 text-sm">
+            <div>
+              <div class="employee-info-label">Position</div>
+              <div class="employee-info-value">{{ interview.employee.job_title|default:"-"|title }}</div>
             </div>
-            <div class="info-row">
-              <div class="info-label">Employment Type</div>
-              <div class="info-value">{{ interview.employee.get_type_display|default:"-" }}</div>
+            <div>
+              <div class="employee-info-label">Department</div>
+              <div class="employee-info-value">{{ interview.get_department }}</div>
             </div>
-            <div class="info-row">
-              <div class="info-label">Hire Date</div>
-              <div class="info-value">{{ interview.employee.start_date|default:"-" }}</div>
-            </div>
-          </div>
-          <div class="space-y-3">
-            <div class="info-row">
-              <div class="info-label">Resignation Status</div>
-              <div class="info-value">
-                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ interview|status_badge_class:"resignation_status" }}">
-                   {{ interview.get_resignation_status_display }}
-                 </span>
+            <div>
+              <div class="employee-info-label">Manager</div>
+              <div class="employee-info-value">
+                {% if interview.employee.manager %}
+                  {{ interview.employee.manager.first_name }} {{ interview.employee.manager.last_name }}
+                {% else %}
+                  -
+                {% endif %}
               </div>
             </div>
-            <div class="info-row">
-              <div class="info-label">Dates</div>
-              <div class="info-value">
-                <div>Filed: {{ interview.date_filed }}</div>
-                <div>Desired: {{ interview.desired_last_day|default:"-" }}</div>
-                <div>Approved: {{ interview.approved_last_day|default:"-" }}</div>
+            <div>
+              <div class="employee-info-label">Team</div>
+              <div class="employee-info-value">
+                {% if interview.employee.departmentlink %}
+                  {{ interview.employee.departmentlink.department_name }}
+                {% else %}
+                  {{ interview.employee.department|title }}
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-white/20">
+            <div class="grid grid-cols-2 gap-4 text-center">
+              <div>
+                <div class="employee-info-label">Hire Date</div>
+                <div class="text-sm font-semibold">{{ interview.employee.start_date|default:"-"|date:"M d, Y" }}</div>
+              </div>
+              <div>
+                <div class="employee-info-label">Tenure</div>
+                <div class="text-sm font-semibold">{{ interview.employee.tenure_active|default:"-" }}</div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Status Details -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-      <div class="section-header" style="background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%);">Workflow Status</div>
-      <div class="info-card-body">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div class="space-y-3">
-            <div class="info-row">
-              <div class="info-label">30-Day Rendering</div>
-              <div class="info-value">
-                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ interview|status_badge_class:"rendering_30day_status" }}">
-                   {{ interview.get_rendering_30day_status_display }}
-                 </span>
-              </div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Exit Interview</div>
-              <div class="info-value">
-                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ interview|status_badge_class:"exit_interview_status" }}">
-                   {{ interview.get_exit_interview_status_display }}
-                 </span>
-              </div>
-            </div>
+        <!-- Critical Deadlines Widget -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div class="section-header" style="background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);">
+            <i class="fas fa-clock"></i> Critical Deadlines
           </div>
-          <div class="space-y-3">
-            <div class="info-row">
-              <div class="info-label">Knowledge Transfer</div>
-              <div class="info-value">
-                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ interview|status_badge_class:"knowledge_transfer_status" }}">
-                   {{ interview.get_knowledge_transfer_status_display }}
-                 </span>
+          <div class="p-4 space-y-3">
+            {% if deadlines %}
+              {% for deadline in deadlines %}
+                <div class="flex items-start justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                      {{ deadline.label }}
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {{ deadline.date|date:"M d, Y" }}
+                    </div>
+                  </div>
+                  <span class="deadline-badge {{ deadline.status }}">
+                    {{ deadline.status_text }}
+                  </span>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="text-center py-6 text-gray-500 dark:text-gray-400 text-sm">
+                <i class="fas fa-check-circle text-2xl mb-2"></i>
+                <p>No active deadlines</p>
               </div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Asset Return</div>
-              <div class="info-value">
-                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ interview|status_badge_class:"asset_return_status" }}">
-                   {{ interview.get_asset_return_status_display }}
-                 </span>
-              </div>
-            </div>
-          </div>
-          <div class="space-y-3">
-            <div class="info-row">
-              <div class="info-label">Clearance</div>
-              <div class="info-value">
-                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ interview|status_badge_class:"clearance_status" }}">
-                   {{ interview.get_clearance_status_display }}
-                 </span>
-              </div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Quitclaim</div>
-              <div class="info-value">
-                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ interview|status_badge_class:"quitclaim_status" }}">
-                   {{ interview.get_quitclaim_status_display }}
-                 </span>
-              </div>
-            </div>
-          </div>
-          <div class="space-y-3">
-            <div class="info-row">
-              <div class="info-label">Final Pay</div>
-              <div class="info-value">
-                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ interview|status_badge_class:"final_pay_status" }}">
-                   {{ interview.get_final_pay_status_display }}
-                 </span>
-              </div>
-            </div>
-            <div class="info-row">
-              <div class="info-label">Compliance</div>
-              <div class="info-value">
-                <div>NDA: {{ interview.nda_signed|yesno:"<span class='text-green-600'>Signed</span>|<span class='text-red-600'>Not Signed</span>"|safe }}</div>
-                <div>NCA: {{ interview.nca_signed|yesno:"<span class='text-green-600'>Signed</span>|<span class='text-red-600'>Not Signed</span>"|safe }}</div>
-              </div>
-            </div>
+            {% endif %}
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Qualitative Feedback -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-      <div class="section-header" style="background: linear-gradient(90deg, #0891b2 0%, #06b6d4 100%);">Qualitative Feedback</div>
-      <div class="info-card-body">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="space-y-3">
-             <div class="info-row">
-               <div class="info-label">Primary Reason</div>
-               <div class="info-value">{{ interview|qualitative_insight:"primary_driver"|default:"-" }}</div>
-             </div>
-             <div class="info-row">
-               <div class="info-label">Category</div>
-               <div class="info-value">{{ interview|qualitative_insight:"categorization"|default:"-" }}</div>
-             </div>
+      <!-- ── Main Content Area ── -->
+      <div class="md:col-span-2 space-y-6">
+
+        <!-- Progress Overview -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 fade-in mt-6" style="animation-delay: 0.1s;">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Process Progress</h3>
+            <span class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ progress_percentage }}%</span>
           </div>
-           <div class="space-y-3 md:col-span-2">
-             <div class="info-row">
-               <div class="info-label">Areas for Improvement</div>
-               <div class="info-value">{{ interview|qualitative_insight:"improvement_areas"|default:"-" }}</div>
-             </div>
-             <div class="info-row">
-               <div class="info-label">Additional Feedback</div>
-               <div class="info-value">{{ interview|qualitative_insight:"additional_feedback"|default:"-" }}</div>
-             </div>
-           </div>
-        </div>
-      </div>
-    </div>
+          <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden mb-6">
+            <div class="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500"
+                 style="width: {{ progress_percentage }}%;"></div>
+          </div>
 
-    <!-- Attachments -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-      <div class="section-header" style="background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);">Attachments</div>
-      <div class="info-card-body">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="info-row">
-            <div class="info-label">Resignation Letter</div>
-            <div class="info-value">
-              {% if interview.resignation_letter %}
-                <a href="{{ interview.resignation_letter.url }}" target="_blank" class="file-link">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
-                  Download Letter
-                </a>
-              {% else %}
-                <span class="text-gray-500 dark:text-gray-400">No file uploaded</span>
-              {% endif %}
+          <!-- Interactive Timeline -->
+          <div class="timeline-container mt-8">
+            <h4 class="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-4">
+              Lifecycle Timeline
+            </h4>
+            {% for event in timeline_events %}
+              <div class="timeline-item {% if event.completed %}completed{% else %}pending{% endif %} fade-in"
+                   style="animation-delay: {{ forloop.counter0 }}0.05s;">
+                <div class="timeline-icon">
+                  <i class="fas {% if event.icon == 'file-alt' %}fa-file-alt{% elif event.icon == 'clipboard-check' %}fa-clipboard-check{% elif event.icon == 'books' %}fa-books{% elif event.icon == 'box-open' %}fa-box-open{% elif event.icon == 'check-shield' %}fa-check-shield{% elif event.icon == 'file-contract' %}fa-file-contract{% elif event.icon == 'money-bill-wave' %}fa-money-bill-wave{% else %}fa-circle{% endif %}"></i>
+                </div>
+                <div class="timeline-content">
+                  <div class="font-semibold text-gray-900 dark:text-gray-100">
+                    {{ event.label }}
+                  </div>
+                  <div class="timeline-date">
+                    {% if event.date %}
+                      {{ event.date|date:"F j, Y" }}
+                    {% else %}
+                      <span class="text-gray-400 italic">Pending</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Collapsible Sections -->
+        <div class="space-y-4" id="accordion">
+
+          <!-- Section 1: Workflow Status (always open by default) -->
+          <div class="accordion-item open fade-in" style="animation-delay: 0.15s;">
+            <button class="accordion-header" onclick="toggleAccordion(this)"
+                    aria-expanded="true">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-tasks"></i>
+                <span>Workflow Status</span>
+              </div>
+              <i class="fas fa-chevron-down accordion-icon"></i>
+            </button>
+            <div class="accordion-content">
+              <div class="accordion-body">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <!-- Rendering 30-Day -->
+                  <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">30-Day Rendering</div>
+                    <div class="flex items-center gap-2">
+                      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                             {{ interview|status_badge_class:'rendering_30day_status' }}">
+                        {{ interview.get_rendering_30day_status_display }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Exit Interview -->
+                  <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Exit Interview</div>
+                    <div class="flex items-center gap-2">
+                      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                             {{ interview|status_badge_class:'exit_interview_status' }}">
+                        {{ interview.get_exit_interview_status_display }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Knowledge Transfer -->
+                  <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Knowledge Transfer</div>
+                    <div class="flex items-center gap-2">
+                      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                             {{ interview|status_badge_class:'knowledge_transfer_status' }}">
+                        {{ interview.get_knowledge_transfer_status_display }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Asset Return -->
+                  <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Asset Return</div>
+                    <div class="flex items-center gap-2">
+                      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                             {{ interview|status_badge_class:'asset_return_status' }}">
+                        {{ interview.get_asset_return_status_display }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Clearance -->
+                  <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Clearance</div>
+                    <div class="flex items-center gap-2">
+                      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                             {{ interview|status_badge_class:'clearance_status' }}">
+                        {{ interview.get_clearance_status_display }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Quitclaim -->
+                  <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Quitclaim</div>
+                    <div class="flex items-center gap-2">
+                      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                             {{ interview|status_badge_class:'quitclaim_status' }}">
+                        {{ interview.get_quitclaim_status_display }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Final Pay -->
+                  <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Final Pay</div>
+                    <div class="flex items-center gap-2">
+                      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium
+                             {{ interview|status_badge_class:'final_pay_status' }}">
+                        {{ interview.get_final_pay_status_display }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Compliance -->
+                  <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                    <div class="text-xs text-gray-500 dark:text-gray-400 uppercase mb-1">Compliance</div>
+                    <div class="space-y-1 text-xs">
+                      <div class="flex items-center gap-2">
+                        <i class="fas {{ interview.nda_signed|yesno:'fa-check text-green-500,fa-times text-red-500' }}"></i>
+                        <span>NDA</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <i class="fas {{ interview.nca_signed|yesno:'fa-check text-green-500,fa-times text-red-500' }}"></i>
+                        <span>NCA</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="info-row">
-            <div class="info-label">Other Attachments</div>
-            <div class="info-value">
-              {% if interview.other_attachments %}
-                <a href="{{ interview.other_attachments.url }}" target="_blank" class="file-link">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
-                  Download Attachments
-                </a>
-              {% else %}
-                <span class="text-gray-500 dark:text-gray-400">No additional attachments</span>
-              {% endif %}
+
+          <!-- Section 2: Employee Details & Dates -->
+          <div class="accordion-item fade-in" style="animation-delay: 0.2s;">
+            <button class="accordion-header" onclick="toggleAccordion(this)"
+                    style="background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);"
+                    aria-expanded="false">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-user-circle"></i>
+                <span>Employee Details & Key Dates</span>
+              </div>
+              <i class="fas fa-chevron-down accordion-icon"></i>
+            </button>
+            <div class="accordion-content">
+              <div class="accordion-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <!-- Left Column -->
+                  <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Full Name</div>
+                        <div class="font-medium">{{ interview.get_full_name }}</div>
+                      </div>
+                      <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Employee ID</div>
+                        <div class="font-medium">{{ interview.get_employee_number }}</div>
+                      </div>
+                      <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Department</div>
+                        <div class="font-medium">{{ interview.get_department }}</div>
+                      </div>
+                      <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Job Title</div>
+                        <div class="font-medium">{{ interview.employee.job_title|default:"-"|title }}</div>
+                      </div>
+                      <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Employment Type</div>
+                        <div class="font-medium">{{ interview.employee.get_type_display|default:"-" }}</div>
+                      </div>
+                      <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Resignation Type</div>
+                        <div class="font-medium">{{ interview.get_resignation_status_display }}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Right Column -->
+                  <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                      <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Date Filed</div>
+                        <div class="font-medium">{{ interview.date_filed|date:"M d, Y" }}</div>
+                      </div>
+                      <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Desired Last Day</div>
+                        <div class="font-medium">
+                          {% if interview.desired_last_day %}
+                            {{ interview.desired_last_day|date:"M d, Y" }}
+                          {% else %}
+                            <span class="text-gray-400">Not set</span>
+                          {% endif %}
+                        </div>
+                      </div>
+                      <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Approved Last Day</div>
+                        <div class="font-medium">
+                          {% if interview.approved_last_day %}
+                            {{ interview.approved_last_day|date:"M d, Y" }}
+                          {% else %}
+                            <span class="text-gray-400">Not set</span>
+                          {% endif %}
+                        </div>
+                      </div>
+                      <div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Hire Date</div>
+                        <div class="font-medium">{{ interview.employee.start_date|default:"-"|date:"M d, Y" }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+
+          <!-- Section 3: Qualitative Feedback -->
+          <div class="accordion-item fade-in" style="animation-delay: 0.25s;">
+            <button class="accordion-header" onclick="toggleAccordion(this)"
+                    style="background: linear-gradient(90deg, #0891b2 0%, #06b6d4 100%);">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-comments"></i>
+                <span>Qualitative Feedback</span>
+              </div>
+              <i class="fas fa-chevron-down accordion-icon"></i>
+            </button>
+            <div class="accordion-content">
+              <div class="accordion-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <div class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Primary Reason</div>
+                    <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      {{ interview|qualitative_insight:'primary_driver'|default:"-" }}
+                    </div>
+                  </div>
+                  <div>
+                    <div class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Category</div>
+                    <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      {{ interview|qualitative_insight:'categorization'|default:"-"|title }}
+                    </div>
+                  </div>
+                  <div class="md:col-span-2">
+                    <div class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Areas for Improvement</div>
+                    <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      {{ interview|qualitative_insight:'improvement_areas'|default:"-" }}
+                    </div>
+                  </div>
+                  <div class="md:col-span-2">
+                    <div class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Additional Feedback</div>
+                    <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      {{ interview|qualitative_insight:'additional_feedback'|default:"-" }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Attachments -->
+          <div class="accordion-item fade-in" style="animation-delay: 0.3s;">
+            <button class="accordion-header" onclick="toggleAccordion(this)"
+                    style="background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-paperclip"></i>
+                <span>Attachments</span>
+              </div>
+              <i class="fas fa-chevron-down accordion-icon"></i>
+            </button>
+            <div class="accordion-content">
+              <div class="accordion-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">Resignation Letter</div>
+                    {% if interview.resignation_letter %}
+                      <a href="{{ interview.resignation_letter.url }}" target="_blank"
+                         class="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
+                        <i class="fas fa-download"></i>
+                        Download Document
+                      </a>
+                    {% else %}
+                      <span class="text-gray-400 italic">No file uploaded</span>
+                    {% endif %}
+                  </div>
+
+                  <div class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mb-2">Other Attachments</div>
+                    {% if interview.other_attachments %}
+                      <a href="{{ interview.other_attachments.url }}" target="_blank"
+                         class="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium">
+                        <i class="fas fa-download"></i>
+                        Download Attachments
+                      </a>
+                    {% else %}
+                      <span class="text-gray-400 italic">No additional attachments</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 5: Audit Trail -->
+          <div class="accordion-item fade-in" style="animation-delay: 0.35s;">
+            <button class="accordion-header" onclick="toggleAccordion(this)"
+                    style="background: linear-gradient(90deg, #4f46e5 0%, #818cf8 100%);">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-history"></i>
+                <span>Audit Trail</span>
+                <span class="ml-auto px-2 py-0.5 bg-white/20 text-white text-xs rounded-full">
+                  {{ history|length }} entries
+                </span>
+              </div>
+              <i class="fas fa-chevron-down accordion-icon"></i>
+            </button>
+            <div class="accordion-content">
+              <div class="accordion-body">
+                {% if history %}
+                  <div class="overflow-x-auto">
+                    <table class="audit-table">
+                      <thead>
+                        <tr>
+                          <th>Date/Time</th>
+                          <th>User</th>
+                          <th>Field Changed</th>
+                          <th>Old Value</th>
+                          <th>New Value</th>
+                          <th>Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for entry in history %}
+                          <tr>
+                            <td class="text-sm whitespace-nowrap">
+                              {{ entry.changed_at|date:"M d, Y H:i" }}
+                            </td>
+                            <td class="text-sm">
+                              {% if entry.changed_by %}
+                                {{ entry.changed_by.first_name }} {{ entry.changed_by.last_name }}
+                              {% else %}
+                                <span class="text-gray-400">System</span>
+                              {% endif %}
+                            </td>
+                            <td class="text-sm font-medium">
+                              {{ entry.get_field_display_name }}
+                            </td>
+                            <td class="text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate" title="{{ entry.old_value|default:'(empty)' }}">
+                              {{ entry.old_value|default:"-" }}
+                            </td>
+                            <td class="text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate" title="{{ entry.new_value|default:'(empty)' }}">
+                              {{ entry.new_value|default:"-" }}
+                            </td>
+                            <td class="text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate" title="{{ entry.change_reason|default:'' }}">
+                              {% if entry.change_reason %}
+                                <i class="fas fa-sticky-note" title="{{ entry.change_reason }}"></i>
+                              {% else %}
+                                -
+                              {% endif %}
+                            </td>
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                {% else %}
+                  <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-history text-3xl mb-3 opacity-50"></i>
+                    <p>No change history available yet.</p>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 6: HR Notes -->
+          {% if interview.interview_notes %}
+          <div class="accordion-item fade-in" style="animation-delay: 0.4s;">
+            <button class="accordion-header" onclick="toggleAccordion(this)" style="background: linear-gradient(90deg, #4b5563 0%, #6b7280 100%);">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-sticky-note"></i>
+                <span>HR Notes</span>
+              </div>
+              <i class="fas fa-chevron-down accordion-icon"></i>
+            </button>
+            <div class="accordion-content">
+              <div class="accordion-body">
+                <div class="prose dark:prose-invert max-w-none">
+                  <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                    {{ interview.interview_notes }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
         </div>
+
+        <!-- Footer: Timestamps -->
+        <div class="flex flex-col sm:flex-row justify-between items-center pt-6 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 fade-in" style="animation-delay: 0.45s;">
+          <div>
+            <i class="far fa-clock mr-1"></i>
+            Created: {{ interview.created_at|date:"F j, Y g:i a" }}
+          </div>
+          <div>
+            <i class="far fa-edit mr-1"></i>
+            Last Updated: {{ interview.updated_at|date:"F j, Y g:i a" }}
+          </div>
+        </div>
+
       </div>
     </div>
-
-    <!-- HR Notes -->
-    {% if interview.interview_notes %}
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-      <div class="section-header" style="background: linear-gradient(90deg, #4b5563 0%, #6b7280 100%);">HR Notes</div>
-      <div class="info-card-body">
-        <div class="prose dark:prose-invert max-w-none">
-          <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ interview.interview_notes }}</p>
-        </div>
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Metadata -->
-    <div class="text-sm text-gray-500 dark:text-gray-400 text-center">
-      Created: {{ interview.created_at|date:"M d, Y H:i" }} |
-      Last Updated: {{ interview.updated_at|date:"M d, Y H:i" }}
-    </div>
-
   </div>
 </main>
 
+<!-- ── Toast notification ── -->
+<div id="toast" class="fixed bottom-4 right-4 z-50 hidden">
+  <div class="bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+    <i class="fas fa-check-circle"></i>
+    <span id="toastMessage">Link copied!</span>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // ── Accordion toggle ──
+  function toggleAccordion(button) {
+    const item = button.closest('.accordion-item');
+    const isOpen = item.classList.contains('open');
+    const icon = button.querySelector('.accordion-icon');
+
+    // Close all siblings
+    const allItems = document.querySelectorAll('.accordion-item');
+    allItems.forEach(other => {
+      if (other !== item) {
+        other.classList.remove('open');
+        other.querySelector('.accordion-icon').style.transform = 'rotate(0deg)';
+      }
+    });
+
+    // Toggle current
+    item.classList.toggle('open');
+    icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+  }
+
+  // Copy interview link
+  function copyInterviewLink() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('Link copied to clipboard!');
+      document.getElementById('copyIcon').classList.add('text-green-500');
+      setTimeout(() => {
+        document.getElementById('copyIcon').classList.remove('text-green-500');
+      }, 2000);
+    }).catch(err => {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = url;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      showToast('Link copied!');
+    });
+  }
+
+  function showToast(message) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastMessage').textContent = message;
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3000);
+  }
+
+  // Initialize - keep first accordion open on load
+  document.addEventListener('DOMContentLoaded', () => {
+    const firstAccordion = document.querySelector('.accordion-item.open');
+    if (firstAccordion) {
+      const icon = firstAccordion.querySelector('.accordion-icon');
+      if (icon) icon.style.transform = 'rotate(180deg)';
+    }
+  });
+</script>
 {% endblock %}

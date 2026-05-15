@@ -571,6 +571,71 @@ class ExitInterview(models.Model):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# ExitInterview History Tracking
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class ExitInterviewHistory(models.Model):
+    """
+    Model to track changes to ExitInterview records.
+    Automatically created when ExitInterview is updated via signal.
+    """
+
+    # Field choices - tracks the fields that can be changed
+    FIELD_CHOICES = [
+        ('resignation_status', 'Resignation Status'),
+        ('date_filed', 'Date Filed'),
+        ('desired_last_day', 'Desired Last Day'),
+        ('approved_last_day', 'Approved Last Day'),
+        ('rendering_30day_status', '30-Day Rendering Status'),
+        ('exit_interview_status', 'Exit Interview Status'),
+        ('knowledge_transfer_status', 'Knowledge Transfer Status'),
+        ('asset_return_status', 'Asset Return Status'),
+        ('clearance_status', 'Clearance Status'),
+        ('quitclaim_status', 'Quitclaim Status'),
+        ('final_pay_status', 'Final Pay Status'),
+        ('nda_signed', 'NDA Signed'),
+        ('nca_signed', 'NCA Signed'),
+        ('resignation_letter', 'Resignation Letter'),
+        ('other_attachments', 'Other Attachments'),
+        ('qualitative_data', 'Qualitative Data'),
+        ('interview_notes', 'Interview Notes'),
+    ]
+
+    interview = models.ForeignKey(
+        ExitInterview,
+        on_delete=models.CASCADE,
+        related_name='history'
+    )
+    field_name = models.CharField(max_length=50, choices=FIELD_CHOICES)
+    old_value = models.TextField(null=True, blank=True)
+    new_value = models.TextField(null=True, blank=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+    changed_by = models.ForeignKey(
+        Staff,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='exit_interview_changes_made'
+    )
+    change_reason = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-changed_at']
+        verbose_name = 'Exit Interview History'
+        verbose_name_plural = 'Exit Interview History Records'
+
+    def __str__(self):
+        return f"{self.interview} - {self.get_field_display_name()} changed on {self.changed_at}"
+
+    def get_field_display_name(self):
+        """Get human-readable field name"""
+        for choice in self.FIELD_CHOICES:
+            if choice[0] == self.field_name:
+                return choice[1]
+        return self.field_name
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # ENPS (Employee Net Promoter Score) Survey
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -863,3 +928,111 @@ class ENPSDepartmentAnalytics(models.Model):
     
     def __str__(self):
         return f"{self.survey.name} - {self.department}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Django Signals for ExitInterview change tracking
+# ═══════════════════════════════════════════════════════════════════════════════
+
+from django.db.models.signals import pre_save, post_save
+from django.dispatch import receiver
+
+
+@receiver(pre_save, sender=ExitInterview)
+def capture_exit_interview_old_values(sender, instance, **kwargs):
+    """
+    Signal to capture old values BEFORE ExitInterview is saved.
+    Stores old values as a temporary attribute on the instance.
+    """
+    if instance.pk is None:
+        # This is a new instance, no old values to track
+        instance._is_new = True
+        instance._old_values = {}
+        return
+
+    instance._is_new = False
+
+    # Get the existing instance from database
+    try:
+        old_instance = ExitInterview.objects.get(pk=instance.pk)
+    except ExitInterview.DoesNotExist:
+        instance._old_values = {}
+        return
+
+    # Capture all tracked field values
+    tracked_fields = [
+        'resignation_status', 'date_filed', 'resignation_letter', 'resignation_letter_text',
+        'desired_last_day', 'approved_last_day',
+        'rendering_30day_status', 'exit_interview_status', 'knowledge_transfer_status',
+        'asset_return_status', 'clearance_status', 'quitclaim_status', 'final_pay_status',
+        'nda_signed', 'nca_signed', 'other_attachments', 'qualitative_data', 'interview_notes'
+    ]
+
+    old_values = {}
+    for field_name in tracked_fields:
+        old_value = getattr(old_instance, field_name, None)
+        old_values[field_name] = old_value
+
+    instance._old_values = old_values
+
+
+@receiver(post_save, sender=ExitInterview)
+def track_exit_interview_changes(sender, instance, created, **kwargs):
+    """
+    Signal to automatically create ExitInterviewHistory records when ExitInterview is saved.
+    Uses the old values captured in pre_save to compare with new values.
+    """
+    # Get old values captured in pre_save
+    old_values = getattr(instance, '_old_values', {})
+
+    # Get the user who made the change (set by the view)
+    changed_by = getattr(instance, '_changed_by', None)
+
+    if created:
+        # For new creations, track all non-empty fields as new values
+        tracked_fields = [
+            'resignation_status', 'date_filed', 'resignation_letter', 'resignation_letter_text',
+            'desired_last_day', 'approved_last_day',
+            'rendering_30day_status', 'exit_interview_status', 'knowledge_transfer_status',
+            'asset_return_status', 'clearance_status', 'quitclaim_status', 'final_pay_status',
+            'nda_signed', 'nca_signed', 'other_attachments', 'qualitative_data', 'interview_notes'
+        ]
+
+        for field_name in tracked_fields:
+            new_value = getattr(instance, field_name, None)
+            if new_value is not None:
+                new_value_str = str(new_value) if not isinstance(new_value, (dict, list)) else str(new_value)
+                ExitInterviewHistory.objects.create(
+                    interview=instance,
+                    field_name=field_name,
+                    old_value=None,
+                    new_value=new_value_str,
+                    changed_by=changed_by
+                )
+        return
+
+    # For updates, track only changed fields
+    tracked_fields = [
+        'resignation_status', 'date_filed', 'resignation_letter', 'resignation_letter_text',
+        'desired_last_day', 'approved_last_day',
+        'rendering_30day_status', 'exit_interview_status', 'knowledge_transfer_status',
+        'asset_return_status', 'clearance_status', 'quitclaim_status', 'final_pay_status',
+        'nda_signed', 'nca_signed', 'other_attachments', 'qualitative_data', 'interview_notes'
+    ]
+
+    for field_name in tracked_fields:
+        old_value = old_values.get(field_name)
+        new_value = getattr(instance, field_name, None)
+
+        # Compare values
+        if str(old_value) != str(new_value):
+            old_value_str = str(old_value) if old_value is not None else ''
+            new_value_str = str(new_value) if new_value is not None else ''
+
+            ExitInterviewHistory.objects.create(
+                interview=instance,
+                field_name=field_name,
+                old_value=old_value_str,
+                new_value=new_value_str,
+                changed_by=changed_by
+            )

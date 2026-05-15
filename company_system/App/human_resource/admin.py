@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import EmployeeProfileSettings, EmployeeShiftRule, ExitInterview
+from .models import EmployeeProfileSettings, EmployeeShiftRule, ExitInterview, ExitInterviewHistory, Staff
 from .payroll_models import (
     PayrollRecord, Payout, PayoutDetail, Loan, Benefit, EmployeeBenefit,
     BankType, BankAccount, BankAllocation, PayrollOverride, PayrollAuditLog,
@@ -347,5 +347,48 @@ class ExitInterviewAdmin(admin.ModelAdmin):
         }),
     )
     readonly_fields = ('created_at', 'updated_at')
+
+    def save_model(self, request, obj, form, change):
+        """Capture the admin user who made the change for audit tracking."""
+        emp_num = request.session.get('employee_number')
+        if emp_num:
+            try:
+                staff = Staff.objects.get(employee_number=emp_num)
+                obj._changed_by = staff
+            except Staff.DoesNotExist:
+                obj._changed_by = None
+        else:
+            obj._changed_by = None
+        super().save_model(request, obj, form, change)
+
+
+# =============================================================================
+# ExitInterview History (Audit Trail)
+# =============================================================================
+
+class ExitInterviewHistoryInline(admin.TabularInline):
+    model = ExitInterviewHistory
+    extra = 0
+    readonly_fields = ('field_name', 'old_value', 'new_value', 'changed_at', 'changed_by', 'change_reason')
+    fields = ('field_name', 'old_value', 'new_value', 'changed_at', 'changed_by', 'change_reason')
+    can_delete = False
+    show_change_link = True
+    classes = ('collapse',)  # collapsed by default
+
+    def has_add_permission(self, request, obj=None):
+        return False  # Inlines are read-only audit records
+
+
+# Attach the inline to ExitInterviewAdmin
+ExitInterviewAdmin.inlines = ExitInterviewAdmin.inlines + (ExitInterviewHistoryInline,)
+
+
+@admin.register(ExitInterviewHistory)
+class ExitInterviewHistoryAdmin(admin.ModelAdmin):
+    list_display = ('interview', 'field_name', 'changed_at', 'changed_by')
+    list_filter = ('field_name', 'changed_at')
+    search_fields = ('interview__employee__first_name', 'interview__employee__last_name', 'field_name')
+    readonly_fields = ('changed_at',)
+    raw_id_fields = ('interview', 'changed_by')
 
 

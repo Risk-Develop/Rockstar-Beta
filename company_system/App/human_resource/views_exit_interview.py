@@ -177,7 +177,13 @@ def exit_interview_edit(request, pk):
     if request.method == 'POST':
         form = ExitInterviewForm(request.POST, request.FILES, instance=interview)
         if form.is_valid():
-            interview = form.save()
+            interview = form.save(commit=False)
+            # Capture the user who made this change for audit tracking
+            emp_num = request.session.get('employee_number')
+            changing_user = Staff.objects.filter(employee_number=emp_num).first()
+            interview._changed_by = changing_user
+            interview.save()
+            form.save_m2m() if hasattr(form, 'save_m2m') else None
             messages.success(request, f"Exit interview updated for {interview.get_full_name()}.")
             return redirect('human_resource:exit_interview_list')
     else:
@@ -210,7 +216,7 @@ def exit_interview_detail(request, pk):
             messages.error(request, "Permission denied.")
             return redirect('human_resource:hr_dashboard')
     else:
-        employee = None
+        employee = Staff.objects.filter(employee_number=emp_num).first()
 
     interview = get_object_or_404(
         ExitInterview.objects.select_related('employee'),
@@ -221,12 +227,177 @@ def exit_interview_detail(request, pk):
     progress_percentage = interview.get_progress_percentage()
     is_complete = interview.is_process_complete()
 
+    # Fetch full audit history for timeline lookups (unlimited)
+    history_qs = interview.history.select_related('changed_by').all()
+
+    # Fetch recent history for display (limit to 50)
+    history = history_qs[:50]
+
+    # Compute timeline milestones
+    # We'll build a list of events with label, date, and completion status
+    timeline_events = []
+
+    # 1. Form Filed
+    if interview.date_filed:
+        timeline_events.append({
+            'label': 'Resignation Form Filed',
+            'date': interview.date_filed,
+            'completed': True,
+            'icon': 'file-alt',
+        })
+
+    # 2. Exit Interview Completed
+    exit_completed = interview.exit_interview_status == 'completed'
+    exit_date = None
+    if exit_completed:
+        # Try to find the history entry when status changed to completed
+        exit_hist = history_qs.filter(field_name='exit_interview_status', new_value='completed').first()
+        exit_date = exit_hist.changed_at.date() if exit_hist else interview.updated_at.date()
+    timeline_events.append({
+        'label': 'Exit Interview',
+        'date': exit_date,
+        'completed': exit_completed,
+        'icon': 'clipboard-check',
+    })
+
+    # 3. Knowledge Transfer Completed
+    kt_completed = interview.knowledge_transfer_status == 'completed'
+    kt_date = None
+    if kt_completed:
+        kt_hist = history_qs.filter(field_name='knowledge_transfer_status', new_value='completed').first()
+        kt_date = kt_hist.changed_at.date() if kt_hist else interview.updated_at.date()
+    timeline_events.append({
+        'label': 'Knowledge Transfer',
+        'date': kt_date,
+        'completed': kt_completed,
+        'icon': 'books',
+    })
+
+    # 4. Asset Return Completed
+    asset_completed = interview.asset_return_status == 'completed'
+    asset_date = None
+    if asset_completed:
+        asset_hist = history_qs.filter(field_name='asset_return_status', new_value='completed').first()
+        asset_date = asset_hist.changed_at.date() if asset_hist else interview.updated_at.date()
+    timeline_events.append({
+        'label': 'Asset Return',
+        'date': asset_date,
+        'completed': asset_completed,
+        'icon': 'box-open',
+    })
+
+    # 5. Clearance Completed
+    clearance_completed = interview.clearance_status == 'completed'
+    clearance_date = None
+    if clearance_completed:
+        clearance_hist = history_qs.filter(field_name='clearance_status', new_value='completed').first()
+        clearance_date = clearance_hist.changed_at.date() if clearance_hist else interview.updated_at.date()
+    timeline_events.append({
+        'label': 'Clearance',
+        'date': clearance_date,
+        'completed': clearance_completed,
+        'icon': 'check-shield',
+    })
+
+    # 6. Quitclaim Completed
+    quitclaim_completed = interview.quitclaim_status == 'completed'
+    quitclaim_date = None
+    if quitclaim_completed:
+        quitclaim_hist = history_qs.filter(field_name='quitclaim_status', new_value='completed').first()
+        quitclaim_date = quitclaim_hist.changed_at.date() if quitclaim_hist else interview.updated_at.date()
+    timeline_events.append({
+        'label': 'Quitclaim',
+        'date': quitclaim_date,
+        'completed': quitclaim_completed,
+        'icon': 'file-contract',
+    })
+
+    # 7. Final Pay Released
+    final_pay_completed = interview.final_pay_status == 'released'
+    final_pay_date = None
+    if final_pay_completed:
+        final_pay_hist = history_qs.filter(field_name='final_pay_status', new_value='released').first()
+        final_pay_date = final_pay_hist.changed_at.date() if final_pay_hist else interview.updated_at.date()
+    timeline_events.append({
+        'label': 'Final Pay',
+        'date': final_pay_date,
+        'completed': final_pay_completed,
+        'icon': 'money-bill-wave',
+    })
+
+    # Compute deadline statuses for widget
+    from datetime import date, timedelta
+    today = date.today()
+    deadline_threshold = timedelta(days=7)  # 7 days threshold for "approaching"
+
+    deadlines = []
+
+    # Desired Last Day
+    if interview.desired_last_day:
+        due_date = interview.desired_last_day
+        if due_date < today:
+            status = 'overdue'
+            status_text = 'Overdue'
+        elif (due_date - today) <= deadline_threshold:
+            status = 'approaching'
+            status_text = 'Approaching'
+        else:
+            status = 'on_track'
+            status_text = 'On Track'
+        deadlines.append({
+            'label': 'Desired Last Day',
+            'date': due_date,
+            'status': status,
+            'status_text': status_text,
+        })
+
+    # Approved Last Day
+    if interview.approved_last_day:
+        due_date = interview.approved_last_day
+        if due_date < today:
+            status = 'overdue'
+            status_text = 'Overdue'
+        elif (due_date - today) <= deadline_threshold:
+            status = 'approaching'
+            status_text = 'Approaching'
+        else:
+            status = 'on_track'
+            status_text = 'On Track'
+        deadlines.append({
+            'label': 'Approved Last Day',
+            'date': due_date,
+            'status': status,
+            'status_text': status_text,
+        })
+
+    # 30-Day Rendering Deadline (if applicable)
+    if interview.date_filed and interview.rendering_30day_status not in ['na', 'completed', 'immediate']:
+        due_date = interview.date_filed + timedelta(days=30)
+        if due_date < today:
+            status = 'overdue'
+            status_text = 'Overdue'
+        elif (due_date - today) <= deadline_threshold:
+            status = 'approaching'
+            status_text = 'Approaching'
+        else:
+            status = 'on_track'
+            status_text = 'On Track'
+        deadlines.append({
+            'label': '30-Day Rendering',
+            'date': due_date,
+            'status': status,
+            'status_text': status_text,
+        })
+
     context = {
         'employee': employee,
         'is_owner': is_owner,
         'interview': interview,
         'progress_percentage': progress_percentage,
         'is_complete': is_complete,
+        'history': history,
+        'timeline_events': timeline_events,
+        'deadlines': deadlines,
         'title': 'Exit Interview Details',
     }
     return render(request, 'hr/default/exit_interview/exit_interview_detail.html', context)
