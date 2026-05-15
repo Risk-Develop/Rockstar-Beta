@@ -1,5 +1,12 @@
 {% load hr_extras %}
 <tr id="row-{{ interview.pk }}" class="table-row {% cycle 'table-row-odd' 'table-row-even' %} hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
+  <!-- Select Checkbox -->
+  <td class="table-cell select-col" style="width:44px;max-width:50px;text-align:center;">
+    <input type="checkbox"
+           class="row-checkbox w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+           data-pk="{{ interview.pk }}">
+  </td>
+
   <!-- Employee Column -->
   <td class="table-cell">
     <div class="flex items-center gap-3">
@@ -21,12 +28,39 @@
     </span>
   </td>
 
-  <!-- Progress -->
+  <!-- Progress with tooltip -->
   <td class="table-cell text-right">
     <div class="flex items-center justify-end gap-2">
-      <div class="flex-1 w-24">
+      <div class="flex-1 w-24 progress-tooltip-cell">
         <div class="progress-bar">
           <div class="progress-fill" style="width: {{ interview.get_progress_percentage }}%"></div>
+        </div>
+        <div class="progress-tooltip">
+          <div class="font-semibold text-white mb-1">{{ interview.get_progress_percentage }}% — Step Breakdown</div>
+          <div class="progress-tooltip-row">
+            <span class="pt-label {% if interview.exit_interview_status == 'completed' %}completed{% endif %}">Exit Interview</span>
+            <span class="pt-value {% if interview.exit_interview_status == 'completed' %}pt-completed{% else %}pt-pending{% endif %}">{% if interview.exit_interview_status == 'completed' %}✓{% else %}○{% endif %}</span>
+          </div>
+          <div class="progress-tooltip-row">
+            <span class="pt-label {% if interview.knowledge_transfer_status == 'completed' %}completed{% endif %}">Knowledge Transfer</span>
+            <span class="pt-value {% if interview.knowledge_transfer_status == 'completed' %}pt-completed{% else %}pt-pending{% endif %}">{% if interview.knowledge_transfer_status == 'completed' %}✓{% else %}○{% endif %}</span>
+          </div>
+          <div class="progress-tooltip-row">
+            <span class="pt-label {% if interview.asset_return_status == 'completed' %}completed{% endif %}">Asset Return</span>
+            <span class="pt-value {% if interview.asset_return_status == 'completed' %}pt-completed{% else %}pt-pending{% endif %}">{% if interview.asset_return_status == 'completed' %}✓{% else %}○{% endif %}</span>
+          </div>
+          <div class="progress-tooltip-row">
+            <span class="pt-label {% if interview.clearance_status == 'completed' %}completed{% endif %}">Clearance</span>
+            <span class="pt-value {% if interview.clearance_status == 'completed' %}pt-completed{% else %}pt-pending{% endif %}">{% if interview.clearance_status == 'completed' %}✓{% else %}○{% endif %}</span>
+          </div>
+          <div class="progress-tooltip-row">
+            <span class="pt-label {% if interview.quitclaim_status == 'completed' %}completed{% endif %}">Quitclaim</span>
+            <span class="pt-value {% if interview.quitclaim_status == 'completed' %}pt-completed{% else %}pt-pending{% endif %}">{% if interview.quitclaim_status == 'completed' %}✓{% else %}○{% endif %}</span>
+          </div>
+          <div class="progress-tooltip-row">
+            <span class="pt-label {% if interview.final_pay_status == 'released' %}completed{% endif %}">Final Pay</span>
+            <span class="pt-value {% if interview.final_pay_status == 'released' %}pt-completed{% else %}pt-pending{% endif %}">{% if interview.final_pay_status == 'released' %}✓{% else %}○{% endif %}</span>
+          </div>
         </div>
       </div>
       <span class="text-sm font-semibold text-gray-700 dark:text-gray-300 w-10 text-right">{{ interview.get_progress_percentage }}%</span>
@@ -97,32 +131,44 @@
 
   <!-- Actions -->
   <td class="table-cell text-center">
-    <div class="flex items-center justify-center gap-1.5">
-      <a href="{% url 'human_resource:exit_interview_quick_view' interview.pk %}"
-         hx-get="{% url 'human_resource:exit_interview_quick_view' interview.pk %}"
-         hx-target="#quickViewContent"
-         hx-swap="innerHTML"
-         hx-on:after-request="showQuickViewModal()"
-         class="action-icon p-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-colors"
-         title="Quick View">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-      </a>
-      <a href="{% url 'human_resource:exit_interview_detail' interview.pk %}"
-         class="action-icon p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50 rounded-lg transition-colors"
-         title="View Details">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-      </a>
-      <a href="{% url 'human_resource:exit_interview_edit' interview.pk %}"
-         class="action-icon p-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/50 rounded-lg transition-colors"
-         title="Edit">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-      </a>
-      <a href="{% url 'human_resource:exit_interview_delete' interview.pk %}"
-         class="action-icon p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/50 rounded-lg transition-colors"
-         title="Delete"
-         onclick="return confirm('Are you sure you want to delete this exit interview? This action cannot be undone.');">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-      </a>
+    <div class="flex items-center justify-center gap-1.5 row-actions-hover">
+      <div class="action-btn-wrap">
+        <a href="{% url 'human_resource:exit_interview_quick_view' interview.pk %}"
+           hx-get="{% url 'human_resource:exit_interview_quick_view' interview.pk %}"
+           hx-target="#quickViewContent"
+           hx-swap="innerHTML"
+           hx-on:after-request="showQuickViewModal()"
+           class="action-icon p-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 rounded-lg transition-colors"
+           title="Quick View">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+        </a>
+        <span class="action-label">Quick View</span>
+      </div>
+      <div class="action-btn-wrap">
+        <a href="{% url 'human_resource:exit_interview_detail' interview.pk %}"
+           class="action-icon p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/50 rounded-lg transition-colors"
+           title="Details">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+        </a>
+        <span class="action-label">Details</span>
+      </div>
+      <div class="action-btn-wrap">
+        <a href="{% url 'human_resource:exit_interview_edit' interview.pk %}"
+           class="action-icon p-1.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/50 rounded-lg transition-colors"
+           title="Edit">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+        </a>
+        <span class="action-label">Edit</span>
+      </div>
+      <div class="action-btn-wrap">
+        <a href="{% url 'human_resource:exit_interview_delete' interview.pk %}"
+           class="action-icon p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/50 rounded-lg transition-colors"
+           title="Delete"
+           onclick="return confirm('Are you sure you want to delete this exit interview? This action cannot be undone.');">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+        </a>
+        <span class="action-label">Delete</span>
+      </div>
     </div>
   </td>
 </tr>

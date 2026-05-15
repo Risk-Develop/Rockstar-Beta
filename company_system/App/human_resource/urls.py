@@ -263,15 +263,21 @@ urlpatterns = [
      # ==============================
      # Exit Interview
      # ==============================
-     path('exit-interviews/', views_exit_interview.exit_interview_list, name='exit_interview_list'),
-     path('exit-interview/add/', views_exit_interview.exit_interview_add, name='exit_interview_add'),
-     path('exit-interview/edit/<int:pk>/', views_exit_interview.exit_interview_edit, name='exit_interview_edit'),
-      path('exit-interview/<int:pk>/', views_exit_interview.exit_interview_detail, name='exit_interview_detail'),
-      path('exit-interview/<int:pk>/quick-status/', views_exit_interview.exit_interview_quick_status_update, name='exit_interview_quick_status'),
-      path('exit-interview/<int:pk>/quick-view/', views_exit_interview.exit_interview_quick_view, name='exit_interview_quick_view'),
-      path('exit-interview/<int:pk>/delete/', views_exit_interview.exit_interview_delete, name='exit_interview_delete'),
-      path('exit-interview/auto-save/', views_exit_interview.exit_interview_auto_save, name='exit_interview_auto_save'),
-      path('exit-interviews/export/', views_exit_interview.exit_interview_export, name='exit_interview_export'),
+      path('exit-interviews/', views_exit_interview.exit_interview_list, name='exit_interview_list'),
+      path('exit-interview/add/', views_exit_interview.exit_interview_add, name='exit_interview_add'),
+      path('exit-interview/edit/<int:pk>/', views_exit_interview.exit_interview_edit, name='exit_interview_edit'),
+       path('exit-interview/<int:pk>/', views_exit_interview.exit_interview_detail, name='exit_interview_detail'),
+       path('exit-interview/<int:pk>/quick-status/', views_exit_interview.exit_interview_quick_status_update, name='exit_interview_quick_status'),
+       path('exit-interview/<int:pk>/quick-view/', views_exit_interview.exit_interview_quick_view, name='exit_interview_quick_view'),
+       path('exit-interview/<int:pk>/delete/', views_exit_interview.exit_interview_delete, name='exit_interview_delete'),
+       path('exit-interview/auto-save/', views_exit_interview.exit_interview_auto_save, name='exit_interview_auto_save'),
+       path('exit-interviews/export/', views_exit_interview.exit_interview_export, name='exit_interview_export'),
+       # ── New enhanced endpoints ────────────────────────────────────────────────
+       path('exit-interview/bulk-status/', views_exit_interview.exit_interview_bulk_status_update, name='exit_interview_bulk_status_update'),
+       path('exit-interview/bulk-mark-all-read/', views_exit_interview.exit_interview_bulk_mark_all_read, name='exit_interview_bulk_mark_all_read'),
+       path('exit-interview/<int:pk>/add-note/', views_exit_interview.exit_interview_add_note, name='exit_interview_add_note'),
+       path('exit-interview/<int:pk>/request-update/', views_exit_interview.exit_interview_request_update, name='exit_interview_request_update'),
+       path('exit-interview/<int:pk>/satisfaction-chart/', views_exit_interview.exit_interview_satisfaction_chart, name='exit_interview_satisfaction_chart'),
 
 
 ]

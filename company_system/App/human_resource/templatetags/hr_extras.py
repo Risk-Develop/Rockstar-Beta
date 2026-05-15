@@ -1,4 +1,5 @@
 from django import template
+from django.urls import reverse
 
 register = template.Library()
 
@@ -40,4 +41,25 @@ def status_badge_class(interview, status_field):
 def qualitative_insight(interview, key):
     """Get qualitative insight value for a given key."""
     return interview.get_qualitative_insight(key)
+
+@register.filter
+def get_status_field_display(interview, field_name):
+    """Dynamically call get_<field_name>_display on an interview instance."""
+    method = getattr(interview, f'get_{field_name}_display', None)
+    return method() if method else ''
+
+@register.simple_tag
+def bulk_mark_all_read_url():
+    """URL for the bulk mark-all-as-read / all-visible-as-completed endpoint."""
+    return reverse('human_resource:exit_interview_bulk_mark_all_read')
+
+@register.simple_tag
+def bulk_status_update_url():
+    """URL for the bulk status update endpoint."""
+    return reverse('human_resource:exit_interview_bulk_status_update')
+
+@register.simple_tag
+def satisfaction_chart_data_url(pk):
+    """URL for satisfaction chart data for a specific interview."""
+    return reverse('human_resource:exit_interview_satisfaction_chart', args=[pk])
 

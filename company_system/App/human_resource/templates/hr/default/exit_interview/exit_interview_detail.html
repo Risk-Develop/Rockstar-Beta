@@ -25,138 +25,71 @@
   }
 
   /* ── Timeline ── */
-  .timeline-container {
-    position: relative;
-    padding: 1rem 0;
-    overflow: hidden;
-  }
+  .timeline-container { position: relative; padding: 1rem 0; overflow: hidden; }
   .timeline-container::before {
-    content: '';
-    position: absolute;
-    left: 1.25rem;
-    top: 1rem;
-    height: calc(100% - 1rem);
-    background: linear-gradient(to bottom, #e5e7eb 0%, #e5e7eb 100%);
+    content: ''; position: absolute; left: 1.25rem; top: 1rem;
+    height: calc(100% - 1rem); background: linear-gradient(to bottom, #e5e7eb, #e5e7eb);
     border-radius: 2px;
   }
-  .dark .timeline-container::before { background: linear-gradient(to bottom, #374151 0%, #374151 100%); }
-  .timeline-item {
-    position: relative;
-    padding-left: 3.5rem;
-    padding-bottom: 2rem;
-  }
+  .dark .timeline-container::before { background: linear-gradient(to bottom, #374151, #374151); }
+  .timeline-item { position: relative; padding-left: 3.5rem; padding-bottom: 2rem; }
   .timeline-item:last-child { padding-bottom: 0; }
   .timeline-icon {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.875rem;
-    z-index: 1;
-    transition: all 0.3s ease;
+    position: absolute; left: 0; top: 0;
+    width: 2.5rem; height: 2.5rem; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.875rem; z-index: 1; transition: all 0.3s ease;
   }
   .timeline-item.completed .timeline-icon {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
+    background: linear-gradient(135deg, #10b981, #059669); color: white;
     box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
   }
   .timeline-item.current .timeline-icon {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-    color: white;
-    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
-    animation: pulse 2s infinite;
+    background: linear-gradient(135deg, #3b82f6, #2563eb); color: white;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); animation: pulse 2s infinite;
   }
-  .timeline-item.pending .timeline-icon {
-    background: #e5e7eb;
-    color: #9ca3af;
-  }
+  .timeline-item.pending .timeline-icon { background: #e5e7eb; color: #9ca3af; }
   .dark .timeline-item.pending .timeline-icon { background: #374151; color: #6b7280; }
   .timeline-content {
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.75rem;
-    padding: 1rem;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    transition: all 0.2s;
+    background: white; border: 1px solid #e5e7eb; border-radius: 0.75rem;
+    padding: 1rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;
   }
   .dark .timeline-content { background: #1f2937; border-color: #374151; }
   .timeline-item.completed .timeline-content { border-left: 4px solid #10b981; }
   .timeline-item.current .timeline-content { border-left: 4px solid #3b82f6; }
   .timeline-item.pending .timeline-content { border-left: 4px solid #9ca3af; }
-  .timeline-date {
-    font-size: 0.75rem;
-    color: #6b7280;
-    margin-top: 0.25rem;
-  }
+  .timeline-date { font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
   .dark .timeline-date { color: #9ca3af; }
-
   @keyframes pulse {
-    0%, 100% { box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); }
-    50% { box-shadow: 0 4px 12px -1px rgba(59, 130, 246, 0.5); }
+    0%,100% { box-shadow: 0 4px 6px -1px rgba(59,130,246,0.3); }
+    50%      { box-shadow: 0 4px 12px -1px rgba(59,130,246,0.5); }
   }
 
   /* ── Collapsible/Accordion ── */
   .accordion-item {
-    border: 1px solid #e5e7eb;
-    border-radius: 0.75rem;
-    overflow: hidden;
-    margin-bottom: 1rem;
-    background: white;
+    border: 1px solid #e5e7eb; border-radius: 0.75rem; overflow: hidden;
+    margin-bottom: 1rem; background: white;
   }
   .dark .accordion-item { background: #1f2937; border-color: #374151; }
-   .accordion-header {
-     width: 100%;
-     display: flex;
-     align-items: center;
-     justify-content: space-between;
-     padding: 1rem 1.25rem;
-     background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%);
-     border: none;
-     cursor: pointer;
-     font-size: 1rem;
-     font-weight: 600;
-     color: white;
-     transition: filter 0.2s;
-   }
-   .accordion-header:hover { filter: brightness(0.9); }
-   .dark .accordion-header { color: white; }
-   .accordion-icon {
-     transition: transform 0.3s ease;
-   }
-   .accordion-item.open .accordion-icon { transform: rotate(180deg); }
-  .accordion-content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
+  .accordion-header {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.25rem; background: linear-gradient(90deg, #7c3aed, #a78bfa);
+    border: none; cursor: pointer; font-size: 1rem; font-weight: 600;
+    color: white; transition: filter 0.2s;
   }
+  .accordion-header:hover { filter: brightness(0.9); }
+  .dark .accordion-header { color: white; }
+  .accordion-icon { transition: transform 0.3s ease; }
+  .accordion-item.open .accordion-icon { transform: rotate(180deg); }
+  .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
   .accordion-item.open .accordion-content { max-height: 2000px; }
   .accordion-body { padding: 1rem 1.25rem 1.5rem; }
 
   /* ── Audit trail table ── */
-  .audit-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.875rem;
-  }
-  .audit-table th {
-    text-align: left;
-    padding: 0.75rem;
-    border-bottom: 2px solid #e5e7eb;
-    font-weight: 600;
-    color: #6b7280;
-    background: #f9fafb;
-  }
+  .audit-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .audit-table th { text-align: left; padding: 0.75rem; border-bottom: 2px solid #e5e7eb; font-weight: 600; color: #6b7280; background: #f9fafb; }
   .dark .audit-table th { background: #111827; color: #9ca3af; border-bottom-color: #374151; }
-  .audit-table td {
-    padding: 0.75rem;
-    border-bottom: 1px solid #e5e7eb;
-    vertical-align: top;
-  }
+  .audit-table td { padding: 0.75rem; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
   .dark .audit-table td { border-bottom-color: #374151; }
   .audit-table tr:last-child td { border-bottom: none; }
   .audit-table tr:hover { background: #f9fafb; }
@@ -164,91 +97,34 @@
 
   /* ── Deadline badges ── */
   .deadline-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 600;
+    display: inline-flex; align-items: center; padding: 0.25rem 0.75rem;
+    border-radius: 9999px; font-size: 0.75rem; font-weight: 600;
   }
-  .deadline-badge.overdue {
-    background: #fef2f2;
-    color: #dc2626;
-    border: 1px solid #fecaca;
-  }
+  .deadline-badge.overdue { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
   .dark .deadline-badge.overdue { background: #7f1d1d; color: #fca5a5; border-color: #991b1b; }
-  .deadline-badge.approaching {
-    background: #fffbeb;
-    color: #d97706;
-    border: 1px solid #fde68a;
-  }
+  .deadline-badge.approaching { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
   .dark .deadline-badge.approaching { background: #78350f; color: #fcd34d; border-color: #92400e; }
-  .deadline-badge.on_track {
-    background: #f0fdf4;
-    color: #16a34a;
-    border: 1px solid #bbf7d0;
-  }
+  .deadline-badge.on_track { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
   .dark .deadline-badge.on_track { background: #14532d; color: #86efac; border-color: #166534; }
 
   /* ── Employee Context Card ── */
   .employee-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 1rem;
-    padding: 1.5rem;
-    position: sticky;
-    top: 6rem;
-    z-index: 20;
+    background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+    border-radius: 1rem; padding: 1.5rem; position: sticky; top: 6rem; z-index: 20;
   }
   .employee-avatar {
-    width: 4rem;
-    height: 4rem;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 0.75rem;
+    width: 4rem; height: 4rem; border-radius: 50%; background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem;
   }
-  .employee-info-label {
-    font-size: 0.75rem;
-    opacity: 0.8;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  .employee-info-value {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-  }
-
-  /* ── Section headers ── */
-  .section-header {
-    font-size: 1.125rem;
-    font-weight: 700;
-    padding: 1rem 1.25rem;
-    color: white;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
+  .employee-info-label { font-size: 0.75rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; }
+  .employee-info-value { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.5rem; }
 
   /* ── Buttons ── */
   .btn-icon {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 1px solid transparent;
+    display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; border: 1px solid transparent;
   }
   .btn-primary { background: #3b82f6; color: white; }
   .btn-primary:hover { background: #2563eb; }
@@ -263,20 +139,62 @@
 
   /* ── Loader ── */
   .loader {
-    border: 3px solid #e5e7eb;
-    border-top: 3px solid #3b82f6;
-    border-radius: 50%;
-    width: 2rem;
-    height: 2rem;
-    animation: spin 1s linear infinite;
+    border: 3px solid #e5e7eb; border-top: 3px solid #3b82f6;
+    border-radius: 50%; width: 2rem; height: 2rem; animation: spin 1s linear infinite;
   }
   @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
   /* ── Fade in ── */
-  .fade-in {
-    animation: fadeIn 0.3s ease-in;
+  .fade-in { animation: fadeIn 0.3s ease-in; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ── Comparison View ── */
+  .comparison-bar-track { background: #e5e7eb; border-radius: 6px; height: 12px; overflow: hidden; }
+  .dark .comparison-bar-track { background: #374151; }
+  .comparison-bar-dept  { background: linear-gradient(90deg, #a78bfa, #7c3aed); border-radius: 6px; height: 100%; }
+  .comparison-bar-company { background: linear-gradient(90deg, #93c5fd, #3b82f6); border-radius: 6px; height: 100%; }
+  .comparison-placeholder {
+    background: linear-gradient(135deg, #f0f9ff, #eff6ff); border: 2px dashed #bfdbfe;
+    border-radius: 0.75rem; padding: 2rem; text-align: center; color: #60a5fa;
+    cursor: pointer; transition: all 0.2s;
   }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .dark .comparison-placeholder {
+    background: #111827; border-color: #1e3a5f;
+    background: linear-gradient(135deg, #111827, #1e3a5f); color: #60a5fa;
+  }
+  .comparison-placeholder:hover { border-color: #3b82f6; color: #2563eb; }
+
+  .note-panel-collapsed { max-height: 40px; overflow: hidden; cursor: pointer; }
+
+  /* ── Doughnut bar ── */
+  .doughnut-legend { display: flex; flex-direction: column; gap: 0.5rem; }
+  .doughnut-legend-item { display: flex; align-items: center; gap: 0.625rem; font-size: 0.8125rem; }
+  .doughnut-legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+  /* ── Document card ── */
+  .doc-card {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.75rem 1rem; border: 1px solid #e5e7eb; border-radius: 0.625rem;
+    background: white; transition: all 0.15s;
+  }
+  .dark .doc-card { background: #1f2937; border-color: #374151; }
+  .doc-card:hover { border-color: #93c5fd; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .doc-icon {
+    width: 2.5rem; height: 2.5rem; border-radius: 0.5rem;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .doc-label { flex: 1; min-width: 0; }
+  .doc-name { font-size: 0.875rem; font-weight: 500; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dark .doc-name { color: #f1f5f9; }
+  .doc-meta { font-size: 0.75rem; color: #94a3b8; }
+
+  /* ── Request Update button states ── */
+  .request-update-btn { transition: all 0.2s; }
+  .request-update-btn:disabled { cursor: wait; }
+
+  /* Show hover actions on row hover (interactive row states) */
+  .detail-hover-actions { opacity: 0; transition: opacity 0.15s; }
+  .accordion-content-wrapper:hover .detail-hover-actions { opacity: 1; }
 </style>
 {% endblock %}
 
@@ -293,9 +211,7 @@
         <div class="flex items-center gap-3 mb-2">
           <a href="{% url 'human_resource:exit_interview_list' %}"
              class="p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-            </svg>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
           </a>
           <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Exit Interview Dashboard</h1>
@@ -391,8 +307,8 @@
         </div>
 
         <!-- Critical Deadlines Widget -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div class="section-header" style="background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden no-print">
+          <div class="section-header" style="background: linear-gradient(90deg, #f59e0b, #fbbf24);">
             <i class="fas fa-clock"></i> Critical Deadlines
           </div>
           <div class="p-4 space-y-3">
@@ -464,7 +380,7 @@
           </div>
         </div>
 
-        <!-- Collapsible Sections -->
+        <!-- ══ Collapsible Sections ══ -->
         <div class="space-y-4" id="accordion">
 
           <!-- Section 1: Workflow Status (always open by default) -->
@@ -579,18 +495,17 @@
           <!-- Section 2: Employee Details & Dates -->
           <div class="accordion-item fade-in" style="animation-delay: 0.2s;">
             <button class="accordion-header" onclick="toggleAccordion(this)"
-                    style="background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);"
+                    style="background: linear-gradient(90deg, #2563eb, #60a5fa);"
                     aria-expanded="false">
               <div class="flex items-center gap-3">
                 <i class="fas fa-user-circle"></i>
-                <span>Employee Details & Key Dates</span>
+                <span>Employee Details &amp; Key Dates</span>
               </div>
               <i class="fas fa-chevron-down accordion-icon"></i>
             </button>
             <div class="accordion-content">
               <div class="accordion-body">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <!-- Left Column -->
                   <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                       <div>
@@ -619,8 +534,6 @@
                       </div>
                     </div>
                   </div>
-
-                  <!-- Right Column -->
                   <div class="space-y-4">
                     <div class="grid grid-cols-2 gap-4">
                       <div>
@@ -661,7 +574,7 @@
           <!-- Section 3: Qualitative Feedback -->
           <div class="accordion-item fade-in" style="animation-delay: 0.25s;">
             <button class="accordion-header" onclick="toggleAccordion(this)"
-                    style="background: linear-gradient(90deg, #0891b2 0%, #06b6d4 100%);">
+                    style="background: linear-gradient(90deg, #0891b2, #06b6d4);">
               <div class="flex items-center gap-3">
                 <i class="fas fa-comments"></i>
                 <span>Qualitative Feedback</span>
@@ -700,10 +613,329 @@
             </div>
           </div>
 
-          <!-- Section 4: Attachments -->
+          <!-- ── Section 4: Related Documents ──────────────────────────────── -->
+          <div class="accordion-item fade-in" style="animation-delay: 0.28s;">
+            <button class="accordion-header" onclick="toggleAccordion(this)"
+                    style="background: linear-gradient(90deg, #0891b2, #06b6d4);">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-folder-open"></i>
+                <span>Related Documents</span>
+                <span class="ml-auto px-2 py-0.5 bg-white/20 text-white text-xs rounded-full" id="doc-count-badge">
+                  {{ document_count }} doc{{ document_count|pluralize }}
+                </span>
+              </div>
+              <i class="fas fa-chevron-down accordion-icon"></i>
+            </button>
+            <div class="accordion-content">
+              <div class="accordion-body">
+                {# Collect all file entries: resignation letter + other attachments + any Q&A review attachments #}
+                {% with rl=interview.resignation_letter oa=interview.other_attachments %}
+                <div class="space-y-3" id="doc-list">
+                  {% if rl %}
+                  <a href="{{ rl.url }}" target="_blank" class="doc-card">
+                    <div class="doc-icon bg-red-100 dark:bg-red-900">
+                      <svg class="w-5 h-5 text-red-600 dark:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0011.172 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <div class="doc-label">
+                      <div class="doc-name">Resignation Letter</div>
+                      <div class="doc-meta">Letter of withdrawal or end-of-contract notice</div>
+                    </div>
+                    <i class="fas fa-download text-gray-400 text-sm"></i>
+                  </a>
+                  {% else %}
+                  <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 text-sm italic text-center border border-dashed border-gray-200 dark:border-gray-600">
+                    <i class="fas fa-file-excel mr-2"></i>No resignation letter uploaded
+                  </div>
+                  {% endif %}
+
+                  {% if oa %}
+                  <a href="{{ oa.url }}" target="_blank" class="doc-card">
+                    <div class="doc-icon bg-blue-100 dark:bg-blue-900">
+                      <svg class="w-5 h-5 text-blue-600 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0011.172 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <div class="doc-label">
+                      <div class="doc-name">Other Attachments</div>
+                      <div class="doc-meta">Supporting documents submitted with the interview</div>
+                    </div>
+                    <i class="fas fa-download text-gray-400 text-sm"></i>
+                  </a>
+                  {% else %}
+                  <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 text-sm italic text-center border border-dashed border-gray-200 dark:border-gray-600">
+                    <i class="fas fa-file-excel mr-2"></i>No other attachments uploaded
+                  </div>
+                  {% endif %}
+                </div>
+                {% endwith %}
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Section 4b: HR Notes / Annotation ─────────────────────────── -->
           <div class="accordion-item fade-in" style="animation-delay: 0.3s;">
             <button class="accordion-header" onclick="toggleAccordion(this)"
-                    style="background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);">
+                    style="background: linear-gradient(90deg, #f59e0b, #fbbf24);"
+                    aria-expanded="false">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-sticky-note"></i>
+                <span>HR Notes</span>
+              </div>
+              <i class="fas fa-chevron-down accordion-icon"></i>
+            </button>
+            <div class="accordion-content">
+              <div class="accordion-body">
+
+                {# Existing notes display #}
+                {% if interview.interview_notes %}
+                <div class="mb-4">
+                  <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap border-l-4 border-orange-400">
+                    {{ interview.interview_notes|escape }}
+                  </div>
+                </div>
+                {% else %}
+                <div class="mb-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-sm text-gray-400 italic text-center">
+                  No HR notes recorded yet for this interview.
+                </div>
+                {% endif %}
+
+                {# Add New Note panel #}
+                <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Add a Note</span>
+                    <button type="button"
+                            id="hrNoteToggleBtn"
+                            onclick="toggleHrNoteForm()"
+                            class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                      <i class="fas fa-plus mr-1"></i><span id="hrNoteToggleLabel">New Note</span>
+                    </button>
+                  </div>
+
+                  {# Hidden by default; toggled open #}
+                  <form id="hrNoteForm"
+                        style="display: none;"
+                        action="{% url 'human_resource:exit_interview_add_note' interview.pk %}"
+                        method="post"
+                        hx-post="{% url 'human_resource:exit_interview_add_note' interview.pk %}"
+                        hx-swap="innerHTML"
+                        hx-target="#hrNoteForm"
+                        onsubmit="return submitHrNote(this);">
+                    {% csrf_token %}
+                    <textarea name="note"
+                              id="hrNoteTextarea"
+                              rows="3"
+                              placeholder="Type your internal observation…"
+                              class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2
+                                     bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100
+                                     text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+                    <div class="flex items-center justify-end gap-2 mt-2">
+                      <input type="text" name="change_reason" value="HR Note" class="hidden">
+                      <button type="button"
+                              onclick="toggleHrNoteForm()"
+                              class="px-3 py-1.5 text-xs rounded-lg border border-gray-300 dark:border-gray-600
+                                     text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        Cancel
+                      </button>
+                      <button type="submit"
+                              class="px-3 py-1.5 text-xs rounded-lg bg-orange-600 text-white font-medium
+                                     hover:bg-orange-700 transition-colors">
+                        <i class="fas fa-save mr-1"></i>Save Note
+                      </button>
+                    </div>
+                  </form>
+
+                  {# Success feedback bubble #}
+                  <div id="hrNoteSaved"
+                       style="display: none;"
+                       class="mt-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/30
+                              border border-green-200 dark:border-green-800 text-green-800
+                              dark:text-green-200 text-sm flex items-center gap-2">
+                    <i class="fas fa-check-circle text-green-600 dark:text-green-400"></i>
+                    <span id="hrNoteSavedMsg">Note saved!</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Section 5: Request Update / Communication ────────────────── -->
+          <div class="accordion-item fade-in" style="animation-delay: 0.32s;">
+            <button class="accordion-header" onclick="toggleAccordion(this)"
+                    style="background: linear-gradient(90deg, #4f46e5, #818cf8);">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-bell"></i>
+                <span>Communication &amp; Actions</span>
+              </div>
+              <i class="fas fa-chevron-down accordion-icon"></i>
+            </button>
+            <div class="accordion-content">
+              <div class="accordion-body">
+                <div class="flex flex-wrap gap-3">
+                  <button type="button"
+                          id="btn-request-update-employee"
+                          class="request-update-btn flex items-center gap-2 px-4 py-2.5
+                                 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg
+                                 transition-colors"
+                          onclick="sendUpdateRequest(this, 'employee')">
+                    <i class="fas fa-envelope-open-text"></i>
+                    Request Update from Employee
+                  </button>
+                  <button type="button"
+                          id="btn-request-update-manager"
+                          class="request-update-btn flex items-center gap-2 px-4 py-2.5
+                                 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg
+                                 transition-colors"
+                          onclick="sendUpdateRequest(this, 'manager')">
+                    <i class="fas fa-user-tie"></i>
+                    Request Update from Manager
+                  </button>
+                </div>
+
+                {# Feedback placeholder, swapped by HTMX #}
+                <div id="requestUpdateFeedback" class="mt-4"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Section 6: Comparison View ───────────────────────────────── -->
+          <div class="accordion-item fade-in" style="animation-delay: 0.34s;">
+            <button class="accordion-header" onclick="toggleAccordion(this)"
+                    style="background: linear-gradient(90deg, #0f766e, #14b8a6);">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-chart-bar"></i>
+                <span>Comparison View</span>
+                <span class="ml-auto px-2 py-0.5 bg-white/20 text-white text-xs rounded-full"
+                      id="comparison-badge">Dept vs Company</span>
+              </div>
+              <i class="fas fa-chevron-down accordion-icon"></i>
+            </button>
+            <div class="accordion-content">
+              <div class="accordion-body">
+                <span class="comparison-notice text-sm text-gray-500 dark:text-gray-400 italic">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Current record: <strong>{{ progress_percentage }}%</strong> &nbsp;|&nbsp;
+                  Dept avg ({{ dept_name }}): <strong>{{ dept_avg_progress }}%</strong> &nbsp;|&nbsp;
+                  Company avg: <strong>{{ company_avg_progress }}%</strong>
+                </span>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+
+                  {# Dept Avg Card #}
+                  <div class="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-100 dark:border-gray-600">
+                    <h4 class="text-sm font-semibold text-purple-600 dark:text-purple-300 mb-3">
+                      <i class="fas fa-building mr-1"></i>{{ dept_name }}
+                    </h4>
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="text-xs text-gray-500 dark:text-gray-400">Progress</span>
+                      <span class="text-sm font-bold text-purple-700 dark:text-purple-300">Avg {{ dept_avg_progress }}%</span>
+                    </div>
+                    <div class="comparison-bar-track">
+                      <div class="comparison-bar-dept" style="width: {{ dept_avg_progress }}%;"></div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                      {% if progress_percentage > dept_avg_progress %}
+                        <span class="text-green-600 dark:text-green-400">
+                          <i class="fas fa-arrow-up"></i>
+                          +{{ dept_diff_pp }}pp above dept avg
+                        </span>
+                      {% elif progress_percentage < dept_avg_progress %}
+                        <span class="text-amber-600 dark:text-amber-400">
+                          <i class="fas fa-arrow-down"></i>
+                          -{{ dept_diff_pp }}pp below dept avg
+                        </span>
+                      {% else %}
+                        <span class="text-gray-500">On par with dept avg</span>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  {# Company Avg Card #}
+                  <div class="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-100 dark:border-gray-600">
+                    <h4 class="text-sm font-semibold text-blue-600 dark:text-blue-300 mb-3">
+                      <i class="fas fa-globe mr-1"></i>Company-wide
+                    </h4>
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="text-xs text-gray-500 dark:text-gray-400">Progress</span>
+                      <span class="text-sm font-bold text-blue-700 dark:text-blue-300">Avg {{ company_avg_progress }}%</span>
+                    </div>
+                    <div class="comparison-bar-track">
+                      <div class="comparison-bar-company" style="width: {{ company_avg_progress }}%;"></div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                      {% if progress_percentage > company_avg_progress %}
+                        <span class="text-green-600 dark:text-green-400">
+                          <i class="fas fa-arrow-up"></i>
+                          +{{ company_diff_pp }}pp above company avg
+                        </span>
+                      {% elif progress_percentage < company_avg_progress %}
+                        <span class="text-amber-600 dark:text-amber-400">
+                          <i class="fas fa-arrow-down"></i>
+                          -{{ company_diff_pp }}pp below company avg
+                        </span>
+                      {% else %}
+                        <span class="text-gray-500">On par with company avg</span>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  {# This Record Card #}
+                  <div class="bg-blue-50 dark:bg-blue-900/30 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                    <h4 class="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-3">
+                      <i class="fas fa-crosshairs mr-1"></i>This Record
+                    </h4>
+                    <div class="flex items-center gap-2 mb-2">
+                      <div class="text-2xl font-bold text-blue-700 dark:text-blue-300">{{ progress_percentage }}%</div>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold {{ interview|status_badge_class:'resignation_status' }}">
+                        {{ interview.get_resignation_status_display }}
+                      </span>
+                    </div>
+                    <div class="mt-2 space-y-1.5">
+                      <div class="flex justify-between text-xs">
+                        <span class="text-gray-500 dark:text-gray-400">30-Day</span>
+                        <span class="font-medium {{ interview|status_badge_class:'rendering_30day_status' }} rounded-full px-2">{{ interview.get_rendering_30day_status_display }}</span>
+                      </div>
+                      <div class="flex justify-between text-xs">
+                        <span class="text-gray-500 dark:text-gray-400">Interview</span>
+                        <span class="font-medium {{ interview|status_badge_class:'exit_interview_status' }} rounded-full px-2">{{ interview.get_exit_interview_status_display }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Section 7: Satisfaction Score Visualization ─────────────── -->
+          <div class="accordion-item fade-in" style="animation-delay: 0.36s;">
+            <button class="accordion-header" onclick="toggleAccordion(this)"
+                    style="background: linear-gradient(90deg, #db2777, #ec4899);"
+                    aria-expanded="false">
+              <div class="flex items-center gap-3">
+                <i class="fas fa-chart-pie"></i>
+                <span>Satisfaction Overview</span>
+              </div>
+              <i class="fas fa-chevron-down accordion-icon"></i>
+            </button>
+            <div class="accordion-content">
+              <div class="accordion-body">
+                <div id="satisfactionChartContainer">
+                  {# Load chart on first accordion open #}
+                  <div
+                    id="satisfactionChartReady"
+                    data-url="{% satisfaction_chart_data_url interview.pk %}"
+                    style="display:none;"></div>
+                  <div class="p-6 text-center text-gray-400 dark:text-gray-500">
+                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                    <p>Loading satisfaction data…</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 8: Attachments -->
+          <div class="accordion-item fade-in" style="animation-delay: 0.3s;">
+            <button class="accordion-header" onclick="toggleAccordion(this)"
+                    style="background: linear-gradient(90deg, #f59e0b, #fbbf24);">
               <div class="flex items-center gap-3">
                 <i class="fas fa-paperclip"></i>
                 <span>Attachments</span>
@@ -743,10 +975,10 @@
             </div>
           </div>
 
-          <!-- Section 5: Audit Trail -->
+          <!-- Section 9: Audit Trail -->
           <div class="accordion-item fade-in" style="animation-delay: 0.35s;">
             <button class="accordion-header" onclick="toggleAccordion(this)"
-                    style="background: linear-gradient(90deg, #4f46e5 0%, #818cf8 100%);">
+                    style="background: linear-gradient(90deg, #4f46e5, #818cf8);">
               <div class="flex items-center gap-3">
                 <i class="fas fa-history"></i>
                 <span>Audit Trail</span>
@@ -815,29 +1047,7 @@
             </div>
           </div>
 
-          <!-- Section 6: HR Notes -->
-          {% if interview.interview_notes %}
-          <div class="accordion-item fade-in" style="animation-delay: 0.4s;">
-            <button class="accordion-header" onclick="toggleAccordion(this)" style="background: linear-gradient(90deg, #4b5563 0%, #6b7280 100%);">
-              <div class="flex items-center gap-3">
-                <i class="fas fa-sticky-note"></i>
-                <span>HR Notes</span>
-              </div>
-              <i class="fas fa-chevron-down accordion-icon"></i>
-            </button>
-            <div class="accordion-content">
-              <div class="accordion-body">
-                <div class="prose dark:prose-invert max-w-none">
-                  <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                    {{ interview.interview_notes }}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          {% endif %}
-
-        </div>
+        </div><!-- /#accordion -->
 
         <!-- Footer: Timestamps -->
         <div class="flex flex-col sm:flex-row justify-between items-center pt-6 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 fade-in" style="animation-delay: 0.45s;">
@@ -868,52 +1078,292 @@
 
 {% block extra_js %}
 <script>
-  // ── Accordion toggle ──
-  function toggleAccordion(button) {
-    const item = button.closest('.accordion-item');
-    const isOpen = item.classList.contains('open');
-    const icon = button.querySelector('.accordion-icon');
-    button.setAttribute('aria-expanded', !isOpen);
 
+  // ── Accordion toggle ────────────────────────────────────────────────────
+  function toggleAccordion(button) {
+    var item   = button.closest('.accordion-item');
+    var isOpen = item.classList.contains('open');
+    var icon   = button.querySelector('.accordion-icon');
+    button.setAttribute('aria-expanded', !isOpen);
     item.classList.toggle('open');
     icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+
+    // Lazy-load satisfaction chart when Satisfaction section opens
+    if (!isOpen && button.querySelector('i.fa-chart-pie')) {
+      var ready = document.getElementById('satisfactionChartReady');
+      if (ready && ready.dataset.url) {
+        loadSatisfactionChart(ready.dataset.url);
+      }
+    }
   }
 
-  // Copy interview link
+  function toggleHrNoteForm() {
+    var btn  = document.getElementById('hrNoteToggleBtn');
+    var form = document.getElementById('hrNoteForm');
+    var lbl  = document.getElementById('hrNoteToggleLabel');
+    var isHidden = form.style.display === 'none' || form.style.display === '';
+    form.style.display = isHidden ? 'block' : 'none';
+    lbl.textContent    = isHidden ? 'Cancel' : 'New Note';
+    if (isHidden) {
+      document.getElementById('hrNoteTextarea').focus();
+    }
+  }
+
+  function submitHrNote(form) {
+    var textarea = document.getElementById('hrNoteTextarea');
+    if (!textarea.value.trim()) {
+      showToast('Please enter a note before saving.');
+      return false;
+    }
+    // Return true to let HTMX handle the submission and swap innerHTML
+    return true;
+  }
+
+  // Toast helper
+  function showToast(message, type) {
+    type = type || 'blue';
+    var toast = document.getElementById('toast');
+    var msg   = document.getElementById('toastMessage');
+    toast.className = 'fixed bottom-4 right-4 z-50 hidden';
+    void toast.offsetWidth; // reflow to restart CSS animation
+    toast.className = 'fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-lg shadow-lg fade-in';
+    if      (type === 'green') toast.classList.add('bg-green-800','text-white');
+    else if (type === 'red')   toast.classList.add('bg-red-800','text-white');
+    else                       toast.classList.add('bg-gray-800','text-white');
+    toast.querySelector('i').className = type === 'green' ? 'fas fa-check-circle' :
+                                          type === 'red'   ? 'fas fa-times-circle' :
+                                                             'fas fa-check-circle';
+    toast.classList.remove('hidden');
+    msg.textContent = message;
+    setTimeout(function() { toast.classList.add('hidden'); }, 3000);
+  }
+
+  // Hook HTMX completion for note form to show success feedback
+  document.addEventListener('htmx:afterRequest', function(evt) {
+    if (!evt.detail) return;
+    // Note saved
+    if (evt.detail.target &&
+        evt.detail.target.id === 'hrNoteForm' &&
+        evt.detail.xhr.status === 200) {
+      var saved = document.getElementById('hrNoteSaved');
+      var savedMsg = document.getElementById('hrNoteSavedMsg');
+      if (saved && savedMsg) {
+        saved.style.display = 'block';
+        savedMsg.textContent = 'Note saved successfully!';
+        setTimeout(function() { saved.style.display = 'none'; }, 3000);
+      }
+      // Reset and hide form
+      var form  = document.getElementById('hrNoteForm');
+      var textarea = document.getElementById('hrNoteTextarea');
+      if (textarea) textarea.value = '';
+      if (form) form.style.display = 'none';
+      var lbl = document.getElementById('hrNoteToggleLabel');
+      if (lbl) lbl.textContent = 'New Note';
+    }
+
+    // Request update sent
+    if (evt.detail.target && evt.detail.target.id === 'requestUpdateFeedback') {
+      showToast('Update request sent!', 'green');
+      var btn = document.getElementById('btn-request-update-employee');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-envelope-open-text mr-1"></i> Request Update from Employee'; }
+      var btn2 = document.getElementById('btn-request-update-manager');
+      if (btn2) { btn2.disabled = false; btn2.innerHTML = '<i class="fas fa-user-tie mr-1"></i> Request Update from Manager'; }
+    }
+  });
+
+  // ── Copy interview link ─────────────────────────────────────────────────
   function copyInterviewLink() {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => {
+    var url = window.location.href;
+    navigator.clipboard.writeText(url).then(function() {
       showToast('Link copied to clipboard!');
-      document.getElementById('copyIcon').classList.add('text-green-500');
-      setTimeout(() => {
-        document.getElementById('copyIcon').classList.remove('text-green-500');
-      }, 2000);
-    }).catch(err => {
-      // Fallback for older browsers
-      const textarea = document.createElement('textarea');
-      textarea.value = url;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
+      var icon = document.getElementById('copyIcon');
+      if (icon) { icon.classList.add('text-green-500'); setTimeout(function(){ icon.classList.remove('text-green-500'); }, 2000); }
+    }).catch(function() {
+      var textarea = document.createElement('textarea');
+      textarea.value = url; document.body.appendChild(textarea);
+      textarea.select(); document.execCommand('copy');
       document.body.removeChild(textarea);
       showToast('Link copied!');
     });
   }
 
-  function showToast(message) {
-    const toast = document.getElementById('toast');
-    document.getElementById('toastMessage').textContent = message;
-    toast.classList.remove('hidden');
-    setTimeout(() => toast.classList.add('hidden'), 3000);
+  // ── Send update request ─────────────────────────────────────────────────
+  function sendUpdateRequest(btn, recipient) {
+    btn.disabled = true;
+    var original = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Sending…';
+
+    var form = document.createElement('form');
+    form.method  = 'POST';
+    form.action  = '{% url "human_resource:exit_interview_request_update" interview.pk %}';
+
+    var csrfEl = document.createElement('input');
+    csrfEl.type = 'hidden'; csrfEl.name = 'csrfmiddlewaretoken';
+    csrfEl.value = '{% csrf_token %}';
+    form.appendChild(csrfEl);
+
+    var recEl = document.createElement('input');
+    recEl.type = 'hidden'; recEl.name = 'recipient'; recEl.value = recipient;
+    form.appendChild(recEl);
+
+    form.style.display = 'none';
+    document.body.appendChild(form);
+
+    htmx.ajax('POST', form.action, {
+      source:    form,
+      target:    '#requestUpdateFeedback',
+      swap:      'innerHTML',
+    });
+    document.body.removeChild(form);
   }
 
-  // Initialize - keep first accordion open on load
-  document.addEventListener('DOMContentLoaded', () => {
-    const firstAccordion = document.querySelector('.accordion-item.open');
+  // ── Satisfaction chart ───────────────────────────────────────────────────
+  var chartRendered = false;
+
+  function loadSatisfactionChart(chartApiUrl) {
+    if (chartRendered) return;
+    chartRendered = true;
+
+    var container = document.getElementById('satisfactionChartContainer');
+    if (!container) return;
+
+    container.innerHTML =
+      '<div class="p-6 text-center text-gray-400"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p>Loading satisfaction data…</p></div>';
+
+    fetch(chartApiUrl)
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function(data) {
+        container.innerHTML = buildChartHtml(data);
+      })
+      .catch(function(err) {
+        container.innerHTML =
+          '<div class="p-6 text-center border border-red-200 bg-red-50 dark:bg-red-900/20 rounded-lg">' +
+          '<i class="fas fa-exclamation-triangle text-red-500 text-2xl mb-2"></i>' +
+          '<p class="text-red-600 dark:text-red-400">Could not load satisfaction data.' +
+          (err && err.message ? ' (' + err.message + ')' : '') + '</p>' +
+          '</div>';
+      });
+  }
+
+  function buildChartHtml(data) {
+    var scores  = data.scores || {};
+    var labels  = Object.keys(scores);
+    var values  = Object.values(scores);
+    var maxVal  = 100;
+    var avg     = data.average || 0;
+    var coAvg   = data.company_average || 0;
+    var deptLbl = data.department_label || 'Dept';
+
+    var palette = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6'];
+
+    var html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">';
+
+    // Left: category score bars
+    html += '<div><h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">' +
+            '<i class="fas fa-star text-yellow-400 mr-1"></i>Category Scores</h4>';
+    html += '<div class="space-y-3">';
+    if (labels.length === 0) {
+      html += '<div class="p-4 text-center text-gray-400 italic border border-gray-200 dark:border-gray-600 rounded-lg">' +
+              'No qualitative data recorded for this interview yet.</div>';
+    }
+    labels.forEach(function(label, i) {
+      var pct   = (values[i] / maxVal) * 100;
+      var color = palette[i % palette.length];
+      html += '<div>' +
+        '<div class="flex items-center justify-between text-xs mb-1">' +
+          '<span class="text-gray-600 dark:text-gray-300">' + label + '</span>' +
+          '<span class="font-bold" style="color:' + color + ';">' + values[i] + '/100</span>' +
+        '</div>' +
+        '<div style="background:#e5e7eb;border-radius:9999px;height:8px;overflow:hidden;min-width:120px;">' +
+          '<div style="background:' + color + ';border-radius:9999px;height:100%;width:' + pct + '%;transition:width 0.6s ease;"></div>' +
+        '</div></div>';
+    });
+    html += '</div>';
+
+    // Prose summary
+    html += buildSatisfactionProseHtml(scores, avg, coAvg, deptLbl);
+    html += '</div>'; // /left col
+
+    // Right: gauge comparison
+    html += '<div>';
+    html += '<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">' +
+            '<i class="fas fa-tachometer-alt text-purple-500 mr-1"></i>Benchmark</h4>';
+    html += '<div class="space-y-4">';
+    html += buildGaugeHtml('This Record', avg,     '#3b82f6', 100);
+    html += buildGaugeHtml('Company Avg',  coAvg,   '#10b981', 100);
+    html += '</div></div>'; // /right col
+    html += '</div>'; // /grid
+
+    return html;
+  }
+
+  function buildSatisfactionProseHtml(scores, avg, coAvg, deptLbl) {
+    var keys   = Object.keys(scores);
+    if (!keys.length) {
+      return '<div class="mt-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-sm">' +
+             '<div class="font-semibold text-blue-800 dark:text-blue-200 mb-1">' +
+             'No data available</div>' +
+             '<div class="text-gray-700 dark:text-gray-300 mt-1">' +
+             'This interview has no qualitative scores yet.</div></div>';
+    }
+    var mk  = keys.reduce(function(a, b) { return scores[a] > scores[b] ? a : b; });
+    var mn  = keys.reduce(function(a, b) { return scores[a] < scores[b] ? a : b; });
+    var txt = [
+      'The strongest signal is <strong>' + mk + '</strong> (' + scores[mk] + '/100), indicating a generally favorable perception.',
+      '<strong>' + mn + '</strong> scored lower (' + scores[mn] + '/100) and may benefit from focused follow-up.',
+      'The overall score of <strong>' + avg + '/100</strong> sits ' +
+        (avg >= coAvg ? 'above' : 'below') +
+        ' the company average of ' + coAvg + '/100.',
+    ];
+    return '<div class="mt-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-sm">' +
+           '<div class="flex items-center gap-2 font-semibold text-blue-800 dark:text-blue-200 mb-1">' +
+           '<i class="fas fa-search"></i>Overall Satisfaction Score: ' + avg + '/100</div>' +
+           '<div class="text-gray-700 dark:text-gray-300 mt-1">' + txt.join(' ') + '</div></div>';
+  }
+
+  function buildGaugeHtml(label, value, color, total) {
+    var hs  = (value / total) * 288;
+    var rot = 144 - hs;
+    return '<div style="text-align:center;">' +
+           '<div style="display:inline-block;position:relative;width:120px;height:120px;">' +
+           '<svg viewBox="0 0 120 120" style="width:120px;height:120px;transform:rotate(-90deg);">' +
+           '<circle cx="60" cy="60" r="52" fill="none" stroke="#e5e7eb" stroke-width="8"/>' +
+           '<circle cx="60" cy="60" r="52" fill="none" stroke="' + color + '" stroke-width="8" ' +
+           'stroke-linecap="round" stroke-dasharray="' + value + ' 100" stroke-dashoffset="25" />' +
+           '</svg>' +
+           '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;' +
+           'font-size:1.25rem;font-weight:700;color:' + color + ';">' + value + '</div>' +
+           '</div>' +
+           '<div class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">' + label + '</div></div>';
+  }
+
+  // ── Initialize on load ──────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function() {
+    var firstAccordion = document.querySelector('.accordion-item.open');
     if (firstAccordion) {
-      const icon = firstAccordion.querySelector('.accordion-icon');
+      var icon = firstAccordion.querySelector('.accordion-icon');
       if (icon) icon.style.transform = 'rotate(180deg)';
     }
+
+    // Wire Satisfaction chart accordion
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('.accordion-header');
+      if (!btn) return;
+      var item = btn.closest('.accordion-item');
+      var title = '';
+      var spans = btn.querySelectorAll('span');
+      spans.forEach(function(s) { if (!s.classList.contains('ml-auto')) title = s.textContent.trim(); });
+      if (title.indexOf('Satisfaction') > -1) {
+        var ready = document.getElementById('satisfactionChartReady');
+        if (ready && ready.dataset.url) {
+          setTimeout(function() { loadSatisfactionChart(ready.dataset.url); }, 400);
+        }
+      }
+    });
   });
+
 </script>
 {% endblock %}
