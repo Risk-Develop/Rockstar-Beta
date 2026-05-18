@@ -199,7 +199,7 @@ NPM_BIN_PATH = "npm.cmd"
 OWNER_LOGIN_ID = "OWNER"
 # Use environment variable in production: OWNER_PASSWORD_HASH
 # Generate hash using: from django.contrib.auth.hashers import make_password; print(make_password('your-password'))
-OWNER_PASSWORD_HASH = os.environ.get('OWNER_PASSWORD_HASH', 'pbkdf2_sha256$1000000$8gTNlGe2ULigjruEFdXSGt$P+9bpcF+GBFzaK2VhkUfZXDYCRB/EcU111VefGuRm7E=')
+OWNER_PASSWORD_HASH = os.environ.get('OWNER_PASSWORD_HASH', 'pbkdf2_sha256$1000000$pwEDFjHGE9oNOBrvyjJuc1$SkSnGtqqWswjB+IS5TE+Sg9i/tO0UT4XkYp8D1QTTs0=')
 
 # Session Security
 SESSION_COOKIE_AGE = 3600  # 1 hour (in seconds)

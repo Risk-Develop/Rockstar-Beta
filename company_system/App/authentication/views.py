@@ -122,6 +122,14 @@ class OwnerPlaceholder:
         self.email_address = ''
         self.role = None
 
+    @property
+    def pk(self):
+        return self.id
+
+    @property
+    def role_name(self):
+        return None
+
 def get_current_employee(request):
     """
     Returns the current Staff object or a placeholder if owner/special user.
@@ -207,6 +215,9 @@ def signup(request):
                 return render(request, "authentication/signup.html", {'form': form})
 
             # 2. Validate email only
+            if emp.email_address is None:
+                messages.error(request, "Your employee record has no email address on file. Please contact your admin or HR to update your email before registering.")
+                return render(request, "authentication/signup.html", {'form': form})
             if emp.email_address.lower() != email:
                 messages.error(request, "Email does not match our records.")
                 return render(request, "authentication/signup.html", {'form': form})
@@ -268,8 +279,8 @@ def login_view(request):
             return redirect("login")
 
         # === OWNER BYPASS LOGIN ===
-        # Use check_password for secure password verification
-        if emp_num == settings.OWNER_LOGIN_ID and check_password(password, settings.OWNER_PASSWORD_HASH):
+        # Case-insensitive match for owner login ID
+        if emp_num.strip().upper() == settings.OWNER_LOGIN_ID.upper() and check_password(password, settings.OWNER_PASSWORD_HASH):
             request.session['employee_number'] = 'OWNER'
             request.session['employee_id'] = 0
             request.session['is_owner'] = True
@@ -282,16 +293,27 @@ def login_view(request):
         # === NORMAL EMPLOYEE LOGIN ===
         # 1️⃣ Fetch Staff with role
         try:
-            emp = Staff.objects.select_related("role").get(
-                employee_number=emp_num,
-                email_address__iexact=email
-            )
+            emp = Staff.objects.select_related("role").get(employee_number=emp_num)
         except Staff.DoesNotExist:
             # Increment failed attempts
             increment_failed_attempt(request, emp_num)
             messages.error(request, "Invalid employee number or email.")
             # Log failed attempt
             log_login_attempt(request, None, emp_num, 'failed', 'Invalid employee number or email')
+            return redirect("login")
+
+        # 1a✅ Verify email — handle staff records with no email (NULL)
+        if emp.email_address:
+            if emp.email_address.lower() != email:
+                increment_failed_attempt(request, emp_num)
+                messages.error(request, "Invalid employee number or email.")
+                log_login_attempt(request, None, emp_num, 'failed', 'Email mismatch')
+                return redirect("login")
+        elif email:
+            # Staff has no email on file but user typed one → reject
+            increment_failed_attempt(request, emp_num)
+            messages.error(request, "Invalid employee number or email.")
+            log_login_attempt(request, None, emp_num, 'failed', 'Email mismatch')
             return redirect("login")
 
         # 2️⃣ Check if UserAccount exists

@@ -2,9 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-
-
-#dashboard_user_mgnt
+    path('dashboard_user_mgnt/', views.dashboard_user_mgnt, name='dashboard_user_mgnt'),
     path('update-staff-role/', views.update_staff_role, name='update_staff_role'),
     path('dashboard/user/delete/<int:pk>/', views.user_delete_dash, name='user_delete_dash'),
 
