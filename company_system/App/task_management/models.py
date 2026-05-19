@@ -217,6 +217,20 @@ class PersonalBoard(models.Model):
     is_archived = models.BooleanField(default=False)
     archived_at = models.DateTimeField(null=True, blank=True)
     order = models.PositiveIntegerField(default=0)
+    accent_color = models.CharField(max_length=20, default='#3b82f6')
+    background_image = models.ImageField(upload_to='board_backgrounds/', blank=True, null=True)
+    background_pattern = models.CharField(max_length=50, default='none')
+    theme_preset = models.CharField(
+        max_length=30,
+        default='default',
+        choices=[
+            ('default', 'Default'),
+            ('dark', 'Dark'),
+            ('ocean', 'Ocean'),
+            ('sunset', 'Sunset'),
+            ('forest', 'Forest'),
+        ]
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

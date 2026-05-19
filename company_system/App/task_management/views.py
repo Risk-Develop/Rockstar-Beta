@@ -725,7 +725,11 @@ def personal_board_create(request):
                 max_order=models.Max('order')
             )['max_order'] or 0
             board = PersonalBoard.objects.create(
-                user=current_staff, name=name, description=description, tag=tag, order=max_order + 1, is_archived=False
+                user=current_staff, name=name, description=description,
+                tag=tag, order=max_order + 1, is_archived=False,
+                accent_color={'work': '#3b82f6', 'personal': '#8b5cf6', 'health': '#10b981',
+                               'finance': '#f59e0b', 'learning': '#ec4899', 'home': '#f97316',
+                               'hobby': '#06b6d4'}.get(tag or '', '#3b82f6')
             )
             for col in PersonalColumn.DEFAULT_COLUMNS:
                 PersonalColumn.objects.create(board=board, **col)
@@ -833,7 +837,9 @@ def personal_board_duplicate(request, board_id):
         name=duplicate_name,
         description=original.description,
         tag=original.tag,
-        order=max_order + 1
+        order=max_order + 1,
+        is_archived=False,
+        accent_color=original.accent_color or '#3b82f6'
     )
 
     # Copy columns

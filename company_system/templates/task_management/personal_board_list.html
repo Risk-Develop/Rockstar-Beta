@@ -867,17 +867,9 @@
                                :class="getTagBadgeClass(selectedTemplate?.tag)"
                                x-text="getTagLabel(selectedTemplate?.tag)"></span>
                      </div>
-                 </template>
-                     <div class="flex-1 min-w-0">
-                         <div class="text-sm font-medium text-gray-200" x-text="selectedTemplate?.name || ''"></div>
-                         <div class="text-xs text-gray-400 truncate" x-text="selectedTemplate?.description || ''"></div>
-                     </div>
-                     <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
-                           :class="getTagBadgeClass(selectedTemplate?.tag)"
-                           x-text="getTagLabel(selectedTemplate?.tag)"></span>
-                 </div>
+                  </template>
 
-                <div class="flex justify-end gap-3 pt-2">
+                  <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
                     <button type="button"
                             @click="closeCreateModal()"
                             class="px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-700 text-gray-300 hover:text-white font-medium transition-all">
@@ -886,11 +878,13 @@
                     <button type="submit"
                             class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2">
                         <i class="fas fa-plus"></i>
-                                    <span>Create Board</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                        <span>Create Board</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+         </div>
 
                     <!-- Filter & Search Bar -->
                     <div class="mb-6 flex flex-wrap gap-3 items-center p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm"
@@ -1971,37 +1965,7 @@
                 return boards;
             },
 
-            get filteredAndSortedBoards() {
-                let boards = this.sortedAllBoards;
-                // 1. Search filter (name or description)
-                if (this.searchQuery.trim()) {
-                    const q = this.searchQuery.toLowerCase().trim();
-                    boards = boards.filter(b =>
-                        (b.name && b.name.toLowerCase().includes(q)) ||
-                        (b.description && b.description.toLowerCase().includes(q))
-                    );
-                }
-                // 2. Completion rate filter
-                if (this.filterCompletionRate !== 'all') {
-                    boards = boards.filter(b => {
-                        const total = b.total_tasks || 0;
-                        const completed = b.completed_tasks || 0;
-                        if (total === 0) {
-                            return this.filterCompletionRate === '0-25';
-                        }
-                        const pct = Math.round((completed / total) * 100);
-                        const [min, max] = this.filterCompletionRate.split('-').map(Number);
-                        return pct >= min && pct <= max;
-                    });
-                }
-                // 3. Tag filter
-                if (this.filterTag !== 'all') {
-                    boards = boards.filter(b => b.tag === this.filterTag);
-                }
-                return boards;
-            },
-
-           get filteredBoardIds() {
+            get filteredBoardIds() {
                return new Set(this.filteredAndSortedBoards.map(b => b.id));
            },
 
@@ -2014,28 +1978,8 @@
            },
 
                   // Called on sort changes (and also bound to filter selects for convenience)
-                  applyFilters() {
-                      // Reorder DOM according to current sort order
-                      const sortedIds = this.sortedAllBoards.map(b => b.id);
-                      const currentOrder = this.getCurrentOrderFromDOM();
-                      if (JSON.stringify(sortedIds) !== JSON.stringify(currentOrder)) {
-                          this.reorderDOM(sortedIds);
-                          // Schedule save after reorder (debounced)
-                          this.scheduleBatchSave();
-                      }
-                  },
-
-                  // Clear all filters
-                  clearAllFilters() {
-                      this.searchQuery = '';
-                      this.filterCompletionRate = 'all';
-                      this.filterTag = 'all';
-                      this.sortBy = 'updated_desc';
-                      // computed updates automatically
-                  },
-
-                  // ========== DRAG & DROP HELPERS ==========
-                  getCurrentOrderFromDOM() {
+                   // ========== DRAG & DROP HELPERS ==========
+                   getCurrentOrderFromDOM() {
                       const grid = document.querySelector('#boards-grid');
                       if (!grid) return [];
                       const cards = grid.querySelectorAll('.relative[data-board-id]');
@@ -2633,19 +2577,24 @@
                return boards;
            },
 
-           // Filter helper
-           applyFilters() {
-               // Trigger reactivity update (computed property auto-updates)
-               // This method exists for x-on:change binding clarity
-           },
+            // Filter & Sort: apply sort-specific DOM reorder
+            applyFilters() {
+                // DOM order only changes on explicit sort-only triggers
+                const sortedIds = this.sortedAllBoards.map(b => b.id);
+                const currentOrder = this.getCurrentOrderFromDOM();
+                if (JSON.stringify(sortedIds) !== JSON.stringify(currentOrder)) {
+                    this.reorderDOM(sortedIds);
+                    // Schedule save after reorder (debounced, completes in 800ms)
+                    this.scheduleBatchSave();
+                }
+            },
 
-           clearAllFilters() {
-               this.searchQuery = '';
-               this.filterCompletionRate = 'all';
-               this.filterTag = 'all';
-               this.sortBy = 'updated_desc';
-               this.applyFilters();
-           },
+            clearAllFilters() {
+                this.searchQuery = '';
+                this.filterCompletionRate = 'all';
+                this.filterTag = 'all';
+                this.sortBy = 'updated_desc';
+            },
 
           // ========== Archive Management Computed ==========
           get filteredArchivedBoards() {
@@ -4443,10 +4392,16 @@
     })();
 
     // Helper: build a board card HTML string (used in AJAX create & restore)
-     function buildBoardCard(board) {
-         const escapedName = window.PersonalBoardsData.escapeHtml(board.name);
-         const escapedDesc = window.PersonalBoardsData.escapeHtml(board.description || 'Personal productivity board');
-         const escapedNameJs = window.PersonalBoardsData.escapeJs(board.name);
+      function buildBoardCard(board) {
+          const data = window.PersonalBoardsData;
+          if (!data) {
+              console.error('buildBoardCard: PersonalBoardsData not available');
+              return '';
+          }
+          const escapedName = data.escapeHtml(board.name);
+          const escapedDesc = data.escapeHtml(board.description || 'Personal productivity board');
+           const escapedNameJs = data.escapeJs(board.name);
+           const escapedDescJs = data.escapeJs(board.description || 'Personal productivity board');
          // Compute task stats and progress
          const totalTasks = board.total_tasks || 0;
          const completedTasks = board.completed_tasks || 0;
@@ -4465,12 +4420,12 @@
           }
          const detailUrl = "{% url 'task_management:personal_board_detail' 0 %}".replace('0', board.id);
          const previewUrl = "{% url 'task_management:personal_tasks_preview_api' 0 %}".replace('0', board.id);
-         const archiveUrl = window.PersonalBoardsData.getArchiveUrl(board.id);
-         const csrfToken = window.PersonalBoardsData.getCsrfToken();
-         const color = window.PersonalBoardsData.getBoardBorderColor(board.tag || '');
-         const adjustedColor = window.PersonalBoardsData.adjustColor(color, 40);
-         const tagLabel = board.tag ? window.PersonalBoardsData.getTagLabel(board.tag) : '';
-         const tagClass = board.tag ? window.PersonalBoardsData.getTagBadgeClass(board.tag) : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+         const archiveUrl = data.getArchiveUrl(board.id);
+         const csrfToken = data.getCsrfToken();
+         const color = data.getBoardBorderColor(board.tag || '');
+         const adjustedColor = data.adjustColor(color, 40);
+         const tagLabel = board.tag ? data.getTagLabel(board.tag) : '';
+         const tagClass = board.tag ? data.getTagBadgeClass(board.tag) : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
 
                  return `
              <div class="relative flip-card" data-board-id="${board.id}" data-preview-url="${previewUrl}" data-detail-url="${detailUrl}" data-board-tag="${board.tag || ''}">
