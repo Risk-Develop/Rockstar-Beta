@@ -1,0 +1,289 @@
+/* ============================================
+   Shared Auth Styles — auth.css
+   Used by: login, signup, select_department, unauthorized
+   ============================================ */
+
+/* ---------- RESET / BASE ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ---------- CARD / CONTAINER ---------- */
+#login-container,
+#signup-container,
+#dept-container,
+#unauth-container {
+  background-color: #f3f4f6;
+  transition: background-color 0.3s, color 0.3s;
+  min-height: 100vh;
+}
+#login-container.dark,
+#signup-container.dark,
+#dept-container.dark,
+#unauth-container.dark {
+  background-color: #111827;
+}
+
+/* ---------- CARD ---------- */
+#login-card,
+#signup-card,
+#dept-card,
+#unauth-card {
+  background-color: #ffffff;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+#login-card.dark,
+#signup-card.dark,
+#dept-card.dark,
+#unauth-card.dark {
+  background-color: #1f2937;
+  color: #f3f4f6;
+}
+
+/* ---------- CARDFOOTER / BRAND ---------- */
+.auth-card-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  transition: border-color 0.3s, color 0.3s;
+}
+#login-card.dark .auth-card-footer,
+#signup-card.dark .auth-card-footer,
+#dept-card.dark .auth-card-footer,
+#unauth-card.dark .auth-card-footer {
+  border-top-color: #374151;
+  color: #6b7280;
+}
+
+/* ---------- TITLES ---------- */
+#login-title,
+#signup-title,
+#dept-title,
+#unauth-card h2 {
+  color: #1f2937;
+  transition: color 0.3s;
+}
+#login-title.dark,
+#signup-title.dark,
+#dept-title.dark,
+#unauth-card.dark h2 {
+  color: #f3f4f6;
+}
+
+/* ---------- LABELS / TEXT ---------- */
+#login-container label,
+#signup-container label,
+#dept-container label {
+  color: #1f2937;
+  transition: color 0.3s;
+}
+#login-container.dark label,
+#signup-container.dark label,
+#dept-container.dark label {
+  color: #f3f4f6;
+}
+
+/* ---------- INPUTS + SELECT ---------- */
+#login-container input[type="text"],
+#login-container input[type="email"],
+#login-container input[type="password"],
+#signup-container input[type="text"],
+#signup-container input[type="email"],
+#signup-container input[type="password"],
+#dept-container select {
+  background-color: #ffffff;
+  border-color: #d1d5db;
+  color: #1f2937;
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+#login-container.dark input[type="text"],
+#login-container.dark input[type="email"],
+#login-container.dark input[type="password"],
+#signup-container.dark input[type="text"],
+#signup-container.dark input[type="email"],
+#signup-container.dark input[type="password"],
+#dept-container.dark select {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #f3f4f6;
+}
+
+/* ---------- INPUT ERROR STATE ---------- */
+.auth-field-error input,
+.auth-field-error select {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+#login-container.dark .auth-field-error input,
+#signup-container.dark .auth-field-error input,
+#dept-container.dark .auth-field-error select {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+}
+
+/* ---------- INLINE VALIDATION MESSAGE ---------- */
+.auth-inline-msg {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.auth-inline-msg.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.auth-inline-msg.is-error {
+  color: #ef4444;
+}
+.auth-inline-msg.is-ok {
+  color: #16a34a;
+}
+#login-container.dark .auth-inline-msg.is-error,
+#signup-container.dark .auth-inline-msg.is-error,
+#dept-container.dark .auth-inline-msg.is-error {
+  color: #f87171;
+}
+#login-container.dark .auth-inline-msg.is-ok,
+#signup-container.dark .auth-inline-msg.is-ok,
+#dept-container.dark .auth-inline-msg.is-ok {
+  color: #4ade80;
+}
+
+/* ---------- INPUT SUCCESS STATE ---------- */
+.auth-field-ok input {
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+#login-container.dark .auth-field-ok input,
+#signup-container.dark .auth-field-ok input {
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
+}
+
+/* ---------- THEME TOGGLE BUTTON ---------- */
+#login-container #theme-toggle,
+#signup-container #theme-toggle,
+#dept-container #theme-toggle,
+#unauth-container #theme-toggle {
+  background-color: #e5e7eb;
+}
+#login-container.dark #theme-toggle,
+#signup-container.dark #theme-toggle,
+#dept-container.dark #theme-toggle,
+#unauth-container.dark #theme-toggle {
+  background-color: #374151;
+}
+
+/* ---------- LINK TEXT ---------- */
+#signup-link,
+#login-link {
+  color: #6b7280;
+  transition: color 0.3s;
+}
+#signup-link.dark,
+#login-link.dark {
+  color: #9ca3af;
+}
+
+/* ---------- "NO DEPARTMENTS" TEXT ---------- */
+#dept-no-dept {
+  color: #6b7280;
+  transition: color 0.3s;
+}
+#dept-no-dept.dark {
+  color: #9ca3af;
+}
+
+/* ---------- LOGIN HINT BOX ---------- */
+#login-hint {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+  color: #6b7280;
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+#login-hint.dark {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #9ca3af;
+}
+
+/* ---------- SIGNUP PASSWORD STRENGTH BAR ---------- */
+.bg-gray-200.auth-bar {
+  background-color: #e5e7eb;
+  transition: background-color 0.3s;
+}
+.bg-gray-200.auth-bar.dark {
+  background-color: #4b5563;
+}
+
+/* ---------- SIGNUP ERROR/SUCCESS MSG BOX ---------- */
+#signup-container .auth-msg-box {
+  animation: slideInMsg 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.auth-msg-box.msg-error {
+  border-color: #ef4444;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+.auth-msg-box.msg-success {
+  border-color: #16a34a;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+#signup-container.dark .auth-msg-box.msg-error {
+  border-color: #f87171;
+}
+#signup-container.dark .auth-msg-box.msg-success {
+  border-color: #4ade80;
+}
+
+/* ---------- FLIP IN ANIMATION ON CARD DISPLAY ---------- */
+@keyframes authFlipIn {
+  from {
+    opacity: 0;
+    transform: perspective(800px) rotateX(8deg) translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(800px) rotateX(0) translateY(0);
+  }
+}
+#login-card,
+#signup-card,
+#dept-card,
+#unauth-card {
+  animation: authFlipIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ---------- SLIDE IN FOR MESSAGES ---------- */
+@keyframes slideInMsg {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ---------- FOCUS-VISIBLE (keyboard nav, dark + light) ---------- */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.4);
+}
+#login-container.dark input:focus-visible,
+#signup-container.dark input:focus-visible,
+#dept-container.dark select:focus-visible {
+  box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.55);
+}
+
+/* ---------- DEPARTMENT "ALL DEPARTMENTS" HIGHLIGHT ---------- */
+.dept-all-option {
+  font-weight: 600;
+  background-color: #fffbeb;
+}
