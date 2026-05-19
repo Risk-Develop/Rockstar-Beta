@@ -1,36 +1,24 @@
 {% extends "base.html" %}
-{% load static %}
-{% block title %}Access Denied{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'authentication/auth.css' %}">
-{% endblock %}
+{% block title %} Unauthentication {% endblock %}
 
 {% block content %}
 
-<div id="unauth-container" class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-    <!-- Dark Mode Toggle -->
-    <button id="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false" class="absolute top-4 right-4 p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2">
-        <span id="theme-icon" class="text-xl" aria-hidden="true">🌙</span>
-    </button>
-    <div id="unauth-card" class="max-w-md w-full bg-white p-8 rounded-lg shadow-md text-center">
-        <!-- Logo Placeholder -->
-        <div class="flex justify-center mb-6">
-            <img src="{% static 'img/Rockstar.png' %}" alt="Logo" class="h-16 w-16">
-        </div>
+<div class="flex items-center justify-center min-h-screen bg-gray-100">
+    <div class="bg-white shadow-lg rounded-xl p-8 max-w-md text-center">
 
-        <div class="text-5xl mb-4" aria-hidden="true">&#x1f512;</div>
-        <h2 class="text-3xl font-bold mb-2">Access Denied</h2>
+        <h2 class="text-3xl font-bold text-red-600 mb-4">Access Denied</h2>
 
-        <p id="unauth-desc" class="text-gray-600 mb-6" style="color: #4b5563;">
+        <p class="text-gray-700 mb-6">
             You do not have permission to access this page.
             Please contact your administrator if you believe this is a mistake.
         </p>
 
-        <a href="{% url 'login' %}" id="unauth-login-link"
-           class="inline-block bg-orange-500 text-white px-8 py-2 rounded hover:bg-orange-600 transition focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+        <a href="{% url 'login' %}"
+           class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
            Return to Login
         </a>
+
     </div>
 </div>
 
@@ -38,38 +26,6 @@
 
 {% block extra_scripts %}
 <script>
-    /* ---------- Dark mode (class-based, shared) ---------- */
-    var unauthDark = false;
-
-    function toggleTheme() {
-        var container = document.getElementById('unauth-container');
-        var card      = document.getElementById('unauth-card');
-        var desc      = document.getElementById('unauth-desc');
-        var btn       = document.getElementById('theme-toggle');
-
-        if (unauthDark) {
-            container.classList.remove('dark');
-            card.classList.remove('dark');
-            btn.setAttribute('aria-pressed', 'false');
-            if (desc) desc.style.color = '#9ca3af';
-            unauthDark = false;
-            localStorage.setItem('theme', 'light');
-        } else {
-            container.classList.add('dark');
-            card.classList.add('dark');
-            btn.setAttribute('aria-pressed', 'true');
-            if (desc) desc.style.color = '#f3f4f6';
-            unauthDark = true;
-            localStorage.setItem('theme', 'dark');
-        }
-    }
-
-    (function initTheme() {
-        var saved   = localStorage.getItem('theme');
-        var prefers = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (saved === 'dark' || (!saved && prefers)) { toggleTheme(); }
-    })();
-
-    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+    console.log("This page has custom JS");
 </script>
 {% endblock %}

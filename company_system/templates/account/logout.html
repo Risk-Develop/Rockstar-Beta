@@ -1,77 +1,27 @@
 {% extends "base.html" %}
 {% load static %}
 {% load allauth %}
-{% block title %}Sign Out{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'authentication/auth.css' %}">
-{% endblock %}
+{% block title %} Logout {% endblock %}
 
 {% block content %}
-
-<div id="logout-container" class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-    <!-- Dark Mode Toggle -->
-    <button id="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false" class="absolute top-4 right-4 p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2">
-        <span id="theme-icon" class="text-xl" aria-hidden="true">🌙</span>
-    </button>
-    <div id="logout-card" class="max-w-md w-full bg-white p-8 rounded-lg shadow-md text-center">
-        <!-- Logo Placeholder -->
-        <div class="flex justify-center mb-6">
-            <img src="{% static 'img/Rockstar.png' %}" alt="Logo" class="h-16 w-16">
-        </div>
-
+<div class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+    <div class="max-w-md w-full bg-white p-8 rounded-lg shadow-md text-center">
         <h2 class="text-2xl font-bold mb-4">Sign Out</h2>
         <p class="text-gray-600 mb-6">Are you sure you want to sign out?</p>
-
-        <form method="post" action="{{ url }}" novalidate>
+        
+        <form method="post" action="{{ url }}">
             {% csrf_token %}
             {% if redirect_field_value %}
                 <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
             {% endif %}
-            <button type="submit" id="logout-submit-btn" class="w-full bg-orange-500 text-white py-2 rounded hover:bg-orange-600 transition">
+            <button type="submit" class="w-full bg-orange-500 text-white py-2 rounded hover:bg-orange-600 transition">
                 Sign Out
             </button>
         </form>
-
+        
         <p class="mt-4 text-sm">
-            <a href="{% url 'login' %}" class="text-orange-500 hover:underline">Cancel</a>
+            <a href="{% url 'account_login' %}" class="text-orange-500 hover:underline">Cancel</a>
         </p>
     </div>
 </div>
-
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-    /* ---------- Dark mode (class-based, shared) ---------- */
-    var logoutDark = false;
-
-    function toggleTheme() {
-        var container = document.getElementById('logout-container');
-        var card      = document.getElementById('logout-card');
-        var btn       = document.getElementById('theme-toggle');
-
-        if (logoutDark) {
-            container.classList.remove('dark');
-            card.classList.remove('dark');
-            btn.setAttribute('aria-pressed', 'false');
-            logoutDark = false;
-            localStorage.setItem('theme', 'light');
-        } else {
-            container.classList.add('dark');
-            card.classList.add('dark');
-            btn.setAttribute('aria-pressed', 'true');
-            logoutDark = true;
-            localStorage.setItem('theme', 'dark');
-        }
-    }
-
-    (function initTheme() {
-        var saved   = localStorage.getItem('theme');
-        var prefers = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (saved === 'dark' || (!saved && prefers)) { toggleTheme(); }
-    })();
-
-    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
-</script>
 {% endblock %}

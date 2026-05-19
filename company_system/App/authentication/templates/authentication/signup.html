@@ -1,16 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Sign Up{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="{% static 'authentication/auth.css' %}">
-{% endblock %}
+{% block title %} Sign Up {% endblock %}
 
 {% block content %}
 
-<div id="signup-container" class="min-h-screen flex items-center justify-center bg-gray-100 px-4" role="main" aria-label="Sign up page">
+<div id="signup-container" class="min-h-screen flex items-center justify-center bg-gray-100 px-4">
     <!-- Dark Mode Toggle -->
-    <button id="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false" class="absolute top-4 right-4 p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2">
+    <button id="theme-toggle" type="button" aria-label="Toggle dark mode" aria-pressed="false" class="absolute top-4 right-4 p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition">
         <span id="theme-icon" class="text-xl" aria-hidden="true">🌙</span>
     </button>
     <div id="signup-card" class="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
@@ -19,46 +15,44 @@
             <img src="{% static 'img/Rockstar.png' %}" alt="Logo" class="h-16 w-16">
         </div>
 
-        <h2 id="signup-title" class="text-2xl font-bold text-center mb-2">Create Your Account</h2>
+        <h2 id="signup-title" class="text-2xl font-bold text-center mb-6">Create Your Account</h2>
 
         {% if messages %}
             {% for message in messages %}
-                <div class="mb-4 text-sm p-3 rounded auth-msg-box {% if message.tags == 'error' %}bg-red-100 text-red-700 border border-red-300 msg-error{% else %}bg-green-100 text-green-700 border border-green-300 msg-success{% endif %}" role="alert">
+                <div class="mb-4 text-sm p-3 rounded {% if message.tags == 'error' %}bg-red-100 text-red-700 border border-red-300{% else %}bg-green-100 text-green-700 border border-green-300{% endif %}" role="alert">
                     {{ message }}
                 </div>
             {% endfor %}
         {% endif %}
 
-        <form method="post" id="signup-form" class="space-y-4" novalidate aria-busy="false">
+        <form method="post" id="signup-form" class="space-y-4" novalidate>
             {% csrf_token %}
-
+            
             <!-- Employee Number Field -->
-            <div class="auth-field">
+            <div>
                 <label for="id_employee_number" class="block text-sm font-medium mb-1">Employee Number</label>
                 {{ form.employee_number }}
-                <p id="employee_number-help" class="auth-inline-msg" aria-live="polite"></p>
                 {% if form.employee_number.errors %}
                     <p class="text-red-500 text-xs mt-1" role="alert">{{ form.employee_number.errors.0 }}</p>
                 {% endif %}
             </div>
-
+            
             <!-- Email Field -->
-            <div class="auth-field">
+            <div>
                 <label for="id_email" class="block text-sm font-medium mb-1">Email Address</label>
                 {{ form.email }}
-                <p id="email-help" class="auth-inline-msg" aria-live="polite"></p>
                 {% if form.email.errors %}
                     <p class="text-red-500 text-xs mt-1" role="alert">{{ form.email.errors.0 }}</p>
                 {% endif %}
             </div>
-
+            
             <!-- Password Field -->
-            <div class="auth-field">
+            <div>
                 <label for="id_password" class="block text-sm font-medium mb-1">Password</label>
                 <div class="relative">
                     {{ form.password }}
-                    <button type="button" onclick="togglePassword('id_password')"
-                            class="password-toggle absolute right-2 top-0 bottom-0 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 rounded"
+                    <button type="button" onclick="togglePassword('id_password')" 
+                            class="password-toggle absolute right-2 top-0 bottom-0 flex items-center text-gray-500 hover:text-gray-700"
                             aria-label="Toggle password visibility"
                             aria-pressed="false">
                         <svg id="id_password-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5" aria-hidden="true">
@@ -72,7 +66,7 @@
                 {% endif %}
                 <!-- Password Strength Meter -->
                 <div class="mt-2">
-                    <div class="h-1 w-full bg-gray-200 rounded overflow-hidden auth-bar">
+                    <div class="h-1 w-full bg-gray-200 rounded overflow-hidden">
                         <div id="strength-bar" class="h-full w-0 transition-all duration-300" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                     <p id="strength-text" class="text-xs mt-1" aria-live="polite"></p>
@@ -89,14 +83,14 @@
                     </ul>
                 </div>
             </div>
-
+            
             <!-- Confirm Password Field -->
-            <div class="auth-field">
+            <div>
                 <label for="id_confirm_password" class="block text-sm font-medium mb-1">Confirm Password</label>
                 <div class="relative">
                     {{ form.confirm_password }}
-                    <button type="button" onclick="togglePassword('id_confirm_password')"
-                            class="password-toggle absolute right-2 top-0 bottom-0 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 rounded"
+                    <button type="button" onclick="togglePassword('id_confirm_password')" 
+                            class="password-toggle absolute right-2 top-0 bottom-0 flex items-center text-gray-500 hover:text-gray-700"
                             aria-label="Toggle confirm password visibility"
                             aria-pressed="false">
                         <svg id="id_confirm_password-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5" aria-hidden="true">
@@ -105,33 +99,26 @@
                         </svg>
                     </button>
                 </div>
-                <p id="confirm-help" class="auth-inline-msg" aria-live="polite"></p>
                 {% if form.confirm_password.errors %}
                     <p class="text-red-500 text-xs mt-1" role="alert">{{ form.confirm_password.errors.0 }}</p>
                 {% endif %}
             </div>
 
-            <button type="submit" id="submit-btn" class="w-full bg-orange-500 text-white py-2.5 rounded hover:bg-orange-600 transition focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button type="submit" id="submit-btn" class="w-full bg-orange-500 text-white py-2.5 rounded hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
                 <span id="btn-text">Sign Up</span>
-                <span id="btn-loader" class="hidden inline-flex items-center justify-center">
-                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                <span id="btn-loader" class="hidden inline-block">
+                    <svg class="animate-spin h-5 w-5 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                 </span>
-                <span id="btn-status" class="sr-only" aria-live="polite"></span>
             </button>
         </form>
 
         <p id="signup-link" class="mt-4 text-center text-sm">
-            Already have an account? <a href="{% url 'login' %}" class="text-orange-500 font-semibold hover:underline focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 rounded px-1">Login</a>
+            Already have an account? <a href="{% url 'login' %}" class="text-orange-500 font-semibold hover:underline">Login</a>
         </p>
     </div>
-</div>
-
-<!-- Card Footer -->
-<div class="auth-card-footer">
-    &copy; {{ now|date:"Y" }} Rockstar Web Design Services &mdash; All rights reserved.
 </div>
 
 
@@ -140,248 +127,228 @@
 
 {% block extra_scripts %}
 <script>
-    /* ================================================================
-       Utility: show / hide inline field validation message
-       ================================================================ */
-    function showInlineMsg(helpEl, msg, isOk) {
-        if (!helpEl) return;
-        helpEl.textContent = msg;
-        helpEl.className = 'auth-inline-msg visible ' + (isOk ? 'is-ok' : 'is-error');
-    }
-    function clearInlineMsg(helpEl) {
-        if (!helpEl) return;
-        helpEl.textContent = '';
-        helpEl.className = 'auth-inline-msg';
-    }
+    // Dark colors
+    const darkBg = '#111827';
+    const darkCard = '#1f2937';
+    const darkText = '#f3f4f6';
+    const darkMuted = '#9ca3af';
+    const darkInputBg = '#374151';
+    const darkInputBorder = '#4b5563';
+    const darkBarBg = '#4b5563';
+    
+    // Light colors
+    const lightBg = '#f3f4f6';
+    const lightCard = '#ffffff';
+    const lightText = '#1f2937';
+    const lightMuted = '#6b7280';
+    const lightInputBg = '#ffffff';
+    const lightInputBorder = '#d1d5cb';
+    const lightBarBg = '#e5e7eb';
+    
+    let isDark = false;
 
-    /* ================================================================
-       Employee Number — format check EMP-XXXX-XXXX
-       ================================================================ */
-    (function() {
-        var field = document.getElementById('id_employee_number');
-        var help  = document.getElementById('employee_number-help');
-        if (!field || !help) return;
-
-        var empNumRegex = /^EMP-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
-
-        field.addEventListener('blur', function() {
-            var val = field.value.trim().toUpperCase();
-            if (!val) {
-                showInlineMsg(help, 'Employee number is required.', false);
-                return;
-            }
-            if (!empNumRegex.test(val)) {
-                showInlineMsg(help, 'Expected format: EMP-XXXX-XXXX (letters and numbers).', false);
-                return;
-            }
-            showInlineMsg(help, 'Format looks correct. We will verify it on submit.', true);
-        });
-
-        field.addEventListener('input', function() {
-            if (help.classList.contains('is-error')) {
-                var val = field.value.trim().toUpperCase();
-                if (empNumRegex.test(val)) {
-                    showInlineMsg(help, 'Format looks correct.', true);
-                }
-            }
-        });
-    })();
-
-    /* ================================================================
-       Email — basic format validation
-       ================================================================ */
-    (function() {
-        var field = document.getElementById('id_email');
-        var help  = document.getElementById('email-help');
-        if (!field || !help) return;
-
-        var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-        field.addEventListener('blur', function() {
-            var val = field.value.trim();
-            if (!val) {
-                showInlineMsg(help, 'Email address is required.', false);
-                return;
-            }
-            if (!emailRegex.test(val)) {
-                showInlineMsg(help, 'Please enter a valid email address.', false);
-                return;
-            }
-            showInlineMsg(help, 'Valid email format. We will verify it on submit.', true);
-        });
-    })();
-
-    /* ================================================================
-       Password — real-time strength check + inline feedback
-       ================================================================ */
-    (function() {
-        var pwField    = document.getElementById('id_password');
-        var confirmField = document.getElementById('id_confirm_password');
-        var helpEl     = document.getElementById('confirm-help');
-        if (!pwField || !confirmField || !helpEl) return;
-
-        confirmField.addEventListener('input', function() {
-            var pwVal  = pwField.value;
-            var cnfVal = confirmField.value;
-            if (!cnfVal) { clearInlineMsg(helpEl); return; }
-            if (pwVal === cnfVal) {
-                showInlineMsg(helpEl, 'Passwords match.', true);
-            } else {
-                showInlineMsg(helpEl, 'Passwords do not match.', false);
-            }
-        });
-    })();
-
-    /* ================================================================
-       Employee Number — uppercase on blur
-       ================================================================ */
-    (function() {
-        var field = document.getElementById('id_employee_number');
-        if (!field) return;
-        field.addEventListener('blur', function() {
-            var pos = field.selectionStart;
-            var end = field.selectionEnd;
-            field.value = field.value.toUpperCase();
-            field.setSelectionRange(pos, end);
-        });
-    })();
-
-    /* ================================================================
-       Password toggle
-       ================================================================ */
     function togglePassword(fieldId) {
-        var field = document.getElementById(fieldId);
-        var icon  = document.getElementById(fieldId + '-icon');
-        var btn   = field.nextElementSibling;
-        var eye   = '<path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>';
-        var slash = '<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>';
-
+        const field = document.getElementById(fieldId);
+        const icon = document.getElementById(fieldId + '-icon');
+        const btn = field.nextElementSibling;
+        
         if (field.type === 'password') {
-            field.type      = 'text';
-            icon.innerHTML  = slash;
+            field.type = 'text';
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />';
             btn.setAttribute('aria-pressed', 'true');
         } else {
-            field.type      = 'password';
-            icon.innerHTML  = eye;
+            field.type = 'password';
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />';
             btn.setAttribute('aria-pressed', 'false');
         }
     }
 
-    /* ================================================================
-       Dark mode (class-based, shared)
-       ================================================================ */
-    var signupDark = false;
-
     function toggleTheme() {
-        var container = document.getElementById('signup-container');
-        var card      = document.getElementById('signup-card');
-        var title     = document.getElementById('signup-title');
-        var link      = document.getElementById('signup-link');
-        var barBg     = document.querySelector('.auth-bar');
-        var btn       = document.getElementById('theme-toggle');
-
-        if (signupDark) {
-            container.classList.remove('dark');
-            card.classList.remove('dark');
-            title.classList.remove('dark');
-            link.classList.remove('dark');
-            if (barBg) barBg.classList.remove('dark');
-            btn.setAttribute('aria-pressed', 'false');
-            signupDark = false;
+        const container = document.getElementById('signup-container');
+        const card = document.getElementById('signup-card');
+        const title = document.getElementById('signup-title');
+        const icon = document.getElementById('theme-icon');
+        const link = document.getElementById('signup-link');
+        const barBg = document.querySelector('.bg-gray-200');
+        const themeBtn = document.getElementById('theme-toggle');
+        
+        // Toggle inputs and labels
+        const inputs = document.querySelectorAll('input');
+        const labels = document.querySelectorAll('label');
+        
+        if (isDark) {
+            // Switch to light mode
+            container.style.backgroundColor = lightBg;
+            card.style.backgroundColor = lightCard;
+            card.style.color = lightText;
+            title.style.color = lightText;
+            link.style.color = lightMuted;
+            if (barBg) barBg.style.backgroundColor = lightBarBg;
+            icon.textContent = '🌙';
+            themeBtn.setAttribute('aria-pressed', 'false');
+            
+            inputs.forEach(input => {
+                if (input.type !== 'checkbox') {
+                    input.style.backgroundColor = lightInputBg;
+                    input.style.borderColor = lightInputBorder;
+                    input.style.color = lightText;
+                }
+            });
+            
+            labels.forEach(label => {
+                label.style.color = lightText;
+            });
+            
+            isDark = false;
             localStorage.setItem('theme', 'light');
         } else {
-            container.classList.add('dark');
-            card.classList.add('dark');
-            title.classList.add('dark');
-            link.classList.add('dark');
-            if (barBg) barBg.classList.add('dark');
-            btn.setAttribute('aria-pressed', 'true');
-            signupDark = true;
+            // Switch to dark mode
+            container.style.backgroundColor = darkBg;
+            card.style.backgroundColor = darkCard;
+            card.style.color = darkText;
+            title.style.color = darkText;
+            link.style.color = darkMuted;
+            if (barBg) barBg.style.backgroundColor = darkBarBg;
+            icon.textContent = '🌞';
+            themeBtn.setAttribute('aria-pressed', 'true');
+            
+            inputs.forEach(input => {
+                if (input.type !== 'checkbox') {
+                    input.style.backgroundColor = darkInputBg;
+                    input.style.borderColor = darkInputBorder;
+                    input.style.color = darkText;
+                }
+            });
+            
+            labels.forEach(label => {
+                label.style.color = darkText;
+            });
+            
+            isDark = true;
             localStorage.setItem('theme', 'dark');
         }
     }
 
+    // Initialize theme on page load
     (function initTheme() {
-        var saved = localStorage.getItem('theme');
-        var prefers = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (saved === 'dark' || (!saved && prefers)) { toggleTheme(); }
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+            toggleTheme();
+        }
     })();
 
+    // Loading state on form submit
+    const form = document.getElementById('signup-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const btnText = document.getElementById('btn-text');
+    const btnLoader = document.getElementById('btn-loader');
+
+    form.addEventListener('submit', function(e) {
+        // Show loading state
+        submitBtn.disabled = true;
+        btnText.classList.add('hidden');
+        btnLoader.classList.remove('hidden');
+        btnText.classList.add('inline-block');
+    });
+
+    // Password Strength Meter
+    const passwordInput = document.getElementById('id_password');
+    const strengthBar = document.getElementById('strength-bar');
+    const strengthText = document.getElementById('strength-text');
+
+    // Password requirement elements
+    const reqLength = document.getElementById('req-length');
+    const reqUpper = document.getElementById('req-upper');
+    const reqLower = document.getElementById('req-lower');
+    const reqNumber = document.getElementById('req-number');
+    const reqSpecial = document.getElementById('req-special');
+
+    passwordInput.addEventListener('input', function() {
+        const password = passwordInput.value;
+        let strength = 0;
+        
+        // Check each requirement
+        const hasLength = password.length >= 8;
+        const hasLength12 = password.length >= 12;
+        const hasLower = /[a-z]/.test(password);
+        const hasUpper = /[A-Z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+        
+        // Update requirement visual states
+        if (hasLength) {
+            reqLength.classList.remove('text-gray-400');
+            reqLength.classList.add('text-green-600');
+        } else {
+            reqLength.classList.remove('text-green-600');
+            reqLength.classList.add('text-gray-400');
+        }
+        
+        if (hasUpper) {
+            reqUpper.classList.remove('text-gray-400');
+            reqUpper.classList.add('text-green-600');
+        } else {
+            reqUpper.classList.remove('text-green-600');
+            reqUpper.classList.add('text-gray-400');
+        }
+        
+        if (hasLower) {
+            reqLower.classList.remove('text-gray-400');
+            reqLower.classList.add('text-green-600');
+        } else {
+            reqLower.classList.remove('text-green-600');
+            reqLower.classList.add('text-gray-400');
+        }
+        
+        if (hasNumber) {
+            reqNumber.classList.remove('text-gray-400');
+            reqNumber.classList.add('text-green-600');
+        } else {
+            reqNumber.classList.remove('text-green-600');
+            reqNumber.classList.add('text-gray-400');
+        }
+        
+        if (hasSpecial) {
+            reqSpecial.classList.remove('text-gray-400');
+            reqSpecial.classList.add('text-green-600');
+        } else {
+            reqSpecial.classList.remove('text-green-600');
+            reqSpecial.classList.add('text-gray-400');
+        }
+        
+        // Calculate strength
+        if (hasLength) strength++;
+        if (hasLength12) strength++;
+        if (hasLower) strength++;
+        if (hasUpper) strength++;
+        if (hasNumber) strength++;
+        if (hasSpecial) strength++;
+        
+        const percentage = (strength / 6) * 100;
+        strengthBar.style.width = percentage + '%';
+        strengthBar.setAttribute('aria-valuenow', percentage);
+        
+        if (strength <= 2) {
+            strengthBar.className = 'h-full transition-all duration-300 bg-red-500';
+            strengthBar.setAttribute('aria-valuenow', 33);
+            strengthText.textContent = 'Weak';
+            strengthText.className = 'text-xs mt-1 text-red-500';
+        } else if (strength <= 4) {
+            strengthBar.className = 'h-full transition-all duration-300 bg-yellow-500';
+            strengthBar.setAttribute('aria-valuenow', 66);
+            strengthText.textContent = 'Medium';
+            strengthText.className = 'text-xs mt-1 text-yellow-500';
+        } else {
+            strengthBar.className = 'h-full transition-all duration-300 bg-green-500';
+            strengthBar.setAttribute('aria-valuenow', 100);
+            strengthText.textContent = 'Strong';
+            strengthText.className = 'text-xs mt-1 text-green-500';
+        }
+    });
+
+    // Theme toggle event listener
     document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
-
-    /* ================================================================
-       Loading state on form submit + aria-busy
-       ================================================================ */
-    (function() {
-        var form     = document.getElementById('signup-form');
-        var submitBtn = document.getElementById('submit-btn');
-        var btnText   = document.getElementById('btn-text');
-        var btnLoader = document.getElementById('btn-loader');
-        var btnStatus = document.getElementById('btn-status');
-
-        form.addEventListener('submit', function() {
-            form.setAttribute('aria-busy', 'true');
-            submitBtn.disabled = true;
-            btnText.classList.add('hidden');
-            btnLoader.classList.remove('hidden');
-            if (btnStatus) btnStatus.textContent = 'Signing up, please wait.';
-        });
-    })();
-
-    /* ================================================================
-       Password Strength Meter
-       ================================================================ */
-    (function() {
-        var passwordInput = document.getElementById('id_password');
-        var strengthBar   = document.getElementById('strength-bar');
-        var strengthText  = document.getElementById('strength-text');
-        var reqLength     = document.getElementById('req-length');
-        var reqUpper      = document.getElementById('req-upper');
-        var reqLower      = document.getElementById('req-lower');
-        var reqNumber     = document.getElementById('req-number');
-        var reqSpecial    = document.getElementById('req-special');
-
-        if (!passwordInput) return;
-
-        passwordInput.addEventListener('input', function() {
-            var pw = passwordInput.value;
-            var hasLength   = pw.length >= 8;
-            var hasLength12 = pw.length >= 12;
-            var hasLower    = /[a-z]/.test(pw);
-            var hasUpper    = /[A-Z]/.test(pw);
-            var hasNumber   = /[0-9]/.test(pw);
-            var hasSpecial  = /[^a-zA-Z0-9]/.test(pw);
-
-            function req(el, cond) {
-                if (cond) { el.classList.remove('text-gray-400'); el.classList.add('text-green-600'); }
-                else       { el.classList.remove('text-green-600');            el.classList.add('text-gray-400'); }
-            }
-            req(reqLength,  hasLength);
-            req(reqUpper,   hasUpper);
-            req(reqLower,   hasLower);
-            req(reqNumber,  hasNumber);
-            req(reqSpecial, hasSpecial);
-
-            var strength = (hasLength ? 1 : 0) + (hasLength12 ? 1 : 0)
-                         + hasLower + hasUpper + hasNumber + hasSpecial;
-            var pct = (strength / 6) * 100;
-            strengthBar.style.width = pct + '%';
-            strengthBar.setAttribute('aria-valuenow', pct);
-
-            if (strength <= 2) {
-                strengthBar.className = 'h-full transition-all duration-300 bg-red-500';
-                strengthText.textContent = 'Weak';
-                strengthText.className = 'text-xs mt-1 text-red-500';
-            } else if (strength <= 4) {
-                strengthBar.className = 'h-full transition-all duration-300 bg-yellow-500';
-                strengthText.textContent = 'Medium';
-                strengthText.className = 'text-xs mt-1 text-yellow-500';
-            } else {
-                strengthBar.className = 'h-full transition-all duration-300 bg-green-500';
-                strengthText.textContent = 'Strong';
-                strengthText.className = 'text-xs mt-1 text-green-500';
-            }
-        });
-    })();
 </script>
 {% endblock %}
